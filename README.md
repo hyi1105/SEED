@@ -7,14 +7,18 @@
 - 原則：**只放可公開的學習筆記**，不放公司敏感資料  
 - 目標：不認識的人也能看、能追知識怎麼累積與改寫；介面用阿嬤用語（存一版、看看改了什麼、回到舊的）
 
-## 第一次啟用 Pages（若網址 404）
+## 第一次啟用 Pages（若網址 404／沒綠勾）
 
-1. 開 https://github.com/hyi1105/SEED/settings/pages  
-2. Build and deployment → Source 選 **GitHub Actions**  
-3. 到 https://github.com/hyi1105/SEED/actions 等 `pages` 工作流程變綠勾  
-4. 再開 https://hyi1105.github.io/SEED/  
+**先可看的臨時網址（不必等 Pages）：**  
+https://raw.githack.com/hyi1105/SEED/main/docs/index.html
 
-（若堅持用「Deploy from a branch」：Branch 選 `main`，Folder 選 **/docs**，不要選根目錄 `/`。）
+正式 Pages 排查：
+
+1. https://github.com/hyi1105/SEED/settings/actions → Actions permissions 選 **Allow all actions**
+2. https://github.com/hyi1105/SEED/settings/environments → 點 `github-pages` → Deployment branches 改成 **No restriction**（或確認包含 `main`）
+3. https://github.com/hyi1105/SEED/settings/pages → Source 維持 **GitHub Actions**
+4. https://github.com/hyi1105/SEED/actions/workflows/pages.yml → **Run workflow** → Branch `main` → Run  
+5. 等該次 run 變綠勾後再開 https://hyi1105.github.io/SEED/
 
 ## 現在怎麼看內容
 
