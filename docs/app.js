@@ -11,6 +11,8 @@ const state = {
   versions: [],
   panel: "list",
   dragId: null,
+  touchDragging: false,
+  suppressClick: false,
 };
 
 const $ = (id) => document.getElementById(id);
@@ -48,9 +50,11 @@ async function fetchText(url) {
 }
 
 async function fetchJson(url) {
-  const res = await fetch(url, {
-    headers: { Accept: "application/vnd.github+json" },
-  });
+  const isGithubApi = url.includes("api.github.com");
+  const res = await fetch(
+    url,
+    isGithubApi ? { headers: { Accept: "application/vnd.github+json" } } : undefined
+  );
   if (!res.ok) throw new Error(`讀取失敗（${res.status}）`);
   return res.json();
 }
@@ -125,6 +129,7 @@ function renderMap() {
         btn.draggable = true;
         btn.textContent = seed.title;
         btn.title = `${seed.title}\n${seed.blurb || ""}\n拖曳可改位置，點一下打開`;
+        btn.style.touchAction = "none";
         btn.addEventListener("dragstart", (e) => {
           state.dragId = seed.id;
           e.dataTransfer.setData("text/seed-id", seed.id);
@@ -133,7 +138,42 @@ function renderMap() {
         btn.addEventListener("dragend", () => {
           state.dragId = null;
         });
+        btn.addEventListener(
+          "touchstart",
+          (e) => {
+            if (e.touches.length !== 1) return;
+            state.dragId = seed.id;
+            state.touchDragging = true;
+          },
+          { passive: true }
+        );
+        btn.addEventListener(
+          "touchend",
+          (e) => {
+            if (!state.touchDragging || !state.dragId) return;
+            const t = e.changedTouches[0];
+            const el = document.elementFromPoint(t.clientX, t.clientY);
+            const cell = el && el.closest(".map-cell");
+            const id = state.dragId;
+            state.touchDragging = false;
+            state.dragId = null;
+            if (cell) {
+              const col = Number(cell.dataset.col);
+              const row = Number(cell.dataset.row);
+              const seed = state.seeds.find((s) => s.id === id);
+              if (seed && (seed.col !== col || seed.row !== row)) {
+                state.suppressClick = true;
+                moveSeed(id, col, row);
+              }
+            }
+          },
+          { passive: true }
+        );
         btn.addEventListener("click", () => {
+          if (state.suppressClick) {
+            state.suppressClick = false;
+            return;
+          }
           selectSeed(seed).catch((err) => setStatus(err.message || String(err)));
         });
         cell.appendChild(btn);

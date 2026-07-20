@@ -10,7 +10,12 @@
 ## 第一次啟用 Pages（若網址 404／沒綠勾）
 
 **先可看的臨時網址（不必等 Pages）：**  
-https://raw.githack.com/hyi1105/SEED/main/docs/index.html
+https://raw.githack.com/hyi1105/SEED/main/docs/index.html  
+
+⚠️ 不要用下面這些開 `index.html`，瀏覽器會顯示**純文字**（沒有地圖、不能拖）：
+- `raw.githubusercontent.com/...`
+- `cdn.jsdelivr.net/gh/.../index.html`
+- GitHub 網頁上的「Raw」按鈕
 
 正式 Pages 排查：
 
