@@ -7,11 +7,14 @@
 - 原則：**只放可公開的學習筆記**，不放公司敏感資料  
 - 目標：不認識的人也能看、能追知識怎麼累積與改寫；介面用阿嬤用語（存一版、看看改了什麼、回到舊的）
 
-## 第一次啟用 Pages
+## 第一次啟用 Pages（若網址 404）
 
-若上面網址還打不開，到  
-https://github.com/hyi1105/SEED/settings/pages  
-→ Source：**Deploy from a branch** → Branch：`main` → Folder：**/docs** → Save。
+1. 開 https://github.com/hyi1105/SEED/settings/pages  
+2. Build and deployment → Source 選 **GitHub Actions**  
+3. 到 https://github.com/hyi1105/SEED/actions 等 `pages` 工作流程變綠勾  
+4. 再開 https://hyi1105.github.io/SEED/  
+
+（若堅持用「Deploy from a branch」：Branch 選 `main`，Folder 選 **/docs**，不要選根目錄 `/`。）
 
 ## 現在怎麼看內容
 
