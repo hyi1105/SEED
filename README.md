@@ -38,7 +38,7 @@ https://raw.githack.com/hyi1105/SEED/main/docs/index.html
 | 知識庫 + Pages | 地圖首頁、讀取、舊版本、行級差異 | **完成** |
 | 六動作 | 自己改、請 AI 改、看差異、用／不要、存一版、回舊的 | **完成** |
 | 封包分享 | 打包帶走／還原回來 | **完成** |
-| 之後（非核心） | OAuth、多地圖、原生 App 等 | 可晚做 |
+| 之後（非核心） | 登入授權、多地圖、原生應用等 | 可晚做 |
 
 詳見 [`memory/topics/progress-final.md`](memory/topics/progress-final.md)、[`memory/topics/core-features.md`](memory/topics/core-features.md)。
 

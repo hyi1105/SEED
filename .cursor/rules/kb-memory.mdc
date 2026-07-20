@@ -1,56 +1,61 @@
 ---
-description: AI-first personal knowledge base — co-maintained via chat + Cursor diffs
+description: AI-first 個人知識庫 — 以對話 + Cursor diff 共同維護
 alwaysApply: true
 ---
 
-# Cursor_KB — co-maintained memory
+# Cursor_KB — 共同維護的記憶庫
 
-This workspace is the user's personal knowledge base. **You and the user maintain notes together.** The user prefers reviewing your edits in Cursor like code diffs — not hunting through unfamiliar `.md` alone.
+本工作區是使用者的個人知識庫。**你與使用者一起維護筆記。** 使用者偏好像審 code 一樣，在 Cursor 看 diff 確認，而不是自己在陌生 `.md` 裡翻找。
 
-## Operating model
+## 語言
 
-1. **Propose by editing**: When something is worth remembering, edit the note file(s) directly so the user can **see the diff in Cursor** and confirm/reject like a code change.
-2. **Say what moved**: After edits, briefly list in chat: which file(s), what section, what you added/changed/removed. Keep it short — the diff is the source of truth.
-3. **Human-readable notes**: Write notes so a quick skim still makes sense (clear headings, short bullets). Avoid cryptic agent-only shorthand.
-4. **Retrieve on request**: When asked about past chats, search `memory/index.md` → `sessions/` / `topics/`. Reply with **date/time**, summary, and key content.
-5. **Restructure on request**: Reorganize into `memory/topics/` and keep `memory/index.md` current; again expose changes as diffs.
+- **一律繁體中文**：筆記正文、標題、與使用者對話皆用繁體中文。
+- 專有名詞（GitHub、Pages、SEED 等）可保留原文；其餘說明用中文。
 
-Do not dump large wall-of-text into chat as a substitute for editing the note — edit the file, let them review the diff.
+## 運作方式
 
-## Images (paste / attach)
+1. **用改檔提案**：值得記住的內容直接改筆記，讓使用者在 Cursor **看 diff** 確認／拒絕。
+2. **說清楚動了哪**：改完在聊天簡短列出：哪個檔、哪一節、增刪改了什麼。diff 才是真相。
+3. **人看得懂**：標題清楚、條列短；避免只有 Agent 懂的縮寫。
+4. **按需回憶**：問到過去對話時，查 `memory/index.md` → `sessions/`／`topics/`，回覆**日期時間**、摘要、重點。
+5. **按需重整**：整理進 `memory/topics/`，並更新 `memory/index.md`；同樣用 diff 呈現。
 
-1. Save under `memory/assets/YYYY-MM-DD-slug.ext`.
-2. Write **text memory** in the note (what it shows, readable text/OCR, why it mattered).
-3. Link the asset path. Text is the searchable source of truth.
+不要用大段聊天文字代替改檔——改檔，讓使用者審 diff。
 
-## Layout
+## 圖片（貼上／附件）
 
-- `memory/index.md` — master index
-- `memory/sessions/YYYY-MM-DD-slug.md` — session summaries
-- `memory/topics/*.md` — durable topic notes
-- `memory/assets/` — original images
+1. 存到 `memory/assets/YYYY-MM-DD-slug.ext`。
+2. 在筆記寫**文字記憶**（畫面說明、可讀文字／OCR、為何重要）。
+3. 連到資產路徑。文字才是可搜尋主體。
 
-## Session note template
+## 目錄
+
+- `memory/index.md` — 總索引
+- `memory/sessions/YYYY-MM-DD-slug.md` — 場次摘要
+- `memory/topics/*.md` — 主題筆記
+- `memory/assets/` — 原圖
+
+## 場次筆記範本
 
 ```markdown
 ---
 date: YYYY-MM-DD
-time: HH:MM (timezone)
+time: HH:MM (時區)
 tags: []
 status: active
 ---
 
-# Title
+# 標題
 
-## Summary
-## Key points
-## Decisions / preferences
-## Images
-- asset: assets/YYYY-MM-DD-slug.png
-  - text memory: ...
-## Open threads
+## 摘要
+## 重點
+## 決定／偏好
+## 圖片
+- 資產: assets/YYYY-MM-DD-slug.png
+  - 文字記憶: ...
+## 待續
 ```
 
-## Index row format
+## 索引列格式
 
-`- YYYY-MM-DD — Title — tags — link to session/topic file`
+`- YYYY-MM-DD — 標題 — 標籤 — 連到場次／主題檔`

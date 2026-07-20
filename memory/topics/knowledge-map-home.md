@@ -7,11 +7,11 @@ status: active
 
 # 首頁：知識地圖格
 
-## Summary
+## 摘要
 
 每個 `.md`（seed）像資料夾裡的檔案，但首頁不是清單，而是**超簡易地圖**：例如 10×10 格子，把知識擺在有相對／地理邏輯的位置。解析度依使用再調。
 
-## Example
+## 例子
 
 | 主題 | 地圖直覺 |
 |---|---|
@@ -20,7 +20,7 @@ status: active
 | 南橫交通議題 | 偏南 |
 | 蘇花交通議題 | 偏東（蘇花） |
 
-## Product rules
+## 產品規則
 
 1. Seed = 一格上的「檔案／地標」  
 2. 位置有意義（相對關係）  
@@ -39,8 +39,8 @@ status: active
 
 預覽網址請用 raw.githack（勿用 raw.githubusercontent／jsDelivr 開 html）。
 
-## Later
+## 之後
 
 - 多張地圖、縮放、連線  
-- OAuth 登入取代手貼權杖（更阿嬤）  
+- 用登入授權取代手貼權杖（更阿嬤）  
 - 公司電腦 pull 同步 OneDrive 工作區

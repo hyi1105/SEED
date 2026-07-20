@@ -133,6 +133,15 @@
       "blurb": "工作室",
       "col": 3,
       "row": 4
+    },
+    {
+      "id": "lang",
+      "title": "語言偏好",
+      "alias": "繁體中文",
+      "path": "memory/topics/language-zh-hant.md",
+      "blurb": "工作室",
+      "col": 1,
+      "row": 4
     }
   ]
 }
