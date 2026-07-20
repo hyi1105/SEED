@@ -10,6 +10,7 @@
 
 ## 場次
 
+- 2026-07-21 — 角色選擇＋控制台框編輯 — 標籤：ux、角色、控制台、路徑 — [sessions/2026-07-21-agent-control-panel.md](sessions/2026-07-21-agent-control-panel.md)
 - 2026-07-20 — 延續路線 A→B→D→E（C 暫緩）— 標籤：路線、拼圖、優先序 — [sessions/2026-07-20-continuation-roadmap.md](sessions/2026-07-20-continuation-roadmap.md)
 - 2026-07-20 — 從知識地圖改成知識拼圖 — 標籤：拼圖、產品、模板 — [sessions/2026-07-20-knowledge-puzzle.md](sessions/2026-07-20-knowledge-puzzle.md)
 - 2026-07-20 — 手機操作：地圖太小、選單太大 — 標籤：體驗、手機、地圖 — [sessions/2026-07-20-mobile-map-ux.md](sessions/2026-07-20-mobile-map-ux.md)

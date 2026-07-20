@@ -15,7 +15,31 @@ const TOKEN_KEY = "seed-github-token-v1";
 const AI_KEY = "seed-openai-key-v1";
 const AI_BASE_KEY = "seed-openai-base-v1";
 const MEMBER_KEY = "seed-member-code-v1";
+const AGENT_KEY = "seed-agent-v1";
+const RECENT_PATH_KEY = "seed-recent-paths-v1";
 const DEFAULT_AI_BASE = "https://api.openai.com/v1";
+
+/** 三角色：像對戰選角；罵角色不是罵你，比較敢保護、敢長大 */
+const AGENTS = [
+  {
+    id: "ward",
+    name: "守護",
+    skill: "擋攻擊",
+    blurb: "別人罵他，不是罵你。你會想保護他。",
+  },
+  {
+    id: "forge",
+    name: "工頭",
+    skill: "讓東西長",
+    blurb: "像硬體工廠：一格一格長大，控制台感。",
+  },
+  {
+    id: "scout",
+    name: "偵察",
+    skill: "先探路",
+    blurb: "幫你找下一步，不讓你正面硬扛。",
+  },
+];
 
 const state = {
   seeds: [],
@@ -42,6 +66,9 @@ const state = {
   workingText: "",
   editing: false,
   draftAccepted: false,
+  frames: [],
+  frameEditIndex: -1,
+  agentId: "ward",
 };
 
 const $ = (id) => document.getElementById(id);
@@ -133,34 +160,15 @@ function showPanel(name) {
   const chrome = $("chrome");
   const docBar = $("doc-bar");
   if (chrome) chrome.dataset.mode = onMap ? "map" : "doc";
-  if (docBar) {
-    if (onMap) docBar.setAttribute("hidden", "");
-    else docBar.removeAttribute("hidden");
-  }
+  // 種子內操作列先隱藏：路徑用 SEED、段落用框編輯
+  if (docBar) docBar.setAttribute("hidden", "");
   closeAllPopovers();
-
-  document.querySelectorAll("#doc-bar .btn[data-action]").forEach((btn) => {
-    const action = btn.dataset.action;
-    const mapActions = {
-      list: "list",
-      read: "read",
-      edit: "read",
-      history: "history",
-      diff: "diff",
-    };
-    if (mapActions[action]) {
-      const pressed =
-        mapActions[action] === name &&
-        (action !== "edit" || state.editing) &&
-        (action !== "read" || !state.editing);
-      btn.setAttribute("aria-pressed", pressed ? "true" : "false");
-    }
-  });
 
   const stage = document.querySelector(".stage");
   if (stage) stage.scrollTop = 0;
   const panel = $(`panel-${name}`);
   if (panel) panel.scrollTop = 0;
+  if (name !== "list") pushRecentPath();
   updatePathBrand();
   updateSyncUi();
 }
@@ -170,8 +178,56 @@ function updateDraftBar() {
   $("draft-bar").classList.toggle("hidden", !dirty);
 }
 
+function textToFrames(text) {
+  const raw = String(text || "");
+  if (!raw.trim()) return [""];
+  const parts = raw.split(/\n{2,}/);
+  return parts.length ? parts : [raw];
+}
+
+function framesToText(frames) {
+  return (frames || []).join("\n\n");
+}
+
+function syncWorkingFromFrames() {
+  state.workingText = framesToText(state.frames);
+  if ($("edit-body")) $("edit-body").value = state.workingText;
+  updateDraftBar();
+}
+
+function renderFrameBoard() {
+  const board = $("read-body");
+  if (!board) return;
+  board.classList.add("frame-board");
+  board.innerHTML = "";
+  const frames = state.frames.length ? state.frames : [""];
+  frames.forEach((frame, index) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "text-frame";
+    btn.dataset.index = String(index);
+    const preview = (frame || "").trim() || "（空白格 · 點一下寫入）";
+    btn.innerHTML = `<span class="frame-index">${index + 1}</span><span class="frame-text">${escapeHtml(preview)}</span>`;
+    btn.addEventListener("click", () => openFrameEditor(index));
+    board.appendChild(btn);
+  });
+  const add = document.createElement("button");
+  add.type = "button";
+  add.className = "text-frame text-frame-add";
+  add.textContent = "+ 加一格";
+  add.addEventListener("click", () => {
+    state.frames.push("");
+    syncWorkingFromFrames();
+    renderFrameBoard();
+    openFrameEditor(state.frames.length - 1);
+  });
+  board.appendChild(add);
+}
+
 function setViewMode(text) {
+  // 仍保留：舊版預覽等；預設改走框編輯
   state.editing = false;
+  state.frames = textToFrames(text);
   $("read-body").classList.remove("hidden");
   $("edit-body").classList.add("hidden");
   $("read-body").textContent = text;
@@ -180,12 +236,170 @@ function setViewMode(text) {
 
 function setEditMode(text) {
   state.editing = true;
-  $("read-body").classList.add("hidden");
-  $("edit-body").classList.remove("hidden");
-  $("edit-body").value = text;
+  state.frames = textToFrames(text);
   state.workingText = text;
+  $("read-body").classList.remove("hidden");
+  $("edit-body").classList.add("hidden");
+  $("edit-body").value = text;
+  renderFrameBoard();
   updateDraftBar();
-  $("edit-body").focus();
+}
+
+function openFrameEditor(index) {
+  state.frameEditIndex = index;
+  const input = $("frame-edit-input");
+  const dlg = $("frame-edit-dialog");
+  const title = $("frame-edit-title");
+  if (!input || !dlg) return;
+  if (title) title.textContent = `改第 ${index + 1} 格`;
+  input.value = state.frames[index] || "";
+  dlg.showModal();
+  setTimeout(() => {
+    input.focus();
+    try {
+      input.setSelectionRange(input.value.length, input.value.length);
+    } catch {
+      /* ignore */
+    }
+  }, 50);
+}
+
+function applyFrameEditor() {
+  const index = state.frameEditIndex;
+  const input = $("frame-edit-input");
+  if (index < 0 || !input) return;
+  state.frames[index] = input.value;
+  state.editing = true;
+  syncWorkingFromFrames();
+  renderFrameBoard();
+  state.frameEditIndex = -1;
+  showToast(`已更新第 ${index + 1} 格`, "ok");
+}
+
+function getSelectedAgent() {
+  const id = localStorage.getItem(AGENT_KEY) || state.agentId || "ward";
+  return AGENTS.find((a) => a.id === id) || AGENTS[0];
+}
+
+function setSelectedAgent(id) {
+  const agent = AGENTS.find((a) => a.id === id) || AGENTS[0];
+  state.agentId = agent.id;
+  localStorage.setItem(AGENT_KEY, agent.id);
+  renderAgentPick();
+  updateSyncUi();
+  showToast(`已選角色：${agent.name}（${agent.skill}）`, "ok");
+}
+
+function renderAgentPick() {
+  const wrap = $("agent-pick");
+  if (!wrap) return;
+  const selected = getSelectedAgent();
+  wrap.innerHTML = "";
+  for (const agent of AGENTS) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "agent-card" + (agent.id === selected.id ? " is-selected" : "");
+    btn.setAttribute("role", "option");
+    btn.setAttribute("aria-selected", agent.id === selected.id ? "true" : "false");
+    btn.innerHTML = `
+      <span class="agent-name">${escapeHtml(agent.name)}</span>
+      <span class="agent-skill">${escapeHtml(agent.skill)}</span>
+      <span class="agent-blurb">${escapeHtml(agent.blurb)}</span>
+    `;
+    btn.addEventListener("click", () => setSelectedAgent(agent.id));
+    wrap.appendChild(btn);
+  }
+}
+
+function visibilityLabel() {
+  if (state.map.kind === "community") return "社群";
+  return state.map.visibility === "private" ? "私人" : "公開";
+}
+
+function loadRecentPaths() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(RECENT_PATH_KEY) || "[]");
+    return Array.isArray(raw) ? raw.slice(0, 5) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveRecentPaths(list) {
+  localStorage.setItem(RECENT_PATH_KEY, JSON.stringify((list || []).slice(0, 5)));
+}
+
+function currentPathEntry() {
+  const steps = buildPathSteps();
+  const last = steps[steps.length - 1];
+  return {
+    key: steps.map((s) => s.key).join("/"),
+    label: steps.map((s) => s.label).join(" › "),
+    panel: state.panel,
+    seedId: state.current?.id || null,
+    at: new Date().toISOString(),
+  };
+}
+
+function pushRecentPath() {
+  const entry = currentPathEntry();
+  if (!entry.key || entry.key === "list") return;
+  const list = loadRecentPaths().filter((x) => x.key !== entry.key);
+  list.unshift(entry);
+  saveRecentPaths(list);
+}
+
+function goRecentPath(entry) {
+  if (!entry) return;
+  if (entry.seedId) {
+    const seed = state.seeds.find((s) => s.id === entry.seedId);
+    if (seed) {
+      selectSeed(seed).catch((err) => setStatus(err.message || String(err)));
+      return;
+    }
+  }
+  showPanel("list");
+}
+
+function downloadTemplatePack(templateId) {
+  const tpl = PUZZLE_TEMPLATES[templateId];
+  if (!tpl) {
+    showToast("找不到這個模板", "warn");
+    return;
+  }
+  const pack = {
+    type: "seed-puzzle-template",
+    version: 1,
+    template: templateId,
+    label: tpl.label,
+    cols: tpl.cols,
+    rows: tpl.rows,
+    exportedAt: new Date().toISOString(),
+  };
+  const blob = new Blob([`${JSON.stringify(pack, null, 2)}\n`], {
+    type: "application/json",
+  });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `seed-template-${templateId}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  showToast(`已下載模板：${tpl.label}`, "ok");
+}
+
+function toggleVisibilityPresentation() {
+  if (state.map.kind === "community") {
+    showToast("社群版沒有公開／私人切換（展示用）", "info");
+    return;
+  }
+  state.map.visibility = state.map.visibility === "private" ? "public" : "private";
+  updateSyncUi();
+  showToast(
+    state.map.visibility === "private"
+      ? "已標成私人（展示用，真正隱私之後做）"
+      : "已標成公開（展示用）",
+    "ok"
+  );
 }
 
 function defaultVersionName() {
@@ -576,23 +790,30 @@ function hasUnsavedPuzzleChanges() {
 function updateSyncUi() {
   const dirty = hasUnsavedPuzzleChanges();
   const savedAt = state.catalog?.map?.savedAt || null;
+  const agent = getSelectedAgent();
+
+  const agentLabel = $("header-agent-label");
+  if (agentLabel) agentLabel.textContent = agent.name;
 
   const kindEl = $("header-kind-label");
-  if (kindEl) kindEl.textContent = puzzleKindLabel();
+  if (kindEl) kindEl.textContent = visibilityLabel();
 
   const dot = $("sync-dot");
   if (dot) dot.dataset.state = dirty ? "dirty" : savedAt ? "saved" : "unknown";
 
   const infoKindSwitch = $("info-kind-switch");
-  if (infoKindSwitch) infoKindSwitch.textContent = puzzleKindLabel();
+  if (infoKindSwitch) infoKindSwitch.textContent = visibilityLabel();
 
   const infoSaved = $("info-saved-at");
   if (infoSaved) {
     if (savedAt) {
       const dateLabel = formatSavedAtDate(savedAt);
+      const name = getCurrentLayoutName();
+      const rev = getCurrentLayoutRev();
+      const layoutTag = name && rev ? ` · ${name} v${rev}` : "";
       infoSaved.textContent = dirty
-        ? `${dateLabel}（有未存異動）`
-        : dateLabel;
+        ? `${dateLabel}${layoutTag}（有未存異動）`
+        : `${dateLabel}${layoutTag}`;
     } else {
       infoSaved.textContent = dirty ? "尚未存過（有異動）" : "尚未存過";
     }
@@ -600,7 +821,7 @@ function updateSyncUi() {
 
   const infoExtra = $("info-extra");
   if (infoExtra) {
-    const parts = [];
+    const parts = [`角色：${agent.name} · ${agent.skill}`];
     if (state.map.kind === "community") {
       const comm = loadCommunity();
       parts.push(`點數 ${comm.points}；存成一版 +${COMMUNITY_SAVE_BONUS} 點`);
@@ -1094,7 +1315,10 @@ async function askAiDirect(instruction, source) {
 async function askAiToRevise(instruction) {
   if (!state.current) throw new Error("請先在地圖上點一份筆記");
   if (!state.originalText) await loadSeedText();
-  const source = state.editing ? $("edit-body").value : state.workingText || state.originalText;
+  const source = (() => {
+    if (state.editing) syncWorkingFromFrames();
+    return state.workingText || state.originalText;
+  })();
   setStatus("AI 正在改稿，請稍候…");
   if (usePaidProxy()) return askAiViaProxy(instruction, source);
   return askAiDirect(instruction, source);
@@ -1416,11 +1640,11 @@ async function readCurrent() {
     showPanel("list");
     return;
   }
-  setStatus("正在讀現在的內容…");
+  setStatus("正在打開控制台…");
   const text = await loadSeedText();
-  $("read-title").textContent = state.current.title;
-  setViewMode(text);
-  setStatus(`正在看：${state.current.title}`);
+  $("read-title").textContent = `${state.current.title} · 控制台`;
+  setEditMode(text);
+  setStatus(`控制台：點每一格修改（${state.current.title}）`);
   showPanel("read");
 }
 
@@ -1431,9 +1655,9 @@ async function startEdit() {
     return;
   }
   if (!state.originalText) await loadSeedText();
-  $("read-title").textContent = `${state.current.title}（自己改）`;
+  $("read-title").textContent = `${state.current.title} · 控制台`;
   setEditMode(state.workingText || state.originalText);
-  setStatus("直接改文字；改完可先「看看這次改了什麼」，再「存成一版」");
+  setStatus("點每一格修改；改完可從通知列存成一版");
   showPanel("read");
 }
 
@@ -1465,7 +1689,7 @@ function discardDraft() {
   state.workingText = state.originalText;
   state.draftAccepted = false;
   if (state.editing) {
-    $("edit-body").value = state.originalText;
+    setEditMode(state.originalText);
   } else {
     setViewMode(state.originalText);
   }
@@ -1475,7 +1699,8 @@ function discardDraft() {
 
 async function saveVersionToRepo(versionName) {
   if (!state.current) throw new Error("請先選一份筆記");
-  const text = state.editing ? $("edit-body").value : state.workingText || state.originalText;
+  if (state.editing) syncWorkingFromFrames();
+  const text = state.workingText || state.originalText;
   if (text == null) throw new Error("沒有可存的內容");
   setStatus("正在存成一版…");
   const content = bytesToBase64(new TextEncoder().encode(text));
@@ -1494,8 +1719,8 @@ async function saveVersionToRepo(versionName) {
   state.originalText = text;
   state.workingText = text;
   state.draftAccepted = false;
-  $("read-title").textContent = state.current.title;
-  setViewMode(text);
+  $("read-title").textContent = `${state.current.title} · 控制台`;
+  setEditMode(text);
   await loadVersions();
   let msg = `已存成一版「${label}」（${String(result.commit?.sha || "").slice(0, 7)}）`;
   const afterPoints = awardCommunityPoints(COMMUNITY_SAVE_BONUS, label);
@@ -1725,7 +1950,7 @@ document.querySelector("#chrome").addEventListener("click", async (e) => {
         showPanel("list");
         return;
       }
-      if (state.editing) state.workingText = $("edit-body").value;
+      if (state.editing) syncWorkingFromFrames();
       if (!getToken()) {
         $("token-dialog").showModal();
         setStatus("請先設定鑰匙，再存成一版");
@@ -2048,7 +2273,7 @@ function buildPathSteps() {
       go: async () => {
         showPanel("read");
         if (!state.originalText) await loadSeedText();
-        setViewMode(state.workingText || state.originalText);
+        setEditMode(state.workingText || state.originalText);
       },
     });
   }
@@ -2066,11 +2291,11 @@ function buildPathSteps() {
       depth: state.current ? 2 : 1,
       go: () => showPanel("diff"),
     });
-  } else if (state.editing && state.panel === "read") {
+  } else if (state.editing && state.panel === "read" && state.current) {
     steps.push({
       key: "edit",
-      label: "自己改",
-      depth: state.current ? 2 : 1,
+      label: "控制台",
+      depth: 2,
       go: () => startEdit(),
     });
   }
@@ -2088,7 +2313,6 @@ function renderPathLadder() {
     btn.className = "path-step";
     if (index === steps.length - 1) btn.classList.add("is-current");
     btn.dataset.depth = String(step.depth);
-    btn.dataset.depth = String(step.depth);
     btn.textContent = step.label;
     btn.addEventListener("click", () => {
       step.go();
@@ -2098,16 +2322,39 @@ function renderPathLadder() {
   });
 }
 
+function renderPathRecent() {
+  const wrap = $("path-recent");
+  if (!wrap) return;
+  const list = loadRecentPaths();
+  wrap.innerHTML = "";
+  if (!list.length) {
+    const empty = document.createElement("p");
+    empty.className = "path-recent-empty";
+    empty.textContent = "還沒有最近位置。點進種子後會出現這裡。";
+    wrap.appendChild(empty);
+    return;
+  }
+  for (const entry of list.slice(0, 5)) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "path-recent-item";
+    btn.textContent = entry.label;
+    btn.title = entry.label;
+    btn.addEventListener("click", () => {
+      setPathOpen(false);
+      goRecentPath(entry);
+    });
+    wrap.appendChild(btn);
+  }
+}
+
 function setPathOpen(open) {
   const pop = $("path-popover");
   const btn = $("brand-home");
   if (!pop) return;
-  if (open && state.panel === "list") {
-    showPanel("list");
-    return;
-  }
   if (open) {
     renderPathLadder();
+    renderPathRecent();
     positionPopover(pop, btn);
     setPopoverOpen(null);
   }
@@ -2118,10 +2365,15 @@ function setPathOpen(open) {
 
 function updatePathBrand() {
   const btn = $("brand-home");
+  const here = $("brand-here");
   if (!btn) return;
-  const onMap = state.panel === "list";
-  btn.title = onMap ? "知識拼圖首頁" : "點開路徑，選擇要回到哪一層";
-  btn.classList.toggle("has-path", !onMap);
+  const steps = buildPathSteps();
+  const last = steps[steps.length - 1];
+  const label = last?.label || "知識拼圖";
+  if (here) here.textContent = label;
+  btn.title = "點開路徑與最近五處";
+  btn.classList.toggle("has-path", state.panel !== "list");
+  btn.classList.toggle("can-open", true);
 }
 
 function setPopoverOpen(name) {
@@ -2136,7 +2388,9 @@ function setPopoverOpen(name) {
   if (notifyBtn) notifyBtn.setAttribute("aria-expanded", name === "notify" ? "true" : "false");
   if (name === "me") {
     positionPopover(me, meBtn);
+    renderAgentPick();
     refreshLayoutHistorySummary();
+    updateSyncUi();
   } else if (name === "notify") {
     positionPopover(notify, notifyBtn);
     renderNotifyChips();
@@ -2166,16 +2420,14 @@ function renderNotifyChips() {
   const chips =
     state.panel === "list"
       ? [
-          { label: "換模板", run: () => $("template-setup").click() },
-          { label: "排版紀錄", run: () => openLayoutHistoryDialog() },
           { label: "存拼圖", run: () => savePuzzleLayout() },
+          { label: "排版紀錄", run: () => openLayoutHistoryDialog() },
           { label: "打包帶走", run: () => exportSeedPack() },
         ]
       : [
           { label: "回拼圖", run: () => showPanel("list") },
-          { label: "自己改", run: () => startEdit() },
-          { label: "請 AI 改", run: () => $("ai-dialog").showModal() },
           { label: "存成一版", run: () => $("version-dialog").showModal() },
+          { label: "請 AI 改", run: () => $("ai-dialog").showModal() },
         ];
   wrap.innerHTML = "";
   for (const c of chips) {
@@ -2205,8 +2457,8 @@ function handleNotifyInput(text) {
     resetPuzzleLayout();
     return;
   }
-  if (/模板/.test(t)) {
-    $("template-setup").click();
+  if (/模板|下載/.test(t)) {
+    setPopoverOpen("me");
     return;
   }
   if (/排版|紀錄|歷史/.test(t)) {
@@ -2223,10 +2475,6 @@ function handleNotifyInput(text) {
 
 $("brand-home").addEventListener("click", (e) => {
   e.stopPropagation();
-  if (state.panel === "list") {
-    closeAllPopovers();
-    return;
-  }
   const open = $("path-popover").classList.contains("hidden");
   setPathOpen(open);
 });
@@ -2245,8 +2493,7 @@ $("notify-btn").addEventListener("click", (e) => {
 });
 
 $("info-kind-switch").addEventListener("click", () => {
-  closeAllPopovers();
-  $("template-setup").click();
+  toggleVisibilityPresentation();
 });
 
 $("info-layout-history").addEventListener("click", () => {
@@ -2254,9 +2501,21 @@ $("info-layout-history").addEventListener("click", () => {
   openLayoutHistoryDialog();
 });
 
-$("info-template").addEventListener("click", () => {
-  closeAllPopovers();
-  $("template-setup").click();
+$("template-dl")?.addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-template]");
+  if (!btn) return;
+  downloadTemplatePack(btn.dataset.template);
+});
+
+$("frame-edit-form")?.addEventListener("submit", (e) => {
+  const submitter = e.submitter;
+  if (submitter && submitter.value === "cancel") {
+    state.frameEditIndex = -1;
+    return;
+  }
+  e.preventDefault();
+  applyFrameEditor();
+  $("frame-edit-dialog").close();
 });
 
 $("notify-form").addEventListener("submit", (e) => {
@@ -2286,7 +2545,10 @@ loadAppConfig()
   .then(() => loadCatalog())
   .then(() => refreshLayoutHistorySummary())
   .then(() => {
+    state.agentId = getSelectedAgent().id;
+    renderAgentPick();
+    updatePathBrand();
     updateSyncUi();
-    showToast("拖曳可改拼圖；有異動時 header 會出現存檔", "info");
+    showToast("點右上選角色；點 SEED 看路徑；點種子進控制台改每一格", "info");
   })
   .catch((err) => setStatus(err.message || String(err)));

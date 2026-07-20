@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=puzzle9" />
+  <link rel="stylesheet" href="styles.css?v=puzzle10" />
   <!-- 預覽請用 raw.githack（會正確當成網頁）。不要用 raw.githubusercontent 或 jsDelivr 開 html，會變純文字。 -->
 </head>
 <body>
@@ -20,9 +20,10 @@
           id="brand-home"
           aria-expanded="false"
           aria-controls="path-popover"
-          title="路徑"
+          title="路徑與最近位置"
         >
-          SEED
+          <span class="brand-name">SEED</span>
+          <span class="brand-here" id="brand-here">知識拼圖</span>
         </button>
         <div class="top-end">
           <div class="header-layout-actions hidden" id="header-layout-actions" aria-label="拼圖位置異動">
@@ -37,9 +38,9 @@
               </svg>
             </button>
           </div>
-          <button type="button" class="header-chip" id="header-me-btn" aria-expanded="false" aria-controls="me-popover" title="我的狀態與設定">
-            <span class="me-prefix">我</span>
-            <span id="header-kind-label">個人·公開</span>
+          <button type="button" class="header-chip" id="header-me-btn" aria-expanded="false" aria-controls="me-popover" title="選擇角色 · 控制台">
+            <span class="me-prefix" id="header-agent-label">守護</span>
+            <span id="header-kind-label">公開</span>
             <span class="sync-dot" id="sync-dot" data-state="unknown" aria-hidden="true"></span>
           </button>
           <button type="button" class="btn btn-icon btn-ghost" id="notify-btn" title="系統回饋" aria-expanded="false" aria-controls="notify-popover">
@@ -53,16 +54,21 @@
       </header>
 
       <div class="popover path-popover hidden" id="path-popover" role="navigation" aria-label="路徑">
-        <p class="popover-heading">路徑</p>
+        <p class="popover-heading">現在位置</p>
         <nav class="path-ladder" id="path-ladder"></nav>
+        <div class="me-divider" aria-hidden="true"></div>
+        <p class="popover-heading">最近用過</p>
+        <nav class="path-recent" id="path-recent"></nav>
       </div>
 
-      <div class="popover me-popover hidden" id="me-popover" role="dialog" aria-label="我">
-        <p class="popover-heading">我</p>
+      <div class="popover me-popover hidden" id="me-popover" role="dialog" aria-label="角色控制台">
+        <p class="popover-heading">選擇角色 · 控制台</p>
+        <div class="agent-pick" id="agent-pick" role="listbox" aria-label="三角色"></div>
+        <div class="me-divider" aria-hidden="true"></div>
         <div class="info-sheet">
           <div class="info-row">
             <span class="info-label">狀態</span>
-            <button type="button" class="info-action" id="info-kind-switch">個人·公開</button>
+            <button type="button" class="info-action" id="info-kind-switch" title="點一下切換公開／私人（展示用）">公開</button>
           </div>
           <div class="info-row">
             <span class="info-label">存檔</span>
@@ -72,23 +78,29 @@
             <span class="info-label">排版紀錄</span>
             <button type="button" class="info-action" id="info-layout-history">尚無紀錄</button>
           </div>
-          <div class="info-row">
+          <div class="info-row info-row-stack">
             <span class="info-label">拼圖模板</span>
-            <button type="button" class="info-action" id="info-template">10×10</button>
+            <div class="template-dl" id="template-dl">
+              <button type="button" class="template-dl-btn" data-template="grid-8">下載 8×8</button>
+              <button type="button" class="template-dl-btn" data-template="grid-10">下載 10×10</button>
+              <button type="button" class="template-dl-btn" data-template="grid-12">下載 12×12</button>
+            </div>
           </div>
           <p class="info-extra hidden" id="info-extra"></p>
         </div>
         <div class="me-divider" aria-hidden="true"></div>
         <div class="me-menu">
-          <button type="button" class="me-link" id="save-layout">存拼圖位置</button>
-          <button type="button" class="me-link" id="reset-layout">重置位置</button>
-          <button type="button" class="me-link" id="token-setup">設定鑰匙</button>
-          <button type="button" class="me-link" id="ai-key-setup">AI 鑰匙</button>
-          <button type="button" class="me-link hidden" id="member-setup">會員碼</button>
           <button type="button" class="me-link" id="pack-export">打包帶走</button>
           <button type="button" class="me-link" id="pack-import">還原回來</button>
-          <button type="button" class="me-link" id="template-setup">拼圖模板（完整）</button>
         </div>
+        <!-- 隱藏入口：進階設定仍可用（不在控制台列出） -->
+        <button type="button" class="hidden" id="save-layout" tabindex="-1" aria-hidden="true">存拼圖位置</button>
+        <button type="button" class="hidden" id="reset-layout" tabindex="-1" aria-hidden="true">重置位置</button>
+        <button type="button" class="hidden" id="token-setup" tabindex="-1" aria-hidden="true">設定鑰匙</button>
+        <button type="button" class="hidden" id="ai-key-setup" tabindex="-1" aria-hidden="true">AI 鑰匙</button>
+        <button type="button" class="hidden" id="member-setup" tabindex="-1" aria-hidden="true">會員碼</button>
+        <button type="button" class="hidden" id="template-setup" tabindex="-1" aria-hidden="true">拼圖模板</button>
+        <button type="button" class="hidden" id="info-template" tabindex="-1" aria-hidden="true">模板標籤</button>
       </div>
 
       <div class="popover notify-popover hidden" id="notify-popover" role="log" aria-label="系統回饋">
@@ -125,7 +137,7 @@
 
       <section id="panel-read" class="panel hidden">
         <div class="read-head">
-          <h1 id="read-title">讀現在的</h1>
+          <h1 id="read-title">控制台</h1>
           <div id="draft-bar" class="draft-bar hidden">
             <span class="draft-label">你改過了，還沒存進倉庫</span>
             <button type="button" class="btn" id="draft-diff">看看這次改了什麼</button>
@@ -133,7 +145,7 @@
             <button type="button" class="btn" id="draft-discard">不要</button>
           </div>
         </div>
-        <article id="read-body" class="prose"></article>
+        <article id="read-body" class="prose frame-board" aria-label="段落框編輯"></article>
         <textarea id="edit-body" class="edit-body hidden" spellcheck="true" aria-label="編輯筆記"></textarea>
       </section>
 
@@ -312,6 +324,21 @@
       </form>
     </dialog>
 
+    <dialog id="frame-edit-dialog" class="token-dialog frame-sheet">
+      <form method="dialog" id="frame-edit-form">
+        <h2 id="frame-edit-title">改這一格</h2>
+        <p class="lead">每一段是一個框。改完按套用，會回到控制台。</p>
+        <label class="token-label">
+          這一格
+          <textarea id="frame-edit-input" rows="5" placeholder="輸入這一格的內容…"></textarea>
+        </label>
+        <div class="token-actions">
+          <button type="submit" class="btn btn-primary" value="save">套用</button>
+          <button type="submit" class="btn" value="cancel">取消</button>
+        </div>
+      </form>
+    </dialog>
+
     <dialog id="version-dialog" class="token-dialog">
       <form method="dialog" id="version-form">
         <h2>存成一版</h2>
@@ -330,6 +357,6 @@
 
   <div class="toast hidden" id="toast" role="status" aria-live="polite"></div>
 
-  <script src="app.js?v=puzzle9"></script>
+  <script src="app.js?v=puzzle10"></script>
 </body>
 </html>
