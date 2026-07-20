@@ -2,41 +2,156 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>SEED — 知識地圖</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>SEED — 知識拼圖</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=paid2" />
+  <link rel="stylesheet" href="styles.css?v=puzzle3" />
   <!-- 預覽請用 raw.githack（會正確當成網頁）。不要用 raw.githubusercontent 或 jsDelivr 開 html，會變純文字。 -->
 </head>
 <body>
   <div class="app">
-    <header class="top">
-      <div class="brand">
-        <p class="brand-name">SEED</p>
-        <p class="brand-tag">知識像地圖一樣擺：有位置、有關係</p>
-      </div>
-      <p class="hint" id="status">正在載入…</p>
-    </header>
+    <div class="chrome" id="chrome" data-mode="map">
+      <header class="top">
+        <button type="button" class="brand-home" data-action="list" id="brand-home" title="回知識拼圖">
+          SEED
+        </button>
+        <p class="hint sr-only" id="status" aria-live="polite">正在載入…</p>
+        <button
+          type="button"
+          class="btn menu-btn"
+          id="menu-btn"
+          aria-expanded="false"
+          aria-controls="menu-drawer"
+        >
+          選單
+        </button>
+      </header>
 
-    <nav class="actions" aria-label="主要操作">
-      <button type="button" class="btn" data-action="list" aria-pressed="true">知識地圖</button>
-      <button type="button" class="btn" data-action="read">讀現在的</button>
-      <button type="button" class="btn" data-action="edit">自己改</button>
-      <button type="button" class="btn" data-action="diff">看看改了什麼</button>
-      <button type="button" class="btn" data-action="history">回到舊的</button>
-      <button type="button" class="btn btn-primary" data-action="save-version">存成一版</button>
-      <button type="button" class="btn" id="reset-layout" title="回到倉庫預設位置">重置位置</button>
-      <button type="button" class="btn" id="save-layout" title="把目前地圖位置寫進 seeds.json">存地圖位置</button>
-      <button type="button" class="btn" id="token-setup" title="設定 GitHub 鑰匙">設定鑰匙</button>
-      <button type="button" class="btn btn-primary" data-action="ai">請 AI 改</button>
-      <button type="button" class="btn" id="member-setup" title="輸入會員碼">會員碼</button>
-      <button type="button" class="btn" id="ai-key-setup" title="設定 AI 鑰匙（進階）">AI 鑰匙</button>
-      <button type="button" class="btn" id="pack-export" title="打包全部內容與設定">打包帶走</button>
-      <button type="button" class="btn" id="pack-import" title="上傳封包還原">還原回來</button>
+      <div class="menu-drawer collapsed" id="menu-drawer" role="menu" aria-label="系統選單">
+        <p class="menu-label">拼圖與設定</p>
+        <div class="menu-grid">
+          <button type="button" class="btn" id="template-setup" title="選擇拼圖模板">拼圖模板</button>
+          <button type="button" class="btn" id="save-layout" title="把目前拼圖位置寫進 seeds.json">存拼圖位置</button>
+          <button type="button" class="btn" id="reset-layout" title="回到倉庫預設位置">重置位置</button>
+          <button type="button" class="btn" id="token-setup" title="設定 GitHub 鑰匙">設定鑰匙</button>
+          <button type="button" class="btn" id="ai-key-setup" title="設定 AI 鑰匙">AI 鑰匙</button>
+          <button type="button" class="btn hidden" id="member-setup" title="輸入會員碼">會員碼</button>
+          <button type="button" class="btn" id="pack-export" title="打包全部內容與設定">打包帶走</button>
+          <button type="button" class="btn" id="pack-import" title="上傳封包還原">還原回來</button>
+        </div>
+      </div>
+
+      <nav class="doc-bar" id="doc-bar" aria-label="筆記操作" hidden>
+        <button type="button" class="btn" data-action="list">回拼圖</button>
+        <button type="button" class="btn" data-action="read">讀現在的</button>
+        <button type="button" class="btn" data-action="edit">自己改</button>
+        <button type="button" class="btn btn-primary" data-action="save-version">存成一版</button>
+        <button type="button" class="btn btn-primary" data-action="ai">請 AI 改</button>
+        <button type="button" class="btn" data-action="diff">看看改了什麼</button>
+        <button type="button" class="btn" data-action="history">回到舊的</button>
+      </nav>
+
       <input type="file" id="pack-file" accept=".seedpack,.json,application/json" hidden />
-    </nav>
+    </div>
+
+    <main class="stage">
+      <section id="panel-list" class="panel panel-map">
+        <h1 id="map-title" class="sr-only">知識拼圖</h1>
+        <p id="map-note" class="sr-only"></p>
+        <div class="puzzle-meta" id="puzzle-meta" aria-live="polite"></div>
+        <div class="map-shell">
+          <div id="knowledge-map" class="knowledge-map" role="grid" aria-label="知識拼圖格子"></div>
+        </div>
+      </section>
+
+      <section id="panel-read" class="panel hidden">
+        <div class="read-head">
+          <h1 id="read-title">讀現在的</h1>
+          <div id="draft-bar" class="draft-bar hidden">
+            <span class="draft-label">你改過了，還沒存進倉庫</span>
+            <button type="button" class="btn" id="draft-diff">看看這次改了什麼</button>
+            <button type="button" class="btn btn-primary" id="draft-keep">用這次的</button>
+            <button type="button" class="btn" id="draft-discard">不要</button>
+          </div>
+        </div>
+        <article id="read-body" class="prose"></article>
+        <textarea id="edit-body" class="edit-body hidden" spellcheck="true" aria-label="編輯筆記"></textarea>
+      </section>
+
+      <section id="panel-history" class="panel hidden">
+        <h1>回到舊的</h1>
+        <p class="lead">每一列是曾經存過的樣子。可預覽；若要恢復成那版內容，用「用這版繼續改」再「存成一版」。</p>
+        <ul id="version-list" class="version-list"></ul>
+      </section>
+
+      <section id="panel-diff" class="panel hidden">
+        <h1>看看改了什麼</h1>
+        <div class="diff-picks">
+          <label>
+            舊的（左）
+            <select id="diff-old"></select>
+          </label>
+          <label>
+            新的（右）
+            <select id="diff-new"></select>
+          </label>
+          <button type="button" class="btn btn-primary" id="run-diff">顯示差異</button>
+        </div>
+        <pre id="diff-out" class="diff-out" aria-live="polite"></pre>
+      </section>
+    </main>
+
+    <dialog id="template-dialog" class="token-dialog">
+      <form method="dialog" id="template-form">
+        <h2>選擇拼圖模板</h2>
+        <p>模板決定格子大小與擺法。之後可加更多樣式；現在先這幾種。</p>
+        <label class="token-label">
+          模板
+          <select id="template-select">
+            <option value="grid-8">空白拼圖 8×8</option>
+            <option value="grid-10">空白拼圖 10×10</option>
+            <option value="grid-12">空白拼圖 12×12</option>
+            <option value="demo-taiwan-roads">示範：台灣橫貫公路</option>
+          </select>
+        </label>
+        <label class="token-label">
+          拼圖類型
+          <select id="puzzle-kind">
+            <option value="personal">個人版（可設公開／私人）</option>
+            <option value="community">社群版（搶位置，像菜市場攤位）</option>
+          </select>
+        </label>
+        <label class="token-label" id="visibility-label">
+          個人版可見範圍
+          <select id="puzzle-visibility">
+            <option value="public">公開</option>
+            <option value="private">私人</option>
+          </select>
+        </label>
+        <p class="lead" id="template-hint">個人版可設公開或私人。套用模板會改格子大小；記得再「存拼圖位置」。</p>
+        <div class="token-actions">
+          <button type="submit" class="btn btn-primary" value="save">套用</button>
+          <button type="submit" class="btn" value="cancel">取消</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="claim-dialog" class="token-dialog">
+      <form method="dialog" id="claim-form">
+        <h2>搶這一格</h2>
+        <p id="claim-cost-label">這格要幾點</p>
+        <label class="token-label">
+          要擺哪顆種子
+          <select id="claim-seed-select"></select>
+        </label>
+        <div class="token-actions">
+          <button type="submit" class="btn btn-primary" value="save">花點數佔位</button>
+          <button type="submit" class="btn" value="cancel">取消</button>
+        </div>
+      </form>
+    </dialog>
 
     <dialog id="token-dialog" class="token-dialog">
       <form method="dialog" id="token-form">
@@ -128,65 +243,7 @@
         </div>
       </form>
     </dialog>
-
-    <section id="panel-list" class="panel panel-map">
-      <div class="map-head">
-        <h1 id="map-title">知識地圖</h1>
-        <p class="lead" id="map-note">每一格可以放一份筆記；位置代表相對關係（例如北／中／南／東）。</p>
-      </div>
-      <div class="map-shell">
-        <div class="compass compass-n" aria-hidden="true">北</div>
-        <div class="compass compass-s" aria-hidden="true">南</div>
-        <div class="compass compass-w" aria-hidden="true">西</div>
-        <div class="compass compass-e" aria-hidden="true">東</div>
-        <div id="knowledge-map" class="knowledge-map" role="grid" aria-label="知識地圖格子"></div>
-      </div>
-      <p class="map-legend">每個種子＝圖示大頭貼＋短標。之後可換成書封圖（cover）。</p>
-    </section>
-
-    <section id="panel-read" class="panel hidden">
-      <div class="read-head">
-        <h1 id="read-title">讀現在的</h1>
-        <div id="draft-bar" class="draft-bar hidden">
-          <span class="draft-label">你改過了，還沒存進倉庫</span>
-          <button type="button" class="btn" id="draft-diff">看看這次改了什麼</button>
-          <button type="button" class="btn btn-primary" id="draft-keep">用這次的</button>
-          <button type="button" class="btn" id="draft-discard">不要</button>
-        </div>
-      </div>
-      <article id="read-body" class="prose"></article>
-      <textarea id="edit-body" class="edit-body hidden" spellcheck="true" aria-label="編輯筆記"></textarea>
-    </section>
-
-    <section id="panel-history" class="panel hidden">
-      <h1>回到舊的</h1>
-      <p class="lead">每一列是曾經存過的樣子。可預覽；若要恢復成那版內容，用「用這版繼續改」再「存成一版」。</p>
-      <ul id="version-list" class="version-list"></ul>
-    </section>
-
-    <section id="panel-diff" class="panel hidden">
-      <h1>看看改了什麼</h1>
-      <div class="diff-picks">
-        <label>
-          舊的（左）
-          <select id="diff-old"></select>
-        </label>
-        <label>
-          新的（右）
-          <select id="diff-new"></select>
-        </label>
-        <button type="button" class="btn btn-primary" id="run-diff">顯示差異</button>
-      </div>
-      <pre id="diff-out" class="diff-out" aria-live="polite"></pre>
-    </section>
-
-    <footer class="foot">
-      <a href="https://github.com/hyi1105/SEED" target="_blank" rel="noopener">在 GitHub 看原始檔</a>
-      <span>·</span>
-      <span>正確預覽：</span>
-      <a href="https://raw.githack.com/hyi1105/SEED/main/docs/index.html" target="_blank" rel="noopener">raw.githack 知識地圖</a>
-    </footer>
   </div>
-  <script src="app.js?v=paid2"></script>
+  <script src="app.js?v=puzzle3"></script>
 </body>
 </html>

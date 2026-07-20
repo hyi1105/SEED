@@ -4,6 +4,9 @@ const SEEDS_PATH = "docs/seeds.json";
 const RAW = `https://raw.githubusercontent.com/${REPO}/${BRANCH}/`;
 const API = `https://api.github.com/repos/${REPO}`;
 const LAYOUT_KEY = "seed-map-layout-v1";
+const COMMUNITY_KEY = "seed-community-v1";
+const COMMUNITY_START_POINTS = 50;
+const COMMUNITY_SAVE_BONUS = 10;
 const TOKEN_KEY = "seed-github-token-v1";
 const AI_KEY = "seed-openai-key-v1";
 const AI_BASE_KEY = "seed-openai-base-v1";
@@ -12,7 +15,15 @@ const DEFAULT_AI_BASE = "https://api.openai.com/v1";
 
 const state = {
   seeds: [],
-  map: { cols: 10, rows: 10, title: "知識地圖", note: "" },
+  map: {
+    cols: 10,
+    rows: 10,
+    title: "知識拼圖",
+    note: "",
+    kind: "personal",
+    visibility: "public",
+    template: "grid-10",
+  },
   catalog: null,
   config: { apiBase: "" },
   current: null,
@@ -20,6 +31,8 @@ const state = {
   panel: "list",
   dragId: null,
   touchDragging: false,
+  touchHighlightCell: null,
+  claimCell: null,
   suppressClick: false,
   originalText: "",
   workingText: "",
@@ -39,7 +52,18 @@ function showPanel(name) {
   for (const id of ["list", "read", "history", "diff"]) {
     $(`panel-${id}`).classList.toggle("hidden", id !== name);
   }
-  document.querySelectorAll(".actions .btn[data-action]").forEach((btn) => {
+
+  const onMap = name === "list";
+  const chrome = $("chrome");
+  const docBar = $("doc-bar");
+  if (chrome) chrome.dataset.mode = onMap ? "map" : "doc";
+  if (docBar) {
+    if (onMap) docBar.setAttribute("hidden", "");
+    else docBar.removeAttribute("hidden");
+  }
+  setMenuOpen(false);
+
+  document.querySelectorAll("#doc-bar .btn[data-action]").forEach((btn) => {
     const action = btn.dataset.action;
     const mapActions = {
       list: "list",
@@ -56,6 +80,11 @@ function showPanel(name) {
       btn.setAttribute("aria-pressed", pressed ? "true" : "false");
     }
   });
+
+  const stage = document.querySelector(".stage");
+  if (stage) stage.scrollTop = 0;
+  const panel = $(`panel-${name}`);
+  if (panel) panel.scrollTop = 0;
 }
 
 function updateDraftBar() {
@@ -150,10 +179,173 @@ function isStudio(seed) {
   return (seed.blurb || "").includes("工作室");
 }
 
-/** Short map caption: prefer short, else first 2 of alias/title */
+function loadCommunity() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(COMMUNITY_KEY) || "null");
+    if (raw && typeof raw === "object") {
+      return { points: Number(raw.points) || COMMUNITY_START_POINTS, claims: raw.claims || {} };
+    }
+  } catch {
+    /* ignore */
+  }
+  return { points: COMMUNITY_START_POINTS, claims: {} };
+}
+
+function saveCommunity(data) {
+  localStorage.setItem(COMMUNITY_KEY, JSON.stringify(data));
+}
+
+function cellClaimCost(col, row) {
+  const cx = (state.map.cols - 1) / 2;
+  const cy = (state.map.rows - 1) / 2;
+  const dist = Math.abs(col - cx) + Math.abs(row - cy);
+  return Math.max(3, 5 + Math.round(dist * 2));
+}
+
+function resolveSeedAt(col, row) {
+  if (state.map.kind === "community") {
+    const comm = loadCommunity();
+    const claim = comm.claims[`${col},${row}`];
+    if (claim) {
+      const s = state.seeds.find((x) => x.id === claim.seedId);
+      if (s) return s;
+    }
+  }
+  return seedAt(col, row);
+}
+
+function awardCommunityPoints(amount, reason) {
+  if (state.map.kind !== "community" || amount <= 0) return null;
+  const comm = loadCommunity();
+  comm.points += amount;
+  saveCommunity(comm);
+  updatePuzzleMeta();
+  return comm.points;
+}
+
+function openClaimDialog(col, row) {
+  const cost = cellClaimCost(col, row);
+  const comm = loadCommunity();
+  if (comm.points < cost) {
+    setStatus(`點數不足：這格要 ${cost} 點，你現有 ${comm.points} 點`);
+    return;
+  }
+  state.claimCell = { col, row, cost };
+  const sel = $("claim-seed-select");
+  sel.innerHTML = "";
+  for (const s of state.seeds) {
+    const opt = document.createElement("option");
+    opt.value = s.id;
+    opt.textContent = s.title;
+    sel.appendChild(opt);
+  }
+  $("claim-cost-label").textContent = `這格要 ${cost} 點（你現有 ${comm.points} 點）`;
+  $("claim-dialog").showModal();
+}
+
+function commitClaim(seedId) {
+  if (!state.claimCell) return;
+  const { col, row, cost } = state.claimCell;
+  const comm = loadCommunity();
+  if (comm.points < cost) {
+    setStatus(`點數不足：需要 ${cost} 點`);
+    return;
+  }
+  comm.points -= cost;
+  comm.claims[`${col},${row}`] = { seedId, spent: cost, at: new Date().toISOString() };
+  saveCommunity(comm);
+  state.claimCell = null;
+  renderMap();
+  setStatus(`已用 ${cost} 點佔 (${col + 1}, ${row + 1})；剩 ${comm.points} 點`);
+}
+
+function clearTouchHighlight() {
+  if (state.touchHighlightCell) {
+    state.touchHighlightCell.classList.remove("drop-target");
+    state.touchHighlightCell = null;
+  }
+  document.querySelectorAll(".map-seed.touch-dragging").forEach((el) => {
+    el.classList.remove("touch-dragging");
+  });
+}
+
+function highlightCellAt(clientX, clientY) {
+  clearTouchHighlight();
+  const el = document.elementFromPoint(clientX, clientY);
+  const cell = el && el.closest(".map-cell");
+  if (cell) {
+    cell.classList.add("drop-target");
+    state.touchHighlightCell = cell;
+  }
+}
+
+function puzzleKindLabel() {
+  if (state.map.kind === "community") return "社群版";
+  return state.map.visibility === "private" ? "個人版·私人" : "個人版·公開";
+}
+
+function hasUnsavedPuzzleChanges() {
+  if (loadSavedLayout()) return true;
+  const cat = state.catalog;
+  if (!cat) return false;
+  const baseMap = cat.map || {};
+  if (
+    (state.map.template || "grid-10") !== (baseMap.template || "grid-10") ||
+    (state.map.kind || "personal") !== (baseMap.kind || "personal") ||
+    (state.map.visibility || "public") !== (baseMap.visibility || "public") ||
+    state.map.cols !== baseMap.cols ||
+    state.map.rows !== baseMap.rows
+  ) {
+    return true;
+  }
+  const baseSeeds = Object.fromEntries((cat.seeds || []).map((s) => [s.id, s]));
+  return state.seeds.some((s) => {
+    const base = baseSeeds[s.id];
+    return !base || base.col !== s.col || base.row !== s.row;
+  });
+}
+
+function updatePuzzleMeta() {
+  const el = $("puzzle-meta");
+  if (!el) return;
+  const parts = [`<span class="puzzle-badge">${escapeHtml(puzzleKindLabel())}</span>`];
+  if (state.map.kind === "community") {
+    const comm = loadCommunity();
+    parts.push(`<span class="puzzle-badge puzzle-points">${comm.points} 點</span>`);
+    parts.push(`<span class="puzzle-note">點空格搶位；存成一版 +${COMMUNITY_SAVE_BONUS} 點</span>`);
+  }
+  if (state.map.kind === "personal" && state.map.visibility === "private") {
+    parts.push(
+      `<span class="puzzle-note">公開 repo 下僅標記；真正隱私需登入（之後做）</span>`
+    );
+  }
+  if (state.map.kind === "community") {
+    parts.push(`<span class="puzzle-note">示範種子保留；空格可花點數搶位</span>`);
+  }
+  if (hasUnsavedPuzzleChanges()) {
+    parts.push(`<span class="puzzle-unsaved">尚未存進倉庫 → 選單「存拼圖位置」</span>`);
+  }
+  el.innerHTML = parts.join("");
+}
+
+async function maybePromptSaveLayout(reason) {
+  if (!getToken()) return;
+  const ok = window.confirm(`${reason}\n\n要把拼圖設定寫進倉庫嗎？`);
+  if (!ok) return;
+  try {
+    await saveLayoutToRepo();
+  } catch (err) {
+    setStatus(err.message || String(err));
+  }
+}
+
+/** 拼圖短標：優先 short；否則用 alias／title（最多四字，方便辨識） */
 function shortLabel(seed) {
   const raw = (seed.short || seed.alias || seed.title || "").replace(/\s+/g, "");
-  return Array.from(raw).slice(0, 2).join("") || "書";
+  const chars = Array.from(raw);
+  if (!chars.length) return "書";
+  if (seed.short) return chars.slice(0, 6).join("");
+  return chars.slice(0, 4).join("");
 }
 
 function monogram(seed) {
@@ -202,13 +394,13 @@ function renderMap() {
         moveSeed(id, col, row);
       });
 
-      const seed = seedAt(col, row);
+      const seed = resolveSeedAt(col, row);
       if (seed) {
         cell.classList.remove("empty");
         const btn = document.createElement("button");
         btn.type = "button";
         btn.className = "map-seed icon" + (isStudio(seed) ? " studio" : "");
-        btn.draggable = true;
+        btn.draggable = state.map.kind !== "community";
         btn.innerHTML = iconHtml(seed);
         btn.title = `${seed.title}\n短標：${shortLabel(seed)}\n${seed.blurb || ""}\n拖曳可改位置，點一下打開`;
         btn.setAttribute("aria-label", seed.title);
@@ -227,8 +419,19 @@ function renderMap() {
             if (e.touches.length !== 1) return;
             state.dragId = seed.id;
             state.touchDragging = true;
+            btn.classList.add("touch-dragging");
           },
           { passive: true }
+        );
+        btn.addEventListener(
+          "touchmove",
+          (e) => {
+            if (!state.touchDragging || state.dragId !== seed.id) return;
+            e.preventDefault();
+            const t = e.touches[0];
+            highlightCellAt(t.clientX, t.clientY);
+          },
+          { passive: false }
         );
         btn.addEventListener(
           "touchend",
@@ -240,6 +443,7 @@ function renderMap() {
             const id = state.dragId;
             state.touchDragging = false;
             state.dragId = null;
+            clearTouchHighlight();
             if (cell) {
               const col = Number(cell.dataset.col);
               const row = Number(cell.dataset.row);
@@ -252,6 +456,15 @@ function renderMap() {
           },
           { passive: true }
         );
+        btn.addEventListener(
+          "touchcancel",
+          () => {
+            state.touchDragging = false;
+            state.dragId = null;
+            clearTouchHighlight();
+          },
+          { passive: true }
+        );
         btn.addEventListener("click", () => {
           if (state.suppressClick) {
             state.suppressClick = false;
@@ -260,11 +473,21 @@ function renderMap() {
           selectSeed(seed).catch((err) => setStatus(err.message || String(err)));
         });
         cell.appendChild(btn);
+      } else if (state.map.kind === "community") {
+        const cost = cellClaimCost(col, row);
+        const slot = document.createElement("button");
+        slot.type = "button";
+        slot.className = "claim-slot";
+        slot.textContent = `${cost}點`;
+        slot.title = `花 ${cost} 點搶這格`;
+        slot.addEventListener("click", () => openClaimDialog(col, row));
+        cell.appendChild(slot);
       }
 
       root.appendChild(cell);
     }
   }
+  updatePuzzleMeta();
 }
 
 function moveSeed(id, col, row) {
@@ -279,7 +502,37 @@ function moveSeed(id, col, row) {
   seed.row = row;
   saveLayout();
   renderMap();
-  setStatus(`已把「${seed.title}」放到 (${col + 1}, ${row + 1})；位置存在這個瀏覽器`);
+  setStatus(`已把「${seed.title}」放到 (${col + 1}, ${row + 1})；記得選單「存拼圖位置」寫回倉庫`);
+}
+
+const PUZZLE_TEMPLATES = {
+  "grid-8": { cols: 8, rows: 8, label: "空白拼圖 8×8" },
+  "grid-10": { cols: 10, rows: 10, label: "空白拼圖 10×10" },
+  "grid-12": { cols: 12, rows: 12, label: "空白拼圖 12×12" },
+  "demo-taiwan-roads": { cols: 10, rows: 10, label: "示範：台灣橫貫公路" },
+};
+
+function clampSeedsToMap() {
+  const maxC = Math.max(0, (state.map.cols || 10) - 1);
+  const maxR = Math.max(0, (state.map.rows || 10) - 1);
+  for (const s of state.seeds) {
+    s.col = Math.min(Math.max(0, s.col || 0), maxC);
+    s.row = Math.min(Math.max(0, s.row || 0), maxR);
+  }
+}
+
+function applyPuzzleTemplate(templateId) {
+  const tpl = PUZZLE_TEMPLATES[templateId] || PUZZLE_TEMPLATES["grid-10"];
+  state.map.template = templateId;
+  state.map.cols = tpl.cols;
+  state.map.rows = tpl.rows;
+  state.map.title = "知識拼圖";
+  state.map.note = `${tpl.label}；拖曳擺放，點進去看完整內容`;
+  clampSeedsToMap();
+  localStorage.removeItem(LAYOUT_KEY);
+  $("map-title").textContent = state.map.title;
+  $("map-note").textContent = state.map.note;
+  renderMap();
 }
 
 async function loadCatalog() {
@@ -289,14 +542,18 @@ async function loadCatalog() {
   state.map = {
     cols: data.map?.cols || 10,
     rows: data.map?.rows || 10,
-    title: data.map?.title || "知識地圖",
+    title: data.map?.title || "知識拼圖",
     note: data.map?.note || "",
+    kind: data.map?.kind || "personal",
+    visibility: data.map?.visibility || "public",
+    template: data.map?.template || "grid-10",
   };
   state.seeds = (data.seeds || []).map((s) => ({
     ...s,
     col: Number.isInteger(s.col) ? s.col : 0,
     row: Number.isInteger(s.row) ? s.row : 0,
   }));
+  clampSeedsToMap();
   applySavedLayout();
   $("map-title").textContent = state.map.title;
   $("map-note").textContent = state.map.note;
@@ -575,18 +832,19 @@ async function putRepoFile(path, text, message) {
 }
 
 async function saveLayoutToRepo() {
-  setStatus("正在把地圖位置寫進 seeds.json…");
+  setStatus("正在把拼圖位置寫進 seeds.json…");
   const payload = buildSeedsPayload();
   const text = `${JSON.stringify(payload, null, 2)}\n`;
-  const result = await putRepoFile(SEEDS_PATH, text, "Update knowledge map seed positions");
+  const result = await putRepoFile(SEEDS_PATH, text, "Update knowledge puzzle seed positions");
   state.catalog = payload;
   localStorage.removeItem(LAYOUT_KEY);
   setStatus(`已寫回倉庫：${SEEDS_PATH}（commit ${String(result.commit?.sha || "").slice(0, 7)}）`);
+  updatePuzzleMeta();
   return result;
 }
 
 async function buildSeedPack() {
-  setStatus("正在打包全部筆記與地圖設定…");
+  setStatus("正在打包全部筆記與拼圖設定…");
   // Prefer live positions from state
   const catalog = buildSeedsPayload();
   const files = {};
@@ -819,7 +1077,10 @@ async function saveVersionToRepo(versionName) {
   $("read-title").textContent = state.current.title;
   setViewMode(text);
   await loadVersions();
-  setStatus(`已存成一版「${label}」（${String(result.commit?.sha || "").slice(0, 7)}）`);
+  let msg = `已存成一版「${label}」（${String(result.commit?.sha || "").slice(0, 7)}）`;
+  const afterPoints = awardCommunityPoints(COMMUNITY_SAVE_BONUS, label);
+  if (afterPoints != null) msg += `；+${COMMUNITY_SAVE_BONUS} 點（現有 ${afterPoints} 點）`;
+  setStatus(msg);
   showPanel("read");
   return result;
 }
@@ -1009,7 +1270,7 @@ async function runDiff() {
   showPanel("diff");
 }
 
-document.querySelector(".actions").addEventListener("click", async (e) => {
+document.querySelector("#chrome").addEventListener("click", async (e) => {
   const btn = e.target.closest("button[data-action]");
   if (!btn || btn.disabled) return;
   const action = btn.dataset.action;
@@ -1116,6 +1377,7 @@ $("version-form").addEventListener("submit", async (e) => {
 });
 
 $("reset-layout").addEventListener("click", async () => {
+  setMenuOpen(false);
   localStorage.removeItem(LAYOUT_KEY);
   try {
     await loadCatalog();
@@ -1127,6 +1389,7 @@ $("reset-layout").addEventListener("click", async () => {
 });
 
 $("token-setup").addEventListener("click", () => {
+  setMenuOpen(false);
   $("token-input").value = getToken() ? "••••••••（已儲存，要換就貼新的）" : "";
   $("token-dialog").showModal();
 });
@@ -1152,6 +1415,7 @@ $("token-clear").addEventListener("click", () => {
 });
 
 $("ai-key-setup").addEventListener("click", () => {
+  setMenuOpen(false);
   $("ai-key-input").value = getAiKey() ? "••••••••（已儲存，要換就貼新的）" : "";
   $("ai-base-input").value = getAiBase();
   $("ai-key-dialog").showModal();
@@ -1228,7 +1492,64 @@ $("ai-form").addEventListener("submit", async (e) => {
   }
 });
 
+$("template-setup").addEventListener("click", () => {
+  setMenuOpen(false);
+  $("template-select").value = state.map.template || "grid-10";
+  $("puzzle-kind").value = state.map.kind || "personal";
+  $("puzzle-visibility").value = state.map.visibility || "public";
+  syncVisibilityField();
+  $("template-dialog").showModal();
+});
+
+function syncVisibilityField() {
+  const personal = $("puzzle-kind").value === "personal";
+  $("visibility-label").style.display = personal ? "" : "none";
+  $("template-hint").textContent = personal
+    ? "個人版可設公開或私人。套用模板會改格子大小；記得再「存拼圖位置」。"
+    : "社群版：點數搶空格。越靠近中心越貴；存成一版可賺點數。";
+}
+
+$("puzzle-kind").addEventListener("change", syncVisibilityField);
+
+$("claim-form").addEventListener("submit", (e) => {
+  const submitter = e.submitter;
+  if (submitter && submitter.value === "cancel") {
+    state.claimCell = null;
+    return;
+  }
+  e.preventDefault();
+  const seedId = $("claim-seed-select").value;
+  if (!seedId) {
+    setStatus("請選一顆種子");
+    return;
+  }
+  commitClaim(seedId);
+  $("claim-dialog").close();
+});
+
+$("template-form").addEventListener("submit", async (e) => {
+  const submitter = e.submitter;
+  if (submitter && submitter.value === "cancel") return;
+  e.preventDefault();
+  const templateId = $("template-select").value;
+  state.map.kind = $("puzzle-kind").value;
+  state.map.visibility =
+    state.map.kind === "personal" ? $("puzzle-visibility").value : "public";
+  applyPuzzleTemplate(templateId);
+  $("template-dialog").close();
+  const tplLabel = PUZZLE_TEMPLATES[templateId]?.label || templateId;
+  setStatus(
+    state.map.kind === "community"
+      ? `已套用「${tplLabel}」（社群版搶位之後再接）`
+      : `已套用「${tplLabel}」；要永久保存請「存拼圖位置」`
+  );
+  if (state.map.kind !== "community") {
+    await maybePromptSaveLayout(`已套用「${tplLabel}」`);
+  }
+});
+
 $("save-layout").addEventListener("click", async () => {
+  setMenuOpen(false);
   try {
     if (!getToken()) {
       $("token-dialog").showModal();
@@ -1242,10 +1563,12 @@ $("save-layout").addEventListener("click", async () => {
 });
 
 $("pack-export").addEventListener("click", () => {
+  setMenuOpen(false);
   exportSeedPack().catch((err) => setStatus(err.message || String(err)));
 });
 
 $("pack-import").addEventListener("click", () => {
+  setMenuOpen(false);
   $("pack-file").click();
 });
 
@@ -1274,17 +1597,39 @@ $("run-diff").addEventListener("click", () => {
   runDiff().catch((err) => setStatus(err.message || String(err)));
 });
 
+function setMenuOpen(open) {
+  const btn = $("menu-btn");
+  const drawer = $("menu-drawer");
+  if (!btn || !drawer) return;
+  btn.setAttribute("aria-expanded", open ? "true" : "false");
+  btn.classList.toggle("is-open", open);
+  drawer.classList.toggle("collapsed", !open);
+}
+
+$("menu-btn").addEventListener("click", () => {
+  const open = $("menu-drawer").classList.contains("collapsed");
+  setMenuOpen(open);
+});
+
+document.addEventListener("click", (e) => {
+  const drawer = $("menu-drawer");
+  const btn = $("menu-btn");
+  if (!drawer || drawer.classList.contains("collapsed")) return;
+  if (drawer.contains(e.target) || btn.contains(e.target)) return;
+  setMenuOpen(false);
+});
+
 loadAppConfig()
   .then(() => loadCatalog())
   .then(() =>
     setStatus(
       usePaidProxy()
         ? getMemberCode()
-          ? "付費代辦已就緒：選筆記後可「請 AI 改」"
-          : "付費代辦模式：請先按「會員碼」"
+          ? "付費代辦已就緒：點種子後可「請 AI 改」"
+          : "付費代辦模式：請先在選單設定「會員碼」"
         : getToken()
-          ? "可拖曳改位置；進階用戶可自備「AI 鑰匙」"
-          : "可拖曳改位置；寫回倉庫請先「設定鑰匙」"
+          ? "可拖曳改位置，再按「存拼圖位置」"
+          : "可拖曳改位置；寫回倉庫請先在選單「設定鑰匙」"
     )
   )
   .catch((err) => setStatus(err.message || String(err)));
