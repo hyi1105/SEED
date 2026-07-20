@@ -9,9 +9,9 @@
     "cols": 10,
     "rows": 10,
     "note": "知識拼圖：拖曳擺放；點進去看完整標題",
-    "savedAt": "2026-07-20T23:30:34.148Z",
+    "savedAt": "2026-07-20T23:40:02.937Z",
     "layoutName": "7/21 上午7:30",
-    "layoutRev": 1
+    "layoutRev": 2
   },
   "seeds": [
     {
@@ -51,7 +51,7 @@
       "path": "memory/maps/taiwan-roads/suhua.md",
       "blurb": "偏東",
       "col": 8,
-      "row": 2,
+      "row": 3,
       "cover": null
     },
     {
@@ -100,8 +100,8 @@
       "alias": "知識起點",
       "path": "memory/sessions/2026-07-20-kb-setup.md",
       "blurb": "工作室",
-      "col": 3,
-      "row": 4,
+      "col": 4,
+      "row": 3,
       "cover": null
     },
     {
@@ -110,7 +110,7 @@
       "alias": "總目錄",
       "path": "memory/index.md",
       "blurb": "工作室",
-      "col": 3,
+      "col": 4,
       "row": 2,
       "cover": null
     },
@@ -171,7 +171,7 @@
       "path": "memory/topics/learn-cursor-demo.md",
       "blurb": "工作室",
       "col": 4,
-      "row": 2,
+      "row": 1,
       "cover": null
     },
     {
