@@ -10,11 +10,13 @@
 
 ## Sessions
 
+- 2026-07-20 — 最終版進度同步（地圖＋規格＋README）— tags: progress, mvp, final, sync — [sessions/2026-07-20-final-sync.md](sessions/2026-07-20-final-sync.md)
 - 2026-07-20 — 知識庫協作 + 關機後手機怎麼繼續 — tags: meta, workflow, collab, mobile, cloud-agent — [sessions/2026-07-20-kb-setup.md](sessions/2026-07-20-kb-setup.md)
 - 2026-07-20 — 產品願景：阿嬤級 UX + 自建版本（個人 MVP）— tags: product, grandma-ux, versioning — [sessions/2026-07-20-platform-vision.md](sessions/2026-07-20-platform-vision.md)
 
 ## Topics
 
+- **最終版進度總表**— [topics/progress-final.md](topics/progress-final.md)
 - 個人 MVP 一頁規格（阿嬤級六動作）— [topics/personal-mvp-spec.md](topics/personal-mvp-spec.md)
 - GitHub 入門（搭配 SEED／Pages／Actions）— [topics/github-for-seed.md](topics/github-for-seed.md)
 - 首頁知識地圖格— [topics/knowledge-map-home.md](topics/knowledge-map-home.md)

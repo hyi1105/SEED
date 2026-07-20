@@ -56,6 +56,7 @@ status: active
 ## Open threads
 
 - ~~個人 MVP 畫面~~ → 已寫：`topics/personal-mvp-spec.md`
-- Seed 分享細節實作（壓縮包 vs 資料夾）
-- AI 提供者（Cursor 內／外部 API）第一版怎接
-- 實作載體：本機 Web / 小桌面程式 — 待選
+- ~~Seed 分享細節~~ → 已做：`topics/seed-pack.md`（`.seedpack.json` 打包／還原）
+- ~~AI 提供者第一版~~ → 已接：瀏覽器存 OpenAI／相容 API 鑰匙 +「請 AI 改」
+- ~~實作載體~~ → 已選：**GitHub Pages 單頁**（`docs/`）
+- 之後可做（非核心）：OAuth、多地圖、原生 App — 見 `topics/progress-final.md`

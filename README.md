@@ -31,13 +31,16 @@ https://raw.githack.com/hyi1105/SEED/main/docs/index.html
 2. 原始筆記索引：[`memory/index.md`](memory/index.md)  
 3. 個人 MVP 規格：[`memory/topics/personal-mvp-spec.md`](memory/topics/personal-mvp-spec.md)
 
-## 路線
+## 路線（最終版進度已同步）
 
-| 階段 | 內容 |
-|---|---|
-| 現在 | Markdown 知識庫 + Pages：讀取、舊版本、行級差異 |
-| 下一步 | 請 AI 改、存成一版（寫回） |
-| 之後 | seed  fort ／更完整分享 |
+| 階段 | 內容 | 狀態 |
+|---|---|---|
+| 知識庫 + Pages | 地圖首頁、讀取、舊版本、行級差異 | **完成** |
+| 六動作 | 自己改、請 AI 改、看差異、用／不要、存一版、回舊的 | **完成** |
+| 封包分享 | 打包帶走／還原回來 | **完成** |
+| 之後（非核心） | OAuth、多地圖、原生 App 等 | 可晚做 |
+
+詳見 [`memory/topics/progress-final.md`](memory/topics/progress-final.md)、[`memory/topics/core-features.md`](memory/topics/core-features.md)。
 
 ## 維護方式
 
