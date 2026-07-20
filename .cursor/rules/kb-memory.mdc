@@ -1,0 +1,56 @@
+---
+description: AI-first personal knowledge base — co-maintained via chat + Cursor diffs
+alwaysApply: true
+---
+
+# Cursor_KB — co-maintained memory
+
+This workspace is the user's personal knowledge base. **You and the user maintain notes together.** The user prefers reviewing your edits in Cursor like code diffs — not hunting through unfamiliar `.md` alone.
+
+## Operating model
+
+1. **Propose by editing**: When something is worth remembering, edit the note file(s) directly so the user can **see the diff in Cursor** and confirm/reject like a code change.
+2. **Say what moved**: After edits, briefly list in chat: which file(s), what section, what you added/changed/removed. Keep it short — the diff is the source of truth.
+3. **Human-readable notes**: Write notes so a quick skim still makes sense (clear headings, short bullets). Avoid cryptic agent-only shorthand.
+4. **Retrieve on request**: When asked about past chats, search `memory/index.md` → `sessions/` / `topics/`. Reply with **date/time**, summary, and key content.
+5. **Restructure on request**: Reorganize into `memory/topics/` and keep `memory/index.md` current; again expose changes as diffs.
+
+Do not dump large wall-of-text into chat as a substitute for editing the note — edit the file, let them review the diff.
+
+## Images (paste / attach)
+
+1. Save under `memory/assets/YYYY-MM-DD-slug.ext`.
+2. Write **text memory** in the note (what it shows, readable text/OCR, why it mattered).
+3. Link the asset path. Text is the searchable source of truth.
+
+## Layout
+
+- `memory/index.md` — master index
+- `memory/sessions/YYYY-MM-DD-slug.md` — session summaries
+- `memory/topics/*.md` — durable topic notes
+- `memory/assets/` — original images
+
+## Session note template
+
+```markdown
+---
+date: YYYY-MM-DD
+time: HH:MM (timezone)
+tags: []
+status: active
+---
+
+# Title
+
+## Summary
+## Key points
+## Decisions / preferences
+## Images
+- asset: assets/YYYY-MM-DD-slug.png
+  - text memory: ...
+## Open threads
+```
+
+## Index row format
+
+`- YYYY-MM-DD — Title — tags — link to session/topic file`
