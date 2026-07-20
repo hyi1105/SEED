@@ -11,7 +11,15 @@ const DEFAULT_AI_BASE = "https://api.openai.com/v1";
 
 const state = {
   seeds: [],
-  map: { cols: 10, rows: 10, title: "知識地圖", note: "" },
+  map: {
+    cols: 10,
+    rows: 10,
+    title: "知識拼圖",
+    note: "",
+    kind: "personal",
+    visibility: "public",
+    template: "grid-10",
+  },
   catalog: null,
   current: null,
   versions: [],
@@ -164,7 +172,7 @@ function isStudio(seed) {
   return (seed.blurb || "").includes("工作室");
 }
 
-/** 地圖短標：優先 short；否則用 alias／title（最多四字，方便辨識） */
+/** 拼圖短標：優先 short；否則用 alias／title（最多四字，方便辨識） */
 function shortLabel(seed) {
   const raw = (seed.short || seed.alias || seed.title || "").replace(/\s+/g, "");
   const chars = Array.from(raw);
@@ -299,6 +307,36 @@ function moveSeed(id, col, row) {
   setStatus(`已把「${seed.title}」放到 (${col + 1}, ${row + 1})；位置存在這個瀏覽器`);
 }
 
+const PUZZLE_TEMPLATES = {
+  "grid-8": { cols: 8, rows: 8, label: "空白拼圖 8×8" },
+  "grid-10": { cols: 10, rows: 10, label: "空白拼圖 10×10" },
+  "grid-12": { cols: 12, rows: 12, label: "空白拼圖 12×12" },
+  "demo-taiwan-roads": { cols: 10, rows: 10, label: "示範：台灣橫貫公路" },
+};
+
+function clampSeedsToMap() {
+  const maxC = Math.max(0, (state.map.cols || 10) - 1);
+  const maxR = Math.max(0, (state.map.rows || 10) - 1);
+  for (const s of state.seeds) {
+    s.col = Math.min(Math.max(0, s.col || 0), maxC);
+    s.row = Math.min(Math.max(0, s.row || 0), maxR);
+  }
+}
+
+function applyPuzzleTemplate(templateId) {
+  const tpl = PUZZLE_TEMPLATES[templateId] || PUZZLE_TEMPLATES["grid-10"];
+  state.map.template = templateId;
+  state.map.cols = tpl.cols;
+  state.map.rows = tpl.rows;
+  state.map.title = "知識拼圖";
+  state.map.note = `${tpl.label}；拖曳擺放，點進去看完整內容`;
+  clampSeedsToMap();
+  localStorage.removeItem(LAYOUT_KEY);
+  $("map-title").textContent = state.map.title;
+  $("map-note").textContent = state.map.note;
+  renderMap();
+}
+
 async function loadCatalog() {
   // Bust CDN cache after writes
   const data = await fetchJson(`./seeds.json?ts=${Date.now()}`);
@@ -306,14 +344,18 @@ async function loadCatalog() {
   state.map = {
     cols: data.map?.cols || 10,
     rows: data.map?.rows || 10,
-    title: data.map?.title || "知識地圖",
+    title: data.map?.title || "知識拼圖",
     note: data.map?.note || "",
+    kind: data.map?.kind || "personal",
+    visibility: data.map?.visibility || "public",
+    template: data.map?.template || "grid-10",
   };
   state.seeds = (data.seeds || []).map((s) => ({
     ...s,
     col: Number.isInteger(s.col) ? s.col : 0,
     row: Number.isInteger(s.row) ? s.row : 0,
   }));
+  clampSeedsToMap();
   applySavedLayout();
   $("map-title").textContent = state.map.title;
   $("map-note").textContent = state.map.note;
@@ -518,10 +560,10 @@ async function putRepoFile(path, text, message) {
 }
 
 async function saveLayoutToRepo() {
-  setStatus("正在把地圖位置寫進 seeds.json…");
+  setStatus("正在把拼圖位置寫進 seeds.json…");
   const payload = buildSeedsPayload();
   const text = `${JSON.stringify(payload, null, 2)}\n`;
-  const result = await putRepoFile(SEEDS_PATH, text, "Update knowledge map seed positions");
+  const result = await putRepoFile(SEEDS_PATH, text, "Update knowledge puzzle seed positions");
   state.catalog = payload;
   localStorage.removeItem(LAYOUT_KEY);
   setStatus(`已寫回倉庫：${SEEDS_PATH}（commit ${String(result.commit?.sha || "").slice(0, 7)}）`);
@@ -529,7 +571,7 @@ async function saveLayoutToRepo() {
 }
 
 async function buildSeedPack() {
-  setStatus("正在打包全部筆記與地圖設定…");
+  setStatus("正在打包全部筆記與拼圖設定…");
   // Prefer live positions from state
   const catalog = buildSeedsPayload();
   const files = {};
@@ -1142,6 +1184,42 @@ $("ai-form").addEventListener("submit", async (e) => {
   } catch (err) {
     setStatus(err.message || String(err));
   }
+});
+
+$("template-setup").addEventListener("click", () => {
+  setMenuOpen(false);
+  $("template-select").value = state.map.template || "grid-10";
+  $("puzzle-kind").value = state.map.kind || "personal";
+  $("puzzle-visibility").value = state.map.visibility || "public";
+  syncVisibilityField();
+  $("template-dialog").showModal();
+});
+
+function syncVisibilityField() {
+  const personal = $("puzzle-kind").value === "personal";
+  $("visibility-label").style.display = personal ? "" : "none";
+  $("template-hint").textContent = personal
+    ? "個人版可設公開或私人。套用模板會改格子大小；記得再「存拼圖位置」。"
+    : "社群版之後會用點數搶位置（像菜市場攤位）。目前先記下類型，搶位規則尚未上線。";
+}
+
+$("puzzle-kind").addEventListener("change", syncVisibilityField);
+
+$("template-form").addEventListener("submit", async (e) => {
+  const submitter = e.submitter;
+  if (submitter && submitter.value === "cancel") return;
+  e.preventDefault();
+  const templateId = $("template-select").value;
+  state.map.kind = $("puzzle-kind").value;
+  state.map.visibility =
+    state.map.kind === "personal" ? $("puzzle-visibility").value : "public";
+  applyPuzzleTemplate(templateId);
+  $("template-dialog").close();
+  setStatus(
+    state.map.kind === "community"
+      ? `已套用「${PUZZLE_TEMPLATES[templateId]?.label || templateId}」（社群版搶位之後再接）`
+      : `已套用「${PUZZLE_TEMPLATES[templateId]?.label || templateId}」；要永久保存請「存拼圖位置」`
+  );
 });
 
 $("save-layout").addEventListener("click", async () => {

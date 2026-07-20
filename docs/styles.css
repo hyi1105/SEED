@@ -370,26 +370,13 @@ h1 {
   flex: 1 1 auto;
   min-height: 0;
   margin: 0;
-  padding: 0.7rem 0.1rem 0.45rem;
+  padding: 0.35rem;
   display: flex;
   align-items: center;
   justify-content: center;
   container-type: size;
 }
 
-.compass {
-  position: absolute;
-  font-family: "Noto Serif TC", serif;
-  font-weight: 700;
-  color: var(--muted);
-  letter-spacing: 0.15em;
-  font-size: 0.8rem;
-}
-
-.compass-n { top: 0; left: 50%; transform: translateX(-50%); }
-.compass-s { bottom: 0; left: 50%; transform: translateX(-50%); }
-.compass-w,
-.compass-e { display: none; }
 
 .knowledge-map {
   display: grid;
@@ -410,8 +397,8 @@ h1 {
 
 @supports not (width: 1cqw) {
   .knowledge-map {
-    width: min(100%, calc(100dvh - 8.5rem));
-    height: min(100%, calc(100dvh - 8.5rem));
+    width: min(100%, calc(100dvh - 6.5rem));
+    height: min(100%, calc(100dvh - 6.5rem));
   }
 }
 
@@ -579,19 +566,6 @@ h1 {
 }
 
 @media (min-width: 641px) and (max-width: 900px) {
-  .compass-w {
-    display: block;
-    left: 0;
-    top: 50%;
-    transform: translateY(-50%);
-  }
-
-  .compass-e {
-    display: block;
-    right: 0;
-    top: 50%;
-    transform: translateY(-50%);
-  }
 }
 
 @media (min-width: 901px) {
@@ -634,29 +608,9 @@ h1 {
     padding: 0.35rem 0.55rem 0.45rem;
   }
 
-  .compass-w {
-    display: block;
-    left: 0;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 0.95rem;
-  }
-
-  .compass-e {
-    display: block;
-    right: 0;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 0.95rem;
-  }
-
-  .compass-n,
-  .compass-s {
-    font-size: 0.95rem;
-  }
 
   .map-shell {
-    padding: 1.1rem 1.4rem;
+    padding: 0.55rem;
   }
 
   .knowledge-map {
@@ -740,6 +694,14 @@ h1 {
   border: 1px solid var(--line);
   resize: vertical;
   min-height: 5.5rem;
+}
+
+.token-label select {
+  font: inherit;
+  padding: 0.55rem 0.7rem;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: #fff;
 }
 
 .token-actions {

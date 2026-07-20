@@ -10,6 +10,7 @@
 
 ## 場次
 
+- 2026-07-20 — 從知識地圖改成知識拼圖 — 標籤：拼圖、產品、模板 — [sessions/2026-07-20-knowledge-puzzle.md](sessions/2026-07-20-knowledge-puzzle.md)
 - 2026-07-20 — 手機操作：地圖太小、選單太大 — 標籤：體驗、手機、地圖 — [sessions/2026-07-20-mobile-map-ux.md](sessions/2026-07-20-mobile-map-ux.md)
 - 2026-07-20 — 最終版進度同步（地圖＋規格＋README）— 標籤：進度、MVP、最終版、同步 — [sessions/2026-07-20-final-sync.md](sessions/2026-07-20-final-sync.md)
 - 2026-07-20 — 知識庫協作 + 關機後手機怎麼繼續 — 標籤：流程、協作、手機、雲端 Agent — [sessions/2026-07-20-kb-setup.md](sessions/2026-07-20-kb-setup.md)
@@ -18,9 +19,10 @@
 ## 主題
 
 - **最終版進度總表**— [topics/progress-final.md](topics/progress-final.md)
+- **知識拼圖（個人／社群／模板）**— [topics/knowledge-puzzle.md](topics/knowledge-puzzle.md)
 - 個人 MVP 一頁規格（阿嬤級六動作）— [topics/personal-mvp-spec.md](topics/personal-mvp-spec.md)
 - GitHub 入門（搭配 SEED／Pages／Actions）— [topics/github-for-seed.md](topics/github-for-seed.md)
-- 首頁知識地圖格— [topics/knowledge-map-home.md](topics/knowledge-map-home.md)
+- 首頁知識拼圖格— [topics/knowledge-map-home.md](topics/knowledge-map-home.md)
 - **核心功能清單（不可少）**— [topics/core-features.md](topics/core-features.md)
 - SEED 封包（打包帶走／還原）— [topics/seed-pack.md](topics/seed-pack.md)
 - 開源怎麼賺錢— [topics/open-source-monetize.md](topics/open-source-monetize.md)

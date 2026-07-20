@@ -2,10 +2,13 @@
   "repo": "hyi1105/SEED",
   "branch": "main",
   "map": {
-    "title": "知識地圖",
+    "title": "知識拼圖",
+    "kind": "personal",
+    "visibility": "public",
+    "template": "demo-taiwan-roads",
     "cols": 10,
     "rows": 10,
-    "note": "北↑ 南↓ 西← 東→；格子上是四字「章印」別名，可拖曳；完整標題點進去才看"
+    "note": "知識拼圖：拖曳擺放；點進去看完整標題"
   },
   "seeds": [
     {
@@ -142,6 +145,15 @@
       "blurb": "工作室",
       "col": 1,
       "row": 4
+    },
+    {
+      "id": "puzzle",
+      "title": "知識拼圖",
+      "alias": "拼圖規格",
+      "path": "memory/topics/knowledge-puzzle.md",
+      "blurb": "工作室",
+      "col": 2,
+      "row": 5
     }
   ]
 }
