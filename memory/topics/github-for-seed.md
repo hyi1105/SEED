@@ -7,7 +7,7 @@ status: active
 
 # GitHub 是什麼、怎麼跟 SEED 搭配
 
-## Summary
+## 摘要
 
 使用者對「Run workflow」不熟，需要搞懂 GitHub 能做什麼，以及和 SEED（公開筆記 + Pages 操作畫面）怎麼串。
 
@@ -59,7 +59,7 @@ https://github.com/hyi1105/SEED/actions/workflows/pages.yml
 4. 開網站設定：**Settings → Pages**（Source 用 GitHub Actions）  
 5. 暫時看畫面：可用 raw.githack 連結（不靠 Pages）
 
-## Open threads
+## 待續
 
 - 2026-07-20：GitHub **Actions／Pages 服務異常**（githubstatus 顯示 partial outage）。Run workflow 出現 “unexpected error”／startup_failure 屬平台問題，非操作錯誤。恢復後再手動 Run 一次 `pages`。
 - 正式網址：https://hyi1105.github.io/SEED/  
