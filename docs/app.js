@@ -7,12 +7,14 @@ const LAYOUT_KEY = "seed-map-layout-v1";
 const TOKEN_KEY = "seed-github-token-v1";
 const AI_KEY = "seed-openai-key-v1";
 const AI_BASE_KEY = "seed-openai-base-v1";
+const MEMBER_KEY = "seed-member-code-v1";
 const DEFAULT_AI_BASE = "https://api.openai.com/v1";
 
 const state = {
   seeds: [],
   map: { cols: 10, rows: 10, title: "知識地圖", note: "" },
   catalog: null,
+  config: { apiBase: "" },
   current: null,
   versions: [],
   panel: "list",
@@ -331,6 +333,24 @@ function setAiBase(base) {
   else localStorage.removeItem(AI_BASE_KEY);
 }
 
+function getMemberCode() {
+  return localStorage.getItem(MEMBER_KEY) || "";
+}
+
+function setMemberCode(code) {
+  const t = (code || "").trim();
+  if (t) localStorage.setItem(MEMBER_KEY, t);
+  else localStorage.removeItem(MEMBER_KEY);
+}
+
+function apiBase() {
+  return String(state.config.apiBase || "").replace(/\/$/, "");
+}
+
+function usePaidProxy() {
+  return Boolean(apiBase());
+}
+
 function stripAiFences(text) {
   let t = (text || "").trim();
   if (t.startsWith("```")) {
@@ -339,14 +359,45 @@ function stripAiFences(text) {
   return t;
 }
 
-async function askAiToRevise(instruction) {
+async function askAiViaProxy(instruction, source) {
+  const code = getMemberCode();
+  if (!code) throw new Error("還沒輸入會員碼。付費後會拿到一組碼，請按「會員碼」設定。");
+  const res = await fetch(`${apiBase()}/v1/ai/revise`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${code}`,
+    },
+    body: JSON.stringify({
+      title: state.current.title,
+      instruction,
+      content: source,
+    }),
+  });
+  let data = {};
+  try {
+    data = await res.json();
+  } catch {
+    data = {};
+  }
+  if (!res.ok) {
+    if (res.status === 402) throw new Error(data.error || "本月次數用完了");
+    if (res.status === 401) throw new Error(data.error || "會員碼無效");
+    throw new Error(data.error || `代辦失敗（${res.status}）`);
+  }
+  const out = stripAiFences(data.revised || "");
+  if (!out) throw new Error("沒有產出內容");
+  if (data.quota) {
+    setStatus(
+      `AI 已改稿。本月還剩 ${data.quota.remaining} 次（已用 ${data.quota.used}/${data.quota.quota}）`
+    );
+  }
+  return out;
+}
+
+async function askAiDirect(instruction, source) {
   const key = getAiKey();
   if (!key) throw new Error("還沒設定 AI 鑰匙，請先按「AI 鑰匙」");
-  if (!state.current) throw new Error("請先在地圖上點一份筆記");
-  if (!state.originalText) await loadSeedText();
-  const source = state.editing ? $("edit-body").value : state.workingText || state.originalText;
-  setStatus("AI 正在改稿，請稍候…");
-
   const res = await fetch(`${getAiBase()}/chat/completions`, {
     method: "POST",
     headers: {
@@ -374,7 +425,6 @@ async function askAiToRevise(instruction) {
       ],
     }),
   });
-
   if (!res.ok) {
     let detail = "";
     try {
@@ -386,11 +436,37 @@ async function askAiToRevise(instruction) {
     if (res.status === 401) throw new Error("AI 鑰匙無效，請重新設定「AI 鑰匙」");
     throw new Error(`AI 改稿失敗（${res.status}）：${detail}`);
   }
-
   const data = await res.json();
   const out = stripAiFences(data.choices?.[0]?.message?.content || "");
   if (!out) throw new Error("AI 沒有產出內容，請換個說法再試");
   return out;
+}
+
+async function askAiToRevise(instruction) {
+  if (!state.current) throw new Error("請先在地圖上點一份筆記");
+  if (!state.originalText) await loadSeedText();
+  const source = state.editing ? $("edit-body").value : state.workingText || state.originalText;
+  setStatus("AI 正在改稿，請稍候…");
+  if (usePaidProxy()) return askAiViaProxy(instruction, source);
+  return askAiDirect(instruction, source);
+}
+
+async function loadAppConfig() {
+  try {
+    const data = await fetchJson(`./config.json?ts=${Date.now()}`);
+    state.config = { apiBase: data.apiBase || "" };
+  } catch {
+    state.config = { apiBase: "" };
+  }
+  updateAiUiMode();
+}
+
+function updateAiUiMode() {
+  const paid = usePaidProxy();
+  const memberBtn = $("member-setup");
+  const aiKeyBtn = $("ai-key-setup");
+  if (memberBtn) memberBtn.classList.toggle("hidden", !paid);
+  if (aiKeyBtn) aiKeyBtn.classList.toggle("hidden", paid);
 }
 
 function buildSeedsPayload() {
@@ -947,7 +1023,13 @@ document.querySelector(".actions").addEventListener("click", async (e) => {
         showPanel("list");
         return;
       }
-      if (!getAiKey()) {
+      if (usePaidProxy()) {
+        if (!getMemberCode()) {
+          $("member-dialog").showModal();
+          setStatus("請先輸入會員碼，再請 AI 改");
+          return;
+        }
+      } else if (!getAiKey()) {
         $("ai-key-dialog").showModal();
         setStatus("請先設定 AI 鑰匙，再請 AI 改");
         return;
@@ -1075,6 +1157,30 @@ $("ai-key-setup").addEventListener("click", () => {
   $("ai-key-dialog").showModal();
 });
 
+$("member-setup").addEventListener("click", () => {
+  $("member-input").value = getMemberCode() ? "••••••••（已儲存，要換就貼新的）" : "";
+  $("member-dialog").showModal();
+});
+
+$("member-form").addEventListener("submit", (e) => {
+  const submitter = e.submitter;
+  if (submitter && submitter.value === "cancel") return;
+  const raw = $("member-input").value.trim();
+  if (raw && !raw.startsWith("••")) setMemberCode(raw);
+  if (!getMemberCode()) {
+    e.preventDefault();
+    setStatus("請貼上會員碼");
+    return;
+  }
+  setStatus("會員碼已存好，可以按「請 AI 改」");
+});
+
+$("member-clear").addEventListener("click", () => {
+  setMemberCode("");
+  $("member-input").value = "";
+  setStatus("已清除會員碼");
+});
+
 $("ai-key-form").addEventListener("submit", (e) => {
   const submitter = e.submitter;
   if (submitter && submitter.value === "cancel") return;
@@ -1168,12 +1274,17 @@ $("run-diff").addEventListener("click", () => {
   runDiff().catch((err) => setStatus(err.message || String(err)));
 });
 
-loadCatalog()
+loadAppConfig()
+  .then(() => loadCatalog())
   .then(() =>
     setStatus(
-      getToken()
-        ? "可拖曳改位置，再按「存到倉庫」寫進 seeds.json"
-        : "可拖曳改位置；要正式寫回倉庫請先「設定鑰匙」"
+      usePaidProxy()
+        ? getMemberCode()
+          ? "付費代辦已就緒：選筆記後可「請 AI 改」"
+          : "付費代辦模式：請先按「會員碼」"
+        : getToken()
+          ? "可拖曳改位置；進階用戶可自備「AI 鑰匙」"
+          : "可拖曳改位置；寫回倉庫請先「設定鑰匙」"
     )
   )
   .catch((err) => setStatus(err.message || String(err)));

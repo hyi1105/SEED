@@ -23,9 +23,9 @@
 - **核心功能清單（不可少）**— [topics/core-features.md](topics/core-features.md)
 - SEED 封包（打包帶走／還原）— [topics/seed-pack.md](topics/seed-pack.md)
 - 開源怎麼賺錢— [topics/open-source-monetize.md](topics/open-source-monetize.md)
-- 公開程式／想法怎麼賺錢（AI 易抄）— [topics/open-source-monetize.md](topics/open-source-monetize.md)
+- **收費：阿嬤只付費、AI 代辦**— [topics/paid-grandma-ai.md](topics/paid-grandma-ai.md)
+- 關機改手機前檢查— [topics/pc-before-mobile.md](topics/pc-before-mobile.md)
 - 語言偏好（一律繁體中文）— [topics/language-zh-hant.md](topics/language-zh-hant.md)
-
 ## 地圖（示範）
 
 - 北橫／中橫／南橫／蘇花— `memory/maps/taiwan-roads/`

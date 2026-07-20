@@ -459,6 +459,11 @@ h1 {
   display: none;
 }
 
+.btn.hidden,
+.hidden {
+  display: none !important;
+}
+
 .draft-label {
   font-weight: 500;
   margin-right: 0.25rem;

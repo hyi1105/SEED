@@ -1,0 +1,4 @@
+{
+  "apiBase": "",
+  "note": "付費代辦上線後填入 API 網址，例如 https://seed-api.example.com。空白＝仍用瀏覽器自備 AI 鑰匙（進階用戶）。"
+}

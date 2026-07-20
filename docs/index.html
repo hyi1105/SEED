@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=final2" />
+  <link rel="stylesheet" href="styles.css?v=paid2" />
   <!-- 預覽請用 raw.githack（會正確當成網頁）。不要用 raw.githubusercontent 或 jsDelivr 開 html，會變純文字。 -->
 </head>
 <body>
@@ -31,7 +31,8 @@
       <button type="button" class="btn" id="save-layout" title="把目前地圖位置寫進 seeds.json">存地圖位置</button>
       <button type="button" class="btn" id="token-setup" title="設定 GitHub 鑰匙">設定鑰匙</button>
       <button type="button" class="btn btn-primary" data-action="ai">請 AI 改</button>
-      <button type="button" class="btn" id="ai-key-setup" title="設定 AI 鑰匙">AI 鑰匙</button>
+      <button type="button" class="btn" id="member-setup" title="輸入會員碼">會員碼</button>
+      <button type="button" class="btn" id="ai-key-setup" title="設定 AI 鑰匙（進階）">AI 鑰匙</button>
       <button type="button" class="btn" id="pack-export" title="打包全部內容與設定">打包帶走</button>
       <button type="button" class="btn" id="pack-import" title="上傳封包還原">還原回來</button>
       <input type="file" id="pack-file" accept=".seedpack,.json,application/json" hidden />
@@ -53,6 +54,22 @@
         <div class="token-actions">
           <button type="submit" class="btn btn-primary" value="save">儲存鑰匙</button>
           <button type="button" class="btn" id="token-clear">清除鑰匙</button>
+          <button type="submit" class="btn" value="cancel">關閉</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="member-dialog" class="token-dialog">
+      <form method="dialog" id="member-form">
+        <h2>會員碼</h2>
+        <p>付費後會拿到一組碼。阿嬤只要貼上這組碼，不用申請 AI key。</p>
+        <label class="token-label">
+          會員碼
+          <input type="password" id="member-input" autocomplete="off" placeholder="例如 demo" />
+        </label>
+        <div class="token-actions">
+          <button type="submit" class="btn btn-primary" value="save">儲存</button>
+          <button type="button" class="btn" id="member-clear">清除</button>
           <button type="submit" class="btn" value="cancel">關閉</button>
         </div>
       </form>
@@ -170,6 +187,6 @@
       <a href="https://raw.githack.com/hyi1105/SEED/main/docs/index.html" target="_blank" rel="noopener">raw.githack 知識地圖</a>
     </footer>
   </div>
-  <script src="app.js?v=final2"></script>
+  <script src="app.js?v=paid2"></script>
 </body>
 </html>
