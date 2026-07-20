@@ -1177,11 +1177,27 @@ function setActionsOpen(open) {
   const btn = $("actions-more-btn");
   const drawer = $("actions-drawer");
   if (!nav || !btn || !drawer) return;
+  // 寬螢幕一律展開全部按鈕，不走「更多」
+  if (window.matchMedia("(min-width: 901px)").matches) {
+    nav.classList.remove("is-open");
+    drawer.classList.remove("collapsed");
+    btn.setAttribute("aria-expanded", "false");
+    btn.textContent = "更多";
+    return;
+  }
   nav.classList.toggle("is-open", open);
   btn.setAttribute("aria-expanded", open ? "true" : "false");
   btn.textContent = open ? "收起" : "更多";
-  if (open) drawer.removeAttribute("hidden");
-  else drawer.setAttribute("hidden", "");
+  drawer.classList.toggle("collapsed", !open);
+}
+
+function syncActionsLayout() {
+  if (window.matchMedia("(min-width: 901px)").matches) {
+    setActionsOpen(false);
+    $("actions-drawer")?.classList.remove("collapsed");
+  } else if (!$("actions")?.classList.contains("is-open")) {
+    $("actions-drawer")?.classList.add("collapsed");
+  }
 }
 
 $("actions-more-btn").addEventListener("click", () => {
@@ -1192,11 +1208,17 @@ $("actions-more-btn").addEventListener("click", () => {
 document.querySelector(".actions").addEventListener("click", (e) => {
   const btn = e.target.closest("button");
   if (!btn || btn.id === "actions-more-btn") return;
-  // 手機點完操作就收起「更多」，把畫面還給地圖
+  // 手機／平板點完操作就收起「更多」
   if (window.matchMedia("(max-width: 900px)").matches) {
     setActionsOpen(false);
   }
 });
+
+window.addEventListener("resize", () => {
+  syncActionsLayout();
+});
+
+syncActionsLayout();
 
 loadCatalog()
   .then(() =>

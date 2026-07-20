@@ -152,7 +152,7 @@ html, body {
   box-shadow: 0 8px 24px rgba(20, 32, 26, 0.12);
 }
 
-.actions-drawer[hidden] {
+.actions-drawer.collapsed {
   display: none;
 }
 
@@ -661,8 +661,22 @@ h1 {
 }
 
 @media (min-width: 901px) {
+  html, body {
+    background:
+      radial-gradient(ellipse 80% 50% at 10% -10%, #e7f2ea 0%, transparent 55%),
+      radial-gradient(ellipse 60% 40% at 100% 0%, #efe6d6 0%, transparent 50%),
+      var(--paper);
+  }
+
+  .app {
+    max-width: 1120px;
+    border-left: 1px solid var(--line);
+    border-right: 1px solid var(--line);
+    background: color-mix(in srgb, var(--paper) 70%, #fff);
+  }
+
   .brand-name {
-    font-size: 1.75rem;
+    font-size: 2rem;
   }
 
   .brand-tag {
@@ -671,18 +685,27 @@ h1 {
 
   .hint {
     white-space: normal;
-    max-width: 45%;
-    font-size: 0.9rem;
+    max-width: 48%;
+    font-size: 0.92rem;
+    overflow: visible;
+    text-overflow: unset;
   }
 
   .chrome {
-    padding: 0.75rem 1rem 0.65rem;
+    padding: 0.85rem 1.1rem 0.75rem;
+  }
+
+  .top {
+    align-items: end;
+    margin-bottom: 0.65rem;
   }
 
   .actions {
+    display: flex;
     flex-direction: row;
     flex-wrap: wrap;
     align-items: center;
+    gap: 0.45rem;
   }
 
   .actions-bar {
@@ -694,20 +717,18 @@ h1 {
   }
 
   .actions-more-btn {
-    display: none;
+    display: none !important;
   }
 
-  .actions-drawer {
+  /* 不可用 [hidden]：瀏覽器有 display:none !important，桌面會整組消失 */
+  .actions-drawer,
+  .actions-drawer.collapsed {
     display: contents;
     position: static;
     border: 0;
     padding: 0;
     background: transparent;
     box-shadow: none;
-  }
-
-  .actions-drawer[hidden] {
-    display: contents;
   }
 
   .actions-drawer-label {
@@ -721,7 +742,7 @@ h1 {
   .actions-extra .btn {
     width: auto;
     border-radius: 10px;
-    padding: 0.48rem 0.85rem;
+    padding: 0.5rem 0.9rem;
     font-size: 0.95rem;
   }
 
@@ -736,7 +757,20 @@ h1 {
   }
 
   .panel {
-    padding: 1rem 1.15rem;
+    padding: 1.1rem 1.25rem 1.2rem;
+  }
+
+  .panel-map .map-head h1 {
+    font-size: 1.45rem;
+  }
+
+  .panel-map .lead {
+    font-size: 0.95rem;
+    -webkit-line-clamp: 3;
+  }
+
+  .map-legend {
+    font-size: 0.9rem;
   }
 
   .compass-w {
@@ -744,6 +778,7 @@ h1 {
     left: 0;
     top: 50%;
     transform: translateY(-50%);
+    font-size: 0.95rem;
   }
 
   .compass-e {
@@ -751,15 +786,21 @@ h1 {
     right: 0;
     top: 50%;
     transform: translateY(-50%);
+    font-size: 0.95rem;
+  }
+
+  .compass-n,
+  .compass-s {
+    font-size: 0.95rem;
   }
 
   .map-shell {
-    padding: 1.4rem;
+    padding: 1.6rem 1.8rem;
   }
 
   .knowledge-map {
-    width: min(100cqw, 100cqh, 820px);
-    height: min(100cqw, 100cqh, 820px);
+    width: min(100cqw, 100cqh, 780px);
+    height: min(100cqw, 100cqh, 780px);
     gap: 4px;
     padding: 8px;
     border-radius: 14px;
@@ -771,6 +812,12 @@ h1 {
 
   .seed-caption {
     font-size: clamp(0.58rem, 1.4vw, 0.72rem);
+  }
+
+  .edit-body {
+    min-height: min(55vh, 520px);
+    height: auto;
+    resize: vertical;
   }
 }
 
