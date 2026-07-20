@@ -10,6 +10,7 @@
 
 ## 場次
 
+- 2026-07-20 — 手機操作：地圖太小、選單太大 — 標籤：體驗、手機、地圖 — [sessions/2026-07-20-mobile-map-ux.md](sessions/2026-07-20-mobile-map-ux.md)
 - 2026-07-20 — 最終版進度同步（地圖＋規格＋README）— 標籤：進度、MVP、最終版、同步 — [sessions/2026-07-20-final-sync.md](sessions/2026-07-20-final-sync.md)
 - 2026-07-20 — 知識庫協作 + 關機後手機怎麼繼續 — 標籤：流程、協作、手機、雲端 Agent — [sessions/2026-07-20-kb-setup.md](sessions/2026-07-20-kb-setup.md)
 - 2026-07-20 — 產品願景：阿嬤級 UX + 自建版本（個人 MVP）— 標籤：產品、阿嬤體驗、版本 — [sessions/2026-07-20-platform-vision.md](sessions/2026-07-20-platform-vision.md)

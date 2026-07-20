@@ -1168,12 +1168,38 @@ $("run-diff").addEventListener("click", () => {
   runDiff().catch((err) => setStatus(err.message || String(err)));
 });
 
+function setActionsOpen(open) {
+  const nav = $("actions");
+  const btn = $("actions-more-btn");
+  const drawer = $("actions-drawer");
+  if (!nav || !btn || !drawer) return;
+  nav.classList.toggle("is-open", open);
+  btn.setAttribute("aria-expanded", open ? "true" : "false");
+  btn.textContent = open ? "收起" : "更多";
+  if (open) drawer.removeAttribute("hidden");
+  else drawer.setAttribute("hidden", "");
+}
+
+$("actions-more-btn").addEventListener("click", () => {
+  const open = !$("actions").classList.contains("is-open");
+  setActionsOpen(open);
+});
+
+document.querySelector(".actions").addEventListener("click", (e) => {
+  const btn = e.target.closest("button");
+  if (!btn || btn.id === "actions-more-btn") return;
+  // 手機點完操作就收起「更多」，把畫面還給地圖
+  if (window.matchMedia("(max-width: 900px)").matches) {
+    setActionsOpen(false);
+  }
+});
+
 loadCatalog()
   .then(() =>
     setStatus(
       getToken()
-        ? "可拖曳改位置，再按「存到倉庫」寫進 seeds.json"
-        : "可拖曳改位置；要正式寫回倉庫請先「設定鑰匙」"
+        ? "可拖曳改位置，再按「存地圖位置」寫進倉庫"
+        : "可拖曳改位置；要正式寫回倉庫請先在「更多」裡設定鑰匙"
     )
   )
   .catch((err) => setStatus(err.message || String(err)));
