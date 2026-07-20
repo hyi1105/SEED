@@ -1008,19 +1008,19 @@ function stripAiFences(text) {
   return t;
 }
 
-async function askAiViaProxy(instruction, source) {
+async function askAiViaProxy(systemPrompt, userResponse) {
   const code = getMemberCode();
   if (!code) throw new Error("還沒輸入會員碼。付費後會拿到一組碼，請按「會員碼」設定。");
-  const res = await fetch(`${apiBase()}/v1/ai/revise`, {
+  const res = await fetch(`${apiBase()}/v1/ai/respond`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${code}`,
     },
     body: JSON.stringify({
-      title: state.current.title,
-      instruction,
-      content: source,
+      title: state.current?.title || "未命名",
+      systemPrompt,
+      userResponse,
     }),
   });
   let data = {};
@@ -1034,17 +1034,15 @@ async function askAiViaProxy(instruction, source) {
     if (res.status === 401) throw new Error(data.error || "會員碼無效");
     throw new Error(data.error || `代辦失敗（${res.status}）`);
   }
-  const out = stripAiFences(data.revised || "");
+  const out = stripAiFences(data.answer || "");
   if (!out) throw new Error("沒有產出內容");
   if (data.quota) {
-    setStatus(
-      `AI 已改稿。本月還剩 ${data.quota.remaining} 次（已用 ${data.quota.used}/${data.quota.quota}）`
-    );
+    setStatus(`AI 已回應。本月還剩 ${data.quota.remaining} 次（已用 ${data.quota.used}/${data.quota.quota}）`);
   }
   return out;
 }
 
-async function askAiDirect(instruction, source) {
+async function askAiDirect(systemPrompt, userResponse) {
   const key = getAiKey();
   if (!key) throw new Error("還沒設定 AI 鑰匙，請先按「AI 鑰匙」");
   const res = await fetch(`${getAiBase()}/chat/completions`, {
@@ -1060,16 +1058,15 @@ async function askAiDirect(instruction, source) {
         {
           role: "system",
           content:
-            "你是知識筆記編輯助手。根據使用者指示改寫 Markdown 全文。" +
-            "只輸出完整 Markdown 正文，不要加解釋、不要用 ``` 包起來。" +
-            "保留原有標題結構；專有名詞旁可加一句白話。語氣清楚、給人掃一眼也看得懂。",
+            "你是問答助手。請先理解 system 給的情境或提問，再根據 user 的回答直接作答。" +
+            "只輸出給使用者看的回答，不要加 JSON、不要用 ``` 包起來、不要另外描述流程。",
         },
         {
           role: "user",
           content:
-            `檔名／主題：${state.current.title}\n\n` +
-            `修改指示：\n${instruction}\n\n` +
-            `目前正文：\n${source}`,
+            `目前主題：${state.current?.title || "未命名"}\n\n` +
+            `System：\n${systemPrompt}\n\n` +
+            `User：\n${userResponse}`,
         },
       ],
     }),
@@ -1083,7 +1080,7 @@ async function askAiDirect(instruction, source) {
       detail = await res.text();
     }
     if (res.status === 401) throw new Error("AI 鑰匙無效，請重新設定「AI 鑰匙」");
-    throw new Error(`AI 改稿失敗（${res.status}）：${detail}`);
+    throw new Error(`AI 回答失敗（${res.status}）：${detail}`);
   }
   const data = await res.json();
   const out = stripAiFences(data.choices?.[0]?.message?.content || "");
@@ -1091,13 +1088,11 @@ async function askAiDirect(instruction, source) {
   return out;
 }
 
-async function askAiToRevise(instruction) {
-  if (!state.current) throw new Error("請先在地圖上點一份筆記");
-  if (!state.originalText) await loadSeedText();
-  const source = state.editing ? $("edit-body").value : state.workingText || state.originalText;
-  setStatus("AI 正在改稿，請稍候…");
-  if (usePaidProxy()) return askAiViaProxy(instruction, source);
-  return askAiDirect(instruction, source);
+async function askAiToRespond(systemPrompt, userResponse) {
+  if (!state.current) throw new Error("請先在拼圖上點一份筆記");
+  setStatus("AI 正在回應，請稍候…");
+  if (usePaidProxy()) return askAiViaProxy(systemPrompt, userResponse);
+  return askAiDirect(systemPrompt, userResponse);
 }
 
 async function loadAppConfig() {
@@ -1403,7 +1398,7 @@ async function selectSeed(seed) {
 }
 
 async function loadSeedText() {
-  if (!state.current) throw new Error("請先在地圖上點一份筆記");
+  if (!state.current) throw new Error("請先在拼圖上點一份筆記");
   const text = await fetchText(`${RAW}${state.current.path}?ts=${Date.now()}`);
   state.originalText = text;
   state.workingText = text;
@@ -1412,7 +1407,7 @@ async function loadSeedText() {
 
 async function readCurrent() {
   if (!state.current) {
-    setStatus("請先在地圖上點一份筆記");
+    setStatus("請先在拼圖上點一份筆記");
     showPanel("list");
     return;
   }
@@ -1426,7 +1421,7 @@ async function readCurrent() {
 
 async function startEdit() {
   if (!state.current) {
-    setStatus("請先在地圖上點一份筆記");
+    setStatus("請先在拼圖上點一份筆記");
     showPanel("list");
     return;
   }
@@ -1656,7 +1651,7 @@ function diffLines(aText, bText) {
 
 async function runDiff() {
   if (!state.current) {
-    setStatus("請先在地圖上點一份筆記");
+    setStatus("請先在拼圖上點一份筆記");
     showPanel("list");
     return;
   }
@@ -1700,28 +1695,33 @@ document.querySelector("#chrome").addEventListener("click", async (e) => {
     if (action === "edit") await startEdit();
     if (action === "ai") {
       if (!state.current) {
-        setStatus("請先在地圖上點一份筆記");
+        setStatus("請先在拼圖上點一份筆記");
         showPanel("list");
         return;
       }
       if (usePaidProxy()) {
         if (!getMemberCode()) {
           $("member-dialog").showModal();
-          setStatus("請先輸入會員碼，再請 AI 改");
+          setStatus("請先輸入會員碼，再讓 AI 回答");
           return;
         }
       } else if (!getAiKey()) {
         $("ai-key-dialog").showModal();
-        setStatus("請先設定 AI 鑰匙，再請 AI 改");
+        setStatus("請先設定 AI 鑰匙，再讓 AI 回答");
         return;
       }
-      $("ai-instruction").value = "";
+      $("ai-system").value = state.current
+        ? `請根據「${state.current.title}」這份內容，先理解 system 的情境，再根據 user 的回答直接回應。`
+        : "";
+      $("ai-user").value = "";
+      $("ai-answer").textContent = "";
+      $("ai-answer-box").classList.add("hidden");
       $("ai-dialog").showModal();
-      $("ai-instruction").focus();
+      $("ai-user").focus();
     }
     if (action === "save-version") {
       if (!state.current) {
-        setStatus("請先在地圖上點一份筆記");
+        setStatus("請先在拼圖上點一份筆記");
         showPanel("list");
         return;
       }
@@ -1736,7 +1736,7 @@ document.querySelector("#chrome").addEventListener("click", async (e) => {
     }
     if (action === "history") {
       if (!state.current) {
-        setStatus("請先在地圖上點一份筆記");
+        setStatus("請先在拼圖上點一份筆記");
         showPanel("list");
         return;
       }
@@ -1745,7 +1745,7 @@ document.querySelector("#chrome").addEventListener("click", async (e) => {
     }
     if (action === "diff") {
       if (!state.current) {
-        setStatus("請先在地圖上點一份筆記");
+        setStatus("請先在拼圖上點一份筆記");
         showPanel("list");
         return;
       }
@@ -1869,7 +1869,7 @@ $("member-form").addEventListener("submit", (e) => {
     setStatus("請貼上會員碼");
     return;
   }
-  setStatus("會員碼已存好，可以按「請 AI 改」");
+  setStatus("會員碼已存好，可以按「AI 回答」");
 });
 
 $("member-clear").addEventListener("click", () => {
@@ -1889,7 +1889,7 @@ $("ai-key-form").addEventListener("submit", (e) => {
     setStatus("請貼上 AI 鑰匙");
     return;
   }
-  setStatus("AI 鑰匙已存好，可以按「請 AI 改」");
+  setStatus("AI 鑰匙已存好，可以按「AI 回答」");
 });
 
 $("ai-key-clear").addEventListener("click", () => {
@@ -1904,22 +1904,17 @@ $("ai-form").addEventListener("submit", async (e) => {
   const submitter = e.submitter;
   if (submitter && submitter.value === "cancel") return;
   e.preventDefault();
-  const instruction = $("ai-instruction").value.trim();
-  if (!instruction) {
-    setStatus("請先寫一句「我想這樣改」");
+  const systemPrompt = $("ai-system").value.trim();
+  const userResponse = $("ai-user").value.trim();
+  if (!systemPrompt || !userResponse) {
+    setStatus("請先填好 System 與 User 兩段內容");
     return;
   }
-  $("ai-dialog").close();
   try {
-    const revised = await askAiToRevise(instruction);
-    if (!state.originalText) await loadSeedText();
-    state.workingText = revised;
-    state.draftAccepted = false;
-    $("read-title").textContent = `${state.current.title}（AI 建議稿）`;
-    setEditMode(revised);
-    updateDraftBar();
-    showDraftDiff();
-    setStatus("AI 已產出建議稿。可看差異，再「用這次的」或「不要」，最後「存成一版」");
+    const answer = await askAiToRespond(systemPrompt, userResponse);
+    $("ai-answer").textContent = answer;
+    $("ai-answer-box").classList.remove("hidden");
+    setStatus("AI 已根據你的回答回應");
   } catch (err) {
     setStatus(err.message || String(err));
   }
@@ -2167,14 +2162,12 @@ function renderNotifyChips() {
     state.panel === "list"
       ? [
           { label: "換模板", run: () => $("template-setup").click() },
-          { label: "排版紀錄", run: () => openLayoutHistoryDialog() },
           { label: "存拼圖", run: () => savePuzzleLayout() },
-          { label: "打包帶走", run: () => exportSeedPack() },
         ]
       : [
           { label: "回拼圖", run: () => showPanel("list") },
           { label: "自己改", run: () => startEdit() },
-          { label: "請 AI 改", run: () => $("ai-dialog").showModal() },
+          { label: "AI 回答", run: () => $("ai-dialog").showModal() },
           { label: "存成一版", run: () => $("version-dialog").showModal() },
         ];
   wrap.innerHTML = "";
@@ -2209,12 +2202,10 @@ function handleNotifyInput(text) {
     $("template-setup").click();
     return;
   }
-  if (/排版|紀錄|歷史/.test(t)) {
-    openLayoutHistoryDialog();
-    return;
-  }
   if (state.current && /ai|改|潤稿/.test(t.toLowerCase())) {
-    $("ai-instruction").value = t;
+    $("ai-system").value = "請根據 system 與 user 的內容直接回應。";
+    $("ai-user").value = t;
+    $("ai-answer-box").classList.add("hidden");
     $("ai-dialog").showModal();
     return;
   }
