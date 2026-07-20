@@ -321,9 +321,12 @@ h1 {
   background: rgba(255, 252, 247, 0.35);
   min-width: 0;
   min-height: 0;
-  padding: 3px;
+  padding: 4px;
   cursor: default;
   position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .map-cell.empty:hover {
@@ -335,17 +338,16 @@ h1 {
   background: var(--accent-soft);
 }
 
+/* 章印＝格子正中的正方形縮圖，文字依縮圖縮放，不被裁切 */
 .map-seed {
-  width: 100%;
-  height: 100%;
   border: 2px solid #8f2a2a;
-  border-radius: 10px;
+  border-radius: 22%;
   background:
     radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.35), transparent 45%),
     #f7ebe3;
   color: #7a1f1f;
   font: inherit;
-  padding: 4px;
+  padding: 0;
   cursor: grab;
   display: flex;
   align-items: center;
@@ -354,14 +356,19 @@ h1 {
   box-shadow:
     inset 0 0 0 1px rgba(143, 42, 42, 0.25),
     0 2px 0 rgba(20, 32, 26, 0.08);
-  overflow: hidden;
+  overflow: visible;
+  box-sizing: border-box;
 }
 
 .map-seed.seal {
+  container-type: size;
+  width: min(92%, 4.75rem);
   aspect-ratio: 1 / 1;
+  height: auto;
   max-width: 100%;
   max-height: 100%;
-  margin: 0 auto;
+  flex: 0 0 auto;
+  padding: 8%;
 }
 
 .map-seed:active {
@@ -388,28 +395,44 @@ h1 {
   font-weight: 700;
   line-height: 1;
   letter-spacing: 0;
+  overflow: visible;
 }
 
 .seal-face.seal-1 {
-  font-size: clamp(0.95rem, 2.4vw, 1.45rem);
+  font-size: 52cqmin;
 }
 
 .seal-face.seal-2 {
   grid-template-rows: 1fr 1fr;
-  font-size: clamp(0.78rem, 2vw, 1.15rem);
-  gap: 1px;
+  font-size: 38cqmin;
+  gap: 0;
 }
 
 .seal-face.seal-4 {
   grid-template-columns: 1fr 1fr;
   grid-template-rows: 1fr 1fr;
-  font-size: clamp(0.72rem, 1.9vw, 1.05rem);
-  gap: 1px;
+  font-size: 34cqmin;
+  gap: 0;
 }
 
 .seal-face span {
   display: grid;
   place-items: center;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  /* fallback when cqmin unsupported */
+  font-size: inherit;
+}
+
+@supports not (font-size: 1cqmin) {
+  .map-seed.seal {
+    width: min(90%, 3.6rem);
+    padding: 0.28rem;
+  }
+  .seal-face.seal-1 { font-size: 1.15rem; }
+  .seal-face.seal-2 { font-size: 0.85rem; }
+  .seal-face.seal-4 { font-size: 0.72rem; }
 }
 
 .map-legend {
