@@ -85,6 +85,7 @@ function showPanel(name) {
   if (stage) stage.scrollTop = 0;
   const panel = $(`panel-${name}`);
   if (panel) panel.scrollTop = 0;
+  updateHeaderLayoutActions();
 }
 
 function updateDraftBar() {
@@ -322,10 +323,31 @@ function updatePuzzleMeta() {
   if (state.map.kind === "community") {
     parts.push(`<span class="puzzle-note">示範種子保留；空格可花點數搶位</span>`);
   }
-  if (hasUnsavedPuzzleChanges()) {
-    parts.push(`<span class="puzzle-unsaved">尚未存進倉庫 → 選單「存拼圖位置」</span>`);
-  }
   el.innerHTML = parts.join("");
+  updateHeaderLayoutActions();
+}
+
+function updateHeaderLayoutActions() {
+  const wrap = $("header-layout-actions");
+  if (!wrap) return;
+  const onMap = state.panel === "list";
+  wrap.classList.toggle("hidden", !(onMap && hasUnsavedPuzzleChanges()));
+}
+
+async function resetPuzzleLayout() {
+  localStorage.removeItem(LAYOUT_KEY);
+  await loadCatalog();
+  setStatus("已重置為倉庫預設位置");
+  showPanel("list");
+}
+
+async function savePuzzleLayout() {
+  if (!getToken()) {
+    $("token-dialog").showModal();
+    setStatus("請先設定鑰匙，再按「存拼圖位置」");
+    return;
+  }
+  await saveLayoutToRepo();
 }
 
 async function maybePromptSaveLayout(reason) {
@@ -1378,11 +1400,24 @@ $("version-form").addEventListener("submit", async (e) => {
 
 $("reset-layout").addEventListener("click", async () => {
   setMenuOpen(false);
-  localStorage.removeItem(LAYOUT_KEY);
   try {
-    await loadCatalog();
-    setStatus("已重置為倉庫預設位置");
-    showPanel("list");
+    await resetPuzzleLayout();
+  } catch (err) {
+    setStatus(err.message || String(err));
+  }
+});
+
+$("header-reset-layout").addEventListener("click", async () => {
+  try {
+    await resetPuzzleLayout();
+  } catch (err) {
+    setStatus(err.message || String(err));
+  }
+});
+
+$("header-save-layout").addEventListener("click", async () => {
+  try {
+    await savePuzzleLayout();
   } catch (err) {
     setStatus(err.message || String(err));
   }
@@ -1551,12 +1586,7 @@ $("template-form").addEventListener("submit", async (e) => {
 $("save-layout").addEventListener("click", async () => {
   setMenuOpen(false);
   try {
-    if (!getToken()) {
-      $("token-dialog").showModal();
-      setStatus("請先設定鑰匙，再按「存地圖位置」");
-      return;
-    }
-    await saveLayoutToRepo();
+    await savePuzzleLayout();
   } catch (err) {
     setStatus(err.message || String(err));
   }

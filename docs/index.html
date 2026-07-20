@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=puzzle3" />
+  <link rel="stylesheet" href="styles.css?v=puzzle4" />
   <!-- 預覽請用 raw.githack（會正確當成網頁）。不要用 raw.githubusercontent 或 jsDelivr 開 html，會變純文字。 -->
 </head>
 <body>
@@ -17,16 +17,30 @@
         <button type="button" class="brand-home" data-action="list" id="brand-home" title="回知識拼圖">
           SEED
         </button>
+        <div class="top-end">
+          <div class="header-layout-actions hidden" id="header-layout-actions" aria-label="拼圖位置異動">
+            <button type="button" class="btn btn-icon" id="header-reset-layout" title="重置位置" aria-label="重置位置">
+              <svg class="btn-icon-svg" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+                <path fill="currentColor" d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46A7.96 7.96 0 0 0 20 13c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 14.74A7.96 7.96 0 0 0 4 13c0 4.42 3.58 8 8 8v4l5-5-5-5v4z"/>
+              </svg>
+            </button>
+            <button type="button" class="btn btn-icon btn-primary" id="header-save-layout" title="存拼圖位置" aria-label="存拼圖位置">
+              <svg class="btn-icon-svg" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+                <path fill="currentColor" d="M17 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7l-4-4zm-5 16a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm3-10H5V5h10v4z"/>
+              </svg>
+            </button>
+          </div>
+          <button
+            type="button"
+            class="btn menu-btn"
+            id="menu-btn"
+            aria-expanded="false"
+            aria-controls="menu-drawer"
+          >
+            選單
+          </button>
+        </div>
         <p class="hint sr-only" id="status" aria-live="polite">正在載入…</p>
-        <button
-          type="button"
-          class="btn menu-btn"
-          id="menu-btn"
-          aria-expanded="false"
-          aria-controls="menu-drawer"
-        >
-          選單
-        </button>
       </header>
 
       <div class="menu-drawer collapsed" id="menu-drawer" role="menu" aria-label="系統選單">
@@ -244,6 +258,6 @@
       </form>
     </dialog>
   </div>
-  <script src="app.js?v=puzzle3"></script>
+  <script src="app.js?v=puzzle4"></script>
 </body>
 </html>

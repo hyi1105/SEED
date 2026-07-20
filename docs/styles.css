@@ -84,7 +84,42 @@ html, body {
 
 .menu-btn {
   flex: 0 0 auto;
+}
+
+.top-end {
   margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex: 0 0 auto;
+}
+
+.header-layout-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.header-layout-actions.hidden {
+  display: none;
+}
+
+.btn-icon {
+  padding: 0.38rem;
+  min-width: 2.55rem;
+  min-height: 2.55rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+}
+
+.btn-icon-svg {
+  display: block;
+}
+
+.header-layout-actions .btn-primary.btn-icon {
+  box-shadow: 0 0 0 2px rgba(31, 107, 74, 0.25);
 }
 
 .menu-btn.is-open {
@@ -389,10 +424,6 @@ h1 {
 .puzzle-note,
 .puzzle-unsaved {
   color: var(--muted);
-}
-
-.puzzle-unsaved {
-  color: #9a6b2e;
 }
 
 .map-shell {
