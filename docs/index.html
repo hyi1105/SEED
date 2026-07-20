@@ -7,39 +7,33 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=control1" />
+  <link rel="stylesheet" href="styles.css?v=control2" />
   <!-- 預覽請用 raw.githack（會正確當成網頁）。不要用 raw.githubusercontent 或 jsDelivr 開 html，會變純文字。 -->
 </head>
 <body>
   <div class="app">
     <div class="chrome" id="chrome" data-mode="map">
       <header class="top">
-        <button
-          type="button"
-          class="brand-home"
-          id="brand-home"
-          aria-expanded="false"
-          aria-controls="path-popover"
-          title="路徑與最近位置"
-        >
-          <span class="brand-name">SEED</span>
-          <span class="brand-here" id="brand-here">知識拼圖</span>
-        </button>
+        <div class="brand-block">
+          <button
+            type="button"
+            class="brand-home"
+            id="brand-home"
+            aria-expanded="false"
+            aria-controls="path-popover"
+            title="點開路徑與最近位置"
+          >
+            SEED
+          </button>
+          <nav class="path-crumb" id="path-crumb" aria-label="目前階層">首頁</nav>
+        </div>
         <div class="top-end">
-          <div class="header-layout-actions hidden" id="header-layout-actions" aria-label="拼圖位置異動">
-            <button type="button" class="btn btn-icon" id="header-reset-layout" title="重置位置" aria-label="重置位置">
-              <svg class="btn-icon-svg" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
-                <path fill="currentColor" d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46A7.96 7.96 0 0 0 20 13c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 14.74A7.96 7.96 0 0 0 4 13c0 4.42 3.58 8 8 8v4l5-5-5-5v4z"/>
-              </svg>
-            </button>
-            <button type="button" class="btn btn-icon btn-primary" id="header-save-layout" title="存拼圖位置" aria-label="存拼圖位置">
-              <svg class="btn-icon-svg" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
-                <path fill="currentColor" d="M17 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7l-4-4zm-5 16a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm3-10H5V5h10v4z"/>
-              </svg>
-            </button>
+          <div class="mode-chips hidden" id="mode-chips" role="toolbar" aria-label="檢視模式">
+            <button type="button" class="header-chip mode-chip" data-mode="edit" aria-pressed="true">編輯</button>
+            <button type="button" class="header-chip mode-chip" data-mode="a4" aria-pressed="false">A4檢視</button>
+            <button type="button" class="header-chip mode-chip" data-mode="diff" aria-pressed="false">記錄比對</button>
           </div>
-          <button type="button" class="header-chip" id="header-me-btn" aria-expanded="false" aria-controls="me-popover" title="選擇角色 · 控制台">
-            <span class="me-prefix" id="header-agent-label">守護</span>
+          <button type="button" class="header-chip" id="header-me-btn" aria-expanded="false" aria-controls="me-popover" title="狀態">
             <span id="header-kind-label">公開</span>
             <span class="sync-dot" id="sync-dot" data-state="unknown" aria-hidden="true"></span>
           </button>
@@ -61,39 +55,20 @@
         <nav class="path-recent" id="path-recent"></nav>
       </div>
 
-      <div class="popover me-popover hidden" id="me-popover" role="dialog" aria-label="角色控制台">
-        <p class="popover-heading">選擇角色 · 控制台</p>
-        <div class="agent-pick" id="agent-pick" role="listbox" aria-label="三角色"></div>
-        <div class="me-divider" aria-hidden="true"></div>
+      <div class="popover me-popover hidden" id="me-popover" role="dialog" aria-label="狀態">
+        <p class="popover-heading">狀態</p>
         <div class="info-sheet">
           <div class="info-row">
-            <span class="info-label">狀態</span>
+            <span class="info-label">可見</span>
             <button type="button" class="info-action" id="info-kind-switch" title="點一下切換公開／私人（展示用）">公開</button>
           </div>
           <div class="info-row">
             <span class="info-label">存檔</span>
-            <span class="info-value" id="info-saved-at">尚未存過</span>
-          </div>
-          <div class="info-row hidden">
-            <span class="info-label">排版紀錄</span>
-            <button type="button" class="info-action" id="info-layout-history">尚無紀錄</button>
-          </div>
-          <div class="info-row info-row-stack">
-            <span class="info-label">拼圖模板</span>
-            <div class="template-dl" id="template-dl">
-              <button type="button" class="template-dl-btn" data-template="grid-8">下載 8×8</button>
-              <button type="button" class="template-dl-btn" data-template="grid-10">下載 10×10</button>
-              <button type="button" class="template-dl-btn" data-template="grid-12">下載 12×12</button>
-            </div>
+            <span class="info-value" id="info-saved-at">自動儲存</span>
           </div>
           <p class="info-extra hidden" id="info-extra"></p>
         </div>
-        <div class="me-divider" aria-hidden="true"></div>
-        <div class="me-menu">
-          <button type="button" class="me-link" id="pack-export">打包帶走</button>
-          <button type="button" class="me-link" id="pack-import">還原回來</button>
-        </div>
-        <!-- 隱藏入口：進階設定仍可用（不在控制台列出） -->
+        <!-- 隱藏入口：進階設定仍可用 -->
         <button type="button" class="hidden" id="save-layout" tabindex="-1" aria-hidden="true">存拼圖位置</button>
         <button type="button" class="hidden" id="reset-layout" tabindex="-1" aria-hidden="true">重置位置</button>
         <button type="button" class="hidden" id="token-setup" tabindex="-1" aria-hidden="true">設定鑰匙</button>
@@ -101,6 +76,13 @@
         <button type="button" class="hidden" id="member-setup" tabindex="-1" aria-hidden="true">會員碼</button>
         <button type="button" class="hidden" id="template-setup" tabindex="-1" aria-hidden="true">拼圖模板</button>
         <button type="button" class="hidden" id="info-template" tabindex="-1" aria-hidden="true">模板標籤</button>
+        <button type="button" class="hidden" id="info-layout-history" tabindex="-1" aria-hidden="true">排版紀錄</button>
+        <button type="button" class="hidden" id="pack-export" tabindex="-1" aria-hidden="true">打包帶走</button>
+        <button type="button" class="hidden" id="pack-import" tabindex="-1" aria-hidden="true">還原回來</button>
+        <div class="hidden" id="header-layout-actions" aria-hidden="true">
+          <button type="button" id="header-reset-layout">重置</button>
+          <button type="button" id="header-save-layout">存檔</button>
+        </div>
       </div>
 
       <div class="popover notify-popover hidden" id="notify-popover" role="log" aria-label="系統回饋">
@@ -137,13 +119,7 @@
 
       <section id="panel-read" class="panel hidden">
         <div class="read-head">
-          <h1 id="read-title">控制台</h1>
-          <div id="draft-bar" class="draft-bar hidden">
-            <span class="draft-label">你改過了，還沒存進倉庫</span>
-            <button type="button" class="btn" id="draft-diff">看看這次改了什麼</button>
-            <button type="button" class="btn btn-primary" id="draft-keep">用這次的</button>
-            <button type="button" class="btn" id="draft-discard">不要</button>
-          </div>
+          <h1 id="read-title" class="sr-only">編輯</h1>
         </div>
         <article id="read-body" class="prose frame-board" aria-label="段落框編輯"></article>
         <textarea id="edit-body" class="edit-body hidden" spellcheck="true" aria-label="編輯筆記"></textarea>
@@ -365,6 +341,6 @@
 
   <div class="toast hidden" id="toast" role="status" aria-live="polite"></div>
 
-  <script src="app.js?v=control1"></script>
+  <script src="app.js?v=control2"></script>
 </body>
 </html>

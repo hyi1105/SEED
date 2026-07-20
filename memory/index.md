@@ -10,6 +10,7 @@
 
 ## 場次
 
+- 2026-07-21 — 階層常駐＋框外註解＋自動存 — 標籤：ux、自動儲存、框編輯 — [sessions/2026-07-21-autosave-frames.md](sessions/2026-07-21-autosave-frames.md)
 - 2026-07-21 — 角色選擇＋控制台框編輯 — 標籤：ux、角色、控制台、路徑 — [sessions/2026-07-21-agent-control-panel.md](sessions/2026-07-21-agent-control-panel.md)
 - 2026-07-20 — 全部發佈（Pages 綠勾、快取 full1）— 標籤：發佈、上線 — [sessions/2026-07-20-full-publish.md](sessions/2026-07-20-full-publish.md)
 - 2026-07-20 — 簡化成 System → User → AI — 標籤：流程、AI、簡化 — [sessions/2026-07-20-simple-flow-release.md](sessions/2026-07-20-simple-flow-release.md)
