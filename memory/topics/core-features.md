@@ -26,7 +26,7 @@ status: active
 | 能力 | 說明 | 現況 |
 |---|---|---|
 | 自己改 | 人手改正文 | **已有** |
-| 請 AI 改 | 一句話產生建議變更 | **已有**（自備 key）；**付費路徑**：平台代辦 key（見 `paid-grandma-ai.md`） |
+| AI 回答 | System 先說、User 回答、AI 再回應 | **已有**（自備 key）；**付費路徑**：平台代辦 key（見 `paid-grandma-ai.md`） |
 | 看看改了什麼 | 舊／新對照（紅綠或等價） | **已有**（草稿差異＋Git 歷史） |
 | 用這次的／不要 | 接受或丟棄建議 | **已有**（草稿） |
 | 存成一版 | 文件快照，可取名 | **已有**（寫回 `.md`） |
@@ -53,3 +53,5 @@ status: active
 **2026-07-20**：核心含封包帶走／還原。GitHub／AI 鑰匙不進封包。  
 **同日**：收費方向＝阿嬤只付費，AI 代辦由平台完成並賺服務費（`server/` 已開工）。  
 **最終版同步（同日）**：A＋B 全有 → 個人 MVP 核心不缺。總表見 `progress-final.md`。
+
+**互動修正（同日）**：不做 system feedback board、player records、一般 packaging instructions；問答順序以 **System → User → AI** 為準。

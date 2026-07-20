@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=puzzle10" />
+  <link rel="stylesheet" href="styles.css?v=control1" />
   <!-- 預覽請用 raw.githack（會正確當成網頁）。不要用 raw.githubusercontent 或 jsDelivr 開 html，會變純文字。 -->
 </head>
 <body>
@@ -43,7 +43,7 @@
             <span id="header-kind-label">公開</span>
             <span class="sync-dot" id="sync-dot" data-state="unknown" aria-hidden="true"></span>
           </button>
-          <button type="button" class="btn btn-icon btn-ghost" id="notify-btn" title="系統回饋" aria-expanded="false" aria-controls="notify-popover">
+          <button type="button" class="btn btn-icon btn-ghost hidden" id="notify-btn" title="系統回饋" aria-expanded="false" aria-controls="notify-popover">
             <svg class="btn-icon-svg" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
               <path fill="currentColor" d="M12 22a2 2 0 0 0 2-2H10a2 2 0 0 0 2 2zm6-6V11a6 6 0 1 0-12 0v5l-2 2v1h16v-1l-2-2z"/>
             </svg>
@@ -74,7 +74,7 @@
             <span class="info-label">存檔</span>
             <span class="info-value" id="info-saved-at">尚未存過</span>
           </div>
-          <div class="info-row">
+          <div class="info-row hidden">
             <span class="info-label">排版紀錄</span>
             <button type="button" class="info-action" id="info-layout-history">尚無紀錄</button>
           </div>
@@ -118,7 +118,7 @@
         <button type="button" class="btn" data-action="read">讀現在的</button>
         <button type="button" class="btn" data-action="edit">自己改</button>
         <button type="button" class="btn btn-primary" data-action="save-version">存成一版</button>
-        <button type="button" class="btn btn-primary" data-action="ai">請 AI 改</button>
+        <button type="button" class="btn btn-primary" data-action="ai">AI 回答</button>
         <button type="button" class="btn" data-action="diff">看看改了什麼</button>
         <button type="button" class="btn" data-action="history">回到舊的</button>
       </nav>
@@ -262,7 +262,7 @@
     <dialog id="ai-key-dialog" class="token-dialog">
       <form method="dialog" id="ai-key-form">
         <h2>設定 AI 鑰匙</h2>
-        <p>「請 AI 改」會呼叫 OpenAI（或相容服務）。鑰匙只存在這台瀏覽器，<strong>不要貼到聊天</strong>。</p>
+        <p>「AI 回答」會呼叫 OpenAI（或相容服務）。鑰匙只存在這台瀏覽器，<strong>不要貼到聊天</strong>。</p>
         <ol class="token-steps">
           <li>到 <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">OpenAI API keys</a> 建立一把 key</li>
           <li>貼到下面（通常以 <code>sk-</code> 開頭）</li>
@@ -285,14 +285,22 @@
 
     <dialog id="ai-dialog" class="token-dialog">
       <form method="dialog" id="ai-form">
-        <h2>請 AI 改</h2>
-        <p>用一句話說你要怎麼改這份筆記。AI 會產出<strong>整份新稿</strong>當草稿，你再決定用不用、要不要存成一版。</p>
+        <h2>System → User → AI</h2>
+        <p>先放 system 的問題或情境，再寫 user 的回答；AI 只根據這兩段回應，不另外顯示回饋板或玩家紀錄。</p>
         <label class="token-label">
-          我想這樣改
-          <textarea id="ai-instruction" rows="4" placeholder="例如：把「今天學會的」寫得更白話，並補三個常踩的坑"></textarea>
+          System 先說
+          <textarea id="ai-system" rows="3" placeholder="例如：請根據這份筆記，問我今天真正學會了什麼"></textarea>
         </label>
+        <label class="token-label">
+          User 回答
+          <textarea id="ai-user" rows="4" placeholder="例如：我學會了怎麼存版本，也知道出錯時先看差異"></textarea>
+        </label>
+        <div class="ai-answer hidden" id="ai-answer-box">
+          <p class="ai-answer-label">AI 回答</p>
+          <article id="ai-answer" class="prose ai-answer-text"></article>
+        </div>
         <div class="token-actions">
-          <button type="submit" class="btn btn-primary" value="run">開始改</button>
+          <button type="submit" class="btn btn-primary" value="run">送給 AI</button>
           <button type="submit" class="btn" value="cancel">取消</button>
         </div>
       </form>
@@ -357,6 +365,6 @@
 
   <div class="toast hidden" id="toast" role="status" aria-live="polite"></div>
 
-  <script src="app.js?v=puzzle10"></script>
+  <script src="app.js?v=control1"></script>
 </body>
 </html>

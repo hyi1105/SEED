@@ -11,6 +11,8 @@
 ## 場次
 
 - 2026-07-21 — 角色選擇＋控制台框編輯 — 標籤：ux、角色、控制台、路徑 — [sessions/2026-07-21-agent-control-panel.md](sessions/2026-07-21-agent-control-panel.md)
+- 2026-07-20 — 全部發佈（Pages 綠勾、快取 full1）— 標籤：發佈、上線 — [sessions/2026-07-20-full-publish.md](sessions/2026-07-20-full-publish.md)
+- 2026-07-20 — 簡化成 System → User → AI — 標籤：流程、AI、簡化 — [sessions/2026-07-20-simple-flow-release.md](sessions/2026-07-20-simple-flow-release.md)
 - 2026-07-20 — 延續路線 A→B→D→E（C 暫緩）— 標籤：路線、拼圖、優先序 — [sessions/2026-07-20-continuation-roadmap.md](sessions/2026-07-20-continuation-roadmap.md)
 - 2026-07-20 — 從知識地圖改成知識拼圖 — 標籤：拼圖、產品、模板 — [sessions/2026-07-20-knowledge-puzzle.md](sessions/2026-07-20-knowledge-puzzle.md)
 - 2026-07-20 — 手機操作：地圖太小、選單太大 — 標籤：體驗、手機、地圖 — [sessions/2026-07-20-mobile-map-ux.md](sessions/2026-07-20-mobile-map-ux.md)
