@@ -321,7 +321,7 @@ h1 {
   background: rgba(255, 252, 247, 0.35);
   min-width: 0;
   min-height: 0;
-  padding: 4px;
+  padding: 2px;
   cursor: default;
   position: relative;
   display: flex;
@@ -338,101 +338,94 @@ h1 {
   background: var(--accent-soft);
 }
 
-/* 章印＝格子正中的正方形縮圖，文字依縮圖縮放，不被裁切 */
+/* 圖示縮圖：上大頭貼、下短標；可換成書封 cover */
 .map-seed {
-  border: 2px solid #8f2a2a;
-  border-radius: 22%;
-  background:
-    radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.35), transparent 45%),
-    #f7ebe3;
-  color: #7a1f1f;
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
   font: inherit;
   padding: 0;
   cursor: grab;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  text-align: center;
-  box-shadow:
-    inset 0 0 0 1px rgba(143, 42, 42, 0.25),
-    0 2px 0 rgba(20, 32, 26, 0.08);
+  gap: 2px;
   overflow: visible;
   box-sizing: border-box;
 }
 
-.map-seed.seal {
-  container-type: size;
-  width: min(92%, 4.75rem);
-  aspect-ratio: 1 / 1;
-  height: auto;
-  max-width: 100%;
-  max-height: 100%;
-  flex: 0 0 auto;
-  padding: 8%;
+.map-seed.icon {
+  flex: 1 1 auto;
 }
 
 .map-seed:active {
   cursor: grabbing;
 }
 
-.map-seed.studio {
-  border-color: #8a6a2e;
-  color: #5c4518;
-  background:
-    radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.4), transparent 45%),
-    #f3ead4;
-  box-shadow:
-    inset 0 0 0 1px rgba(138, 106, 46, 0.28),
-    0 2px 0 rgba(20, 32, 26, 0.08);
+.seed-avatar {
+  width: min(72%, 3.1rem);
+  aspect-ratio: 1 / 1;
+  border-radius: 18%;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  overflow: hidden;
+  border: 2px solid #2f6b4f;
+  background: linear-gradient(160deg, #e8f5ee, #d5ebe0);
+  box-shadow: 0 1px 2px rgba(20, 32, 26, 0.12);
 }
 
-.seal-face {
-  display: grid;
-  width: 100%;
-  height: 100%;
-  place-items: center;
-  font-family: "Noto Serif TC", "Songti TC", serif;
+.seed-avatar.mono {
+  font-family: "Noto Serif TC", serif;
   font-weight: 700;
+  font-size: clamp(0.7rem, 1.8vw, 0.95rem);
   line-height: 1;
+  color: #1a4d38;
   letter-spacing: 0;
-  overflow: visible;
 }
 
-.seal-face.seal-1 {
-  font-size: 52cqmin;
+.seed-avatar.has-cover {
+  padding: 0;
+  background: #ddd;
 }
 
-.seal-face.seal-2 {
-  grid-template-rows: 1fr 1fr;
-  font-size: 38cqmin;
-  gap: 0;
-}
-
-.seal-face.seal-4 {
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: 1fr 1fr;
-  font-size: 34cqmin;
-  gap: 0;
-}
-
-.seal-face span {
-  display: grid;
-  place-items: center;
+.seed-avatar.has-cover img {
   width: 100%;
   height: 100%;
-  overflow: visible;
-  /* fallback when cqmin unsupported */
-  font-size: inherit;
+  object-fit: cover;
+  display: block;
 }
 
-@supports not (font-size: 1cqmin) {
-  .map-seed.seal {
-    width: min(90%, 3.6rem);
-    padding: 0.28rem;
-  }
-  .seal-face.seal-1 { font-size: 1.15rem; }
-  .seal-face.seal-2 { font-size: 0.85rem; }
-  .seal-face.seal-4 { font-size: 0.72rem; }
+.map-seed.studio .seed-avatar {
+  border-color: #8a6a2e;
+  background: linear-gradient(160deg, #f7f0e0, #ebe0c8);
+  color: #5c4518;
+}
+
+.map-seed.studio .seed-avatar.mono {
+  color: #5c4518;
+}
+
+.seed-caption {
+  max-width: 100%;
+  padding: 0 1px;
+  font-size: clamp(0.58rem, 1.4vw, 0.72rem);
+  font-weight: 700;
+  line-height: 1.15;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--ink);
+}
+
+.map-seed.studio .seed-caption {
+  color: #5c4518;
 }
 
 .map-legend {

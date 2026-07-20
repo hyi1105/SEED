@@ -145,18 +145,28 @@ function isStudio(seed) {
   return (seed.blurb || "").includes("工作室");
 }
 
-/** Map stamp label: prefer alias, max 4 chars (章印) */
-function sealText(seed) {
-  const raw = (seed.alias || seed.title || "").replace(/\s+/g, "");
-  return Array.from(raw).slice(0, 4).join("");
+/** Short map caption: prefer short, else first 2 of alias/title */
+function shortLabel(seed) {
+  const raw = (seed.short || seed.alias || seed.title || "").replace(/\s+/g, "");
+  return Array.from(raw).slice(0, 2).join("") || "書";
 }
 
-function sealHtml(seed) {
-  const chars = Array.from(sealText(seed));
-  const n = chars.length;
-  const layout = n >= 3 ? "seal-4" : n === 2 ? "seal-2" : "seal-1";
-  const inner = chars.map((c) => `<span>${escapeHtml(c)}</span>`).join("");
-  return `<span class="seal-face ${layout}" aria-hidden="true">${inner}</span>`;
+function monogram(seed) {
+  return shortLabel(seed);
+}
+
+/** Icon tile: cover image or monogram avatar + caption (future: book avatar) */
+function iconHtml(seed) {
+  const label = shortLabel(seed);
+  const mono = monogram(seed);
+  const cover = seed.cover;
+  let avatar;
+  if (cover) {
+    avatar = `<span class="seed-avatar has-cover"><img src="${escapeHtml(cover)}" alt="" draggable="false" /></span>`;
+  } else {
+    avatar = `<span class="seed-avatar mono" aria-hidden="true">${escapeHtml(mono)}</span>`;
+  }
+  return `${avatar}<span class="seed-caption">${escapeHtml(label)}</span>`;
 }
 
 function renderMap() {
@@ -192,10 +202,10 @@ function renderMap() {
         cell.classList.remove("empty");
         const btn = document.createElement("button");
         btn.type = "button";
-        btn.className = "map-seed seal" + (isStudio(seed) ? " studio" : "");
+        btn.className = "map-seed icon" + (isStudio(seed) ? " studio" : "");
         btn.draggable = true;
-        btn.innerHTML = sealHtml(seed);
-        btn.title = `${seed.title}\n章印：${sealText(seed)}\n${seed.blurb || ""}\n拖曳可改位置，點一下打開`;
+        btn.innerHTML = iconHtml(seed);
+        btn.title = `${seed.title}\n短標：${shortLabel(seed)}\n${seed.blurb || ""}\n拖曳可改位置，點一下打開`;
         btn.setAttribute("aria-label", seed.title);
         btn.style.touchAction = "none";
         btn.addEventListener("dragstart", (e) => {
@@ -309,6 +319,8 @@ function buildSeedsPayload() {
       row: live.row,
       title: live.title ?? s.title,
       alias: live.alias ?? s.alias,
+      short: live.short ?? s.short,
+      cover: live.cover ?? s.cover ?? null,
       path: live.path ?? s.path,
       blurb: live.blurb ?? s.blurb,
       id: live.id ?? s.id,
@@ -321,6 +333,8 @@ function buildSeedsPayload() {
         id: s.id,
         title: s.title,
         alias: s.alias,
+        short: s.short,
+        cover: s.cover ?? null,
         path: s.path,
         blurb: s.blurb,
         col: s.col,
