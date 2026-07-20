@@ -5,9 +5,9 @@ tags: [product, ux, puzzle, seed, homepage]
 status: active
 ---
 
-# 首頁：知識拼圖格
-
 > 原名「知識地圖」。**2026-07-20** 改為拼圖取向：去掉東南西北。詳見 `knowledge-puzzle.md`。
+
+# 首頁：知識拼圖格
 
 ## 摘要
 
