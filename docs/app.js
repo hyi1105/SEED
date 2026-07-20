@@ -54,6 +54,10 @@ function showPanel(name) {
       btn.setAttribute("aria-pressed", pressed ? "true" : "false");
     }
   });
+  const stage = document.querySelector(".stage");
+  if (stage) stage.scrollTop = 0;
+  const panel = $(`panel-${name}`);
+  if (panel) panel.scrollTop = 0;
 }
 
 function updateDraftBar() {
