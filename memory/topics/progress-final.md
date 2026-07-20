@@ -39,3 +39,4 @@ status: active
 ## 發佈紀錄
 
 - 2026-07-20：最終版同步 PR 已合併；GitHub Pages 已重新部署成功。
+- 同日稍晚：使用者確認 https://hyi1105.github.io/SEED/ **可以打開**。
