@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=final2" />
+  <link rel="stylesheet" href="styles.css?v=mobile1" />
   <!-- 預覽請用 raw.githack（會正確當成網頁）。不要用 raw.githubusercontent 或 jsDelivr 開 html，會變純文字。 -->
 </head>
 <body>
@@ -20,20 +20,38 @@
       <p class="hint" id="status">正在載入…</p>
     </header>
 
-    <nav class="actions" aria-label="主要操作">
-      <button type="button" class="btn" data-action="list" aria-pressed="true">知識地圖</button>
-      <button type="button" class="btn" data-action="read">讀現在的</button>
-      <button type="button" class="btn" data-action="edit">自己改</button>
-      <button type="button" class="btn" data-action="diff">看看改了什麼</button>
-      <button type="button" class="btn" data-action="history">回到舊的</button>
-      <button type="button" class="btn btn-primary" data-action="save-version">存成一版</button>
-      <button type="button" class="btn" id="reset-layout" title="回到倉庫預設位置">重置位置</button>
-      <button type="button" class="btn" id="save-layout" title="把目前地圖位置寫進 seeds.json">存地圖位置</button>
-      <button type="button" class="btn" id="token-setup" title="設定 GitHub 鑰匙">設定鑰匙</button>
-      <button type="button" class="btn btn-primary" data-action="ai">請 AI 改</button>
-      <button type="button" class="btn" id="ai-key-setup" title="設定 AI 鑰匙">AI 鑰匙</button>
-      <button type="button" class="btn" id="pack-export" title="打包全部內容與設定">打包帶走</button>
-      <button type="button" class="btn" id="pack-import" title="上傳封包還原">還原回來</button>
+    <nav class="actions" id="actions" aria-label="主要操作">
+      <div class="actions-bar">
+        <div class="actions-core" role="group" aria-label="常用">
+          <button type="button" class="btn" data-action="list" aria-pressed="true">知識地圖</button>
+          <button type="button" class="btn" data-action="read">讀現在的</button>
+          <button type="button" class="btn" data-action="edit">自己改</button>
+          <button type="button" class="btn btn-primary" data-action="save-version">存成一版</button>
+        </div>
+        <button
+          type="button"
+          class="btn actions-more-btn"
+          id="actions-more-btn"
+          aria-expanded="false"
+          aria-controls="actions-drawer"
+        >
+          更多
+        </button>
+      </div>
+      <div class="actions-drawer" id="actions-drawer" hidden>
+        <p class="actions-drawer-label">其他操作</p>
+        <div class="actions-extra" role="group" aria-label="其他操作">
+          <button type="button" class="btn" data-action="diff">看看改了什麼</button>
+          <button type="button" class="btn" data-action="history">回到舊的</button>
+          <button type="button" class="btn btn-primary" data-action="ai">請 AI 改</button>
+          <button type="button" class="btn" id="reset-layout" title="回到倉庫預設位置">重置位置</button>
+          <button type="button" class="btn" id="save-layout" title="把目前地圖位置寫進 seeds.json">存地圖位置</button>
+          <button type="button" class="btn" id="token-setup" title="設定 GitHub 鑰匙">設定鑰匙</button>
+          <button type="button" class="btn" id="ai-key-setup" title="設定 AI 鑰匙">AI 鑰匙</button>
+          <button type="button" class="btn" id="pack-export" title="打包全部內容與設定">打包帶走</button>
+          <button type="button" class="btn" id="pack-import" title="上傳封包還原">還原回來</button>
+        </div>
+      </div>
       <input type="file" id="pack-file" accept=".seedpack,.json,application/json" hidden />
     </nav>
 
@@ -170,6 +188,6 @@
       <a href="https://raw.githack.com/hyi1105/SEED/main/docs/index.html" target="_blank" rel="noopener">raw.githack 知識地圖</a>
     </footer>
   </div>
-  <script src="app.js?v=final2"></script>
+  <script src="app.js?v=mobile1"></script>
 </body>
 </html>
