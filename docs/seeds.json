@@ -9,9 +9,9 @@
     "cols": 10,
     "rows": 10,
     "note": "知識拼圖：拖曳擺放；點進去看完整標題",
-    "savedAt": "2026-07-20T23:47:54.470Z",
+    "savedAt": "2026-07-20T23:58:21.491Z",
     "layoutName": "7/21 上午7:30",
-    "layoutRev": 3
+    "layoutRev": 4
   },
   "seeds": [
     {
@@ -20,9 +20,10 @@
       "alias": "北橫交通",
       "path": "memory/maps/taiwan-roads/beiheng.md",
       "blurb": "偏北",
-      "col": 6,
+      "col": 5,
       "row": 0,
-      "cover": null
+      "cover": null,
+      "archived": false
     },
     {
       "id": "zhongheng",
@@ -32,7 +33,8 @@
       "blurb": "偏中",
       "col": 6,
       "row": 6,
-      "cover": null
+      "cover": null,
+      "archived": false
     },
     {
       "id": "nanheng",
@@ -42,7 +44,8 @@
       "blurb": "偏南",
       "col": 7,
       "row": 4,
-      "cover": null
+      "cover": null,
+      "archived": false
     },
     {
       "id": "suhua",
@@ -52,7 +55,8 @@
       "blurb": "偏東",
       "col": 8,
       "row": 3,
-      "cover": null
+      "cover": null,
+      "archived": false
     },
     {
       "id": "mvp",
@@ -62,7 +66,8 @@
       "blurb": "工作室",
       "col": 2,
       "row": 3,
-      "cover": null
+      "cover": null,
+      "archived": false
     },
     {
       "id": "map-spec",
@@ -72,7 +77,8 @@
       "blurb": "工作室",
       "col": 3,
       "row": 6,
-      "cover": null
+      "cover": null,
+      "archived": false
     },
     {
       "id": "vision",
@@ -82,7 +88,8 @@
       "blurb": "工作室",
       "col": 1,
       "row": 5,
-      "cover": null
+      "cover": null,
+      "archived": false
     },
     {
       "id": "github",
@@ -92,7 +99,8 @@
       "blurb": "工作室",
       "col": 3,
       "row": 0,
-      "cover": null
+      "cover": null,
+      "archived": false
     },
     {
       "id": "setup",
@@ -100,9 +108,10 @@
       "alias": "知識起點",
       "path": "memory/sessions/2026-07-20-kb-setup.md",
       "blurb": "工作室",
-      "col": 4,
-      "row": 2,
-      "cover": null
+      "col": 0,
+      "row": 0,
+      "cover": null,
+      "archived": false
     },
     {
       "id": "index",
@@ -112,7 +121,8 @@
       "blurb": "工作室",
       "col": 6,
       "row": 1,
-      "cover": null
+      "cover": null,
+      "archived": true
     },
     {
       "id": "core",
@@ -122,7 +132,8 @@
       "blurb": "工作室",
       "col": 0,
       "row": 1,
-      "cover": null
+      "cover": null,
+      "archived": true
     },
     {
       "id": "seed-pack",
@@ -130,9 +141,10 @@
       "alias": "打包帶走",
       "path": "memory/topics/seed-pack.md",
       "blurb": "工作室",
-      "col": 5,
+      "col": 6,
       "row": 3,
-      "cover": null
+      "cover": null,
+      "archived": true
     },
     {
       "id": "monetize",
@@ -142,7 +154,8 @@
       "blurb": "工作室",
       "col": 1,
       "row": 1,
-      "cover": null
+      "cover": null,
+      "archived": true
     },
     {
       "id": "progress",
@@ -152,7 +165,8 @@
       "blurb": "工作室",
       "col": 5,
       "row": 7,
-      "cover": null
+      "cover": null,
+      "archived": true
     },
     {
       "id": "lang",
@@ -162,7 +176,8 @@
       "blurb": "工作室",
       "col": 0,
       "row": 5,
-      "cover": null
+      "cover": null,
+      "archived": true
     },
     {
       "id": "learn-cursor",
@@ -172,7 +187,8 @@
       "blurb": "工作室",
       "col": 4,
       "row": 1,
-      "cover": null
+      "cover": null,
+      "archived": true
     },
     {
       "id": "puzzle",
@@ -182,7 +198,8 @@
       "blurb": "工作室",
       "col": 2,
       "row": 8,
-      "cover": null
+      "cover": null,
+      "archived": true
     }
   ]
 }
