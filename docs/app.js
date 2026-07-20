@@ -1,12 +1,15 @@
 const REPO = "hyi1105/SEED";
 const BRANCH = "main";
+const SEEDS_PATH = "docs/seeds.json";
 const RAW = `https://raw.githubusercontent.com/${REPO}/${BRANCH}/`;
 const API = `https://api.github.com/repos/${REPO}`;
 const LAYOUT_KEY = "seed-map-layout-v1";
+const TOKEN_KEY = "seed-github-token-v1";
 
 const state = {
   seeds: [],
   map: { cols: 10, rows: 10, title: "知識地圖", note: "" },
+  catalog: null,
   current: null,
   versions: [],
   panel: "list",
@@ -200,7 +203,9 @@ function moveSeed(id, col, row) {
 }
 
 async function loadCatalog() {
-  const data = await fetchJson("./seeds.json");
+  // Bust CDN cache after writes
+  const data = await fetchJson(`./seeds.json?ts=${Date.now()}`);
+  state.catalog = data;
   state.map = {
     cols: data.map?.cols || 10,
     rows: data.map?.rows || 10,
@@ -216,6 +221,116 @@ async function loadCatalog() {
   $("map-title").textContent = state.map.title;
   $("map-note").textContent = state.map.note;
   renderMap();
+}
+
+function getToken() {
+  return localStorage.getItem(TOKEN_KEY) || "";
+}
+
+function setToken(token) {
+  const t = (token || "").trim();
+  if (t) localStorage.setItem(TOKEN_KEY, t);
+  else localStorage.removeItem(TOKEN_KEY);
+}
+
+function buildSeedsPayload() {
+  const byId = Object.fromEntries(state.seeds.map((s) => [s.id, s]));
+  const base = state.catalog || { repo: REPO, branch: BRANCH, map: state.map, seeds: [] };
+  const seeds = (base.seeds || state.seeds).map((s) => {
+    const live = byId[s.id] || s;
+    return {
+      ...s,
+      col: live.col,
+      row: live.row,
+      title: live.title ?? s.title,
+      path: live.path ?? s.path,
+      blurb: live.blurb ?? s.blurb,
+      id: live.id ?? s.id,
+    };
+  });
+  // Include any new seeds only in state
+  for (const s of state.seeds) {
+    if (!seeds.some((x) => x.id === s.id)) {
+      seeds.push({
+        id: s.id,
+        title: s.title,
+        path: s.path,
+        blurb: s.blurb,
+        col: s.col,
+        row: s.row,
+      });
+    }
+  }
+  return {
+    ...base,
+    repo: base.repo || REPO,
+    branch: base.branch || BRANCH,
+    map: {
+      ...(base.map || {}),
+      ...state.map,
+    },
+    seeds,
+  };
+}
+
+function bytesToBase64(bytes) {
+  let binary = "";
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  }
+  return btoa(binary);
+}
+
+async function githubFetch(url, options = {}) {
+  const token = getToken();
+  if (!token) throw new Error("還沒設定 GitHub 鑰匙，請先按「設定鑰匙」");
+  const res = await fetch(url, {
+    ...options,
+    headers: {
+      Accept: "application/vnd.github+json",
+      Authorization: `Bearer ${token}`,
+      "X-GitHub-Api-Version": "2022-11-28",
+      ...(options.headers || {}),
+    },
+  });
+  if (!res.ok) {
+    let detail = "";
+    try {
+      const err = await res.json();
+      detail = err.message || JSON.stringify(err);
+    } catch {
+      detail = await res.text();
+    }
+    if (res.status === 401 || res.status === 403) {
+      throw new Error(`權杖無效或權限不足（${res.status}）。請重新設定鑰匙，Contents 要 Read and write。`);
+    }
+    throw new Error(`GitHub 寫入失敗（${res.status}）：${detail}`);
+  }
+  return res.json();
+}
+
+async function saveLayoutToRepo() {
+  setStatus("正在把地圖位置寫進 seeds.json…");
+  const payload = buildSeedsPayload();
+  const text = `${JSON.stringify(payload, null, 2)}\n`;
+  const content = bytesToBase64(new TextEncoder().encode(text));
+
+  const meta = await githubFetch(`${API}/contents/${SEEDS_PATH}?ref=${BRANCH}`);
+  const result = await githubFetch(`${API}/contents/${SEEDS_PATH}`, {
+    method: "PUT",
+    body: JSON.stringify({
+      message: "Update knowledge map seed positions",
+      content,
+      sha: meta.sha,
+      branch: BRANCH,
+    }),
+  });
+
+  state.catalog = payload;
+  localStorage.removeItem(LAYOUT_KEY);
+  setStatus(`已寫回倉庫：${SEEDS_PATH}（commit ${String(result.commit?.sha || "").slice(0, 7)}）`);
+  return result;
 }
 
 async function selectSeed(seed) {
@@ -445,10 +560,54 @@ $("reset-layout").addEventListener("click", async () => {
   }
 });
 
+$("token-setup").addEventListener("click", () => {
+  $("token-input").value = getToken() ? "••••••••（已儲存，要換就貼新的）" : "";
+  $("token-dialog").showModal();
+});
+
+$("token-form").addEventListener("submit", (e) => {
+  const submitter = e.submitter;
+  const value = submitter && submitter.value;
+  if (value === "cancel") return;
+  const raw = $("token-input").value.trim();
+  if (raw && !raw.startsWith("••")) {
+    setToken(raw);
+    setStatus("鑰匙已存在這台瀏覽器，可以按「存到倉庫」");
+  } else if (!getToken()) {
+    e.preventDefault();
+    setStatus("請貼上 GitHub 權杖");
+  }
+});
+
+$("token-clear").addEventListener("click", () => {
+  setToken("");
+  $("token-input").value = "";
+  setStatus("已清除鑰匙");
+});
+
+$("save-layout").addEventListener("click", async () => {
+  try {
+    if (!getToken()) {
+      $("token-dialog").showModal();
+      setStatus("請先設定鑰匙，再按「存到倉庫」");
+      return;
+    }
+    await saveLayoutToRepo();
+  } catch (err) {
+    setStatus(err.message || String(err));
+  }
+});
+
 $("run-diff").addEventListener("click", () => {
   runDiff().catch((err) => setStatus(err.message || String(err)));
 });
 
 loadCatalog()
-  .then(() => setStatus("在地圖上點一格，或拖曳改位置"))
+  .then(() =>
+    setStatus(
+      getToken()
+        ? "可拖曳改位置，再按「存到倉庫」寫進 seeds.json"
+        : "可拖曳改位置；要正式寫回倉庫請先「設定鑰匙」"
+    )
+  )
   .catch((err) => setStatus(err.message || String(err)));

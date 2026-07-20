@@ -26,9 +26,32 @@
       <button type="button" class="btn" data-action="diff">看看改了什麼</button>
       <button type="button" class="btn" data-action="history">回到舊的</button>
       <button type="button" class="btn" id="reset-layout" title="回到倉庫預設位置">重置位置</button>
+      <button type="button" class="btn btn-primary" id="save-layout" title="把目前地圖位置寫進 seeds.json">存到倉庫</button>
+      <button type="button" class="btn" id="token-setup" title="設定 GitHub 鑰匙">設定鑰匙</button>
       <button type="button" class="btn btn-muted" data-action="ai" disabled title="下一版">請 AI 改</button>
       <button type="button" class="btn btn-muted" data-action="save" disabled title="下一版">存成一版</button>
     </nav>
+
+    <dialog id="token-dialog" class="token-dialog">
+      <form method="dialog" id="token-form">
+        <h2>設定 GitHub 鑰匙</h2>
+        <p>要把地圖位置寫進倉庫，需要一把自己帳號的權杖（Personal Access Token）。只存在<strong>這台電腦的瀏覽器</strong>，不會上傳到網頁原始碼。</p>
+        <ol class="token-steps">
+          <li>打開 <a href="https://github.com/settings/tokens?type=beta" target="_blank" rel="noopener">Fine-grained tokens</a></li>
+          <li>Generate → 只選 repo <code>SEED</code> → Permissions → Contents：<strong>Read and write</strong></li>
+          <li>產生後貼到下面</li>
+        </ol>
+        <label class="token-label">
+          權杖
+          <input type="password" id="token-input" autocomplete="off" placeholder="github_pat_…" />
+        </label>
+        <div class="token-actions">
+          <button type="submit" class="btn btn-primary" value="save">儲存鑰匙</button>
+          <button type="button" class="btn" id="token-clear">清除鑰匙</button>
+          <button type="submit" class="btn" value="cancel">關閉</button>
+        </div>
+      </form>
+    </dialog>
 
     <section id="panel-list" class="panel panel-map">
       <div class="map-head">
