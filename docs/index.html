@@ -3,18 +3,18 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>SEED — 知識地圖</title>
+  <title>SEED — 知識拼圖</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=ctx1" />
+  <link rel="stylesheet" href="styles.css?v=puzzle1" />
   <!-- 預覽請用 raw.githack（會正確當成網頁）。不要用 raw.githubusercontent 或 jsDelivr 開 html，會變純文字。 -->
 </head>
 <body>
   <div class="app">
     <div class="chrome" id="chrome" data-mode="map">
       <header class="top">
-        <button type="button" class="brand-home" data-action="list" id="brand-home" title="回知識地圖">
+        <button type="button" class="brand-home" data-action="list" id="brand-home" title="回知識拼圖">
           SEED
         </button>
         <p class="hint sr-only" id="status" aria-live="polite">正在載入…</p>
@@ -30,9 +30,10 @@
       </header>
 
       <div class="menu-drawer collapsed" id="menu-drawer" role="menu" aria-label="系統選單">
-        <p class="menu-label">地圖與設定</p>
+        <p class="menu-label">拼圖與設定</p>
         <div class="menu-grid">
-          <button type="button" class="btn" id="save-layout" title="把目前地圖位置寫進 seeds.json">存地圖位置</button>
+          <button type="button" class="btn" id="template-setup" title="選擇拼圖模板">拼圖模板</button>
+          <button type="button" class="btn" id="save-layout" title="把目前拼圖位置寫進 seeds.json">存拼圖位置</button>
           <button type="button" class="btn" id="reset-layout" title="回到倉庫預設位置">重置位置</button>
           <button type="button" class="btn" id="token-setup" title="設定 GitHub 鑰匙">設定鑰匙</button>
           <button type="button" class="btn" id="ai-key-setup" title="設定 AI 鑰匙">AI 鑰匙</button>
@@ -42,7 +43,7 @@
       </div>
 
       <nav class="doc-bar" id="doc-bar" aria-label="筆記操作" hidden>
-        <button type="button" class="btn" data-action="list">回地圖</button>
+        <button type="button" class="btn" data-action="list">回拼圖</button>
         <button type="button" class="btn" data-action="read">讀現在的</button>
         <button type="button" class="btn" data-action="edit">自己改</button>
         <button type="button" class="btn btn-primary" data-action="save-version">存成一版</button>
@@ -56,14 +57,10 @@
 
     <main class="stage">
       <section id="panel-list" class="panel panel-map">
-        <h1 id="map-title" class="sr-only">知識地圖</h1>
+        <h1 id="map-title" class="sr-only">知識拼圖</h1>
         <p id="map-note" class="sr-only"></p>
         <div class="map-shell">
-          <div class="compass compass-n" aria-hidden="true">北</div>
-          <div class="compass compass-s" aria-hidden="true">南</div>
-          <div class="compass compass-w" aria-hidden="true">西</div>
-          <div class="compass compass-e" aria-hidden="true">東</div>
-          <div id="knowledge-map" class="knowledge-map" role="grid" aria-label="知識地圖格子"></div>
+          <div id="knowledge-map" class="knowledge-map" role="grid" aria-label="知識拼圖格子"></div>
         </div>
       </section>
 
@@ -103,6 +100,41 @@
         <pre id="diff-out" class="diff-out" aria-live="polite"></pre>
       </section>
     </main>
+
+    <dialog id="template-dialog" class="token-dialog">
+      <form method="dialog" id="template-form">
+        <h2>選擇拼圖模板</h2>
+        <p>模板決定格子大小與擺法。之後可加更多樣式；現在先這幾種。</p>
+        <label class="token-label">
+          模板
+          <select id="template-select">
+            <option value="grid-8">空白拼圖 8×8</option>
+            <option value="grid-10">空白拼圖 10×10</option>
+            <option value="grid-12">空白拼圖 12×12</option>
+            <option value="demo-taiwan-roads">示範：台灣橫貫公路</option>
+          </select>
+        </label>
+        <label class="token-label">
+          拼圖類型
+          <select id="puzzle-kind">
+            <option value="personal">個人版（可設公開／私人）</option>
+            <option value="community">社群版（搶位置，像菜市場攤位）</option>
+          </select>
+        </label>
+        <label class="token-label" id="visibility-label">
+          個人版可見範圍
+          <select id="puzzle-visibility">
+            <option value="public">公開</option>
+            <option value="private">私人</option>
+          </select>
+        </label>
+        <p class="lead" id="template-hint">社群版的點數搶位之後再接；目前先記住你的選擇。</p>
+        <div class="token-actions">
+          <button type="submit" class="btn btn-primary" value="save">套用</button>
+          <button type="submit" class="btn" value="cancel">取消</button>
+        </div>
+      </form>
+    </dialog>
 
     <dialog id="token-dialog" class="token-dialog">
       <form method="dialog" id="token-form">
@@ -179,6 +211,6 @@
       </form>
     </dialog>
   </div>
-  <script src="app.js?v=ctx1"></script>
+  <script src="app.js?v=puzzle1"></script>
 </body>
 </html>
