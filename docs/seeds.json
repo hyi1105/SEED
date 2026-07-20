@@ -9,9 +9,9 @@
     "cols": 10,
     "rows": 10,
     "note": "知識拼圖：拖曳擺放；點進去看完整標題",
-    "savedAt": "2026-07-20T23:40:02.937Z",
+    "savedAt": "2026-07-20T23:47:54.470Z",
     "layoutName": "7/21 上午7:30",
-    "layoutRev": 2
+    "layoutRev": 3
   },
   "seeds": [
     {
@@ -21,7 +21,7 @@
       "path": "memory/maps/taiwan-roads/beiheng.md",
       "blurb": "偏北",
       "col": 6,
-      "row": 1,
+      "row": 0,
       "cover": null
     },
     {
@@ -90,8 +90,8 @@
       "alias": "入門指南",
       "path": "memory/topics/github-for-seed.md",
       "blurb": "工作室",
-      "col": 2,
-      "row": 1,
+      "col": 3,
+      "row": 0,
       "cover": null
     },
     {
@@ -101,7 +101,7 @@
       "path": "memory/sessions/2026-07-20-kb-setup.md",
       "blurb": "工作室",
       "col": 4,
-      "row": 3,
+      "row": 2,
       "cover": null
     },
     {
@@ -110,8 +110,8 @@
       "alias": "總目錄",
       "path": "memory/index.md",
       "blurb": "工作室",
-      "col": 4,
-      "row": 2,
+      "col": 6,
+      "row": 1,
       "cover": null
     },
     {
@@ -120,8 +120,8 @@
       "alias": "核心清單",
       "path": "memory/topics/core-features.md",
       "blurb": "工作室",
-      "col": 2,
-      "row": 2,
+      "col": 0,
+      "row": 1,
       "cover": null
     },
     {
@@ -131,7 +131,7 @@
       "path": "memory/topics/seed-pack.md",
       "blurb": "工作室",
       "col": 5,
-      "row": 5,
+      "row": 3,
       "cover": null
     },
     {
@@ -141,7 +141,7 @@
       "path": "memory/topics/open-source-monetize.md",
       "blurb": "工作室",
       "col": 1,
-      "row": 3,
+      "row": 1,
       "cover": null
     },
     {
@@ -150,8 +150,8 @@
       "alias": "進度總表",
       "path": "memory/topics/progress-final.md",
       "blurb": "工作室",
-      "col": 4,
-      "row": 6,
+      "col": 5,
+      "row": 7,
       "cover": null
     },
     {
@@ -160,8 +160,8 @@
       "alias": "繁體中文",
       "path": "memory/topics/language-zh-hant.md",
       "blurb": "工作室",
-      "col": 1,
-      "row": 4,
+      "col": 0,
+      "row": 5,
       "cover": null
     },
     {
@@ -180,8 +180,8 @@
       "alias": "拼圖規格",
       "path": "memory/topics/knowledge-puzzle.md",
       "blurb": "工作室",
-      "col": 1,
-      "row": 6,
+      "col": 2,
+      "row": 8,
       "cover": null
     }
   ]
