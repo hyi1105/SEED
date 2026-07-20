@@ -26,8 +26,9 @@ status: active
 | 範圍 | 先個人版，對應真實需求 |
 | 場景 A（現在） | Cursor／新系統上手 → 知識庫 → 可分享 |
 | 場景 B（未來） | 接手舊系統、吃下別人工作 |
-| 版本底座 | **B：自建版本體驗**（阿嬤級 UX） |
+| 版本底座 | **B：自建版本體驗**（阿嬤級 UX）；託管於 Public GitHub + Pages |
 | 北極星 UX | 80 歲阿嬤都會用：無 commit／push／branch 用語 |
+| 公開策略 | Public repo [`hyi1105/SEED`](https://github.com/hyi1105/SEED)；只放學習筆記；目標與陌生人分享並在 Pages 上看版本差異 |
 
 ## Desired capabilities (personal MVP)
 
