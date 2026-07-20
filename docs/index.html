@@ -23,23 +23,24 @@
     <nav class="actions" aria-label="主要操作">
       <button type="button" class="btn" data-action="list" aria-pressed="true">知識地圖</button>
       <button type="button" class="btn" data-action="read">讀現在的</button>
+      <button type="button" class="btn" data-action="edit">自己改</button>
       <button type="button" class="btn" data-action="diff">看看改了什麼</button>
       <button type="button" class="btn" data-action="history">回到舊的</button>
+      <button type="button" class="btn btn-primary" data-action="save-version">存成一版</button>
       <button type="button" class="btn" id="reset-layout" title="回到倉庫預設位置">重置位置</button>
-      <button type="button" class="btn btn-primary" id="save-layout" title="把目前地圖位置寫進 seeds.json">存到倉庫</button>
+      <button type="button" class="btn" id="save-layout" title="把目前地圖位置寫進 seeds.json">存地圖位置</button>
       <button type="button" class="btn" id="token-setup" title="設定 GitHub 鑰匙">設定鑰匙</button>
       <button type="button" class="btn btn-muted" data-action="ai" disabled title="下一版">請 AI 改</button>
-      <button type="button" class="btn btn-muted" data-action="save" disabled title="下一版">存成一版</button>
     </nav>
 
     <dialog id="token-dialog" class="token-dialog">
       <form method="dialog" id="token-form">
         <h2>設定 GitHub 鑰匙</h2>
-        <p>要把地圖位置寫進倉庫，需要一把自己帳號的權杖（Personal Access Token）。只存在<strong>這台電腦的瀏覽器</strong>，不會上傳到網頁原始碼。</p>
+        <p>要把地圖位置或筆記內容寫進倉庫，需要權杖。只存在<strong>這台電腦的瀏覽器</strong>，不會進網頁原始碼。</p>
         <ol class="token-steps">
           <li>打開 <a href="https://github.com/settings/tokens?type=beta" target="_blank" rel="noopener">Fine-grained tokens</a></li>
           <li>Generate → 只選 repo <code>SEED</code> → Permissions → Contents：<strong>Read and write</strong></li>
-          <li>產生後貼到下面</li>
+          <li>產生後貼到下面（不要貼到聊天）</li>
         </ol>
         <label class="token-label">
           權杖
@@ -49,6 +50,21 @@
           <button type="submit" class="btn btn-primary" value="save">儲存鑰匙</button>
           <button type="button" class="btn" id="token-clear">清除鑰匙</button>
           <button type="submit" class="btn" value="cancel">關閉</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="version-dialog" class="token-dialog">
+      <form method="dialog" id="version-form">
+        <h2>存成一版</h2>
+        <p>幫這一版取個好記的名字（例如「初稿」「補了坑」）。會寫進倉庫，之後可在「回到舊的」找到。</p>
+        <label class="token-label">
+          這一版叫
+          <input type="text" id="version-name" maxlength="40" placeholder="例如：7月20日 早上" />
+        </label>
+        <div class="token-actions">
+          <button type="submit" class="btn btn-primary" value="save">存進去</button>
+          <button type="submit" class="btn" value="cancel">取消</button>
         </div>
       </form>
     </dialog>
@@ -65,17 +81,26 @@
         <div class="compass compass-e" aria-hidden="true">東</div>
         <div id="knowledge-map" class="knowledge-map" role="grid" aria-label="知識地圖格子"></div>
       </div>
-      <p class="map-legend">格子上是「章印」別名（最多四字）；完整名稱滑鼠停在上面或點進去才看。左下工作室、中間交通四題。</p>
+      <p class="map-legend">格子上是「章印」別名（最多四字）。點開後可自己改、存成一版。</p>
     </section>
 
     <section id="panel-read" class="panel hidden">
-      <h1 id="read-title">讀現在的</h1>
+      <div class="read-head">
+        <h1 id="read-title">讀現在的</h1>
+        <div id="draft-bar" class="draft-bar hidden">
+          <span class="draft-label">你改過了，還沒存進倉庫</span>
+          <button type="button" class="btn" id="draft-diff">看看這次改了什麼</button>
+          <button type="button" class="btn btn-primary" id="draft-keep">用這次的</button>
+          <button type="button" class="btn" id="draft-discard">不要</button>
+        </div>
+      </div>
       <article id="read-body" class="prose"></article>
+      <textarea id="edit-body" class="edit-body hidden" spellcheck="true" aria-label="編輯筆記"></textarea>
     </section>
 
     <section id="panel-history" class="panel hidden">
       <h1>回到舊的</h1>
-      <p class="lead">每一列是曾經存過的樣子（依時間）。點「當成左邊／右邊」再去「看看改了什麼」。</p>
+      <p class="lead">每一列是曾經存過的樣子。可預覽；若要恢復成那版內容，用「用這版繼續改」再「存成一版」。</p>
       <ul id="version-list" class="version-list"></ul>
     </section>
 
@@ -100,8 +125,6 @@
       <span>·</span>
       <span>正確預覽：</span>
       <a href="https://raw.githack.com/hyi1105/SEED/main/docs/index.html" target="_blank" rel="noopener">raw.githack 知識地圖</a>
-      <span>·</span>
-      <span>勿用 raw.githubusercontent／jsDelivr 開 html（會變純文字）</span>
     </footer>
   </div>
   <script src="app.js"></script>

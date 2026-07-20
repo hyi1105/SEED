@@ -16,6 +16,10 @@ const state = {
   dragId: null,
   touchDragging: false,
   suppressClick: false,
+  originalText: "",
+  workingText: "",
+  editing: false,
+  draftAccepted: false,
 };
 
 const $ = (id) => document.getElementById(id);
@@ -32,11 +36,57 @@ function showPanel(name) {
   }
   document.querySelectorAll(".actions .btn[data-action]").forEach((btn) => {
     const action = btn.dataset.action;
-    const mapActions = { list: "list", read: "read", history: "history", diff: "diff" };
+    const mapActions = {
+      list: "list",
+      read: "read",
+      edit: "read",
+      history: "history",
+      diff: "diff",
+    };
     if (mapActions[action]) {
-      btn.setAttribute("aria-pressed", mapActions[action] === name ? "true" : "false");
+      const pressed =
+        mapActions[action] === name &&
+        (action !== "edit" || state.editing) &&
+        (action !== "read" || !state.editing);
+      btn.setAttribute("aria-pressed", pressed ? "true" : "false");
     }
   });
+}
+
+function updateDraftBar() {
+  const dirty = state.editing && state.workingText !== state.originalText;
+  $("draft-bar").classList.toggle("hidden", !dirty);
+}
+
+function setViewMode(text) {
+  state.editing = false;
+  $("read-body").classList.remove("hidden");
+  $("edit-body").classList.add("hidden");
+  $("read-body").textContent = text;
+  $("draft-bar").classList.add("hidden");
+}
+
+function setEditMode(text) {
+  state.editing = true;
+  $("read-body").classList.add("hidden");
+  $("edit-body").classList.remove("hidden");
+  $("edit-body").value = text;
+  state.workingText = text;
+  updateDraftBar();
+  $("edit-body").focus();
+}
+
+function defaultVersionName() {
+  try {
+    return new Intl.DateTimeFormat("zh-TW", {
+      month: "numeric",
+      day: "numeric",
+      hour: "numeric",
+      minute: "numeric",
+    }).format(new Date());
+  } catch {
+    return new Date().toISOString().slice(0, 16);
+  }
 }
 
 function escapeHtml(s) {
@@ -352,9 +402,20 @@ async function saveLayoutToRepo() {
 
 async function selectSeed(seed) {
   state.current = seed;
+  state.originalText = "";
+  state.workingText = "";
+  state.draftAccepted = false;
   setStatus(`已選：${seed.title}`);
   await Promise.all([readCurrent(), loadVersions()]);
   showPanel("read");
+}
+
+async function loadSeedText() {
+  if (!state.current) throw new Error("請先在地圖上點一份筆記");
+  const text = await fetchText(`${RAW}${state.current.path}?ts=${Date.now()}`);
+  state.originalText = text;
+  state.workingText = text;
+  return text;
 }
 
 async function readCurrent() {
@@ -364,11 +425,89 @@ async function readCurrent() {
     return;
   }
   setStatus("正在讀現在的內容…");
-  const text = await fetchText(RAW + state.current.path);
+  const text = await loadSeedText();
   $("read-title").textContent = state.current.title;
-  $("read-body").textContent = text;
+  setViewMode(text);
   setStatus(`正在看：${state.current.title}`);
   showPanel("read");
+}
+
+async function startEdit() {
+  if (!state.current) {
+    setStatus("請先在地圖上點一份筆記");
+    showPanel("list");
+    return;
+  }
+  if (!state.originalText) await loadSeedText();
+  $("read-title").textContent = `${state.current.title}（自己改）`;
+  setEditMode(state.workingText || state.originalText);
+  setStatus("直接改文字；改完可先「看看這次改了什麼」，再「存成一版」");
+  showPanel("read");
+}
+
+function showDraftDiff() {
+  const parts = diffLines(state.originalText, state.workingText);
+  const out = $("diff-out");
+  out.innerHTML = parts
+    .map((p) => {
+      const prefix = p.type === "add" ? "+ " : p.type === "del" ? "- " : "  ";
+      return `<span class="${p.type}">${prefix}${escapeHtml(p.text)}</span>`;
+    })
+    .join("");
+  const adds = parts.filter((p) => p.type === "add").length;
+  const dels = parts.filter((p) => p.type === "del").length;
+  // Fill selects with pseudo options for this draft session
+  $("diff-old").innerHTML = `<option value="original">存進倉庫前（舊的）</option>`;
+  $("diff-new").innerHTML = `<option value="draft">你這次改的（新的）</option>`;
+  setStatus(`這次修改：新增 ${adds} 行，刪除 ${dels} 行`);
+  showPanel("diff");
+}
+
+function keepDraft() {
+  state.draftAccepted = true;
+  setStatus("已採用這次的修改（還在畫面上；要永久保存請按「存成一版」）");
+  updateDraftBar();
+}
+
+function discardDraft() {
+  state.workingText = state.originalText;
+  state.draftAccepted = false;
+  if (state.editing) {
+    $("edit-body").value = state.originalText;
+  } else {
+    setViewMode(state.originalText);
+  }
+  updateDraftBar();
+  setStatus("已放棄這次的修改，回到存進倉庫前的內容");
+}
+
+async function saveVersionToRepo(versionName) {
+  if (!state.current) throw new Error("請先選一份筆記");
+  const text = state.editing ? $("edit-body").value : state.workingText || state.originalText;
+  if (text == null) throw new Error("沒有可存的內容");
+  setStatus("正在存成一版…");
+  const content = bytesToBase64(new TextEncoder().encode(text));
+  const path = state.current.path;
+  const meta = await githubFetch(`${API}/contents/${path}?ref=${BRANCH}`);
+  const label = versionName || defaultVersionName();
+  const result = await githubFetch(`${API}/contents/${path}`, {
+    method: "PUT",
+    body: JSON.stringify({
+      message: `存成一版：${label}`,
+      content,
+      sha: meta.sha,
+      branch: BRANCH,
+    }),
+  });
+  state.originalText = text;
+  state.workingText = text;
+  state.draftAccepted = false;
+  $("read-title").textContent = state.current.title;
+  setViewMode(text);
+  await loadVersions();
+  setStatus(`已存成一版「${label}」（${String(result.commit?.sha || "").slice(0, 7)}）`);
+  showPanel("read");
+  return result;
 }
 
 function formatWhen(iso) {
@@ -427,10 +566,27 @@ async function loadVersions() {
     });
     li.querySelector('[data-side="open"]').addEventListener("click", async () => {
       const text = await fetchFileAt(v.sha);
+      state.originalText = state.originalText || text;
+      state.workingText = text;
       $("read-title").textContent = `${state.current.title}（舊版 ${formatWhen(v.when)}）`;
-      $("read-body").textContent = text;
+      setViewMode(text);
+      setStatus("已打開舊版預覽。若要用這版繼續改，按「自己改」再「存成一版」");
       showPanel("read");
     });
+    const useBtn = document.createElement("button");
+    useBtn.type = "button";
+    useBtn.className = "btn btn-primary";
+    useBtn.textContent = "用這版繼續改";
+    useBtn.addEventListener("click", async () => {
+      const text = await fetchFileAt(v.sha);
+      if (!state.originalText) await loadSeedText();
+      state.workingText = text;
+      $("read-title").textContent = `${state.current.title}（從舊版繼續）`;
+      setEditMode(text);
+      setStatus("已載入舊版當草稿；確認後按「存成一版」才會寫回倉庫");
+      showPanel("read");
+    });
+    li.querySelector(".row-actions").appendChild(useBtn);
     list.appendChild(li);
   }
 
@@ -509,9 +665,13 @@ async function runDiff() {
     showPanel("list");
     return;
   }
-  if (!state.versions.length) await loadVersions();
   const oldSha = $("diff-old").value;
   const newSha = $("diff-new").value;
+  if (oldSha === "original" && newSha === "draft") {
+    showDraftDiff();
+    return;
+  }
+  if (!state.versions.length) await loadVersions();
   if (!oldSha || !newSha) {
     setStatus("請先在「回到舊的」選兩個版本");
     return;
@@ -542,6 +702,22 @@ document.querySelector(".actions").addEventListener("click", async (e) => {
   try {
     if (action === "list") showPanel("list");
     if (action === "read") await readCurrent();
+    if (action === "edit") await startEdit();
+    if (action === "save-version") {
+      if (!state.current) {
+        setStatus("請先在地圖上點一份筆記");
+        showPanel("list");
+        return;
+      }
+      if (state.editing) state.workingText = $("edit-body").value;
+      if (!getToken()) {
+        $("token-dialog").showModal();
+        setStatus("請先設定鑰匙，再存成一版");
+        return;
+      }
+      $("version-name").value = defaultVersionName();
+      $("version-dialog").showModal();
+    }
     if (action === "history") {
       if (!state.current) {
         setStatus("請先在地圖上點一份筆記");
@@ -557,10 +733,48 @@ document.querySelector(".actions").addEventListener("click", async (e) => {
         showPanel("list");
         return;
       }
+      if (state.editing) state.workingText = $("edit-body").value;
+      if (state.workingText && state.workingText !== state.originalText) {
+        showDraftDiff();
+        return;
+      }
       if (!state.versions.length) await loadVersions();
       fillDiffSelects();
       showPanel("diff");
     }
+  } catch (err) {
+    setStatus(err.message || String(err));
+  }
+});
+
+$("edit-body").addEventListener("input", () => {
+  state.workingText = $("edit-body").value;
+  updateDraftBar();
+});
+
+$("draft-diff").addEventListener("click", () => {
+  if (state.editing) state.workingText = $("edit-body").value;
+  showDraftDiff();
+});
+
+$("draft-keep").addEventListener("click", () => {
+  if (state.editing) state.workingText = $("edit-body").value;
+  keepDraft();
+});
+
+$("draft-discard").addEventListener("click", () => {
+  discardDraft();
+});
+
+$("version-form").addEventListener("submit", async (e) => {
+  const submitter = e.submitter;
+  if (submitter && submitter.value === "cancel") return;
+  e.preventDefault();
+  const name = $("version-name").value.trim() || defaultVersionName();
+  $("version-dialog").close();
+  try {
+    if (state.editing) state.workingText = $("edit-body").value;
+    await saveVersionToRepo(name);
   } catch (err) {
     setStatus(err.message || String(err));
   }

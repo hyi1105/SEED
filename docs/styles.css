@@ -418,6 +418,54 @@ h1 {
   font-size: 0.92rem;
 }
 
+.read-head {
+  display: grid;
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+}
+
+.read-head h1 {
+  margin: 0;
+}
+
+.draft-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  align-items: center;
+  padding: 0.65rem 0.75rem;
+  border-radius: 12px;
+  background: var(--accent-soft);
+  border: 1px solid #9bc4b0;
+}
+
+.draft-bar.hidden {
+  display: none;
+}
+
+.draft-label {
+  font-weight: 500;
+  margin-right: 0.25rem;
+}
+
+.edit-body {
+  width: 100%;
+  min-height: min(60vh, 520px);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 1rem 1.1rem;
+  font: inherit;
+  line-height: 1.65;
+  resize: vertical;
+  background: #fff;
+  color: var(--ink);
+}
+
+.edit-body.hidden,
+.prose.hidden {
+  display: none;
+}
+
 @media (max-width: 640px) {
   .map-shell {
     padding: 1.25rem 0.35rem;
