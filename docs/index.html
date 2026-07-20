@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SEED — 知識煉化</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="top">
+      <div class="brand">
+        <p class="brand-name">SEED</p>
+        <p class="brand-tag">把學習筆記煉成可分享的知識</p>
+      </div>
+      <p class="hint" id="status">正在載入…</p>
+    </header>
+
+    <nav class="actions" aria-label="主要操作">
+      <button type="button" class="btn" data-action="list" aria-pressed="true">選一份</button>
+      <button type="button" class="btn" data-action="read">讀現在的</button>
+      <button type="button" class="btn" data-action="diff">看看改了什麼</button>
+      <button type="button" class="btn" data-action="history">回到舊的</button>
+      <button type="button" class="btn btn-muted" data-action="ai" disabled title="下一版">請 AI 改</button>
+      <button type="button" class="btn btn-muted" data-action="save" disabled title="下一版">存成一版</button>
+    </nav>
+
+    <section id="panel-list" class="panel">
+      <h1>選一份筆記</h1>
+      <p class="lead">公開學習筆記，歡迎陌生人閱讀。點一下開始。</p>
+      <ul id="seed-list" class="seed-list"></ul>
+    </section>
+
+    <section id="panel-read" class="panel hidden">
+      <h1 id="read-title">讀現在的</h1>
+      <article id="read-body" class="prose"></article>
+    </section>
+
+    <section id="panel-history" class="panel hidden">
+      <h1>回到舊的</h1>
+      <p class="lead">每一列是曾經存過的樣子（依時間）。點「當成左邊／右邊」再去「看看改了什麼」。</p>
+      <ul id="version-list" class="version-list"></ul>
+    </section>
+
+    <section id="panel-diff" class="panel hidden">
+      <h1>看看改了什麼</h1>
+      <div class="diff-picks">
+        <label>
+          舊的（左）
+          <select id="diff-old"></select>
+        </label>
+        <label>
+          新的（右）
+          <select id="diff-new"></select>
+        </label>
+        <button type="button" class="btn btn-primary" id="run-diff">顯示差異</button>
+      </div>
+      <pre id="diff-out" class="diff-out" aria-live="polite"></pre>
+    </section>
+
+    <footer class="foot">
+      <a href="https://github.com/hyi1105/SEED" target="_blank" rel="noopener">在 GitHub 看原始檔</a>
+      <span>·</span>
+      <span>第一版：讀取與版本差異；「請 AI 改／存成一版」下一版再加</span>
+    </footer>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>

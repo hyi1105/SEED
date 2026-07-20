@@ -1,0 +1,30 @@
+{
+  "repo": "hyi1105/SEED",
+  "branch": "main",
+  "seeds": [
+    {
+      "id": "index",
+      "title": "知識庫目錄",
+      "path": "memory/index.md",
+      "blurb": "所有筆記的入口"
+    },
+    {
+      "id": "mvp",
+      "title": "個人 MVP 規格",
+      "path": "memory/topics/personal-mvp-spec.md",
+      "blurb": "阿嬤級六動作要做什麼"
+    },
+    {
+      "id": "vision",
+      "title": "產品願景",
+      "path": "memory/sessions/2026-07-20-platform-vision.md",
+      "blurb": "為什麼做 SEED、選自建版本體驗"
+    },
+    {
+      "id": "setup",
+      "title": "知識庫怎麼開始的",
+      "path": "memory/sessions/2026-07-20-kb-setup.md",
+      "blurb": "Cursor 協作、貼圖、手機與 GitHub"
+    }
+  ]
+}

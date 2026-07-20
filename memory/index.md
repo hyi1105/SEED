@@ -16,3 +16,8 @@
 ## Topics
 
 - 個人 MVP 一頁規格（阿嬤級六動作）— [topics/personal-mvp-spec.md](topics/personal-mvp-spec.md)
+
+## Public UI
+
+- GitHub Pages 操作畫面：`docs/` → https://hyi1105.github.io/SEED/
+- Seed 列表設定：`docs/seeds.json`
