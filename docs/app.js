@@ -3,6 +3,8 @@ const BRANCH = "main";
 const SEEDS_PATH = "docs/seeds.json";
 const LAYOUT_HISTORY_PATH = "docs/puzzle-layouts.json";
 const MAX_LAYOUT_VERSIONS = 30;
+const MAX_LAYOUT_SERIES = 20;
+const MAX_REVS_PER_LAYOUT = 30;
 const RAW = `https://raw.githubusercontent.com/${REPO}/${BRANCH}/`;
 const API = `https://api.github.com/repos/${REPO}`;
 const LAYOUT_KEY = "seed-map-layout-v1";
@@ -65,6 +67,25 @@ function formatSavedAt(iso) {
   }
 }
 
+function formatSavedAtDate(iso) {
+  if (!iso) return "";
+  try {
+    const d = new Date(iso);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}/${m}/${day}`;
+  } catch {
+    return String(iso).slice(0, 10);
+  }
+}
+
+function templateDisplayLabel() {
+  const id = state.map.template || "grid-10";
+  const full = PUZZLE_TEMPLATES[id]?.label || id;
+  return full.replace(/^空白拼圖\s*/, "");
+}
+
 function showToast(msg, type = "info") {
   addNotify(msg);
   const el = $("toast");
@@ -116,7 +137,7 @@ function showPanel(name) {
     if (onMap) docBar.setAttribute("hidden", "");
     else docBar.removeAttribute("hidden");
   }
-  setMenuOpen(false);
+  closeAllPopovers();
 
   document.querySelectorAll("#doc-bar .btn[data-action]").forEach((btn) => {
     const action = btn.dataset.action;
@@ -140,6 +161,7 @@ function showPanel(name) {
   if (stage) stage.scrollTop = 0;
   const panel = $(`panel-${name}`);
   if (panel) panel.scrollTop = 0;
+  updatePathBrand();
   updateSyncUi();
 }
 
@@ -368,26 +390,104 @@ async function saveLayoutHistoryFile(data) {
   await putRepoFile(LAYOUT_HISTORY_PATH, text, "Update puzzle layout history");
 }
 
-async function appendLayoutVersion() {
-  const history = await loadLayoutHistoryFile();
-  const snapshot = buildLayoutSnapshot();
-  const entry = {
-    id: Date.now().toString(36),
-    savedAt: new Date().toISOString(),
-    label: defaultVersionName(),
-    ...snapshot,
-  };
-  history.versions = [entry, ...(history.versions || [])].slice(0, MAX_LAYOUT_VERSIONS);
-  await saveLayoutHistoryFile(history);
-  return entry;
+function normalizeLayoutHistory(raw) {
+  if (raw?.layouts?.length) return { layouts: raw.layouts };
+  const flat = raw?.versions || [];
+  const layouts = [];
+  const byName = new Map();
+  for (const v of flat) {
+    const name = v.label || formatSavedAtDate(v.savedAt) || "未命名";
+    if (!byName.has(name)) {
+      byName.set(name, {
+        id: v.layoutId || `${name}-${v.id || Date.now()}`,
+        name,
+        versions: [],
+      });
+    }
+    const layout = byName.get(name);
+    layout.versions.push({
+      rev: layout.versions.length + 1,
+      savedAt: v.savedAt,
+      map: v.map,
+      positions: v.positions,
+    });
+  }
+  for (const layout of byName.values()) {
+    layout.versions.sort((a, b) => b.rev - a.rev);
+    layouts.push(layout);
+  }
+  layouts.sort((a, b) => {
+    const ta = a.versions[0]?.savedAt || "";
+    const tb = b.versions[0]?.savedAt || "";
+    return tb.localeCompare(ta);
+  });
+  return { layouts };
 }
 
-function applyLayoutSnapshot(snapshot) {
+function getCurrentLayoutName() {
+  return state.map.layoutName || state.catalog?.map?.layoutName || "";
+}
+
+function getCurrentLayoutRev() {
+  const rev = state.map.layoutRev ?? state.catalog?.map?.layoutRev;
+  return Number.isInteger(rev) ? rev : 0;
+}
+
+function layoutSaveLabel(saveInfo, name, rev) {
+  if (saveInfo.mode === "new") return `另存拼圖：${name} v1`;
+  return `存拼圖：${name} v${rev}`;
+}
+
+async function appendLayoutVersion(saveInfo) {
+  const raw = await loadLayoutHistoryFile();
+  const history = normalizeLayoutHistory(raw);
+  const snapshot = buildLayoutSnapshot();
+  const now = new Date().toISOString();
+  let layout;
+  let rev;
+
+  if (saveInfo.mode === "new") {
+    const name = saveInfo.name.trim();
+    layout = { id: Date.now().toString(36), name, versions: [] };
+    history.layouts.unshift(layout);
+    rev = 1;
+  } else {
+    const name = getCurrentLayoutName() || defaultVersionName();
+    layout = history.layouts.find((l) => l.name === name);
+    if (!layout) {
+      layout = { id: Date.now().toString(36), name, versions: [] };
+      history.layouts.unshift(layout);
+    }
+    rev = (layout.versions[0]?.rev || 0) + 1;
+  }
+
+  layout.versions.unshift({
+    rev,
+    savedAt: now,
+    map: snapshot.map,
+    positions: snapshot.positions,
+  });
+  layout.versions = layout.versions.slice(0, MAX_REVS_PER_LAYOUT);
+  history.layouts = [layout, ...history.layouts.filter((l) => l.id !== layout.id)].slice(
+    0,
+    MAX_LAYOUT_SERIES
+  );
+
+  state.map.layoutName = layout.name;
+  state.map.layoutRev = rev;
+
+  await saveLayoutHistoryFile(history);
+  return { layout, rev };
+}
+
+function applyLayoutSnapshot(snapshot, meta = {}) {
   if (snapshot.map) {
     state.map = { ...state.map, ...snapshot.map };
     $("map-title").textContent = state.map.title || "知識拼圖";
     $("map-note").textContent = state.map.note || "";
   }
+  if (meta.layoutName) state.map.layoutName = meta.layoutName;
+  if (Number.isInteger(meta.rev)) state.map.layoutRev = meta.rev;
   if (snapshot.positions) {
     const pos = Object.fromEntries(snapshot.positions.map((p) => [p.id, p]));
     for (const s of state.seeds) {
@@ -404,39 +504,49 @@ function applyLayoutSnapshot(snapshot) {
 }
 
 async function openLayoutHistoryDialog() {
-  setMenuOpen(false);
-  setFairyOpen(false);
-  setPopoverOpen(null);
-  const history = await loadLayoutHistoryFile();
+  closeAllPopovers();
+  const history = normalizeLayoutHistory(await loadLayoutHistoryFile());
   const list = $("layout-history-list");
   list.innerHTML = "";
-  const versions = history.versions || [];
-  if (!versions.length) {
+  const layouts = history.layouts || [];
+  if (!layouts.length) {
     list.innerHTML = '<li class="layout-history-empty">還沒有排版紀錄。先按存檔圖示或選單「存拼圖位置」。</li>';
   } else {
-    for (const v of versions) {
-      const li = document.createElement("li");
-      li.className = "layout-history-item";
-      const head = document.createElement("div");
-      head.className = "layout-history-head";
-      head.innerHTML = `<strong>${escapeHtml(v.label || "排版")}</strong><span class="muted">${escapeHtml(formatSavedAt(v.savedAt))}</span>`;
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "btn btn-primary";
-      btn.textContent = "用這版排版";
-      btn.addEventListener("click", () => {
-        const ok = window.confirm(
-          `恢復「${v.label || formatSavedAt(v.savedAt)}」的排版？\n\n會先套用在畫面上；若要永久保存請再按存檔。`
-        );
-        if (!ok) return;
-        applyLayoutSnapshot(v);
-        $("layout-history-dialog").close();
-        showToast("已套用舊排版；記得按存檔寫進倉庫", "info");
-        showPanel("list");
-      });
-      li.appendChild(head);
-      li.appendChild(btn);
-      list.appendChild(li);
+    for (const layout of layouts) {
+      const group = document.createElement("li");
+      group.className = "layout-history-group";
+      const title = document.createElement("p");
+      title.className = "layout-group-name";
+      title.textContent = layout.name;
+      group.appendChild(title);
+      const sub = document.createElement("ul");
+      sub.className = "layout-rev-list";
+      for (const v of layout.versions || []) {
+        const item = document.createElement("li");
+        item.className = "layout-history-item";
+        const head = document.createElement("div");
+        head.className = "layout-history-head";
+        head.innerHTML = `<strong>v${v.rev}</strong><span class="muted">${escapeHtml(formatSavedAt(v.savedAt))}</span>`;
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "btn btn-primary";
+        btn.textContent = "用這版";
+        btn.addEventListener("click", () => {
+          const ok = window.confirm(
+            `恢復「${layout.name} v${v.rev}」？\n\n會先套用在畫面上；若要永久保存請再按存檔。`
+          );
+          if (!ok) return;
+          applyLayoutSnapshot(v, { layoutName: layout.name, rev: v.rev });
+          $("layout-history-dialog").close();
+          showToast(`已套用 ${layout.name} v${v.rev}；記得按存檔寫進倉庫`, "info");
+          showPanel("list");
+        });
+        item.appendChild(head);
+        item.appendChild(btn);
+        sub.appendChild(item);
+      }
+      group.appendChild(sub);
+      list.appendChild(group);
     }
   }
   $("layout-history-dialog").showModal();
@@ -473,17 +583,18 @@ function updateSyncUi() {
   const dot = $("sync-dot");
   if (dot) dot.dataset.state = dirty ? "dirty" : savedAt ? "saved" : "unknown";
 
-  const infoKind = $("info-kind");
-  if (infoKind) infoKind.textContent = puzzleKindLabel();
+  const infoKindSwitch = $("info-kind-switch");
+  if (infoKindSwitch) infoKindSwitch.textContent = puzzleKindLabel();
 
   const infoSaved = $("info-saved-at");
   if (infoSaved) {
     if (savedAt) {
+      const dateLabel = formatSavedAtDate(savedAt);
       infoSaved.textContent = dirty
-        ? `最後存檔 ${formatSavedAt(savedAt)}（有未存異動）`
-        : `最後存檔 ${formatSavedAt(savedAt)}`;
+        ? `${dateLabel}（有未存異動）`
+        : dateLabel;
     } else {
-      infoSaved.textContent = dirty ? "有異動，尚未存過倉庫" : "尚未存過倉庫";
+      infoSaved.textContent = dirty ? "尚未存過（有異動）" : "尚未存過";
     }
   }
 
@@ -501,8 +612,37 @@ function updateSyncUi() {
     infoExtra.classList.toggle("hidden", !parts.length);
   }
 
+  const tplBtn = $("info-template");
+  if (tplBtn) tplBtn.textContent = templateDisplayLabel();
+
   updateHeaderLayoutActions();
-  renderFairyChips();
+  renderNotifyChips();
+}
+
+async function refreshLayoutHistorySummary() {
+  const histBtn = $("info-layout-history");
+  if (!histBtn) return;
+  const name = getCurrentLayoutName();
+  const rev = getCurrentLayoutRev();
+  if (name && rev) {
+    histBtn.textContent = `${name} · v${rev}`;
+    histBtn.title = `目前模板：${name} v${rev} · 點開看全部`;
+    return;
+  }
+  try {
+    const history = normalizeLayoutHistory(await loadLayoutHistoryFile());
+    const latest = history.layouts[0];
+    const latestRev = latest?.versions?.[0];
+    if (latest && latestRev) {
+      histBtn.textContent = `${latest.name} · v${latestRev.rev}`;
+      histBtn.title = `最後排版：${formatSavedAt(latestRev.savedAt)} · 點開看全部`;
+    } else {
+      histBtn.textContent = "尚無紀錄";
+      histBtn.title = "還沒存過排版；先按存檔圖示";
+    }
+  } catch {
+    histBtn.textContent = "尚無紀錄";
+  }
 }
 
 function updateHeaderLayoutActions() {
@@ -519,13 +659,59 @@ async function resetPuzzleLayout() {
   showPanel("list");
 }
 
-async function savePuzzleLayout() {
+async function promptLayoutName() {
+  const input = $("layout-name-input");
+  const dlg = $("layout-name-dialog");
+  const form = $("layout-name-form");
+  const hint = $("layout-name-hint");
+  if (!input || !dlg || !form) return null;
+  const current = getCurrentLayoutName();
+  input.value = "";
+  if (current) {
+    input.placeholder = `留空 = 更新「${current}」小版本`;
+    if (hint) hint.textContent = `目前模板：${current} · v${getCurrentLayoutRev() || 1}。留空直接存小版本；輸入新名稱則另存新模板。`;
+  } else {
+    input.placeholder = defaultVersionName();
+    if (hint) hint.textContent = "第一次存檔：留空會用預設名稱建立模板；也可自訂名稱。";
+  }
+  return new Promise((resolve) => {
+    const onSubmit = (e) => {
+      const submitter = e.submitter;
+      if (submitter && submitter.value === "cancel") {
+        form.removeEventListener("submit", onSubmit);
+        resolve(null);
+        return;
+      }
+      e.preventDefault();
+      const typed = input.value.trim();
+      form.removeEventListener("submit", onSubmit);
+      dlg.close();
+      if (typed) {
+        if (current && typed === current) resolve({ mode: "minor" });
+        else resolve({ mode: "new", name: typed });
+      } else resolve({ mode: "minor" });
+    };
+    form.addEventListener("submit", onSubmit);
+    dlg.showModal();
+    input.focus();
+  });
+}
+
+async function savePuzzleLayout(opts = {}) {
+  const { forceDialog = false } = opts;
   if (!getToken()) {
     $("token-dialog").showModal();
     showToast("請先設定鑰匙，再存拼圖", "warn");
     return;
   }
-  await saveLayoutToRepo();
+  let saveInfo;
+  if (!forceDialog && getCurrentLayoutName()) {
+    saveInfo = { mode: "minor" };
+  } else {
+    saveInfo = await promptLayoutName();
+    if (!saveInfo) return;
+  }
+  await saveLayoutToRepo(saveInfo);
 }
 
 async function maybePromptSaveLayout(reason) {
@@ -533,7 +719,9 @@ async function maybePromptSaveLayout(reason) {
   const ok = window.confirm(`${reason}\n\n要把拼圖設定寫進倉庫嗎？`);
   if (!ok) return;
   try {
-    await saveLayoutToRepo();
+    const saveInfo = getCurrentLayoutName() ? { mode: "minor" } : await promptLayoutName();
+    if (!saveInfo) return;
+    await saveLayoutToRepo(saveInfo);
   } catch (err) {
     setStatus(err.message || String(err));
   }
@@ -748,6 +936,8 @@ async function loadCatalog() {
     visibility: data.map?.visibility || "public",
     template: data.map?.template || "grid-10",
     savedAt: data.map?.savedAt || null,
+    layoutName: data.map?.layoutName || "",
+    layoutRev: Number.isInteger(data.map?.layoutRev) ? data.map.layoutRev : 0,
   };
   state.seeds = (data.seeds || []).map((s) => ({
     ...s,
@@ -1033,28 +1223,42 @@ async function putRepoFile(path, text, message) {
   });
 }
 
-async function saveLayoutToRepo() {
+async function saveLayoutToRepo(saveInfo) {
   setStatus("正在存拼圖…");
   const now = new Date().toISOString();
+  let historyResult;
+  try {
+    historyResult = await appendLayoutVersion(saveInfo);
+  } catch (err) {
+    showToast(`版本紀錄寫入失敗：${err.message || err}`, "warn");
+    throw err;
+  }
+  const { layout, rev } = historyResult;
   state.map.savedAt = now;
+  state.map.layoutName = layout.name;
+  state.map.layoutRev = rev;
   const payload = buildSeedsPayload();
-  payload.map = { ...(payload.map || {}), savedAt: now };
+  payload.map = {
+    ...(payload.map || {}),
+    savedAt: now,
+    layoutName: layout.name,
+    layoutRev: rev,
+  };
   const text = `${JSON.stringify(payload, null, 2)}\n`;
   const result = await putRepoFile(
     SEEDS_PATH,
     text,
-    `存拼圖排版：${defaultVersionName()}`
+    layoutSaveLabel(saveInfo, layout.name, rev)
   );
   state.catalog = JSON.parse(JSON.stringify(payload));
   localStorage.removeItem(LAYOUT_KEY);
-  try {
-    await appendLayoutVersion();
-  } catch (err) {
-    showToast(`排版已存，但版本紀錄寫入失敗：${err.message || err}`, "warn");
-  }
-  const timeLabel = formatSavedAt(now);
-  showToast(`拼圖已存檔 · ${timeLabel}`, "ok");
-  setStatus(`拼圖已存檔 · ${timeLabel}`);
+  const toastMsg =
+    saveInfo.mode === "new"
+      ? `另存模板 · ${layout.name} v1`
+      : `已存檔 · ${layout.name} v${rev}`;
+  showToast(toastMsg, "ok");
+  setStatus(toastMsg);
+  await refreshLayoutHistorySummary();
   updateSyncUi();
   return result;
 }
@@ -1593,7 +1797,7 @@ $("version-form").addEventListener("submit", async (e) => {
 });
 
 $("reset-layout").addEventListener("click", async () => {
-  setMenuOpen(false);
+  closeAllPopovers();
   try {
     await resetPuzzleLayout();
   } catch (err) {
@@ -1618,7 +1822,7 @@ $("header-save-layout").addEventListener("click", async () => {
 });
 
 $("token-setup").addEventListener("click", () => {
-  setMenuOpen(false);
+  closeAllPopovers();
   $("token-input").value = getToken() ? "••••••••（已儲存，要換就貼新的）" : "";
   $("token-dialog").showModal();
 });
@@ -1644,7 +1848,7 @@ $("token-clear").addEventListener("click", () => {
 });
 
 $("ai-key-setup").addEventListener("click", () => {
-  setMenuOpen(false);
+  closeAllPopovers();
   $("ai-key-input").value = getAiKey() ? "••••••••（已儲存，要換就貼新的）" : "";
   $("ai-base-input").value = getAiBase();
   $("ai-key-dialog").showModal();
@@ -1722,7 +1926,7 @@ $("ai-form").addEventListener("submit", async (e) => {
 });
 
 $("template-setup").addEventListener("click", () => {
-  setMenuOpen(false);
+  closeAllPopovers();
   $("template-select").value = state.map.template || "grid-10";
   $("puzzle-kind").value = state.map.kind || "personal";
   $("puzzle-visibility").value = state.map.visibility || "public";
@@ -1767,6 +1971,7 @@ $("template-form").addEventListener("submit", async (e) => {
   applyPuzzleTemplate(templateId);
   $("template-dialog").close();
   const tplLabel = PUZZLE_TEMPLATES[templateId]?.label || templateId;
+  updateSyncUi();
   setStatus(
     state.map.kind === "community"
       ? `已套用「${tplLabel}」（社群版搶位之後再接）`
@@ -1778,21 +1983,21 @@ $("template-form").addEventListener("submit", async (e) => {
 });
 
 $("save-layout").addEventListener("click", async () => {
-  setMenuOpen(false);
+  closeAllPopovers();
   try {
-    await savePuzzleLayout();
+    await savePuzzleLayout({ forceDialog: true });
   } catch (err) {
     setStatus(err.message || String(err));
   }
 });
 
 $("pack-export").addEventListener("click", () => {
-  setMenuOpen(false);
+  closeAllPopovers();
   exportSeedPack().catch((err) => setStatus(err.message || String(err)));
 });
 
 $("pack-import").addEventListener("click", () => {
-  setMenuOpen(false);
+  closeAllPopovers();
   $("pack-file").click();
 });
 
@@ -1821,50 +2026,142 @@ $("run-diff").addEventListener("click", () => {
   runDiff().catch((err) => setStatus(err.message || String(err)));
 });
 
-function setMenuOpen(open) {
-  const btn = $("menu-btn");
-  const drawer = $("menu-drawer");
-  if (!btn || !drawer) return;
-  btn.setAttribute("aria-expanded", open ? "true" : "false");
-  btn.classList.toggle("is-open", open);
-  drawer.classList.toggle("collapsed", !open);
+function closeAllPopovers() {
+  setPopoverOpen(null);
+  setPathOpen(false);
 }
 
-$("menu-btn").addEventListener("click", () => {
-  const open = $("menu-drawer").classList.contains("collapsed");
-  setMenuOpen(open);
-});
+function buildPathSteps() {
+  const steps = [
+    {
+      key: "list",
+      label: "知識拼圖",
+      depth: 0,
+      go: () => showPanel("list"),
+    },
+  ];
+  if (state.current) {
+    steps.push({
+      key: "seed",
+      label: state.current.title,
+      depth: 1,
+      go: async () => {
+        showPanel("read");
+        if (!state.originalText) await loadSeedText();
+        setViewMode(state.workingText || state.originalText);
+      },
+    });
+  }
+  if (state.panel === "history") {
+    steps.push({
+      key: "history",
+      label: "回到舊的",
+      depth: state.current ? 2 : 1,
+      go: () => showPanel("history"),
+    });
+  } else if (state.panel === "diff") {
+    steps.push({
+      key: "diff",
+      label: "看看改了什麼",
+      depth: state.current ? 2 : 1,
+      go: () => showPanel("diff"),
+    });
+  } else if (state.editing && state.panel === "read") {
+    steps.push({
+      key: "edit",
+      label: "自己改",
+      depth: state.current ? 2 : 1,
+      go: () => startEdit(),
+    });
+  }
+  return steps;
+}
 
-document.addEventListener("click", (e) => {
-  const drawer = $("menu-drawer");
-  const btn = $("menu-btn");
-  if (!drawer || drawer.classList.contains("collapsed")) return;
-  if (drawer.contains(e.target) || btn.contains(e.target)) return;
-  setMenuOpen(false);
-});
+function renderPathLadder() {
+  const ladder = $("path-ladder");
+  if (!ladder) return;
+  const steps = buildPathSteps();
+  ladder.innerHTML = "";
+  steps.forEach((step, index) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "path-step";
+    if (index === steps.length - 1) btn.classList.add("is-current");
+    btn.dataset.depth = String(step.depth);
+    btn.dataset.depth = String(step.depth);
+    btn.textContent = step.label;
+    btn.addEventListener("click", () => {
+      step.go();
+      setPathOpen(false);
+    });
+    ladder.appendChild(btn);
+  });
+}
+
+function setPathOpen(open) {
+  const pop = $("path-popover");
+  const btn = $("brand-home");
+  if (!pop) return;
+  if (open && state.panel === "list") {
+    showPanel("list");
+    return;
+  }
+  if (open) {
+    renderPathLadder();
+    positionPopover(pop, btn);
+    setPopoverOpen(null);
+  }
+  pop.classList.toggle("hidden", !open);
+  if (btn) btn.setAttribute("aria-expanded", open ? "true" : "false");
+  updatePathBrand();
+}
+
+function updatePathBrand() {
+  const btn = $("brand-home");
+  if (!btn) return;
+  const onMap = state.panel === "list";
+  btn.title = onMap ? "知識拼圖首頁" : "點開路徑，選擇要回到哪一層";
+  btn.classList.toggle("has-path", !onMap);
+}
 
 function setPopoverOpen(name) {
-  const info = $("info-popover");
+  if (name) setPathOpen(false);
+  const me = $("me-popover");
   const notify = $("notify-popover");
-  const infoBtn = $("header-info-btn");
+  const meBtn = $("header-me-btn");
   const notifyBtn = $("notify-btn");
-  if (info) info.classList.toggle("hidden", name !== "info");
+  if (me) me.classList.toggle("hidden", name !== "me");
   if (notify) notify.classList.toggle("hidden", name !== "notify");
-  if (infoBtn) infoBtn.setAttribute("aria-expanded", name === "info" ? "true" : "false");
+  if (meBtn) meBtn.setAttribute("aria-expanded", name === "me" ? "true" : "false");
   if (notifyBtn) notifyBtn.setAttribute("aria-expanded", name === "notify" ? "true" : "false");
+  if (name === "me") {
+    positionPopover(me, meBtn);
+    refreshLayoutHistorySummary();
+  } else if (name === "notify") {
+    positionPopover(notify, notifyBtn);
+    renderNotifyChips();
+  }
 }
 
-function setFairyOpen(open) {
-  const panel = $("fairy-panel");
-  const btn = $("fairy-btn");
-  if (!panel || !btn) return;
-  panel.classList.toggle("hidden", !open);
-  btn.setAttribute("aria-expanded", open ? "true" : "false");
-  if (open) renderFairyChips();
+function positionPopover(popover, anchor) {
+  if (!popover || !anchor) return;
+  const chrome = $("chrome");
+  if (!chrome) return;
+  const chromeRect = chrome.getBoundingClientRect();
+  const rect = anchor.getBoundingClientRect();
+  const width = Math.min(320, window.innerWidth - 16);
+  let left = rect.left - chromeRect.left;
+  if (left + width > chromeRect.width - 8) {
+    left = Math.max(8, chromeRect.width - width - 8);
+  }
+  popover.style.width = `${width}px`;
+  popover.style.left = `${left}px`;
+  popover.style.top = `${rect.bottom - chromeRect.top + 6}px`;
+  popover.style.right = "auto";
 }
 
-function renderFairyChips() {
-  const wrap = $("fairy-chips");
+function renderNotifyChips() {
+  const wrap = $("notify-chips");
   if (!wrap) return;
   const chips =
     state.panel === "list"
@@ -1884,21 +2181,21 @@ function renderFairyChips() {
   for (const c of chips) {
     const b = document.createElement("button");
     b.type = "button";
-    b.className = "fairy-chip";
+    b.className = "notify-chip";
     b.textContent = c.label;
     b.addEventListener("click", () => {
-      setFairyOpen(false);
+      closeAllPopovers();
       c.run();
     });
     wrap.appendChild(b);
   }
 }
 
-function handleFairyInput(text) {
+function handleNotifyInput(text) {
   const t = (text || "").trim();
   if (!t) return;
-  $("fairy-input").value = "";
-  setFairyOpen(false);
+  $("notify-input").value = "";
+  closeAllPopovers();
   if (/存|儲存|存檔/.test(t)) {
     if (state.panel === "list") savePuzzleLayout();
     else $("version-dialog").showModal();
@@ -1921,71 +2218,73 @@ function handleFairyInput(text) {
     $("ai-dialog").showModal();
     return;
   }
-  showToast("小精靈之後會用 AI 回答；現在先試上方按鈕", "info");
+  showToast("之後會由 AI 在這裡回答；現在先試上方快捷按鈕", "info");
 }
 
-$("header-info-btn").addEventListener("click", (e) => {
+$("brand-home").addEventListener("click", (e) => {
   e.stopPropagation();
-  setMenuOpen(false);
-  const open = $("info-popover").classList.contains("hidden");
-  setPopoverOpen(open ? "info" : null);
+  if (state.panel === "list") {
+    closeAllPopovers();
+    return;
+  }
+  const open = $("path-popover").classList.contains("hidden");
+  setPathOpen(open);
+});
+
+$("header-me-btn").addEventListener("click", (e) => {
+  e.stopPropagation();
+  const open = $("me-popover").classList.contains("hidden");
+  setPopoverOpen(open ? "me" : null);
   updateSyncUi();
 });
 
 $("notify-btn").addEventListener("click", (e) => {
   e.stopPropagation();
-  setMenuOpen(false);
   const open = $("notify-popover").classList.contains("hidden");
   setPopoverOpen(open ? "notify" : null);
 });
 
+$("info-kind-switch").addEventListener("click", () => {
+  closeAllPopovers();
+  $("template-setup").click();
+});
+
 $("info-layout-history").addEventListener("click", () => {
-  setPopoverOpen(null);
+  closeAllPopovers();
   openLayoutHistoryDialog();
 });
 
 $("info-template").addEventListener("click", () => {
-  setPopoverOpen(null);
+  closeAllPopovers();
   $("template-setup").click();
 });
 
-$("layout-history-setup").addEventListener("click", () => {
-  setMenuOpen(false);
-  openLayoutHistoryDialog();
-});
-
-$("fairy-btn").addEventListener("click", (e) => {
-  e.stopPropagation();
-  setPopoverOpen(null);
-  setMenuOpen(false);
-  const open = $("fairy-panel").classList.contains("hidden");
-  setFairyOpen(open);
-});
-
-$("fairy-form").addEventListener("submit", (e) => {
+$("notify-form").addEventListener("submit", (e) => {
   e.preventDefault();
-  handleFairyInput($("fairy-input").value);
+  handleNotifyInput($("notify-input").value);
 });
 
 document.addEventListener("click", (e) => {
-  const info = $("info-popover");
+  const me = $("me-popover");
   const notify = $("notify-popover");
-  const infoBtn = $("header-info-btn");
+  const path = $("path-popover");
+  const meBtn = $("header-me-btn");
   const notifyBtn = $("notify-btn");
-  const fairy = $("fairy-dock");
-  if (info && !info.classList.contains("hidden")) {
-    if (!info.contains(e.target) && !infoBtn.contains(e.target)) setPopoverOpen(null);
+  const brandBtn = $("brand-home");
+  if (me && !me.classList.contains("hidden")) {
+    if (!me.contains(e.target) && !meBtn.contains(e.target)) setPopoverOpen(null);
   }
   if (notify && !notify.classList.contains("hidden")) {
     if (!notify.contains(e.target) && !notifyBtn.contains(e.target)) setPopoverOpen(null);
   }
-  if (fairy && !$("fairy-panel").classList.contains("hidden")) {
-    if (!fairy.contains(e.target)) setFairyOpen(false);
+  if (path && !path.classList.contains("hidden")) {
+    if (!path.contains(e.target) && !brandBtn.contains(e.target)) setPathOpen(false);
   }
 });
 
 loadAppConfig()
   .then(() => loadCatalog())
+  .then(() => refreshLayoutHistorySummary())
   .then(() => {
     updateSyncUi();
     showToast("拖曳可改拼圖；有異動時 header 會出現存檔", "info");

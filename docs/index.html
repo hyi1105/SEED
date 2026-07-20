@@ -7,19 +7,22 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=puzzle5" />
+  <link rel="stylesheet" href="styles.css?v=puzzle8" />
   <!-- 預覽請用 raw.githack（會正確當成網頁）。不要用 raw.githubusercontent 或 jsDelivr 開 html，會變純文字。 -->
 </head>
 <body>
   <div class="app">
     <div class="chrome" id="chrome" data-mode="map">
       <header class="top">
-        <button type="button" class="brand-home" data-action="list" id="brand-home" title="回知識拼圖">
+        <button
+          type="button"
+          class="brand-home"
+          id="brand-home"
+          aria-expanded="false"
+          aria-controls="path-popover"
+          title="路徑"
+        >
           SEED
-        </button>
-        <button type="button" class="header-chip" id="header-info-btn" aria-expanded="false" aria-controls="info-popover" title="拼圖資訊">
-          <span id="header-kind-label">個人·公開</span>
-          <span class="sync-dot" id="sync-dot" data-state="unknown" aria-hidden="true"></span>
         </button>
         <div class="top-end">
           <div class="header-layout-actions hidden" id="header-layout-actions" aria-label="拼圖位置異動">
@@ -34,53 +37,68 @@
               </svg>
             </button>
           </div>
-          <button type="button" class="btn btn-icon btn-ghost" id="notify-btn" title="訊息" aria-expanded="false" aria-controls="notify-popover">
+          <button type="button" class="header-chip" id="header-me-btn" aria-expanded="false" aria-controls="me-popover" title="我的狀態與設定">
+            <span class="me-prefix">我</span>
+            <span id="header-kind-label">個人·公開</span>
+            <span class="sync-dot" id="sync-dot" data-state="unknown" aria-hidden="true"></span>
+          </button>
+          <button type="button" class="btn btn-icon btn-ghost" id="notify-btn" title="系統回饋" aria-expanded="false" aria-controls="notify-popover">
             <svg class="btn-icon-svg" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
               <path fill="currentColor" d="M12 22a2 2 0 0 0 2-2H10a2 2 0 0 0 2 2zm6-6V11a6 6 0 1 0-12 0v5l-2 2v1h16v-1l-2-2z"/>
             </svg>
             <span class="notify-badge hidden" id="notify-badge" aria-hidden="true"></span>
           </button>
-          <button
-            type="button"
-            class="btn menu-btn"
-            id="menu-btn"
-            aria-expanded="false"
-            aria-controls="menu-drawer"
-          >
-            選單
-          </button>
         </div>
         <p class="hint sr-only" id="status" aria-live="polite">正在載入…</p>
       </header>
 
-      <div class="popover hidden" id="info-popover" role="dialog" aria-label="拼圖資訊">
-        <p class="popover-row"><span class="popover-label">類型</span><span id="info-kind">個人版·公開</span></p>
-        <p class="popover-row"><span class="popover-label">存檔</span><span id="info-saved-at">尚未存過倉庫</span></p>
-        <p class="popover-row popover-note" id="info-extra"></p>
-        <div class="popover-actions">
-          <button type="button" class="btn" id="info-layout-history">排版紀錄</button>
-          <button type="button" class="btn" id="info-template">拼圖模板</button>
+      <div class="popover path-popover hidden" id="path-popover" role="navigation" aria-label="路徑">
+        <p class="popover-heading">路徑</p>
+        <nav class="path-ladder" id="path-ladder"></nav>
+      </div>
+
+      <div class="popover me-popover hidden" id="me-popover" role="dialog" aria-label="我">
+        <p class="popover-heading">我</p>
+        <div class="info-sheet">
+          <div class="info-row">
+            <span class="info-label">狀態</span>
+            <button type="button" class="info-action" id="info-kind-switch">個人·公開</button>
+          </div>
+          <div class="info-row">
+            <span class="info-label">存檔</span>
+            <span class="info-value" id="info-saved-at">尚未存過</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">排版紀錄</span>
+            <button type="button" class="info-action" id="info-layout-history">尚無紀錄</button>
+          </div>
+          <div class="info-row">
+            <span class="info-label">拼圖模板</span>
+            <button type="button" class="info-action" id="info-template">10×10</button>
+          </div>
+          <p class="info-extra hidden" id="info-extra"></p>
+        </div>
+        <div class="me-divider" aria-hidden="true"></div>
+        <div class="me-menu">
+          <button type="button" class="me-link" id="save-layout">存拼圖位置</button>
+          <button type="button" class="me-link" id="reset-layout">重置位置</button>
+          <button type="button" class="me-link" id="token-setup">設定鑰匙</button>
+          <button type="button" class="me-link" id="ai-key-setup">AI 鑰匙</button>
+          <button type="button" class="me-link hidden" id="member-setup">會員碼</button>
+          <button type="button" class="me-link" id="pack-export">打包帶走</button>
+          <button type="button" class="me-link" id="pack-import">還原回來</button>
+          <button type="button" class="me-link" id="template-setup">拼圖模板（完整）</button>
         </div>
       </div>
 
-      <div class="popover hidden" id="notify-popover" role="log" aria-label="訊息">
-        <p class="popover-label">最近訊息</p>
+      <div class="popover notify-popover hidden" id="notify-popover" role="log" aria-label="系統回饋">
+        <p class="popover-heading">系統回饋</p>
+        <div class="notify-chips" id="notify-chips"></div>
         <ul class="notify-list" id="notify-list"></ul>
-      </div>
-
-      <div class="menu-drawer collapsed" id="menu-drawer" role="menu" aria-label="系統選單">
-        <p class="menu-label">拼圖與設定</p>
-        <div class="menu-grid">
-          <button type="button" class="btn" id="layout-history-setup" title="回到舊的拼圖排版">排版紀錄</button>
-          <button type="button" class="btn" id="template-setup" title="選擇拼圖模板">拼圖模板</button>
-          <button type="button" class="btn" id="save-layout" title="把目前拼圖位置寫進 seeds.json">存拼圖位置</button>
-          <button type="button" class="btn" id="reset-layout" title="回到倉庫預設位置">重置位置</button>
-          <button type="button" class="btn" id="token-setup" title="設定 GitHub 鑰匙">設定鑰匙</button>
-          <button type="button" class="btn" id="ai-key-setup" title="設定 AI 鑰匙">AI 鑰匙</button>
-          <button type="button" class="btn hidden" id="member-setup" title="輸入會員碼">會員碼</button>
-          <button type="button" class="btn" id="pack-export" title="打包全部內容與設定">打包帶走</button>
-          <button type="button" class="btn" id="pack-import" title="上傳封包還原">還原回來</button>
-        </div>
+        <form class="notify-form" id="notify-form">
+          <input type="text" id="notify-input" placeholder="輸入問題或指令（之後由 AI 回答）" autocomplete="off" />
+          <button type="submit" class="btn btn-primary">送出</button>
+        </form>
       </div>
 
       <nav class="doc-bar" id="doc-bar" aria-label="筆記操作" hidden>
@@ -268,10 +286,25 @@
       </form>
     </dialog>
 
+    <dialog id="layout-name-dialog" class="token-dialog">
+      <form method="dialog" id="layout-name-form">
+        <h2>存拼圖位置</h2>
+        <p id="layout-name-hint" class="lead">留空 = 更新目前模板小版本；輸入新名稱 = 另存新模板。</p>
+        <label class="token-label">
+          模板名稱
+          <input type="text" id="layout-name-input" maxlength="40" placeholder="" />
+        </label>
+        <div class="token-actions">
+          <button type="submit" class="btn btn-primary" value="save">存進去</button>
+          <button type="submit" class="btn" value="cancel">取消</button>
+        </div>
+      </form>
+    </dialog>
+
     <dialog id="layout-history-dialog" class="token-dialog">
       <form method="dialog" id="layout-history-form">
         <h2>排版紀錄</h2>
-        <p class="lead">每次「存拼圖位置」會留一版 JSON 快照。可套用在畫面上，再按存檔才寫進倉庫。</p>
+        <p class="lead">依模板分組，每個模板底下有小版本（v1、v2…）。可套用在畫面上，再按存檔才寫進倉庫。</p>
         <ul id="layout-history-list" class="layout-history-list"></ul>
         <div class="token-actions">
           <button type="submit" class="btn" value="cancel">關閉</button>
@@ -295,20 +328,8 @@
     </dialog>
   </div>
 
-  <div class="fairy-dock" id="fairy-dock">
-    <div class="fairy-panel hidden" id="fairy-panel" role="dialog" aria-label="小精靈助手">
-      <p class="fairy-title">小精靈</p>
-      <div class="fairy-chips" id="fairy-chips"></div>
-      <form class="fairy-form" id="fairy-form">
-        <input type="text" id="fairy-input" placeholder="輸入問題或指令…" autocomplete="off" />
-        <button type="submit" class="btn btn-primary">送出</button>
-      </form>
-    </div>
-    <button type="button" class="fairy-btn" id="fairy-btn" aria-label="小精靈助手" aria-expanded="false" title="小精靈">🧚</button>
-  </div>
-
   <div class="toast hidden" id="toast" role="status" aria-live="polite"></div>
 
-  <script src="app.js?v=puzzle5"></script>
+  <script src="app.js?v=puzzle8"></script>
 </body>
 </html>
