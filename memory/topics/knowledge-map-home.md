@@ -26,13 +26,16 @@ status: active
 2. 位置有意義（相對關係）  
 3. 空格可留白；可拖去空格  
 4. 點一格 → 讀／看差異／回舊版  
-5. **存到倉庫** → 把 `col`/`row` 正式寫回 `docs/seeds.json`
+5. **存到倉庫** → 把 `col`/`row` 正式寫回 `docs/seeds.json`  
+6. **章印別名** `alias`：地圖上最多四個中文，排成印章（1／2／2×2）；完整名稱用 `title`
 
 ## 寫回倉庫（已做）
 
 1. 瀏覽器拖曳（可先存在 localStorage）  
 2. 「設定鑰匙」：Fine-grained PAT，只給 `SEED` 的 Contents Read and write；權杖只存瀏覽器  
 3. 「存到倉庫」：經 GitHub API 更新 `docs/seeds.json` 並 commit  
+
+**2026-07-20**：使用者已撤銷外洩權杖、重建並在瀏覽器完成「設定鑰匙」。權杖勿貼聊天。
 
 預覽網址請用 raw.githack（勿用 raw.githubusercontent／jsDelivr 開 html）。
 

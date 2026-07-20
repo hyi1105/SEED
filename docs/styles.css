@@ -302,25 +302,26 @@ h1 {
 
 .knowledge-map {
   display: grid;
-  gap: 3px;
+  gap: 4px;
   background:
     linear-gradient(180deg, #dfece4 0%, #e8efe4 40%, #efe6d4 100%);
   border: 1px solid var(--line);
   border-radius: 16px;
-  padding: 6px;
+  padding: 8px;
   aspect-ratio: 1 / 1;
-  max-height: min(72vh, 720px);
+  width: min(100%, 900px);
+  max-height: min(86vh, 900px);
   margin: 0 auto;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
 }
 
 .map-cell {
   border: 0;
-  border-radius: 6px;
+  border-radius: 8px;
   background: rgba(255, 252, 247, 0.35);
   min-width: 0;
   min-height: 0;
-  padding: 2px;
+  padding: 3px;
   cursor: default;
   position: relative;
 }
@@ -337,23 +338,30 @@ h1 {
 .map-seed {
   width: 100%;
   height: 100%;
-  border: 1px solid #7a9a86;
-  border-radius: 8px;
-  background: #fffdf8;
-  color: var(--ink);
+  border: 2px solid #8f2a2a;
+  border-radius: 10px;
+  background:
+    radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.35), transparent 45%),
+    #f7ebe3;
+  color: #7a1f1f;
   font: inherit;
-  font-size: clamp(0.58rem, 1.35vw, 0.78rem);
-  font-weight: 700;
-  line-height: 1.2;
-  padding: 3px 4px;
+  padding: 4px;
   cursor: grab;
   display: flex;
   align-items: center;
   justify-content: center;
   text-align: center;
-  box-shadow: 0 1px 0 rgba(20, 32, 26, 0.08);
+  box-shadow:
+    inset 0 0 0 1px rgba(143, 42, 42, 0.25),
+    0 2px 0 rgba(20, 32, 26, 0.08);
   overflow: hidden;
-  hyphens: auto;
+}
+
+.map-seed.seal {
+  aspect-ratio: 1 / 1;
+  max-width: 100%;
+  max-height: 100%;
+  margin: 0 auto;
 }
 
 .map-seed:active {
@@ -361,8 +369,47 @@ h1 {
 }
 
 .map-seed.studio {
-  border-color: #a0895c;
-  background: #f7f0e0;
+  border-color: #8a6a2e;
+  color: #5c4518;
+  background:
+    radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.4), transparent 45%),
+    #f3ead4;
+  box-shadow:
+    inset 0 0 0 1px rgba(138, 106, 46, 0.28),
+    0 2px 0 rgba(20, 32, 26, 0.08);
+}
+
+.seal-face {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  place-items: center;
+  font-family: "Noto Serif TC", "Songti TC", serif;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+.seal-face.seal-1 {
+  font-size: clamp(0.95rem, 2.4vw, 1.45rem);
+}
+
+.seal-face.seal-2 {
+  grid-template-rows: 1fr 1fr;
+  font-size: clamp(0.78rem, 2vw, 1.15rem);
+  gap: 1px;
+}
+
+.seal-face.seal-4 {
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  font-size: clamp(0.72rem, 1.9vw, 1.05rem);
+  gap: 1px;
+}
+
+.seal-face span {
+  display: grid;
+  place-items: center;
 }
 
 .map-legend {

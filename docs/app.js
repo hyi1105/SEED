@@ -95,6 +95,20 @@ function isStudio(seed) {
   return (seed.blurb || "").includes("工作室");
 }
 
+/** Map stamp label: prefer alias, max 4 chars (章印) */
+function sealText(seed) {
+  const raw = (seed.alias || seed.title || "").replace(/\s+/g, "");
+  return Array.from(raw).slice(0, 4).join("");
+}
+
+function sealHtml(seed) {
+  const chars = Array.from(sealText(seed));
+  const n = chars.length;
+  const layout = n >= 3 ? "seal-4" : n === 2 ? "seal-2" : "seal-1";
+  const inner = chars.map((c) => `<span>${escapeHtml(c)}</span>`).join("");
+  return `<span class="seal-face ${layout}" aria-hidden="true">${inner}</span>`;
+}
+
 function renderMap() {
   const root = $("knowledge-map");
   const { cols, rows } = state.map;
@@ -128,10 +142,11 @@ function renderMap() {
         cell.classList.remove("empty");
         const btn = document.createElement("button");
         btn.type = "button";
-        btn.className = "map-seed" + (isStudio(seed) ? " studio" : "");
+        btn.className = "map-seed seal" + (isStudio(seed) ? " studio" : "");
         btn.draggable = true;
-        btn.textContent = seed.title;
-        btn.title = `${seed.title}\n${seed.blurb || ""}\n拖曳可改位置，點一下打開`;
+        btn.innerHTML = sealHtml(seed);
+        btn.title = `${seed.title}\n章印：${sealText(seed)}\n${seed.blurb || ""}\n拖曳可改位置，點一下打開`;
+        btn.setAttribute("aria-label", seed.title);
         btn.style.touchAction = "none";
         btn.addEventListener("dragstart", (e) => {
           state.dragId = seed.id;
@@ -243,6 +258,7 @@ function buildSeedsPayload() {
       col: live.col,
       row: live.row,
       title: live.title ?? s.title,
+      alias: live.alias ?? s.alias,
       path: live.path ?? s.path,
       blurb: live.blurb ?? s.blurb,
       id: live.id ?? s.id,
@@ -254,6 +270,7 @@ function buildSeedsPayload() {
       seeds.push({
         id: s.id,
         title: s.title,
+        alias: s.alias,
         path: s.path,
         blurb: s.blurb,
         col: s.col,
