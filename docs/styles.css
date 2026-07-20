@@ -31,7 +31,7 @@ html, body {
 }
 
 .app {
-  width: min(920px, calc(100% - 2rem));
+  width: min(1100px, calc(100% - 1.5rem));
   margin: 0 auto;
   padding: 1.5rem 0 3rem;
 }
@@ -273,5 +273,110 @@ h1 {
   .diff-picks {
     grid-template-columns: 1fr 1fr auto;
     align-items: end;
+  }
+}
+
+.panel-map {
+  padding-bottom: 1.2rem;
+}
+
+.map-shell {
+  position: relative;
+  margin: 0.5rem 0 0.75rem;
+  padding: 1.6rem;
+}
+
+.compass {
+  position: absolute;
+  font-family: "Noto Serif TC", serif;
+  font-weight: 700;
+  color: var(--muted);
+  letter-spacing: 0.15em;
+  font-size: 0.95rem;
+}
+
+.compass-n { top: 0; left: 50%; transform: translateX(-50%); }
+.compass-s { bottom: 0; left: 50%; transform: translateX(-50%); }
+.compass-w { left: 0; top: 50%; transform: translateY(-50%); }
+.compass-e { right: 0; top: 50%; transform: translateY(-50%); }
+
+.knowledge-map {
+  display: grid;
+  gap: 3px;
+  background:
+    linear-gradient(180deg, #dfece4 0%, #e8efe4 40%, #efe6d4 100%);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 6px;
+  aspect-ratio: 1 / 1;
+  max-height: min(72vh, 720px);
+  margin: 0 auto;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+}
+
+.map-cell {
+  border: 0;
+  border-radius: 6px;
+  background: rgba(255, 252, 247, 0.35);
+  min-width: 0;
+  min-height: 0;
+  padding: 2px;
+  cursor: default;
+  position: relative;
+}
+
+.map-cell.empty:hover {
+  background: rgba(255, 252, 247, 0.55);
+}
+
+.map-cell.drop-target {
+  outline: 2px dashed var(--accent);
+  background: var(--accent-soft);
+}
+
+.map-seed {
+  width: 100%;
+  height: 100%;
+  border: 1px solid #7a9a86;
+  border-radius: 8px;
+  background: #fffdf8;
+  color: var(--ink);
+  font: inherit;
+  font-size: clamp(0.58rem, 1.35vw, 0.78rem);
+  font-weight: 700;
+  line-height: 1.2;
+  padding: 3px 4px;
+  cursor: grab;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  box-shadow: 0 1px 0 rgba(20, 32, 26, 0.08);
+  overflow: hidden;
+  hyphens: auto;
+}
+
+.map-seed:active {
+  cursor: grabbing;
+}
+
+.map-seed.studio {
+  border-color: #a0895c;
+  background: #f7f0e0;
+}
+
+.map-legend {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+@media (max-width: 640px) {
+  .map-shell {
+    padding: 1.25rem 0.35rem;
+  }
+  .compass-w,
+  .compass-e {
+    display: none;
   }
 }

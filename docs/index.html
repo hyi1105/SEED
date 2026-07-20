@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>SEED — 知識煉化</title>
+  <title>SEED — 知識地圖</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;700&display=swap" rel="stylesheet" />
@@ -14,24 +14,34 @@
     <header class="top">
       <div class="brand">
         <p class="brand-name">SEED</p>
-        <p class="brand-tag">把學習筆記煉成可分享的知識</p>
+        <p class="brand-tag">知識像地圖一樣擺：有位置、有關係</p>
       </div>
       <p class="hint" id="status">正在載入…</p>
     </header>
 
     <nav class="actions" aria-label="主要操作">
-      <button type="button" class="btn" data-action="list" aria-pressed="true">選一份</button>
+      <button type="button" class="btn" data-action="list" aria-pressed="true">知識地圖</button>
       <button type="button" class="btn" data-action="read">讀現在的</button>
       <button type="button" class="btn" data-action="diff">看看改了什麼</button>
       <button type="button" class="btn" data-action="history">回到舊的</button>
+      <button type="button" class="btn" id="reset-layout" title="回到倉庫預設位置">重置位置</button>
       <button type="button" class="btn btn-muted" data-action="ai" disabled title="下一版">請 AI 改</button>
       <button type="button" class="btn btn-muted" data-action="save" disabled title="下一版">存成一版</button>
     </nav>
 
-    <section id="panel-list" class="panel">
-      <h1>選一份筆記</h1>
-      <p class="lead">公開學習筆記，歡迎陌生人閱讀。點一下開始。</p>
-      <ul id="seed-list" class="seed-list"></ul>
+    <section id="panel-list" class="panel panel-map">
+      <div class="map-head">
+        <h1 id="map-title">知識地圖</h1>
+        <p class="lead" id="map-note">每一格可以放一份筆記；位置代表相對關係（例如北／中／南／東）。</p>
+      </div>
+      <div class="map-shell">
+        <div class="compass compass-n" aria-hidden="true">北</div>
+        <div class="compass compass-s" aria-hidden="true">南</div>
+        <div class="compass compass-w" aria-hidden="true">西</div>
+        <div class="compass compass-e" aria-hidden="true">東</div>
+        <div id="knowledge-map" class="knowledge-map" role="grid" aria-label="知識地圖格子"></div>
+      </div>
+      <p class="map-legend">實心格＝有筆記（可點開／可拖到空格）。左下「工作室」放學習筆記；中間示範交通四題。</p>
     </section>
 
     <section id="panel-read" class="panel hidden">
@@ -64,7 +74,7 @@
     <footer class="foot">
       <a href="https://github.com/hyi1105/SEED" target="_blank" rel="noopener">在 GitHub 看原始檔</a>
       <span>·</span>
-      <span>第一版：讀取與版本差異；「請 AI 改／存成一版」下一版再加</span>
+      <span>預覽：raw.githack　·　正式 Pages 等 GitHub 服務恢復</span>
     </footer>
   </div>
   <script src="app.js"></script>

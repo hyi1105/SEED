@@ -16,8 +16,15 @@
 ## Topics
 
 - 個人 MVP 一頁規格（阿嬤級六動作）— [topics/personal-mvp-spec.md](topics/personal-mvp-spec.md)
+- GitHub 入門（搭配 SEED／Pages／Actions）— [topics/github-for-seed.md](topics/github-for-seed.md)
+- 首頁知識地圖格— [topics/knowledge-map-home.md](topics/knowledge-map-home.md)
+
+## Maps (demo)
+
+- 北橫／中橫／南橫／蘇花— `memory/maps/taiwan-roads/`
 
 ## Public UI
 
 - GitHub Pages 操作畫面：`docs/` → https://hyi1105.github.io/SEED/
-- Seed 列表設定：`docs/seeds.json`
+- 臨時預覽：https://raw.githack.com/hyi1105/SEED/main/docs/index.html
+- Seed／地圖座標：`docs/seeds.json`

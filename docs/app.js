@@ -2,12 +2,15 @@ const REPO = "hyi1105/SEED";
 const BRANCH = "main";
 const RAW = `https://raw.githubusercontent.com/${REPO}/${BRANCH}/`;
 const API = `https://api.github.com/repos/${REPO}`;
+const LAYOUT_KEY = "seed-map-layout-v1";
 
 const state = {
   seeds: [],
+  map: { cols: 10, rows: 10, title: "知識地圖", note: "" },
   current: null,
   versions: [],
   panel: "list",
+  dragId: null,
 };
 
 const $ = (id) => document.getElementById(id);
@@ -24,9 +27,9 @@ function showPanel(name) {
   }
   document.querySelectorAll(".actions .btn[data-action]").forEach((btn) => {
     const action = btn.dataset.action;
-    const map = { list: "list", read: "read", history: "history", diff: "diff" };
-    if (map[action]) {
-      btn.setAttribute("aria-pressed", map[action] === name ? "true" : "false");
+    const mapActions = { list: "list", read: "read", history: "history", diff: "diff" };
+    if (mapActions[action]) {
+      btn.setAttribute("aria-pressed", mapActions[action] === name ? "true" : "false");
     }
   });
 }
@@ -52,20 +55,127 @@ async function fetchJson(url) {
   return res.json();
 }
 
+function loadSavedLayout() {
+  try {
+    return JSON.parse(localStorage.getItem(LAYOUT_KEY) || "null");
+  } catch {
+    return null;
+  }
+}
+
+function saveLayout() {
+  const payload = {};
+  for (const s of state.seeds) payload[s.id] = { col: s.col, row: s.row };
+  localStorage.setItem(LAYOUT_KEY, JSON.stringify(payload));
+}
+
+function applySavedLayout() {
+  const saved = loadSavedLayout();
+  if (!saved) return;
+  for (const s of state.seeds) {
+    if (saved[s.id]) {
+      s.col = saved[s.id].col;
+      s.row = saved[s.id].row;
+    }
+  }
+}
+
+function seedAt(col, row) {
+  return state.seeds.find((s) => s.col === col && s.row === row);
+}
+
+function isStudio(seed) {
+  return (seed.blurb || "").includes("工作室");
+}
+
+function renderMap() {
+  const root = $("knowledge-map");
+  const { cols, rows } = state.map;
+  root.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+  root.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
+  root.innerHTML = "";
+
+  for (let row = 0; row < rows; row++) {
+    for (let col = 0; col < cols; col++) {
+      const cell = document.createElement("div");
+      cell.className = "map-cell empty";
+      cell.dataset.col = String(col);
+      cell.dataset.row = String(row);
+      cell.setAttribute("role", "gridcell");
+
+      cell.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        cell.classList.add("drop-target");
+      });
+      cell.addEventListener("dragleave", () => cell.classList.remove("drop-target"));
+      cell.addEventListener("drop", (e) => {
+        e.preventDefault();
+        cell.classList.remove("drop-target");
+        const id = e.dataTransfer.getData("text/seed-id") || state.dragId;
+        if (!id) return;
+        moveSeed(id, col, row);
+      });
+
+      const seed = seedAt(col, row);
+      if (seed) {
+        cell.classList.remove("empty");
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "map-seed" + (isStudio(seed) ? " studio" : "");
+        btn.draggable = true;
+        btn.textContent = seed.title;
+        btn.title = `${seed.title}\n${seed.blurb || ""}\n拖曳可改位置，點一下打開`;
+        btn.addEventListener("dragstart", (e) => {
+          state.dragId = seed.id;
+          e.dataTransfer.setData("text/seed-id", seed.id);
+          e.dataTransfer.effectAllowed = "move";
+        });
+        btn.addEventListener("dragend", () => {
+          state.dragId = null;
+        });
+        btn.addEventListener("click", () => {
+          selectSeed(seed).catch((err) => setStatus(err.message || String(err)));
+        });
+        cell.appendChild(btn);
+      }
+
+      root.appendChild(cell);
+    }
+  }
+}
+
+function moveSeed(id, col, row) {
+  const seed = state.seeds.find((s) => s.id === id);
+  if (!seed) return;
+  const occupant = seedAt(col, row);
+  if (occupant && occupant.id !== id) {
+    occupant.col = seed.col;
+    occupant.row = seed.row;
+  }
+  seed.col = col;
+  seed.row = row;
+  saveLayout();
+  renderMap();
+  setStatus(`已把「${seed.title}」放到 (${col + 1}, ${row + 1})；位置存在這個瀏覽器`);
+}
+
 async function loadCatalog() {
   const data = await fetchJson("./seeds.json");
-  state.seeds = data.seeds || [];
-  const list = $("seed-list");
-  list.innerHTML = "";
-  for (const seed of state.seeds) {
-    const li = document.createElement("li");
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.innerHTML = `<strong>${escapeHtml(seed.title)}</strong><span>${escapeHtml(seed.blurb || seed.path)}</span>`;
-    btn.addEventListener("click", () => selectSeed(seed));
-    li.appendChild(btn);
-    list.appendChild(li);
-  }
+  state.map = {
+    cols: data.map?.cols || 10,
+    rows: data.map?.rows || 10,
+    title: data.map?.title || "知識地圖",
+    note: data.map?.note || "",
+  };
+  state.seeds = (data.seeds || []).map((s) => ({
+    ...s,
+    col: Number.isInteger(s.col) ? s.col : 0,
+    row: Number.isInteger(s.row) ? s.row : 0,
+  }));
+  applySavedLayout();
+  $("map-title").textContent = state.map.title;
+  $("map-note").textContent = state.map.note;
+  renderMap();
 }
 
 async function selectSeed(seed) {
@@ -77,7 +187,7 @@ async function selectSeed(seed) {
 
 async function readCurrent() {
   if (!state.current) {
-    setStatus("請先選一份筆記");
+    setStatus("請先在地圖上點一份筆記");
     showPanel("list");
     return;
   }
@@ -188,7 +298,6 @@ async function fetchFileAt(sha) {
   throw new Error("無法解讀檔案內容");
 }
 
-/** Simple line-based LCS diff for grandma-readable output */
 function diffLines(aText, bText) {
   const a = aText.split("\n");
   const b = bText.split("\n");
@@ -224,7 +333,7 @@ function diffLines(aText, bText) {
 
 async function runDiff() {
   if (!state.current) {
-    setStatus("請先選一份筆記");
+    setStatus("請先在地圖上點一份筆記");
     showPanel("list");
     return;
   }
@@ -263,7 +372,7 @@ document.querySelector(".actions").addEventListener("click", async (e) => {
     if (action === "read") await readCurrent();
     if (action === "history") {
       if (!state.current) {
-        setStatus("請先選一份筆記");
+        setStatus("請先在地圖上點一份筆記");
         showPanel("list");
         return;
       }
@@ -272,7 +381,7 @@ document.querySelector(".actions").addEventListener("click", async (e) => {
     }
     if (action === "diff") {
       if (!state.current) {
-        setStatus("請先選一份筆記");
+        setStatus("請先在地圖上點一份筆記");
         showPanel("list");
         return;
       }
@@ -285,10 +394,21 @@ document.querySelector(".actions").addEventListener("click", async (e) => {
   }
 });
 
+$("reset-layout").addEventListener("click", async () => {
+  localStorage.removeItem(LAYOUT_KEY);
+  try {
+    await loadCatalog();
+    setStatus("已重置為倉庫預設位置");
+    showPanel("list");
+  } catch (err) {
+    setStatus(err.message || String(err));
+  }
+});
+
 $("run-diff").addEventListener("click", () => {
   runDiff().catch((err) => setStatus(err.message || String(err)));
 });
 
 loadCatalog()
-  .then(() => setStatus("請選一份筆記開始"))
+  .then(() => setStatus("在地圖上點一格，或拖曳改位置"))
   .catch((err) => setStatus(err.message || String(err)));
