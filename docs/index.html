@@ -7,51 +7,51 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=map2" />
+  <link rel="stylesheet" href="styles.css?v=ctx1" />
   <!-- 預覽請用 raw.githack（會正確當成網頁）。不要用 raw.githubusercontent 或 jsDelivr 開 html，會變純文字。 -->
 </head>
 <body>
   <div class="app">
-    <div class="chrome">
+    <div class="chrome" id="chrome" data-mode="map">
       <header class="top">
-        <p class="brand-name">SEED</p>
+        <button type="button" class="brand-home" data-action="list" id="brand-home" title="回知識地圖">
+          SEED
+        </button>
         <p class="hint sr-only" id="status" aria-live="polite">正在載入…</p>
+        <button
+          type="button"
+          class="btn menu-btn"
+          id="menu-btn"
+          aria-expanded="false"
+          aria-controls="menu-drawer"
+        >
+          選單
+        </button>
       </header>
 
-      <nav class="actions" id="actions" aria-label="主要操作">
-        <div class="actions-bar">
-          <div class="actions-core" role="group" aria-label="常用">
-            <button type="button" class="btn" data-action="list" aria-pressed="true">知識地圖</button>
-            <button type="button" class="btn" data-action="read">讀現在的</button>
-            <button type="button" class="btn" data-action="edit">自己改</button>
-            <button type="button" class="btn btn-primary" data-action="save-version">存成一版</button>
-          </div>
-          <button
-            type="button"
-            class="btn actions-more-btn"
-            id="actions-more-btn"
-            aria-expanded="false"
-            aria-controls="actions-drawer"
-          >
-            更多
-          </button>
+      <div class="menu-drawer collapsed" id="menu-drawer" role="menu" aria-label="系統選單">
+        <p class="menu-label">地圖與設定</p>
+        <div class="menu-grid">
+          <button type="button" class="btn" id="save-layout" title="把目前地圖位置寫進 seeds.json">存地圖位置</button>
+          <button type="button" class="btn" id="reset-layout" title="回到倉庫預設位置">重置位置</button>
+          <button type="button" class="btn" id="token-setup" title="設定 GitHub 鑰匙">設定鑰匙</button>
+          <button type="button" class="btn" id="ai-key-setup" title="設定 AI 鑰匙">AI 鑰匙</button>
+          <button type="button" class="btn" id="pack-export" title="打包全部內容與設定">打包帶走</button>
+          <button type="button" class="btn" id="pack-import" title="上傳封包還原">還原回來</button>
         </div>
-        <div class="actions-drawer collapsed" id="actions-drawer">
-          <p class="actions-drawer-label">其他操作</p>
-          <div class="actions-extra" role="group" aria-label="其他操作">
-            <button type="button" class="btn" data-action="diff">看看改了什麼</button>
-            <button type="button" class="btn" data-action="history">回到舊的</button>
-            <button type="button" class="btn btn-primary" data-action="ai">請 AI 改</button>
-            <button type="button" class="btn" id="reset-layout" title="回到倉庫預設位置">重置位置</button>
-            <button type="button" class="btn" id="save-layout" title="把目前地圖位置寫進 seeds.json">存地圖位置</button>
-            <button type="button" class="btn" id="token-setup" title="設定 GitHub 鑰匙">設定鑰匙</button>
-            <button type="button" class="btn" id="ai-key-setup" title="設定 AI 鑰匙">AI 鑰匙</button>
-            <button type="button" class="btn" id="pack-export" title="打包全部內容與設定">打包帶走</button>
-            <button type="button" class="btn" id="pack-import" title="上傳封包還原">還原回來</button>
-          </div>
-        </div>
-        <input type="file" id="pack-file" accept=".seedpack,.json,application/json" hidden />
+      </div>
+
+      <nav class="doc-bar" id="doc-bar" aria-label="筆記操作" hidden>
+        <button type="button" class="btn" data-action="list">回地圖</button>
+        <button type="button" class="btn" data-action="read">讀現在的</button>
+        <button type="button" class="btn" data-action="edit">自己改</button>
+        <button type="button" class="btn btn-primary" data-action="save-version">存成一版</button>
+        <button type="button" class="btn btn-primary" data-action="ai">請 AI 改</button>
+        <button type="button" class="btn" data-action="diff">看看改了什麼</button>
+        <button type="button" class="btn" data-action="history">回到舊的</button>
       </nav>
+
+      <input type="file" id="pack-file" accept=".seedpack,.json,application/json" hidden />
     </div>
 
     <main class="stage">
@@ -179,6 +179,6 @@
       </form>
     </dialog>
   </div>
-  <script src="app.js?v=map2"></script>
+  <script src="app.js?v=ctx1"></script>
 </body>
 </html>

@@ -57,19 +57,91 @@ html, body {
 .top {
   display: flex;
   flex-wrap: nowrap;
-  justify-content: flex-start;
+  justify-content: space-between;
   gap: 0.5rem;
   align-items: center;
-  margin-bottom: 0.35rem;
+  margin-bottom: 0;
 }
 
-.brand-name {
+.brand-home {
+  appearance: none;
+  border: 0;
+  background: transparent;
   margin: 0;
+  padding: 0.15rem 0.1rem;
   font-family: "Noto Serif TC", serif;
-  font-size: 1.25rem;
+  font-size: 1.35rem;
   font-weight: 700;
   letter-spacing: 0.04em;
   line-height: 1.1;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.brand-home:hover {
+  color: var(--accent);
+}
+
+.menu-btn {
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+
+.menu-btn.is-open {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.menu-drawer {
+  position: absolute;
+  left: 0.65rem;
+  right: 0.65rem;
+  top: calc(100% - 0.15rem);
+  z-index: 40;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+  padding: 0.7rem;
+  box-shadow: 0 8px 24px rgba(20, 32, 26, 0.12);
+}
+
+.menu-drawer.collapsed {
+  display: none;
+}
+
+.menu-label {
+  margin: 0 0 0.45rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.menu-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.4rem;
+}
+
+.menu-grid .btn {
+  width: 100%;
+  text-align: center;
+}
+
+.doc-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.45rem;
+  padding-top: 0.45rem;
+  border-top: 1px solid var(--line);
+}
+
+.doc-bar[hidden] {
+  display: none !important;
+}
+
+.doc-bar .btn {
+  flex: 0 0 auto;
 }
 
 .sr-only {
@@ -96,92 +168,6 @@ html, body {
 .foot,
 .map-legend {
   display: none !important;
-}
-
-.actions {
-  display: flex;
-  flex-direction: column;
-  gap: 0.45rem;
-  margin: 0;
-  padding: 0;
-  position: relative;
-  background: transparent;
-  backdrop-filter: none;
-}
-
-.actions-bar {
-  display: flex;
-  flex-wrap: nowrap;
-  align-items: stretch;
-  gap: 0.4rem;
-}
-
-.actions-core {
-  display: flex;
-  flex: 1 1 auto;
-  flex-wrap: nowrap;
-  gap: 0.35rem;
-  min-width: 0;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-}
-
-.actions-core::-webkit-scrollbar {
-  display: none;
-}
-
-.actions-core .btn {
-  flex: 0 0 auto;
-}
-
-.actions-more-btn {
-  flex: 0 0 auto;
-  white-space: nowrap;
-}
-
-.actions-drawer {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: calc(100% + 0.35rem);
-  z-index: 30;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  background: var(--card);
-  padding: 0.7rem;
-  /* 蓋在內容上，不把畫面往下推 */
-  box-shadow: 0 8px 24px rgba(20, 32, 26, 0.12);
-}
-
-.actions-drawer.collapsed {
-  display: none;
-}
-
-.actions-drawer-label {
-  margin: 0 0 0.5rem;
-  color: var(--muted);
-  font-size: 0.85rem;
-}
-
-.actions-extra {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.4rem;
-}
-
-.actions-extra .btn {
-  width: 100%;
-  text-align: center;
-  border-radius: 10px;
-  padding: 0.55rem 0.55rem;
-  font-size: 0.92rem;
-}
-
-.actions.is-open .actions-more-btn {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #fff;
 }
 
 .btn {
@@ -593,10 +579,6 @@ h1 {
 }
 
 @media (min-width: 641px) and (max-width: 900px) {
-  .actions-extra {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
   .compass-w {
     display: block;
     left: 0;
@@ -627,65 +609,19 @@ h1 {
     background: color-mix(in srgb, var(--paper) 70%, #fff);
   }
 
-  .brand-name {
-    font-size: 1.35rem;
+  .brand-home {
+    font-size: 1.45rem;
   }
 
   .chrome {
-    padding: 0.55rem 0.9rem 0.5rem;
+    padding: 0.5rem 0.9rem 0.45rem;
   }
 
-  .top {
-    margin-bottom: 0.35rem;
+  .menu-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  .actions {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.4rem;
-  }
-
-  .actions-bar {
-    display: contents;
-  }
-
-  .actions-core {
-    display: contents;
-  }
-
-  .actions-more-btn {
-    display: none !important;
-  }
-
-  .actions-drawer,
-  .actions-drawer.collapsed {
-    display: contents;
-    position: static;
-    border: 0;
-    padding: 0;
-    background: transparent;
-    box-shadow: none;
-  }
-
-  .actions-drawer-label {
-    display: none;
-  }
-
-  .actions-extra {
-    display: contents;
-  }
-
-  .actions-extra .btn {
-    width: auto;
-    border-radius: 10px;
-    padding: 0.45rem 0.8rem;
-    font-size: 0.92rem;
-  }
-
-  .btn {
-    border-radius: 10px;
+  .doc-bar .btn {
     font-size: 0.92rem;
     padding: 0.45rem 0.8rem;
   }

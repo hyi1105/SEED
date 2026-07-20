@@ -30,3 +30,4 @@ status: active
 - ~~固定殼層上線後，請使用者再確認手感~~ → 手機 OK
 - **2026-07-20**：網頁版按鈕消失（`hidden` 的 `display:none !important` 蓋過桌面 CSS）→ 改 class `collapsed`；桌面一律展開全部操作
 - **同日**：再砍 chrome／footer 雜訊，放大地圖與短標
+- **同日**：上方整排按鈕改成「選單」＋點開筆記後才出現的情境操作列

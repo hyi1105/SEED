@@ -37,7 +37,18 @@ function showPanel(name) {
   for (const id of ["list", "read", "history", "diff"]) {
     $(`panel-${id}`).classList.toggle("hidden", id !== name);
   }
-  document.querySelectorAll(".actions .btn[data-action]").forEach((btn) => {
+
+  const onMap = name === "list";
+  const chrome = $("chrome");
+  const docBar = $("doc-bar");
+  if (chrome) chrome.dataset.mode = onMap ? "map" : "doc";
+  if (docBar) {
+    if (onMap) docBar.setAttribute("hidden", "");
+    else docBar.removeAttribute("hidden");
+  }
+  setMenuOpen(false);
+
+  document.querySelectorAll("#doc-bar .btn[data-action]").forEach((btn) => {
     const action = btn.dataset.action;
     const mapActions = {
       list: "list",
@@ -54,6 +65,7 @@ function showPanel(name) {
       btn.setAttribute("aria-pressed", pressed ? "true" : "false");
     }
   });
+
   const stage = document.querySelector(".stage");
   if (stage) stage.scrollTop = 0;
   const panel = $(`panel-${name}`);
@@ -940,7 +952,7 @@ async function runDiff() {
   showPanel("diff");
 }
 
-document.querySelector(".actions").addEventListener("click", async (e) => {
+document.querySelector("#chrome").addEventListener("click", async (e) => {
   const btn = e.target.closest("button[data-action]");
   if (!btn || btn.disabled) return;
   const action = btn.dataset.action;
@@ -1041,6 +1053,7 @@ $("version-form").addEventListener("submit", async (e) => {
 });
 
 $("reset-layout").addEventListener("click", async () => {
+  setMenuOpen(false);
   localStorage.removeItem(LAYOUT_KEY);
   try {
     await loadCatalog();
@@ -1052,6 +1065,7 @@ $("reset-layout").addEventListener("click", async () => {
 });
 
 $("token-setup").addEventListener("click", () => {
+  setMenuOpen(false);
   $("token-input").value = getToken() ? "••••••••（已儲存，要換就貼新的）" : "";
   $("token-dialog").showModal();
 });
@@ -1077,6 +1091,7 @@ $("token-clear").addEventListener("click", () => {
 });
 
 $("ai-key-setup").addEventListener("click", () => {
+  setMenuOpen(false);
   $("ai-key-input").value = getAiKey() ? "••••••••（已儲存，要換就貼新的）" : "";
   $("ai-base-input").value = getAiBase();
   $("ai-key-dialog").showModal();
@@ -1130,6 +1145,7 @@ $("ai-form").addEventListener("submit", async (e) => {
 });
 
 $("save-layout").addEventListener("click", async () => {
+  setMenuOpen(false);
   try {
     if (!getToken()) {
       $("token-dialog").showModal();
@@ -1143,10 +1159,12 @@ $("save-layout").addEventListener("click", async () => {
 });
 
 $("pack-export").addEventListener("click", () => {
+  setMenuOpen(false);
   exportSeedPack().catch((err) => setStatus(err.message || String(err)));
 });
 
 $("pack-import").addEventListener("click", () => {
+  setMenuOpen(false);
   $("pack-file").click();
 });
 
@@ -1175,53 +1193,27 @@ $("run-diff").addEventListener("click", () => {
   runDiff().catch((err) => setStatus(err.message || String(err)));
 });
 
-function setActionsOpen(open) {
-  const nav = $("actions");
-  const btn = $("actions-more-btn");
-  const drawer = $("actions-drawer");
-  if (!nav || !btn || !drawer) return;
-  // 寬螢幕一律展開全部按鈕，不走「更多」
-  if (window.matchMedia("(min-width: 901px)").matches) {
-    nav.classList.remove("is-open");
-    drawer.classList.remove("collapsed");
-    btn.setAttribute("aria-expanded", "false");
-    btn.textContent = "更多";
-    return;
-  }
-  nav.classList.toggle("is-open", open);
+function setMenuOpen(open) {
+  const btn = $("menu-btn");
+  const drawer = $("menu-drawer");
+  if (!btn || !drawer) return;
   btn.setAttribute("aria-expanded", open ? "true" : "false");
-  btn.textContent = open ? "收起" : "更多";
+  btn.classList.toggle("is-open", open);
   drawer.classList.toggle("collapsed", !open);
 }
 
-function syncActionsLayout() {
-  if (window.matchMedia("(min-width: 901px)").matches) {
-    setActionsOpen(false);
-    $("actions-drawer")?.classList.remove("collapsed");
-  } else if (!$("actions")?.classList.contains("is-open")) {
-    $("actions-drawer")?.classList.add("collapsed");
-  }
-}
-
-$("actions-more-btn").addEventListener("click", () => {
-  const open = !$("actions").classList.contains("is-open");
-  setActionsOpen(open);
+$("menu-btn").addEventListener("click", () => {
+  const open = $("menu-drawer").classList.contains("collapsed");
+  setMenuOpen(open);
 });
 
-document.querySelector(".actions").addEventListener("click", (e) => {
-  const btn = e.target.closest("button");
-  if (!btn || btn.id === "actions-more-btn") return;
-  // 手機／平板點完操作就收起「更多」
-  if (window.matchMedia("(max-width: 900px)").matches) {
-    setActionsOpen(false);
-  }
+document.addEventListener("click", (e) => {
+  const drawer = $("menu-drawer");
+  const btn = $("menu-btn");
+  if (!drawer || drawer.classList.contains("collapsed")) return;
+  if (drawer.contains(e.target) || btn.contains(e.target)) return;
+  setMenuOpen(false);
 });
-
-window.addEventListener("resize", () => {
-  syncActionsLayout();
-});
-
-syncActionsLayout();
 
 loadCatalog()
   .then(() =>
