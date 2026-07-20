@@ -9,7 +9,9 @@
     "cols": 10,
     "rows": 10,
     "note": "知識拼圖：拖曳擺放；點進去看完整標題",
-    "savedAt": "2026-07-20T07:52:11.143Z"
+    "savedAt": "2026-07-20T23:30:34.148Z",
+    "layoutName": "7/21 上午7:30",
+    "layoutRev": 1
   },
   "seeds": [
     {
@@ -28,8 +30,8 @@
       "alias": "中橫交通",
       "path": "memory/maps/taiwan-roads/zhongheng.md",
       "blurb": "偏中",
-      "col": 5,
-      "row": 5,
+      "col": 6,
+      "row": 6,
       "cover": null
     },
     {
@@ -48,7 +50,7 @@
       "alias": "蘇花交通",
       "path": "memory/maps/taiwan-roads/suhua.md",
       "blurb": "偏東",
-      "col": 7,
+      "col": 8,
       "row": 2,
       "cover": null
     },
@@ -88,7 +90,7 @@
       "alias": "入門指南",
       "path": "memory/topics/github-for-seed.md",
       "blurb": "工作室",
-      "col": 1,
+      "col": 2,
       "row": 1,
       "cover": null
     },
@@ -98,7 +100,7 @@
       "alias": "知識起點",
       "path": "memory/sessions/2026-07-20-kb-setup.md",
       "blurb": "工作室",
-      "col": 2,
+      "col": 3,
       "row": 4,
       "cover": null
     },
@@ -129,7 +131,7 @@
       "path": "memory/topics/seed-pack.md",
       "blurb": "工作室",
       "col": 5,
-      "row": 3,
+      "row": 5,
       "cover": null
     },
     {
@@ -169,7 +171,7 @@
       "path": "memory/topics/learn-cursor-demo.md",
       "blurb": "工作室",
       "col": 4,
-      "row": 1,
+      "row": 2,
       "cover": null
     },
     {
