@@ -35,3 +35,7 @@ status: active
 ## 怎麼用這份
 
 之後若問「做到哪了／最終版有什麼」，以本檔＋`core-features.md` 為準；README「路線」也應對齊這裡。
+
+## 發佈紀錄
+
+- 2026-07-20：最終版同步 PR 已合併；GitHub Pages 已重新部署成功。
