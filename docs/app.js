@@ -476,27 +476,166 @@ async function githubFetch(url, options = {}) {
   return res.json();
 }
 
+async function putRepoFile(path, text, message) {
+  const content = bytesToBase64(new TextEncoder().encode(text));
+  let sha;
+  try {
+    const meta = await githubFetch(`${API}/contents/${path}?ref=${BRANCH}`);
+    sha = meta.sha;
+  } catch (err) {
+    // 404 = new file
+    if (!String(err.message || "").includes("404")) throw err;
+  }
+  const body = {
+    message,
+    content,
+    branch: BRANCH,
+  };
+  if (sha) body.sha = sha;
+  return githubFetch(`${API}/contents/${path}`, {
+    method: "PUT",
+    body: JSON.stringify(body),
+  });
+}
+
 async function saveLayoutToRepo() {
   setStatus("正在把地圖位置寫進 seeds.json…");
   const payload = buildSeedsPayload();
   const text = `${JSON.stringify(payload, null, 2)}\n`;
-  const content = bytesToBase64(new TextEncoder().encode(text));
-
-  const meta = await githubFetch(`${API}/contents/${SEEDS_PATH}?ref=${BRANCH}`);
-  const result = await githubFetch(`${API}/contents/${SEEDS_PATH}`, {
-    method: "PUT",
-    body: JSON.stringify({
-      message: "Update knowledge map seed positions",
-      content,
-      sha: meta.sha,
-      branch: BRANCH,
-    }),
-  });
-
+  const result = await putRepoFile(SEEDS_PATH, text, "Update knowledge map seed positions");
   state.catalog = payload;
   localStorage.removeItem(LAYOUT_KEY);
   setStatus(`已寫回倉庫：${SEEDS_PATH}（commit ${String(result.commit?.sha || "").slice(0, 7)}）`);
   return result;
+}
+
+async function buildSeedPack() {
+  setStatus("正在打包全部筆記與地圖設定…");
+  // Prefer live positions from state
+  const catalog = buildSeedsPayload();
+  const files = {};
+  const paths = new Set([SEEDS_PATH]);
+  for (const s of catalog.seeds || []) {
+    if (s.path) paths.add(s.path);
+    if (s.cover && typeof s.cover === "string" && !/^https?:\/\//i.test(s.cover)) {
+      paths.add(s.cover.replace(/^\.\//, ""));
+    }
+  }
+  // Also pull common memory docs that might not be on map yet
+  for (const extra of [
+    "memory/index.md",
+    "README.md",
+    "memory/topics/core-features.md",
+  ]) {
+    paths.add(extra);
+  }
+
+  let ok = 0;
+  let fail = 0;
+  for (const path of paths) {
+    try {
+      const text = await fetchText(`${RAW}${path}?ts=${Date.now()}`);
+      files[path] = text;
+      ok++;
+      setStatus(`打包中… ${ok} 個檔案`);
+    } catch {
+      fail++;
+    }
+  }
+
+  let layout = null;
+  try {
+    layout = JSON.parse(localStorage.getItem(LAYOUT_KEY) || "null");
+  } catch {
+    layout = null;
+  }
+
+  return {
+    format: "seed-pack",
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    sourceRepo: REPO,
+    sourceBranch: BRANCH,
+    map: catalog.map,
+    seeds: catalog.seeds,
+    files,
+    settings: {
+      layout,
+      // 刻意不含 GitHub／AI 鑰匙
+    },
+    meta: {
+      fileCount: ok,
+      skipped: fail,
+      note: "跨平台還原用。不含鑰匙。類似可帶走的完整備份，不是 PDF。",
+    },
+  };
+}
+
+function downloadSeedPack(pack) {
+  const stamp = new Date().toISOString().slice(0, 10);
+  const blob = new Blob([`${JSON.stringify(pack, null, 2)}\n`], {
+    type: "application/json",
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `SEED-pack-${stamp}.seedpack.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+async function exportSeedPack() {
+  const pack = await buildSeedPack();
+  downloadSeedPack(pack);
+  setStatus(
+    `已打包帶走：${pack.meta.fileCount} 個檔案` +
+      (pack.meta.skipped ? `（略過 ${pack.meta.skipped}）` : "") +
+      "。可拷到別的裝置再「還原回來」。"
+  );
+}
+
+async function restoreSeedPack(pack) {
+  if (!pack || pack.format !== "seed-pack") {
+    throw new Error("這不是 SEED 封包（需要 format: seed-pack）");
+  }
+  if (!getToken()) {
+    $("token-dialog").showModal();
+    throw new Error("還原需要 GitHub 鑰匙，請先設定");
+  }
+  const files = pack.files || {};
+  const paths = Object.keys(files);
+  if (!paths.length) throw new Error("封包裡沒有檔案內容");
+
+  // Ensure seeds.json reflects pack catalog if present
+  if (pack.seeds && pack.map) {
+    const seedsJson = {
+      repo: REPO,
+      branch: BRANCH,
+      map: pack.map,
+      seeds: pack.seeds,
+    };
+    files[SEEDS_PATH] = `${JSON.stringify(seedsJson, null, 2)}\n`;
+  }
+
+  let i = 0;
+  const allPaths = Object.keys(files);
+  for (const path of allPaths) {
+    i++;
+    setStatus(`還原中… ${i}/${allPaths.length}：${path}`);
+    await putRepoFile(path, files[path], `還原 SEED 封包：${path}`);
+  }
+
+  if (pack.settings?.layout) {
+    localStorage.setItem(LAYOUT_KEY, JSON.stringify(pack.settings.layout));
+  } else {
+    localStorage.removeItem(LAYOUT_KEY);
+  }
+
+  state.catalog = null;
+  await loadCatalog();
+  setStatus(`還原完成：寫回 ${allPaths.length} 個檔案。可重新整理確認。`);
 }
 
 async function selectSeed(seed) {
@@ -987,10 +1126,39 @@ $("save-layout").addEventListener("click", async () => {
   try {
     if (!getToken()) {
       $("token-dialog").showModal();
-      setStatus("請先設定鑰匙，再按「存到倉庫」");
+      setStatus("請先設定鑰匙，再按「存地圖位置」");
       return;
     }
     await saveLayoutToRepo();
+  } catch (err) {
+    setStatus(err.message || String(err));
+  }
+});
+
+$("pack-export").addEventListener("click", () => {
+  exportSeedPack().catch((err) => setStatus(err.message || String(err)));
+});
+
+$("pack-import").addEventListener("click", () => {
+  $("pack-file").click();
+});
+
+$("pack-file").addEventListener("change", async () => {
+  const file = $("pack-file").files && $("pack-file").files[0];
+  $("pack-file").value = "";
+  if (!file) return;
+  try {
+    const text = await file.text();
+    const pack = JSON.parse(text);
+    const n = Object.keys(pack.files || {}).length;
+    const ok = window.confirm(
+      `要用這個封包還原嗎？\n\n檔案約 ${n} 個\n匯出時間：${pack.exportedAt || "未知"}\n\n會覆寫倉庫裡同名檔案（不含鑰匙）。`
+    );
+    if (!ok) {
+      setStatus("已取消還原");
+      return;
+    }
+    await restoreSeedPack(pack);
   } catch (err) {
     setStatus(err.message || String(err));
   }

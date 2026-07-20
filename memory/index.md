@@ -19,6 +19,7 @@
 - GitHub 入門（搭配 SEED／Pages／Actions）— [topics/github-for-seed.md](topics/github-for-seed.md)
 - 首頁知識地圖格— [topics/knowledge-map-home.md](topics/knowledge-map-home.md)
 - **核心功能清單（不可少）**— [topics/core-features.md](topics/core-features.md)
+- SEED 封包（打包帶走／還原）— [topics/seed-pack.md](topics/seed-pack.md)
 - 開源怎麼賺錢— [topics/open-source-monetize.md](topics/open-source-monetize.md)
 - 公開 code／想法怎麼賺錢（AI 易抄）— [topics/open-source-monetize.md](topics/open-source-monetize.md)
 
