@@ -5,6 +5,9 @@ const RAW = `https://raw.githubusercontent.com/${REPO}/${BRANCH}/`;
 const API = `https://api.github.com/repos/${REPO}`;
 const LAYOUT_KEY = "seed-map-layout-v1";
 const TOKEN_KEY = "seed-github-token-v1";
+const AI_KEY = "seed-openai-key-v1";
+const AI_BASE_KEY = "seed-openai-base-v1";
+const DEFAULT_AI_BASE = "https://api.openai.com/v1";
 
 const state = {
   seeds: [],
@@ -306,6 +309,88 @@ function setToken(token) {
   const t = (token || "").trim();
   if (t) localStorage.setItem(TOKEN_KEY, t);
   else localStorage.removeItem(TOKEN_KEY);
+}
+
+function getAiKey() {
+  return localStorage.getItem(AI_KEY) || "";
+}
+
+function setAiKey(key) {
+  const t = (key || "").trim();
+  if (t) localStorage.setItem(AI_KEY, t);
+  else localStorage.removeItem(AI_KEY);
+}
+
+function getAiBase() {
+  return (localStorage.getItem(AI_BASE_KEY) || DEFAULT_AI_BASE).replace(/\/$/, "");
+}
+
+function setAiBase(base) {
+  const t = (base || "").trim().replace(/\/$/, "");
+  if (t && t !== DEFAULT_AI_BASE) localStorage.setItem(AI_BASE_KEY, t);
+  else localStorage.removeItem(AI_BASE_KEY);
+}
+
+function stripAiFences(text) {
+  let t = (text || "").trim();
+  if (t.startsWith("```")) {
+    t = t.replace(/^```[a-zA-Z]*\n?/, "").replace(/\n?```$/, "").trim();
+  }
+  return t;
+}
+
+async function askAiToRevise(instruction) {
+  const key = getAiKey();
+  if (!key) throw new Error("還沒設定 AI 鑰匙，請先按「AI 鑰匙」");
+  if (!state.current) throw new Error("請先在地圖上點一份筆記");
+  if (!state.originalText) await loadSeedText();
+  const source = state.editing ? $("edit-body").value : state.workingText || state.originalText;
+  setStatus("AI 正在改稿，請稍候…");
+
+  const res = await fetch(`${getAiBase()}/chat/completions`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${key}`,
+    },
+    body: JSON.stringify({
+      model: "gpt-4o-mini",
+      temperature: 0.4,
+      messages: [
+        {
+          role: "system",
+          content:
+            "你是知識筆記編輯助手。根據使用者指示改寫 Markdown 全文。" +
+            "只輸出完整 Markdown 正文，不要加解釋、不要用 ``` 包起來。" +
+            "保留原有標題結構；專有名詞旁可加一句白話。語氣清楚、給人掃一眼也看得懂。",
+        },
+        {
+          role: "user",
+          content:
+            `檔名／主題：${state.current.title}\n\n` +
+            `修改指示：\n${instruction}\n\n` +
+            `目前正文：\n${source}`,
+        },
+      ],
+    }),
+  });
+
+  if (!res.ok) {
+    let detail = "";
+    try {
+      const err = await res.json();
+      detail = err.error?.message || JSON.stringify(err);
+    } catch {
+      detail = await res.text();
+    }
+    if (res.status === 401) throw new Error("AI 鑰匙無效，請重新設定「AI 鑰匙」");
+    throw new Error(`AI 改稿失敗（${res.status}）：${detail}`);
+  }
+
+  const data = await res.json();
+  const out = stripAiFences(data.choices?.[0]?.message?.content || "");
+  if (!out) throw new Error("AI 沒有產出內容，請換個說法再試");
+  return out;
 }
 
 function buildSeedsPayload() {
@@ -717,6 +802,21 @@ document.querySelector(".actions").addEventListener("click", async (e) => {
     if (action === "list") showPanel("list");
     if (action === "read") await readCurrent();
     if (action === "edit") await startEdit();
+    if (action === "ai") {
+      if (!state.current) {
+        setStatus("請先在地圖上點一份筆記");
+        showPanel("list");
+        return;
+      }
+      if (!getAiKey()) {
+        $("ai-key-dialog").showModal();
+        setStatus("請先設定 AI 鑰匙，再請 AI 改");
+        return;
+      }
+      $("ai-instruction").value = "";
+      $("ai-dialog").showModal();
+      $("ai-instruction").focus();
+    }
     if (action === "save-version") {
       if (!state.current) {
         setStatus("請先在地圖上點一份筆記");
@@ -828,6 +928,59 @@ $("token-clear").addEventListener("click", () => {
   setToken("");
   $("token-input").value = "";
   setStatus("已清除鑰匙");
+});
+
+$("ai-key-setup").addEventListener("click", () => {
+  $("ai-key-input").value = getAiKey() ? "••••••••（已儲存，要換就貼新的）" : "";
+  $("ai-base-input").value = getAiBase();
+  $("ai-key-dialog").showModal();
+});
+
+$("ai-key-form").addEventListener("submit", (e) => {
+  const submitter = e.submitter;
+  if (submitter && submitter.value === "cancel") return;
+  const raw = $("ai-key-input").value.trim();
+  if (raw && !raw.startsWith("••")) setAiKey(raw);
+  setAiBase($("ai-base-input").value.trim() || DEFAULT_AI_BASE);
+  if (!getAiKey()) {
+    e.preventDefault();
+    setStatus("請貼上 AI 鑰匙");
+    return;
+  }
+  setStatus("AI 鑰匙已存好，可以按「請 AI 改」");
+});
+
+$("ai-key-clear").addEventListener("click", () => {
+  setAiKey("");
+  setAiBase(DEFAULT_AI_BASE);
+  $("ai-key-input").value = "";
+  $("ai-base-input").value = DEFAULT_AI_BASE;
+  setStatus("已清除 AI 鑰匙");
+});
+
+$("ai-form").addEventListener("submit", async (e) => {
+  const submitter = e.submitter;
+  if (submitter && submitter.value === "cancel") return;
+  e.preventDefault();
+  const instruction = $("ai-instruction").value.trim();
+  if (!instruction) {
+    setStatus("請先寫一句「我想這樣改」");
+    return;
+  }
+  $("ai-dialog").close();
+  try {
+    const revised = await askAiToRevise(instruction);
+    if (!state.originalText) await loadSeedText();
+    state.workingText = revised;
+    state.draftAccepted = false;
+    $("read-title").textContent = `${state.current.title}（AI 建議稿）`;
+    setEditMode(revised);
+    updateDraftBar();
+    showDraftDiff();
+    setStatus("AI 已產出建議稿。可看差異，再「用這次的」或「不要」，最後「存成一版」");
+  } catch (err) {
+    setStatus(err.message || String(err));
+  }
 });
 
 $("save-layout").addEventListener("click", async () => {

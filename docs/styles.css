@@ -538,11 +538,13 @@ h1 {
   font-weight: 500;
 }
 
-.token-label input {
+.token-label textarea {
   font: inherit;
   padding: 0.55rem 0.7rem;
   border-radius: 10px;
   border: 1px solid var(--line);
+  resize: vertical;
+  min-height: 5.5rem;
 }
 
 .token-actions {

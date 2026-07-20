@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles.css?v=icon2" />
   <!-- 預覽請用 raw.githack（會正確當成網頁）。不要用 raw.githubusercontent 或 jsDelivr 開 html，會變純文字。 -->
 </head>
 <body>
@@ -30,7 +30,8 @@
       <button type="button" class="btn" id="reset-layout" title="回到倉庫預設位置">重置位置</button>
       <button type="button" class="btn" id="save-layout" title="把目前地圖位置寫進 seeds.json">存地圖位置</button>
       <button type="button" class="btn" id="token-setup" title="設定 GitHub 鑰匙">設定鑰匙</button>
-      <button type="button" class="btn btn-muted" data-action="ai" disabled title="下一版">請 AI 改</button>
+      <button type="button" class="btn btn-primary" data-action="ai">請 AI 改</button>
+      <button type="button" class="btn" id="ai-key-setup" title="設定 AI 鑰匙">AI 鑰匙</button>
     </nav>
 
     <dialog id="token-dialog" class="token-dialog">
@@ -50,6 +51,45 @@
           <button type="submit" class="btn btn-primary" value="save">儲存鑰匙</button>
           <button type="button" class="btn" id="token-clear">清除鑰匙</button>
           <button type="submit" class="btn" value="cancel">關閉</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="ai-key-dialog" class="token-dialog">
+      <form method="dialog" id="ai-key-form">
+        <h2>設定 AI 鑰匙</h2>
+        <p>「請 AI 改」會呼叫 OpenAI（或相容服務）。鑰匙只存在這台瀏覽器，<strong>不要貼到聊天</strong>。</p>
+        <ol class="token-steps">
+          <li>到 <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">OpenAI API keys</a> 建立一把 key</li>
+          <li>貼到下面（通常以 <code>sk-</code> 開頭）</li>
+        </ol>
+        <label class="token-label">
+          AI 鑰匙
+          <input type="password" id="ai-key-input" autocomplete="off" placeholder="sk-…" />
+        </label>
+        <label class="token-label">
+          服務網址（一般不用改）
+          <input type="text" id="ai-base-input" autocomplete="off" placeholder="https://api.openai.com/v1" />
+        </label>
+        <div class="token-actions">
+          <button type="submit" class="btn btn-primary" value="save">儲存</button>
+          <button type="button" class="btn" id="ai-key-clear">清除</button>
+          <button type="submit" class="btn" value="cancel">關閉</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="ai-dialog" class="token-dialog">
+      <form method="dialog" id="ai-form">
+        <h2>請 AI 改</h2>
+        <p>用一句話說你要怎麼改這份筆記。AI 會產出<strong>整份新稿</strong>當草稿，你再決定用不用、要不要存成一版。</p>
+        <label class="token-label">
+          我想這樣改
+          <textarea id="ai-instruction" rows="4" placeholder="例如：把「今天學會的」寫得更白話，並補三個常踩的坑"></textarea>
+        </label>
+        <div class="token-actions">
+          <button type="submit" class="btn btn-primary" value="run">開始改</button>
+          <button type="submit" class="btn" value="cancel">取消</button>
         </div>
       </form>
     </dialog>
@@ -127,6 +167,6 @@
       <a href="https://raw.githack.com/hyi1105/SEED/main/docs/index.html" target="_blank" rel="noopener">raw.githack 知識地圖</a>
     </footer>
   </div>
-  <script src="app.js"></script>
+  <script src="app.js?v=ai1"></script>
 </body>
 </html>
