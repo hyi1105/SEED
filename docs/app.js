@@ -152,10 +152,13 @@ function isStudio(seed) {
   return (seed.blurb || "").includes("工作室");
 }
 
-/** Short map caption: prefer short, else first 2 of alias/title */
+/** 地圖短標：優先 short；否則用 alias／title（最多四字，方便辨識） */
 function shortLabel(seed) {
   const raw = (seed.short || seed.alias || seed.title || "").replace(/\s+/g, "");
-  return Array.from(raw).slice(0, 2).join("") || "書";
+  const chars = Array.from(raw);
+  if (!chars.length) return "書";
+  if (seed.short) return chars.slice(0, 6).join("");
+  return chars.slice(0, 4).join("");
 }
 
 function monogram(seed) {
@@ -1224,8 +1227,8 @@ loadCatalog()
   .then(() =>
     setStatus(
       getToken()
-        ? "可拖曳改位置，再按「存地圖位置」寫進倉庫"
-        : "可拖曳改位置；要正式寫回倉庫請先在「更多」裡設定鑰匙"
+        ? "可拖曳改位置，再按「存地圖位置」"
+        : "可拖曳改位置；寫回倉庫請先設定鑰匙"
     )
   )
   .catch((err) => setStatus(err.message || String(err)));

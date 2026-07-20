@@ -7,18 +7,15 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=desk1" />
+  <link rel="stylesheet" href="styles.css?v=map2" />
   <!-- 預覽請用 raw.githack（會正確當成網頁）。不要用 raw.githubusercontent 或 jsDelivr 開 html，會變純文字。 -->
 </head>
 <body>
   <div class="app">
     <div class="chrome">
       <header class="top">
-        <div class="brand">
-          <p class="brand-name">SEED</p>
-          <p class="brand-tag">知識像地圖一樣擺：有位置、有關係</p>
-        </div>
-        <p class="hint" id="status">正在載入…</p>
+        <p class="brand-name">SEED</p>
+        <p class="hint sr-only" id="status" aria-live="polite">正在載入…</p>
       </header>
 
       <nav class="actions" id="actions" aria-label="主要操作">
@@ -59,10 +56,8 @@
 
     <main class="stage">
       <section id="panel-list" class="panel panel-map">
-        <div class="map-head">
-          <h1 id="map-title">知識地圖</h1>
-          <p class="lead" id="map-note">每一格可以放一份筆記；位置代表相對關係（例如北／中／南／東）。</p>
-        </div>
+        <h1 id="map-title" class="sr-only">知識地圖</h1>
+        <p id="map-note" class="sr-only"></p>
         <div class="map-shell">
           <div class="compass compass-n" aria-hidden="true">北</div>
           <div class="compass compass-s" aria-hidden="true">南</div>
@@ -70,7 +65,6 @@
           <div class="compass compass-e" aria-hidden="true">東</div>
           <div id="knowledge-map" class="knowledge-map" role="grid" aria-label="知識地圖格子"></div>
         </div>
-        <p class="map-legend">每個種子＝圖示大頭貼＋短標。之後可換成書封圖（cover）。</p>
       </section>
 
       <section id="panel-read" class="panel hidden">
@@ -109,13 +103,6 @@
         <pre id="diff-out" class="diff-out" aria-live="polite"></pre>
       </section>
     </main>
-
-    <footer class="foot">
-      <a href="https://github.com/hyi1105/SEED" target="_blank" rel="noopener">在 GitHub 看原始檔</a>
-      <span>·</span>
-      <span>正確預覽：</span>
-      <a href="https://raw.githack.com/hyi1105/SEED/main/docs/index.html" target="_blank" rel="noopener">raw.githack 知識地圖</a>
-    </footer>
 
     <dialog id="token-dialog" class="token-dialog">
       <form method="dialog" id="token-form">
@@ -192,6 +179,6 @@
       </form>
     </dialog>
   </div>
-  <script src="app.js?v=desk1"></script>
+  <script src="app.js?v=map2"></script>
 </body>
 </html>
