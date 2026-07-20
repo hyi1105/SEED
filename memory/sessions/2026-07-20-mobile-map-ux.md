@@ -26,4 +26,5 @@ status: active
 
 ## 待續
 
-- 固定殼層上線後，請使用者再確認手感
+- ~~固定殼層上線後，請使用者再確認手感~~ → 手機 OK
+- **2026-07-20**：網頁版按鈕消失（`hidden` 的 `display:none !important` 蓋過桌面 CSS）→ 改 class `collapsed`；桌面一律展開全部操作
