@@ -16,6 +16,7 @@ const AI_KEY = "seed-openai-key-v1";
 const AI_BASE_KEY = "seed-openai-base-v1";
 const MEMBER_KEY = "seed-member-code-v1";
 const RECENT_PATH_KEY = "seed-recent-paths-v1";
+const SEED_TRAY_KEY = "seed-tray-v1";
 const DEFAULT_AI_BASE = "https://api.openai.com/v1";
 
 const state = {
@@ -49,6 +50,7 @@ const state = {
   contentSaveTimer: null,
   layoutSaveTimer: null,
   autosaving: false,
+  archivedSeedIds: [],
 };
 
 const $ = (id) => document.getElementById(id);
@@ -167,7 +169,7 @@ function normalizeFrame(frame) {
 
 function textToFrames(text) {
   const raw = String(text || "");
-  if (!raw.trim()) return [{ note: "", body: "" }];
+  if (!raw.trim()) return [];
   const parts = raw.split(/\n{2,}/);
   return parts.map((part) => {
     const m = part.match(/^<<<NOTE\n([\s\S]*?)\n>>>\n?([\s\S]*)$/);
@@ -220,9 +222,10 @@ async function autosaveSeedContent() {
   syncWorkingFromFrames();
   const text = state.workingText;
   if (text === state.originalText) return;
-  if (!getToken()) {
+  if (state.current.localOnly || !getToken()) {
     localStorage.setItem(`seed-draft:${state.current.id}`, text);
-    setStatus("已暫存本機（尚未設定鑰匙）");
+    state.originalText = text;
+    setStatus(state.current.localOnly ? "已自動儲存在這台裝置" : "已暫存本機（尚未設定鑰匙）");
     updateSyncUi();
     return;
   }
@@ -255,7 +258,9 @@ function renderInsertGap(index) {
   const gap = document.createElement("button");
   gap.type = "button";
   gap.className = "frame-insert-gap";
-  gap.textContent = "+ 在這裡插入";
+  gap.textContent = "+";
+  gap.title = "在這裡插入一格";
+  gap.setAttribute("aria-label", "在這裡插入一格");
   gap.addEventListener("click", () => {
     state.frames.splice(index, 0, { note: "", body: "" });
     syncWorkingFromFrames();
@@ -278,8 +283,7 @@ function renderFrameBoard() {
     return;
   }
 
-  const frames = state.frames.length ? state.frames : [{ note: "", body: "" }];
-  state.frames = frames.map(normalizeFrame);
+  state.frames = state.frames.map(normalizeFrame);
   board.appendChild(renderInsertGap(0));
 
   state.frames.forEach((frame, index) => {
@@ -287,16 +291,6 @@ function renderFrameBoard() {
     block.className = "frame-block";
     block.draggable = true;
     block.dataset.index = String(index);
-
-    const note = document.createElement("input");
-    note.type = "text";
-    note.className = "frame-note";
-    note.placeholder = "註解（不列印）";
-    note.value = frame.note || "";
-    note.addEventListener("input", () => {
-      state.frames[index].note = note.value;
-      scheduleContentAutosave();
-    });
 
     const handle = document.createElement("span");
     handle.className = "frame-handle";
@@ -314,9 +308,38 @@ function renderFrameBoard() {
       scheduleContentAutosave();
     });
 
-    block.appendChild(note);
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "frame-remove";
+    remove.textContent = "×";
+    remove.title = "刪除這一格";
+    remove.setAttribute("aria-label", "刪除這一格");
+    remove.addEventListener("click", () => deleteFrame(index));
+
     block.appendChild(handle);
     block.appendChild(body);
+    block.appendChild(remove);
+
+    const note = document.createElement("input");
+    note.type = "text";
+    note.className = "frame-note";
+    note.placeholder = "註解（不列印）";
+    note.value = frame.note || "";
+    note.addEventListener("input", () => {
+      state.frames[index].note = note.value;
+      scheduleContentAutosave();
+    });
+    const removeIfEmpty = () => {
+      setTimeout(() => {
+        if (group.contains(document.activeElement)) return;
+        const currentIndex = state.frames.indexOf(frame);
+        if (currentIndex < 0) return;
+        const current = state.frames[currentIndex];
+        if (!current.body.trim() && !current.note.trim()) deleteFrame(currentIndex, true);
+      }, 0);
+    };
+    body.addEventListener("blur", removeIfEmpty);
+    note.addEventListener("blur", removeIfEmpty);
 
     block.addEventListener("dragstart", (e) => {
       state.frameDragFrom = index;
@@ -346,9 +369,22 @@ function renderFrameBoard() {
       scheduleContentAutosave();
     });
 
-    board.appendChild(block);
+    const group = document.createElement("div");
+    group.className = "frame-group";
+    group.appendChild(block);
+    group.appendChild(note);
+    board.appendChild(group);
     board.appendChild(renderInsertGap(index + 1));
   });
+}
+
+function deleteFrame(index, silent = false) {
+  if (!state.frames[index]) return;
+  state.frames.splice(index, 1);
+  syncWorkingFromFrames();
+  renderFrameBoard();
+  scheduleContentAutosave();
+  if (!silent) showToast("已刪除這一格", "ok");
 }
 
 function setViewMode(text) {
@@ -458,10 +494,15 @@ async function setDocMode(mode) {
     return;
   }
   if (mode === "diff") {
+    if (state.current.localOnly) {
+      showToast("這顆 SEED 還沒有可比對的版本", "info");
+      return;
+    }
     state.docMode = "diff";
     if (!state.versions.length) await loadVersions();
     showPanel("diff");
     updateModeChips();
+    if (state.versions.length >= 2) await runDiff();
     return;
   }
   if (mode === "a4") {
@@ -542,7 +583,146 @@ function applySavedLayout() {
 }
 
 function seedAt(col, row) {
-  return state.seeds.find((s) => s.col === col && s.row === row);
+  return state.seeds.find((s) => !s.archived && s.col === col && s.row === row);
+}
+
+function loadSeedTrayState() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(SEED_TRAY_KEY) || "{}");
+    return {
+      archived: Array.isArray(raw.archived) ? raw.archived : [],
+      deleted: Array.isArray(raw.deleted) ? raw.deleted : [],
+      custom: Array.isArray(raw.custom) ? raw.custom : [],
+    };
+  } catch {
+    return { archived: [], deleted: [], custom: [] };
+  }
+}
+
+function saveSeedTrayState() {
+  const custom = state.seeds.filter((s) => s.localOnly);
+  const deleted = loadSeedTrayState().deleted;
+  localStorage.setItem(
+    SEED_TRAY_KEY,
+    JSON.stringify({
+      archived: state.seeds.filter((s) => s.archived).map((s) => s.id),
+      deleted,
+      custom,
+    })
+  );
+}
+
+function findFreeMapCell() {
+  for (let row = 0; row < state.map.rows; row++) {
+    for (let col = 0; col < state.map.cols; col++) {
+      if (!seedAt(col, row)) return { col, row };
+    }
+  }
+  return null;
+}
+
+function archiveSeed(id) {
+  const seed = state.seeds.find((s) => s.id === id);
+  if (!seed) return;
+  seed.archived = true;
+  saveSeedTrayState();
+  renderMap();
+  scheduleLayoutAutosave();
+  setStatus(`「${seed.title}」已收到我的 SEED`);
+}
+
+function placeSeedOnMap(id) {
+  const seed = state.seeds.find((s) => s.id === id);
+  const cell = findFreeMapCell();
+  if (!seed || !cell) {
+    showToast("拼圖上沒有空位", "warn");
+    return;
+  }
+  seed.archived = false;
+  seed.col = cell.col;
+  seed.row = cell.row;
+  saveSeedTrayState();
+  renderMap();
+  scheduleLayoutAutosave();
+  setStatus(`「${seed.title}」已放到拼圖`);
+}
+
+function deleteSeed(id) {
+  const seed = state.seeds.find((s) => s.id === id);
+  if (!seed || !window.confirm(`刪除「${seed.title}」？`)) return;
+  const tray = loadSeedTrayState();
+  if (!seed.localOnly && !tray.deleted.includes(id)) tray.deleted.push(id);
+  state.seeds = state.seeds.filter((s) => s.id !== id);
+  localStorage.setItem(
+    SEED_TRAY_KEY,
+    JSON.stringify({
+      archived: state.seeds.filter((s) => s.archived).map((s) => s.id),
+      deleted: tray.deleted,
+      custom: state.seeds.filter((s) => s.localOnly),
+    })
+  );
+  renderMap();
+  scheduleLayoutAutosave();
+  showToast("已刪除 SEED", "ok");
+}
+
+function addSeed() {
+  const title = window.prompt("新的 SEED 名稱");
+  if (!title?.trim()) return;
+  const id = `local-${Date.now().toString(36)}`;
+  const seed = {
+    id,
+    title: title.trim(),
+    alias: title.trim(),
+    short: Array.from(title.trim()).slice(0, 4).join(""),
+    path: "",
+    blurb: "",
+    col: 0,
+    row: 0,
+    archived: true,
+    localOnly: true,
+  };
+  state.seeds.push(seed);
+  localStorage.setItem(`seed-draft:${id}`, "");
+  saveSeedTrayState();
+  renderMap();
+  showToast(`已新增「${seed.title}」`, "ok");
+}
+
+function renderSeedTray() {
+  const root = $("seed-tray-list");
+  if (!root) return;
+  root.innerHTML = "";
+  const archived = state.seeds.filter((s) => s.archived);
+  if (!archived.length) {
+    root.innerHTML = '<p class="seed-tray-empty">這裡可收納暫時不放在拼圖上的 SEED。</p>';
+    return;
+  }
+  for (const seed of archived) {
+    const card = document.createElement("div");
+    card.className = "seed-tray-card";
+    const open = document.createElement("button");
+    open.type = "button";
+    open.className = "seed-tray-open";
+    open.textContent = seed.title;
+    open.addEventListener("click", () =>
+      selectSeed(seed).catch((err) => setStatus(err.message || String(err)))
+    );
+    const place = document.createElement("button");
+    place.type = "button";
+    place.className = "seed-tray-action";
+    place.textContent = "放到拼圖";
+    place.addEventListener("click", () => placeSeedOnMap(seed.id));
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "seed-tray-delete";
+    remove.textContent = "×";
+    remove.title = "刪除";
+    remove.setAttribute("aria-label", `刪除 ${seed.title}`);
+    remove.addEventListener("click", () => deleteSeed(seed.id));
+    card.append(open, place, remove);
+    root.appendChild(card);
+  }
 }
 
 function isStudio(seed) {
@@ -859,9 +1039,16 @@ function hasUnsavedPuzzleChanges() {
     return true;
   }
   const baseSeeds = Object.fromEntries((cat.seeds || []).map((s) => [s.id, s]));
-  return state.seeds.some((s) => {
+  const liveRepoSeeds = state.seeds.filter((s) => !s.localOnly);
+  if ((cat.seeds || []).length !== liveRepoSeeds.length) return true;
+  return liveRepoSeeds.some((s) => {
     const base = baseSeeds[s.id];
-    return !base || base.col !== s.col || base.row !== s.row;
+    return (
+      !base ||
+      base.col !== s.col ||
+      base.row !== s.row ||
+      (base.archived === true) !== (s.archived === true)
+    );
   });
 }
 
@@ -1133,6 +1320,19 @@ function renderMap() {
           selectSeed(seed).catch((err) => setStatus(err.message || String(err)));
         });
         cell.appendChild(btn);
+        if (state.map.kind !== "community") {
+          const archive = document.createElement("button");
+          archive.type = "button";
+          archive.className = "map-seed-archive";
+          archive.textContent = "↓";
+          archive.title = "收到我的 SEED";
+          archive.setAttribute("aria-label", `收起 ${seed.title}`);
+          archive.addEventListener("click", (e) => {
+            e.stopPropagation();
+            archiveSeed(seed.id);
+          });
+          cell.appendChild(archive);
+        }
       } else if (state.map.kind === "community") {
         const cost = cellClaimCost(col, row);
         const slot = document.createElement("button");
@@ -1147,6 +1347,7 @@ function renderMap() {
       root.appendChild(cell);
     }
   }
+  renderSeedTray();
   updateSyncUi();
 }
 
@@ -1211,11 +1412,22 @@ async function loadCatalog() {
     layoutName: data.map?.layoutName || "",
     layoutRev: Number.isInteger(data.map?.layoutRev) ? data.map.layoutRev : 0,
   };
-  state.seeds = (data.seeds || []).map((s) => ({
+  const hasTrayState = localStorage.getItem(SEED_TRAY_KEY) !== null;
+  const tray = loadSeedTrayState();
+  if (!hasTrayState) {
+    tray.archived = (data.seeds || []).slice(8).map((s) => s.id);
+  }
+  const custom = tray.custom.map((s) => ({ ...s, archived: true, localOnly: true }));
+  state.seeds = (data.seeds || [])
+    .filter((s) => !tray.deleted.includes(s.id))
+    .map((s) => ({
     ...s,
     col: Number.isInteger(s.col) ? s.col : 0,
     row: Number.isInteger(s.row) ? s.row : 0,
+    archived: tray.archived.includes(s.id) || s.archived === true,
   }));
+  state.seeds.push(...custom.filter((s) => !state.seeds.some((x) => x.id === s.id)));
+  if (!hasTrayState) saveSeedTrayState();
   clampSeedsToMap();
   applySavedLayout();
   $("map-title").textContent = state.map.title;
@@ -1388,7 +1600,9 @@ function updateAiUiMode() {
 function buildSeedsPayload() {
   const byId = Object.fromEntries(state.seeds.map((s) => [s.id, s]));
   const base = state.catalog || { repo: REPO, branch: BRANCH, map: state.map, seeds: [] };
-  const seeds = (base.seeds || state.seeds).map((s) => {
+  const seeds = (base.seeds || state.seeds)
+    .filter((s) => byId[s.id] && !byId[s.id].localOnly)
+    .map((s) => {
     const live = byId[s.id] || s;
     return {
       ...s,
@@ -1401,11 +1615,12 @@ function buildSeedsPayload() {
       path: live.path ?? s.path,
       blurb: live.blurb ?? s.blurb,
       id: live.id ?? s.id,
+      archived: live.archived === true,
     };
   });
   // Include any new seeds only in state
   for (const s of state.seeds) {
-    if (!seeds.some((x) => x.id === s.id)) {
+    if (!s.localOnly && !seeds.some((x) => x.id === s.id)) {
       seeds.push({
         id: s.id,
         title: s.title,
@@ -1416,6 +1631,7 @@ function buildSeedsPayload() {
         blurb: s.blurb,
         col: s.col,
         row: s.row,
+        archived: s.archived === true,
       });
     }
   }
@@ -1666,12 +1882,18 @@ async function selectSeed(seed) {
   state.workingText = "";
   state.draftAccepted = false;
   setStatus(`已選：${seed.title}`);
-  await Promise.all([readCurrent(), loadVersions()]);
+  await Promise.all([readCurrent(), seed.localOnly ? Promise.resolve() : loadVersions()]);
   showPanel("read");
 }
 
 async function loadSeedText() {
   if (!state.current) throw new Error("請先在拼圖上點一份筆記");
+  if (state.current.localOnly) {
+    const text = localStorage.getItem(`seed-draft:${state.current.id}`) || "";
+    state.originalText = text;
+    state.workingText = text;
+    return text;
+  }
   const text = await fetchText(`${RAW}${state.current.path}?ts=${Date.now()}`);
   state.originalText = text;
   state.workingText = text;
@@ -1700,20 +1922,14 @@ async function startEdit() {
   }
   if (!state.originalText) await loadSeedText();
   if ($("read-title")) $("read-title").textContent = state.current.title;
-  setEditMode(state.workingText || state.originalText);
+  setEditMode(state.workingText ?? state.originalText);
   setStatus("編輯模式：框內直接改，會自動儲存");
   showPanel("read");
 }
 
 function showDraftDiff() {
   const parts = diffLines(state.originalText, state.workingText);
-  const out = $("diff-out");
-  out.innerHTML = parts
-    .map((p) => {
-      const prefix = p.type === "add" ? "+ " : p.type === "del" ? "- " : "  ";
-      return `<span class="${p.type}">${prefix}${escapeHtml(p.text)}</span>`;
-    })
-    .join("");
+  renderDiffA4(parts);
   const adds = parts.filter((p) => p.type === "add").length;
   const dels = parts.filter((p) => p.type === "del").length;
   // Fill selects with pseudo options for this draft session
@@ -1721,6 +1937,19 @@ function showDraftDiff() {
   $("diff-new").innerHTML = `<option value="draft">你這次改的（新的）</option>`;
   setStatus(`這次修改：新增 ${adds} 行，刪除 ${dels} 行`);
   showPanel("diff");
+}
+
+function renderDiffA4(parts) {
+  const out = $("diff-out");
+  out.innerHTML = "";
+  for (const part of parts) {
+    const line = document.createElement("div");
+    line.className = `diff-frame ${part.type}`;
+    line.textContent = part.text || " ";
+    if (part.type === "del") line.title = "刪除內容";
+    if (part.type === "add") line.title = "變更／新增內容";
+    out.appendChild(line);
+  }
 }
 
 function keepDraft() {
@@ -1745,7 +1974,7 @@ async function saveVersionToRepo(versionName, opts = {}) {
   const { silent = false } = opts;
   if (!state.current) throw new Error("請先選一份筆記");
   if (state.editing || state.frames?.length) syncWorkingFromFrames();
-  const text = state.workingText || state.originalText;
+  const text = state.workingText ?? state.originalText;
   if (text == null) throw new Error("沒有可存的內容");
   if (!silent) setStatus("正在存成一版…");
   const content = bytesToBase64(new TextEncoder().encode(text));
@@ -1951,13 +2180,7 @@ async function runDiff() {
     fetchFileAt(newSha),
   ]);
   const parts = diffLines(oldText, newText);
-  const out = $("diff-out");
-  out.innerHTML = parts
-    .map((p) => {
-      const prefix = p.type === "add" ? "+ " : p.type === "del" ? "- " : "  ";
-      return `<span class="${p.type}">${prefix}${escapeHtml(p.text)}</span>`;
-    })
-    .join("");
+  renderDiffA4(parts);
   const adds = parts.filter((p) => p.type === "add").length;
   const dels = parts.filter((p) => p.type === "del").length;
   setStatus(`差異：新增 ${adds} 行，刪除 ${dels} 行`);
@@ -2292,6 +2515,8 @@ $("run-diff").addEventListener("click", () => {
   runDiff().catch((err) => setStatus(err.message || String(err)));
 });
 
+$("seed-add")?.addEventListener("click", addSeed);
+
 function closeAllPopovers() {
   setPopoverOpen(null);
   setPathOpen(false);
@@ -2315,30 +2540,8 @@ function buildPathSteps() {
         state.docMode = "edit";
         showPanel("read");
         if (!state.originalText) await loadSeedText();
-        setEditMode(state.workingText || state.originalText);
+        setEditMode(state.workingText ?? state.originalText);
       },
-    });
-  }
-  if (state.panel === "history" || state.panel === "diff" || state.docMode === "diff") {
-    steps.push({
-      key: "diff",
-      label: "記錄比對",
-      depth: state.current ? 2 : 1,
-      go: () => setDocMode("diff"),
-    });
-  } else if (state.docMode === "a4" && state.panel === "read" && state.current) {
-    steps.push({
-      key: "a4",
-      label: "A4檢視",
-      depth: 2,
-      go: () => setDocMode("a4"),
-    });
-  } else if (state.panel === "read" && state.current) {
-    steps.push({
-      key: "edit",
-      label: "編輯",
-      depth: 2,
-      go: () => setDocMode("edit"),
     });
   }
   return steps;

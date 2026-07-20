@@ -155,6 +155,11 @@ html, body {
   background: var(--accent-soft);
 }
 
+.mode-chip {
+  font-size: 0.7rem;
+  padding: 0.18rem 0.42rem;
+}
+
 .header-chip {
   appearance: none;
   border: 1px solid var(--line);
@@ -425,6 +430,12 @@ html, body {
   margin: 0 auto;
 }
 
+.frame-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+}
+
 .frame-board.a4-view {
   background: #fff;
   border: 1px solid var(--line);
@@ -440,20 +451,27 @@ html, body {
   appearance: none;
   border: 1px dashed transparent;
   background: transparent;
-  color: transparent;
+  color: var(--accent);
   font: inherit;
-  font-size: 0.75rem;
-  padding: 0.15rem;
-  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1;
+  width: 1.35rem;
+  height: 1.35rem;
+  padding: 0;
+  border-radius: 999px;
   cursor: pointer;
   transition: 0.12s ease;
+  align-self: center;
+  opacity: 0.55;
 }
 
 .frame-board:hover .frame-insert-gap,
 .frame-insert-gap:focus-visible {
   color: var(--accent);
-  border-color: var(--line);
+  border-color: var(--accent);
   background: var(--accent-soft);
+  opacity: 1;
 }
 
 .frame-block {
@@ -481,7 +499,7 @@ html, body {
   font: inherit;
   font-size: 0.75rem;
   color: #4a5560;
-  padding: 0.1rem 1.4rem 0.1rem 0;
+  padding: 0.1rem 0.55rem;
   width: 100%;
 }
 
@@ -492,12 +510,35 @@ html, body {
 .frame-handle {
   position: absolute;
   top: 0.45rem;
-  right: 0.45rem;
+  right: 2rem;
   color: #8a949c;
   font-size: 0.75rem;
   letter-spacing: -0.08em;
   cursor: grab;
   user-select: none;
+}
+
+.frame-remove {
+  position: absolute;
+  top: 0.34rem;
+  right: 0.42rem;
+  appearance: none;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #7b858d;
+  width: 1.45rem;
+  height: 1.45rem;
+  padding: 0;
+  font: inherit;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.frame-remove:hover {
+  color: var(--del);
+  background: var(--del-bg);
 }
 
 .frame-body {
@@ -512,6 +553,116 @@ html, body {
   padding: 0.55rem 0.65rem;
   resize: vertical;
   min-height: 2.8rem;
+}
+
+.map-seed-archive {
+  position: absolute;
+  right: 0.2rem;
+  bottom: 0.2rem;
+  z-index: 3;
+  appearance: none;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 252, 247, 0.88);
+  color: var(--muted);
+  width: 1.25rem;
+  height: 1.25rem;
+  padding: 0;
+  font: inherit;
+  font-size: 0.7rem;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+}
+
+.map-cell:hover .map-seed-archive,
+.map-seed-archive:focus-visible {
+  opacity: 1;
+}
+
+@media (pointer: coarse) {
+  .map-seed-archive {
+    opacity: 0.82;
+  }
+}
+
+.seed-tray {
+  margin: 0.5rem 0.35rem 0.35rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper);
+}
+
+.seed-tray-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.seed-tray-head h2 {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.seed-add-btn,
+.seed-tray-action,
+.seed-tray-delete {
+  appearance: none;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--accent);
+  font: inherit;
+  font-size: 0.72rem;
+  padding: 0.22rem 0.55rem;
+  cursor: pointer;
+}
+
+.seed-tray-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.seed-tray-card {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  padding: 0.2rem 0.25rem 0.2rem 0.55rem;
+}
+
+.seed-tray-open {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.seed-tray-delete {
+  color: var(--muted);
+  width: 1.4rem;
+  height: 1.4rem;
+  padding: 0;
+}
+
+.seed-tray-delete:hover {
+  color: var(--del);
+  border-color: var(--del);
+}
+
+.seed-tray-empty {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.78rem;
 }
 
 @media print {
@@ -1200,34 +1351,43 @@ h1 {
 }
 
 .diff-out {
-  margin: 0;
-  padding: 1rem;
-  border-radius: 12px;
+  margin: 0 auto;
+  padding: 1.5rem 1.75rem;
+  border-radius: 2px;
   border: 1px solid var(--line);
-  background: #1b2420;
-  color: #e8f0eb;
-  overflow: auto;
-  max-height: min(70vh, 640px);
+  background: #fff;
+  color: var(--ink);
+  overflow: visible;
+  max-width: 48rem;
+  min-height: 70vh;
   font-size: 0.92rem;
-  line-height: 1.45;
+  line-height: 1.55;
   white-space: pre-wrap;
+  box-shadow: 0 2px 12px rgba(20, 32, 26, 0.06);
 }
 
-.diff-out .add {
+.diff-frame {
+  padding: 0.15rem 0.35rem;
+  margin: 0.08rem 0;
+  border: 1px solid transparent;
+  border-radius: 5px;
+}
+
+.diff-frame.add {
+  border-color: var(--add);
   background: var(--add-bg);
   color: var(--add);
-  display: block;
 }
 
-.diff-out .del {
+.diff-frame.del {
+  border-color: var(--del);
   background: var(--del-bg);
   color: var(--del);
-  display: block;
+  text-decoration: line-through;
 }
 
-.diff-out .ctx {
-  color: #b7c4bc;
-  display: block;
+.diff-frame.ctx {
+  color: var(--ink);
 }
 
 @media (min-width: 720px) {

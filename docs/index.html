@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=control2" />
+  <link rel="stylesheet" href="styles.css?v=control3" />
   <!-- 預覽請用 raw.githack（會正確當成網頁）。不要用 raw.githubusercontent 或 jsDelivr 開 html，會變純文字。 -->
 </head>
 <body>
@@ -33,16 +33,6 @@
             <button type="button" class="header-chip mode-chip" data-mode="a4" aria-pressed="false">A4檢視</button>
             <button type="button" class="header-chip mode-chip" data-mode="diff" aria-pressed="false">記錄比對</button>
           </div>
-          <button type="button" class="header-chip" id="header-me-btn" aria-expanded="false" aria-controls="me-popover" title="狀態">
-            <span id="header-kind-label">公開</span>
-            <span class="sync-dot" id="sync-dot" data-state="unknown" aria-hidden="true"></span>
-          </button>
-          <button type="button" class="btn btn-icon btn-ghost hidden" id="notify-btn" title="系統回饋" aria-expanded="false" aria-controls="notify-popover">
-            <svg class="btn-icon-svg" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
-              <path fill="currentColor" d="M12 22a2 2 0 0 0 2-2H10a2 2 0 0 0 2 2zm6-6V11a6 6 0 1 0-12 0v5l-2 2v1h16v-1l-2-2z"/>
-            </svg>
-            <span class="notify-badge hidden" id="notify-badge" aria-hidden="true"></span>
-          </button>
         </div>
         <p class="hint sr-only" id="status" aria-live="polite">正在載入…</p>
       </header>
@@ -55,20 +45,16 @@
         <nav class="path-recent" id="path-recent"></nav>
       </div>
 
-      <div class="popover me-popover hidden" id="me-popover" role="dialog" aria-label="狀態">
-        <p class="popover-heading">狀態</p>
-        <div class="info-sheet">
-          <div class="info-row">
-            <span class="info-label">可見</span>
-            <button type="button" class="info-action" id="info-kind-switch" title="點一下切換公開／私人（展示用）">公開</button>
-          </div>
-          <div class="info-row">
-            <span class="info-label">存檔</span>
-            <span class="info-value" id="info-saved-at">自動儲存</span>
-          </div>
-          <p class="info-extra hidden" id="info-extra"></p>
-        </div>
-        <!-- 隱藏入口：進階設定仍可用 -->
+      <div class="hidden" aria-hidden="true">
+        <div id="me-popover"></div>
+        <div id="notify-popover"></div>
+        <button type="button" id="header-me-btn"></button>
+        <button type="button" id="notify-btn"></button>
+        <span id="header-kind-label"></span>
+        <span id="sync-dot"></span>
+        <span id="info-saved-at"></span>
+        <span id="info-extra"></span>
+        <button type="button" id="info-kind-switch"></button>
         <button type="button" class="hidden" id="save-layout" tabindex="-1" aria-hidden="true">存拼圖位置</button>
         <button type="button" class="hidden" id="reset-layout" tabindex="-1" aria-hidden="true">重置位置</button>
         <button type="button" class="hidden" id="token-setup" tabindex="-1" aria-hidden="true">設定鑰匙</button>
@@ -85,13 +71,12 @@
         </div>
       </div>
 
-      <div class="popover notify-popover hidden" id="notify-popover" role="log" aria-label="系統回饋">
-        <p class="popover-heading">系統回饋</p>
-        <div class="notify-chips" id="notify-chips"></div>
-        <ul class="notify-list" id="notify-list"></ul>
-        <form class="notify-form" id="notify-form">
+      <div class="hidden" aria-hidden="true">
+        <div id="notify-chips"></div>
+        <ul id="notify-list"></ul>
+        <form id="notify-form">
           <input type="text" id="notify-input" placeholder="輸入問題或指令（之後由 AI 回答）" autocomplete="off" />
-          <button type="submit" class="btn btn-primary">送出</button>
+          <button type="submit">送出</button>
         </form>
       </div>
 
@@ -115,6 +100,13 @@
         <div class="map-shell">
           <div id="knowledge-map" class="knowledge-map" role="grid" aria-label="知識拼圖格子"></div>
         </div>
+        <section class="seed-tray" aria-labelledby="seed-tray-title">
+          <div class="seed-tray-head">
+            <h2 id="seed-tray-title">我的 SEED</h2>
+            <button type="button" class="seed-add-btn" id="seed-add">＋ 新增 SEED</button>
+          </div>
+          <div class="seed-tray-list" id="seed-tray-list"></div>
+        </section>
       </section>
 
       <section id="panel-read" class="panel hidden">
@@ -132,7 +124,7 @@
       </section>
 
       <section id="panel-diff" class="panel hidden">
-        <h1>看看改了什麼</h1>
+        <h1 class="sr-only">記錄比對</h1>
         <div class="diff-picks">
           <label>
             舊的（左）
@@ -144,7 +136,7 @@
           </label>
           <button type="button" class="btn btn-primary" id="run-diff">顯示差異</button>
         </div>
-        <pre id="diff-out" class="diff-out" aria-live="polite"></pre>
+        <div id="diff-out" class="diff-out diff-a4" aria-live="polite"></div>
       </section>
     </main>
 
@@ -308,21 +300,6 @@
       </form>
     </dialog>
 
-    <dialog id="frame-edit-dialog" class="token-dialog frame-sheet">
-      <form method="dialog" id="frame-edit-form">
-        <h2 id="frame-edit-title">改這一格</h2>
-        <p class="lead">每一段是一個框。改完按套用，會回到控制台。</p>
-        <label class="token-label">
-          這一格
-          <textarea id="frame-edit-input" rows="5" placeholder="輸入這一格的內容…"></textarea>
-        </label>
-        <div class="token-actions">
-          <button type="submit" class="btn btn-primary" value="save">套用</button>
-          <button type="submit" class="btn" value="cancel">取消</button>
-        </div>
-      </form>
-    </dialog>
-
     <dialog id="version-dialog" class="token-dialog">
       <form method="dialog" id="version-form">
         <h2>存成一版</h2>
@@ -341,6 +318,6 @@
 
   <div class="toast hidden" id="toast" role="status" aria-live="polite"></div>
 
-  <script src="app.js?v=control2"></script>
+  <script src="app.js?v=control3"></script>
 </body>
 </html>

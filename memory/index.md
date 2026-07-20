@@ -10,6 +10,7 @@
 
 ## 場次
 
+- 2026-07-21 — 所見即所得階層＋我的 SEED — 標籤：ux、框編輯、我的SEED、比對 — [sessions/2026-07-21-wysiwyg-seed-tray.md](sessions/2026-07-21-wysiwyg-seed-tray.md)
 - 2026-07-21 — 階層常駐＋框外註解＋自動存 — 標籤：ux、自動儲存、框編輯 — [sessions/2026-07-21-autosave-frames.md](sessions/2026-07-21-autosave-frames.md)
 - 2026-07-21 — 角色選擇＋控制台框編輯 — 標籤：ux、角色、控制台、路徑 — [sessions/2026-07-21-agent-control-panel.md](sessions/2026-07-21-agent-control-panel.md)
 - 2026-07-20 — 全部發佈（Pages 綠勾、快取 full1）— 標籤：發佈、上線 — [sessions/2026-07-20-full-publish.md](sessions/2026-07-20-full-publish.md)
