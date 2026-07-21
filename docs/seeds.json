@@ -9,9 +9,9 @@
     "cols": 10,
     "rows": 10,
     "note": "知識棋盤：拖曳擺放；點進去看完整標題",
-    "savedAt": "2026-07-21T01:04:54.264Z",
+    "savedAt": "2026-07-21T01:07:46.631Z",
     "layoutName": "7/21 上午7:30",
-    "layoutRev": 13
+    "layoutRev": 14
   },
   "seeds": [
     {
@@ -53,8 +53,8 @@
       "alias": "蘇花交通",
       "path": "memory/maps/taiwan-roads/suhua.md",
       "blurb": "偏東",
-      "col": 8,
-      "row": 3,
+      "col": 7,
+      "row": 4,
       "cover": null,
       "archived": false
     },
@@ -86,8 +86,8 @@
       "alias": "產品願景",
       "path": "memory/sessions/2026-07-20-platform-vision.md",
       "blurb": "工作室",
-      "col": 1,
-      "row": 5,
+      "col": 3,
+      "row": 6,
       "cover": null,
       "archived": false
     },
@@ -108,8 +108,8 @@
       "alias": "知識起點",
       "path": "memory/sessions/2026-07-20-kb-setup.md",
       "blurb": "工作室",
-      "col": 1,
-      "row": 9,
+      "col": 4,
+      "row": 5,
       "cover": null,
       "archived": false
     },
@@ -119,7 +119,7 @@
       "alias": "總目錄",
       "path": "memory/index.md",
       "blurb": "工作室",
-      "col": 3,
+      "col": 5,
       "row": 8,
       "cover": null,
       "archived": false
@@ -142,7 +142,7 @@
       "path": "memory/topics/seed-pack.md",
       "blurb": "工作室",
       "col": 2,
-      "row": 9,
+      "row": 5,
       "cover": null,
       "archived": false
     },
@@ -174,10 +174,10 @@
       "alias": "繁體中文",
       "path": "memory/topics/language-zh-hant.md",
       "blurb": "工作室",
-      "col": 0,
-      "row": 5,
+      "col": 5,
+      "row": 9,
       "cover": null,
-      "archived": true
+      "archived": false
     },
     {
       "id": "learn-cursor",
