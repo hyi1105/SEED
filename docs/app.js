@@ -62,6 +62,7 @@ const state = {
     seedType: "",
     templateId: "",
   },
+  versionStripOpen: false,
 };
 
 const $ = (id) => document.getElementById(id);
@@ -162,6 +163,7 @@ function showPanel(name) {
   const panel = $(`panel-${name}`);
   if (panel) panel.scrollTop = 0;
   if (name === "system-seed") renderSystemSeedPanel();
+  if (name === "list") state.versionStripOpen = false;
   if (name !== "list") pushRecentPath();
   updatePathBrand();
   updateModeChips();
@@ -5398,13 +5400,66 @@ $("document-file")?.addEventListener("change", () => {
 function closeAllPopovers() {
   setPopoverOpen(null);
   setPathOpen(false);
+  setVersionStripOpen(false);
 }
 
-function getSeedReleaseVersionLabel() {
-  if (!state.current) return "";
+function getVersionOrdinal(index, total) {
+  return `v${Math.max(1, total - index)}`;
+}
+
+function renderPathCrumbForSeed(title) {
+  const total = state.versions.length;
   const latest = state.versions[0];
-  if (!latest?.when) return "";
-  return `發布版本 ${formatWhen(latest.when)}`;
+  const open = state.versionStripOpen;
+
+  let strip = "";
+  if (!total || !latest?.when) {
+    strip = `<div class="path-version-strip is-empty">
+      <span class="path-version-left">尚未發布</span>
+      <span class="path-version-right">—</span>
+      <span class="path-version-chevron" aria-hidden="true">▼</span>
+    </div>`;
+  } else {
+    const left = `${getVersionOrdinal(0, total)} · 目前版`;
+    const right = formatWhen(latest.when);
+    strip = `<button type="button" class="path-version-strip" data-version-toggle aria-expanded="${open ? "true" : "false"}">
+      <span class="path-version-left">${escapeHtml(left)}</span>
+      <span class="path-version-right">${escapeHtml(right)}</span>
+      <span class="path-version-chevron${open ? " is-open" : ""}" aria-hidden="true">▼</span>
+    </button>`;
+  }
+
+  let panel = "";
+  if (total > 0) {
+    const rows = state.versions
+      .map((v, i) => {
+        const isCurrent = i === 0;
+        const left = isCurrent ? `${getVersionOrdinal(i, total)} · 目前版` : getVersionOrdinal(i, total);
+        const right = v.when ? formatWhen(v.when) : "—";
+        return `<div class="path-version-row${isCurrent ? " is-current" : ""}">
+          <span class="path-version-left">${escapeHtml(left)}</span>
+          <span class="path-version-right">${escapeHtml(right)}</span>
+        </div>`;
+      })
+      .join("");
+    panel = `<div class="path-version-panel${open ? "" : " hidden"}">${rows}</div>`;
+  }
+
+  return `<div class="path-crumb-seed">
+    <span class="path-crumb-title">${escapeHtml(title)}</span>
+    ${strip}
+    ${panel}
+  </div>`;
+}
+
+function setVersionStripOpen(open) {
+  state.versionStripOpen = open;
+  const panel = document.querySelector(".path-version-panel");
+  const toggle = document.querySelector("[data-version-toggle]");
+  const chevron = document.querySelector(".path-version-chevron");
+  if (panel) panel.classList.toggle("hidden", !open);
+  if (toggle) toggle.setAttribute("aria-expanded", open ? "true" : "false");
+  if (chevron) chevron.classList.toggle("is-open", open);
 }
 
 function buildPathSteps() {
@@ -5490,11 +5545,7 @@ function updatePathBrand() {
       crumb.innerHTML = `<span class="path-crumb-home">Seed</span>`;
     } else if (state.current) {
       const title = state.current.title || "未命名 SEED";
-      const versionLabel = getSeedReleaseVersionLabel();
-      crumb.innerHTML = `<div class="path-crumb-seed">
-        <span class="path-crumb-title">${escapeHtml(title)}</span>
-        ${versionLabel ? `<span class="path-crumb-version">${escapeHtml(versionLabel)}</span>` : ""}
-      </div>`;
+      crumb.innerHTML = renderPathCrumbForSeed(title);
     } else {
       crumb.innerHTML = `<span class="path-crumb-home">首頁</span>`;
     }
@@ -5599,7 +5650,15 @@ function handleNotifyInput(text) {
 $("brand-home").addEventListener("click", (e) => {
   e.stopPropagation();
   setPathOpen(false);
+  setVersionStripOpen(false);
   showPanel("list");
+});
+
+document.querySelector(".brand-block")?.addEventListener("click", (e) => {
+  if (e.target.closest("[data-version-toggle]")) {
+    e.stopPropagation();
+    setVersionStripOpen(!state.versionStripOpen);
+  }
 });
 
 $("header-me-btn").addEventListener("click", (e) => {
@@ -5644,6 +5703,13 @@ document.addEventListener("click", (e) => {
   }
   if (path && !path.classList.contains("hidden")) {
     if (!path.contains(e.target) && !brandBtn.contains(e.target)) setPathOpen(false);
+  }
+  if (state.versionStripOpen) {
+    const strip = document.querySelector(".path-version-strip[data-version-toggle]");
+    const panel = document.querySelector(".path-version-panel");
+    if (strip && panel && !strip.contains(e.target) && !panel.contains(e.target)) {
+      setVersionStripOpen(false);
+    }
   }
 });
 
