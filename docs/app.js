@@ -213,6 +213,85 @@ function listApprovalInstances(templateId) {
   return state.seeds.filter((seed) => seed.approvalTemplateId === templateId);
 }
 
+function isApproverRole(activeRole, config) {
+  if (!activeRole) return false;
+  if (activeRole.startsWith("Approver") || activeRole.includes("_Delegate")) return true;
+  return config.stages.some((stage) => stage.name === activeRole);
+}
+
+function resolveApprovalFieldPermission(config, field, options = {}) {
+  const { fillMode = false, preview = false } = options;
+  const permissionRole = isApproverRole(config.activeRole, config) ? "Approver" : config.activeRole;
+  const permission = config.permissions.find((item) => item.fieldId === field.id && item.role === permissionRole) || {
+    view: true,
+    edit: true,
+    required: false,
+  };
+  if (preview) return permission;
+  if (["Owner", "Admin"].includes(config.activeRole)) {
+    return { ...permission, view: true, edit: !options.readonly };
+  }
+  if (fillMode && ["Requester", "Filler"].includes(config.activeRole) && !["Draft", "Submitted"].includes(config.status)) {
+    return { ...permission, edit: false };
+  }
+  if (fillMode && isApproverRole(config.activeRole, config) && ["Draft"].includes(config.status)) {
+    return { ...permission, view: permission.view, edit: false };
+  }
+  return permission;
+}
+
+function syncApprovalActiveRole(config) {
+  if (["Draft", "Submitted"].includes(config.status)) {
+    config.activeRole = "Requester";
+    config.currentApprover = config.roles.Requester || "申請人";
+    config.currentLevel = 0;
+    return;
+  }
+  if (config.status === "In Process") {
+    const level = Math.max(0, Number(config.currentLevel) || 0);
+    const stage = config.stages[level - 2];
+    if (stage) {
+      config.activeRole = stage.name;
+      config.currentApprover = stage.people || stage.name;
+    }
+  }
+}
+
+function findApprovalPersonForRole(roleName, config) {
+  if (roleName === "Requester") return config.roles.Requester || "申請人";
+  if (roleName === "Filler") return config.roles.Filler || "填寫人";
+  const stage = config.stages.find((item) => item.name === roleName);
+  return stage?.people || roleName;
+}
+
+function deleteApprovalInstance(instanceId) {
+  const instance = state.seeds.find((seed) => seed.id === instanceId);
+  if (!instance || !isApprovalInstance(instance)) return;
+  if (!window.confirm(`刪除申請單「${instance.title}」？`)) return;
+  localStorage.removeItem(`seed-draft:${instanceId}`);
+  localStorage.removeItem(`seed-versions:${instanceId}`);
+  const metadata = loadSeedMetadata();
+  delete metadata[instanceId];
+  localStorage.setItem(SEED_META_KEY, JSON.stringify(metadata));
+  state.seeds = state.seeds.filter((seed) => seed.id !== instanceId);
+  const tray = loadSeedTrayState();
+  localStorage.setItem(
+    SEED_TRAY_KEY,
+    JSON.stringify({
+      archived: state.seeds.filter((seed) => seed.archived).map((seed) => seed.id),
+      deleted: tray.deleted,
+      custom: state.seeds.filter((seed) => seed.localOnly),
+    })
+  );
+  renderMap();
+  if (state.current?.id === instanceId) {
+    const template = state.seeds.find((seed) => seed.id === instance.approvalTemplateId);
+    if (template) selectSeed(template).catch((err) => setStatus(err.message || String(err)));
+    else setStatus("申請單已刪除");
+  }
+  showToast("已刪除申請單", "ok");
+}
+
 function cloneApprovalTemplate(templateSeed) {
   ensureApprovalModel(templateSeed);
   const config = templateSeed.approvalConfig;
@@ -244,6 +323,7 @@ function cloneApprovalTemplate(templateSeed) {
       answers: {},
       comments: [],
       auditTrail: [],
+      roleViewInitialized: false,
     })),
   };
   return instance;
@@ -693,21 +773,32 @@ function buildApprovalPeopleNodes(config) {
   const nodes = [];
   const seen = new Set();
   [
-    config.roles.Requester || "申請人",
-    config.roles.Filler || "填寫人",
-    ...config.stages.flatMap((stage) => String(stage.people || stage.name || "").split(",")),
-  ].forEach((raw) => {
-    const name = raw.trim();
+    { role: "Requester", name: config.roles.Requester || "申請人" },
+    { role: "Filler", name: config.roles.Filler || "填寫人" },
+    ...config.stages.map((stage) => ({ role: stage.name, name: stage.people || stage.name, stage })),
+  ].forEach((node) => {
+    const name = String(node.name || "").trim();
     if (!name || seen.has(name)) return;
     seen.add(name);
-    nodes.push({ role: name, name });
+    nodes.push({ role: node.role, name, stage: node.stage });
   });
   nodes.push({ role: "Complete", name: "完成" });
   return nodes;
 }
 
+function buildApprovalDelegationLoops(config) {
+  return config.stages
+    .filter((stage) => stage.delegatedFrom)
+    .map((stage) => ({
+      delegate: stage.people || stage.name,
+      delegatorRole: stage.delegatedFrom,
+      delegator: findApprovalPersonForRole(stage.delegatedFrom, config),
+      stageName: stage.name,
+    }));
+}
+
 function renderApprovalFlow(seed, options = {}) {
-  const { compact = false, allowRoleSwitch = true, allowMailPreview = true } = options;
+  const { compact = false, allowRoleSwitch = true, allowMailPreview = true, fillMode = false } = options;
   const config = ensureApprovalModel(seed);
   const wrap = document.createElement("div");
   wrap.className = "approval-flow-wrap";
@@ -732,22 +823,32 @@ function renderApprovalFlow(seed, options = {}) {
   const flow = document.createElement("div");
   flow.className = `approval-flow${compact ? " compact" : ""}${config.flowView === "people" ? " is-people" : ""}`;
   const nodes = config.flowView === "people" ? buildApprovalPeopleNodes(config) : buildApprovalStageNodes(config);
+  const loops = config.flowView === "people" ? buildApprovalDelegationLoops(config) : [];
+  const switchRole = (node) => {
+    if (!allowRoleSwitch) return;
+    if (node.role === "Complete") return;
+    config.activeRole = node.stage?.name || node.role;
+    if (node.stage) config.currentApprover = node.name;
+    else if (node.role === "Requester") config.currentApprover = node.name;
+    else if (node.role === "Filler") config.currentApprover = config.roles.Requester || node.name;
+    persistStructuredSeed();
+    renderFrameBoard();
+  };
   nodes.forEach((node, index) => {
     const person = document.createElement("button");
     person.type = "button";
     person.className = "approval-person";
-    if (config.flowView === "stage" && index === config.currentLevel) person.classList.add("is-current");
+    const isCurrentPerson = fillMode
+      ? (node.stage ? node.stage.name === config.activeRole : node.role === config.activeRole)
+      : config.flowView === "stage" && index === config.currentLevel;
+    if (isCurrentPerson) person.classList.add("is-current");
+    if (fillMode && config.activeRole === node.role) person.classList.add("is-viewing");
     person.innerHTML = `<span>${escapeHtml(node.name.slice(0, 1) || "?")}</span><strong>${escapeHtml(node.role)}</strong><small>${escapeHtml(node.name)}</small>`;
-    if (allowRoleSwitch) {
-      person.title = node.role === config.activeRole ? "目前檢視角色" : `切換為 ${node.role}`;
-      person.addEventListener("click", () => {
-        config.activeRole = node.role;
-        if (node.stage) config.currentApprover = node.name;
-        persistStructuredSeed();
-        renderFrameBoard();
-      });
+    if (allowRoleSwitch && node.role !== "Complete") {
+      person.title = isCurrentPerson ? "目前檢視角色" : `以 ${node.name} 視角檢視`;
+      person.addEventListener("click", () => switchRole(node));
     } else {
-      person.disabled = true;
+      person.disabled = node.role === "Complete";
       person.title = node.name;
     }
     flow.appendChild(person);
@@ -768,6 +869,31 @@ function renderApprovalFlow(seed, options = {}) {
     }
   });
   wrap.appendChild(flow);
+
+  if (loops.length) {
+    const loopPanel = document.createElement("div");
+    loopPanel.className = "approval-delegation-loops";
+    loopPanel.innerHTML = "<p class='meta'>委派回簽</p>";
+    loops.forEach((loop) => {
+      const row = document.createElement("div");
+      row.className = "approval-delegation-loop";
+      row.innerHTML = `
+        <span class="approval-delegation-person">${escapeHtml(loop.delegator.slice(0, 1))}</span>
+        <span class="approval-delegation-arrow">→ ${escapeHtml(loop.delegate)} →</span>
+        <span class="approval-delegation-person is-return">${escapeHtml(loop.delegator.slice(0, 1))}</span>
+        <small>${escapeHtml(loop.delegator)} 委派 ${escapeHtml(loop.delegate)}，完成後回簽</small>`;
+      loopPanel.appendChild(row);
+    });
+    wrap.appendChild(loopPanel);
+  }
+
+  if (fillMode) {
+    const hint = document.createElement("p");
+    hint.className = "meta approval-flow-hint";
+    hint.textContent = `目前視角：${config.activeRole}。點流程人頭可切換 Requester／Approver 檢視。`;
+    wrap.appendChild(hint);
+  }
+
   if (config.mailPreviewKey && allowMailPreview) {
     renderApprovalMailPreview(wrap, seed, config.mailPreviewKey);
   }
@@ -844,15 +970,19 @@ function renderApprovalQuestionnaire(board, seed, options = {}) {
   if (showFlow) {
     board.appendChild(renderApprovalFlow(seed, {
       compact: true,
-      allowRoleSwitch: !fillMode,
+      allowRoleSwitch: true,
       allowMailPreview: true,
+      fillMode,
     }));
   }
 
-  if (showRoleBar) {
+  if (showRoleBar || fillMode) {
     const roleBar = document.createElement("div");
     roleBar.className = "approval-role-bar";
-    ["Requester", "Filler", ...config.stages.map((stage) => stage.name), "CopyTo", "FYI", "Owner", "Admin"].forEach((role) => {
+    const roles = fillMode
+      ? ["Requester", "Filler", ...config.stages.map((stage) => stage.name)]
+      : ["Requester", "Filler", ...config.stages.map((stage) => stage.name), "CopyTo", "FYI", "Owner", "Admin"];
+    roles.forEach((role) => {
       const button = document.createElement("button");
       button.type = "button";
       button.className = "btn";
@@ -860,6 +990,9 @@ function renderApprovalQuestionnaire(board, seed, options = {}) {
       button.textContent = role;
       button.addEventListener("click", () => {
         config.activeRole = role;
+        const stage = config.stages.find((item) => item.name === role);
+        if (stage) config.currentApprover = stage.people || stage.name;
+        else if (role === "Requester") config.currentApprover = config.roles.Requester || "申請人";
         persistStructuredSeed();
         renderFrameBoard();
       });
@@ -872,11 +1005,11 @@ function renderApprovalQuestionnaire(board, seed, options = {}) {
   form.className = `approval-questionnaire${preview ? " is-preview" : ""}`;
   form.noValidate = true;
   seed.formFields.forEach((field, index) => {
-    const permissionRole = config.activeRole.startsWith("Approver") ? "Approver" : config.activeRole;
-    const permission = config.permissions.find((item) => item.fieldId === field.id && item.role === permissionRole);
-    if (!preview && permission && !permission.view && !["Owner", "Admin"].includes(config.activeRole)) return;
+    const permission = resolveApprovalFieldPermission(config, field, { fillMode, preview, readonly });
+    if (!preview && !permission.view) return;
     const card = document.createElement("label");
     card.className = "questionnaire-field";
+    if (fillMode && !permission.edit && permission.view) card.classList.add("is-readonly");
     const number = document.createElement("span");
     number.className = "questionnaire-number";
     number.textContent = String(index + 1);
@@ -898,8 +1031,8 @@ function renderApprovalQuestionnaire(board, seed, options = {}) {
     }
     input.className = "questionnaire-input";
     input.value = config.answers[field.id] || "";
-    input.readOnly = readonly;
-    input.disabled = readonly || Boolean(permission && !permission.edit && !["Owner", "Admin"].includes(config.activeRole));
+    input.readOnly = readonly || (fillMode && !permission.edit);
+    input.disabled = readonly || (fillMode && !permission.edit);
     if (!readonly && !input.disabled) {
       input.addEventListener("input", () => {
         config.answers[field.id] = input.value;
@@ -921,7 +1054,7 @@ function renderApprovalQuestionnaire(board, seed, options = {}) {
   });
   board.appendChild(form);
 
-  if (!readonly && config.commentsEnabled) {
+  if (!readonly && config.commentsEnabled && (fillMode ? isApproverRole(config.activeRole, config) || ["Requester", "Filler"].includes(config.activeRole) : true)) {
     const comment = document.createElement("label");
     comment.className = "questionnaire-field questionnaire-comment";
     comment.innerHTML = "<span class='questionnaire-label'>Comment</span>";
@@ -960,9 +1093,12 @@ function renderApprovalQuestionnaire(board, seed, options = {}) {
     actions.appendChild(button);
   };
   const now = () => new Date().toISOString();
-  if (["Requester", "Filler"].includes(config.activeRole)) {
+  const isRequesterSide = ["Requester", "Filler"].includes(config.activeRole);
+  const isApproverSide = isApproverRole(config.activeRole, config);
+  if (isRequesterSide) {
     addAction("Save 草稿", "", () => {
       config.status = "Draft";
+      syncApprovalActiveRole(config);
       config.auditTrail.push({ action: "Save", role: config.activeRole, when: now() });
       persistStructuredSeed();
       renderFrameBoard();
@@ -971,17 +1107,34 @@ function renderApprovalQuestionnaire(board, seed, options = {}) {
       config.status = "In Process";
       config.currentLevel = 2;
       config.currentApprover = config.stages[0]?.people || "Approver1";
+      config.activeRole = config.stages[0]?.name || "Approver1";
       config.lastSubmitDate = now();
       config.auditTrail.push({ action: "Submit", role: config.activeRole, when: now() });
       persistStructuredSeed();
       renderFrameBoard();
     });
     addAction("Call 這張單", "", () => {
-      config.auditTrail.push({ action: "Call／通知 Current Approver 與已收信人", role: config.activeRole, when: now() });
+      const targets = [
+        config.currentApprover,
+        ...config.stages.map((stage) => stage.people).filter(Boolean),
+        config.roles.CopyTo,
+        config.roles.Owner,
+      ].flatMap((item) => String(item).split(",")).map((item) => item.trim()).filter(Boolean);
+      const uniqueTargets = [...new Set(targets)];
+      const selected = window.prompt(
+        `Call 通知對象（逗號分隔，預設 Current Approver 與相關人）：\n${uniqueTargets.join("、")}`,
+        uniqueTargets.slice(0, 3).join(", ")
+      );
+      if (selected === null) return;
+      config.auditTrail.push({
+        action: `Call → ${selected || uniqueTargets.join(", ")}`,
+        role: config.activeRole,
+        when: now(),
+      });
       showToast("已建立 Call 通知紀錄（實際寄信需後端）", "info");
       persistStructuredSeed();
     });
-  } else if (config.activeRole.startsWith("Approver")) {
+  } else if (isApproverSide) {
     addAction("Approve", "approval-approve", () => {
       config.lastApprovalDate = now();
       config.currentLevel += 1;
@@ -999,10 +1152,21 @@ function renderApprovalQuestionnaire(board, seed, options = {}) {
       renderFrameBoard();
     });
     addAction("Return", "", () => {
+      const options = ["Requester", ...config.stages.slice(0, Math.max(0, config.currentLevel - 1)).map((stage) => stage.name)];
+      const target = window.prompt(`退回到？\n可選：${options.join("、")}`, "Requester");
+      if (!target) return;
       config.status = "Submitted";
-      config.currentLevel = Math.max(0, config.currentLevel - 1);
-      config.currentApprover = config.currentLevel <= 1 ? config.roles.Requester : config.stages[config.currentLevel - 2]?.people || "前一階段";
-      config.auditTrail.push({ action: "Return", role: config.activeRole, when: now() });
+      if (target === "Requester") {
+        config.currentLevel = 0;
+        config.currentApprover = config.roles.Requester || "申請人";
+        config.activeRole = "Requester";
+      } else {
+        const stageIndex = config.stages.findIndex((stage) => stage.name === target);
+        config.currentLevel = stageIndex + 2;
+        config.currentApprover = config.stages[stageIndex]?.people || target;
+        config.activeRole = target;
+      }
+      config.auditTrail.push({ action: `Return → ${target}`, role: config.activeRole, when: now() });
       persistStructuredSeed();
       renderFrameBoard();
     });
@@ -1019,8 +1183,9 @@ function renderApprovalQuestionnaire(board, seed, options = {}) {
         reminderDays: 2,
         timeoutAction: "wait",
       });
-      config.auditTrail.push({ action: `Delegate → ${delegate} → ${config.activeRole}`, role: config.activeRole, when: now() });
+      config.auditTrail.push({ action: `Delegate ${config.activeRole} → ${delegate} → ${config.activeRole}`, role: config.activeRole, when: now() });
       config.currentApprover = delegate;
+      config.activeRole = `${config.activeRole}_Delegate`;
       persistStructuredSeed();
       renderFrameBoard();
     });
@@ -1029,7 +1194,11 @@ function renderApprovalQuestionnaire(board, seed, options = {}) {
 }
 
 function renderApprovalTemplateInstances(board, seed) {
-  const instances = listApprovalInstances(seed.id);
+  const instances = listApprovalInstances(seed.id).sort((a, b) => {
+    const aTime = a.approvalConfig?.lastSubmitDate || a.approvalConfig?.lastApprovalDate || "";
+    const bTime = b.approvalConfig?.lastSubmitDate || b.approvalConfig?.lastApprovalDate || "";
+    return bTime.localeCompare(aTime);
+  });
   const section = document.createElement("section");
   section.className = "approval-instance-list";
   section.innerHTML = "<h3>由此範本建立的申請單</h3><p>範本只負責設定；實際填寫會複製成獨立申請單。</p>";
@@ -1052,18 +1221,39 @@ function renderApprovalTemplateInstances(board, seed) {
     const list = document.createElement("ul");
     list.className = "approval-instance-items";
     instances.forEach((instance) => {
+      ensureApprovalModel(instance);
+      const cfg = instance.approvalConfig;
       const item = document.createElement("li");
+      item.className = "approval-instance-row";
       const open = document.createElement("button");
       open.type = "button";
-      open.className = "btn";
+      open.className = "btn approval-instance-open";
       open.textContent = instance.title;
       open.addEventListener("click", () => {
         selectSeed(instance).catch((err) => setStatus(err.message || String(err)));
       });
+      const meta = document.createElement("div");
+      meta.className = "approval-instance-meta";
       const status = document.createElement("span");
-      status.className = "meta";
-      status.textContent = instance.approvalConfig?.status || "Draft";
-      item.append(open, status);
+      status.className = `approval-status approval-status-${String(cfg.status || "Draft").toLowerCase().replace(/\s+/g, "-")}`;
+      status.textContent = cfg.status || "Draft";
+      const dates = document.createElement("span");
+      dates.className = "meta";
+      const submit = cfg.lastSubmitDate ? formatWhen(cfg.lastSubmitDate) : "—";
+      const approval = cfg.lastApprovalDate ? formatWhen(cfg.lastApprovalDate) : "—";
+      dates.textContent = `送出 ${submit}｜簽核 ${approval}`;
+      meta.append(status, dates);
+      const remove = document.createElement("button");
+      remove.type = "button";
+      remove.className = "frame-remove approval-instance-delete";
+      remove.title = "刪除此申請單";
+      remove.textContent = "×";
+      remove.addEventListener("click", (event) => {
+        event.stopPropagation();
+        deleteApprovalInstance(instance.id);
+        renderFrameBoard();
+      });
+      item.append(open, meta, remove);
       list.appendChild(item);
     });
     section.appendChild(list);
@@ -3384,6 +3574,14 @@ async function restoreSeedPack(pack) {
 
 async function selectSeed(seed) {
   state.current = seed;
+  if (isApprovalInstance(seed)) {
+    const config = ensureApprovalModel(seed);
+    if (!config.roleViewInitialized) {
+      syncApprovalActiveRole(config);
+      config.roleViewInitialized = true;
+      persistStructuredSeed();
+    }
+  }
   state.importedOriginal = await loadOriginalDocument(seed.id).catch(() => null);
   state.importedText = state.importedOriginal?.importedText || "";
   state.originalText = "";

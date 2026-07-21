@@ -10,6 +10,7 @@
 
 ## 場次
 
+- 2026-07-21 — 簽核申請單執行期 UX — 標籤：SEED、簽核、申請單 — [sessions/2026-07-21-approval-runtime-ux.md](sessions/2026-07-21-approval-runtime-ux.md)
 - 2026-07-21 — 兩欄編輯＋文件匯入 — 標籤：SEED、兩欄編輯、文件匯入、棋盤模式、歷程 — [sessions/2026-07-21-two-column-document-import.md](sessions/2026-07-21-two-column-document-import.md)
 - 2026-07-21 — 三種 SEED＋手動版本＋棋盤 — 標籤：SEED、版本、簽核、討論、棋盤、匯出 — [sessions/2026-07-21-seed-types-manual-versions.md](sessions/2026-07-21-seed-types-manual-versions.md)
 - 2026-07-21 — 所見即所得階層＋我的 SEED — 標籤：ux、框編輯、我的SEED、比對 — [sessions/2026-07-21-wysiwyg-seed-tray.md](sessions/2026-07-21-wysiwyg-seed-tray.md)

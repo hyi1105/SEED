@@ -1184,6 +1184,66 @@ html, body {
   cursor: pointer;
 }
 
+.approval-person.is-viewing {
+  border-color: var(--accent);
+}
+
+.approval-flow-hint {
+  margin: 0;
+}
+
+.approval-delegation-loops {
+  display: grid;
+  gap: 0.35rem;
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+  background: #f7faf8;
+  padding: 0.55rem 0.65rem;
+}
+
+.approval-delegation-loops > .meta {
+  margin: 0;
+}
+
+.approval-delegation-loop {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.approval-delegation-person {
+  display: grid;
+  place-items: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.approval-delegation-person.is-return {
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+
+.approval-delegation-arrow {
+  color: var(--accent);
+  font-size: 0.78rem;
+}
+
+.approval-delegation-loop small {
+  flex: 1 1 100%;
+  color: var(--muted);
+  font-size: 0.68rem;
+}
+
+.questionnaire-field.is-readonly .questionnaire-input {
+  background: #f3f6f4;
+  color: var(--muted);
+}
+
 .approval-arrow small {
   color: var(--muted);
   font-size: 0.55rem;
@@ -1263,15 +1323,66 @@ html, body {
   list-style: none;
 }
 
-.approval-instance-items li {
-  display: flex;
+.approval-instance-items li,
+.approval-instance-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
   align-items: center;
-  justify-content: space-between;
   gap: 0.5rem;
   border: 1px solid var(--line);
   border-radius: 10px;
   background: var(--card);
   padding: 0.45rem 0.55rem;
+}
+
+.approval-instance-open {
+  justify-self: start;
+  text-align: left;
+}
+
+.approval-instance-meta {
+  display: grid;
+  gap: 0.15rem;
+  justify-items: end;
+}
+
+.approval-status {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 0.1rem 0.45rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+}
+
+.approval-status-draft {
+  background: #eef2f0;
+  color: var(--muted);
+}
+
+.approval-status-submitted {
+  background: #fff4df;
+  color: #9a6b00;
+}
+
+.approval-status-in-process {
+  background: #e8f2ff;
+  color: #1d5ea8;
+}
+
+.approval-status-approved {
+  background: #e6f6ec;
+  color: #1f7a43;
+}
+
+.approval-status-denied {
+  background: #fdecec;
+  color: #b42318;
+}
+
+.approval-instance-delete {
+  position: static;
+  width: 1.8rem;
+  height: 1.8rem;
 }
 
 .approval-template-editor .approval-tabs {
