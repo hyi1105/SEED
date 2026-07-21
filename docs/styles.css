@@ -65,8 +65,8 @@ html, body {
 
 .brand-block {
   display: flex;
-  align-items: baseline;
-  gap: 0.55rem;
+  align-items: center;
+  gap: 0.45rem;
   min-width: 0;
   flex: 1 1 auto;
   max-width: calc(100% - 11rem);
@@ -91,6 +91,125 @@ html, body {
 .brand-home:hover,
 .brand-home.has-path {
   color: var(--accent);
+}
+
+.nav-current {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nav-current.hidden {
+  display: none;
+}
+
+.nav-menu-btn {
+  appearance: none;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  margin: 0;
+  padding: 0.2rem 0.45rem;
+  line-height: 1;
+  cursor: pointer;
+  flex: 0 0 auto;
+  color: var(--muted);
+}
+
+.nav-menu-btn:hover,
+.nav-menu-btn[aria-expanded="true"] {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.nav-menu-chevron {
+  display: block;
+  font-size: 0.55rem;
+  transition: transform 0.15s ease;
+}
+
+.nav-menu-btn[aria-expanded="true"] .nav-menu-chevron {
+  transform: rotate(180deg);
+}
+
+.popover.nav-popover {
+  width: min(20rem, calc(100vw - 1.3rem));
+  max-width: 20rem;
+  padding: 0.55rem 0.65rem 0.6rem;
+}
+
+.nav-version {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.35rem 0.45rem 0.5rem;
+  margin-bottom: 0.35rem;
+  border-bottom: 1px solid var(--line);
+  font-size: 0.72rem;
+}
+
+.nav-version[hidden] {
+  display: none;
+}
+
+.nav-version-left {
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.nav-version-right {
+  color: var(--muted);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.nav-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 0.08rem;
+}
+
+.nav-choice {
+  appearance: none;
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  font-size: 0.88rem;
+  padding: 0.42rem 0.45rem;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--ink);
+}
+
+.nav-choice:hover:not(:disabled) {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.nav-choice.is-current,
+.nav-choice:disabled {
+  color: var(--accent);
+  font-weight: 600;
+  cursor: default;
+  opacity: 0.85;
+}
+
+.nav-location {
+  margin: 0.45rem 0 0;
+  padding: 0.35rem 0.45rem 0;
+  border-top: 1px solid var(--line);
+  font-size: 0.72rem;
+  color: var(--muted);
 }
 
 .mode-chips,

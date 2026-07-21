@@ -7,14 +7,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=control30" />
+  <link rel="stylesheet" href="styles.css?v=control31" />
   <!-- 預覽請用 raw.githack（會正確當成網頁）。不要用 raw.githubusercontent 或 jsDelivr 開 html，會變純文字。 -->
 </head>
 <body>
   <div class="app">
     <div class="chrome" id="chrome" data-mode="map">
       <header class="top">
-        <div class="brand-block">
+        <div class="brand-block" id="brand-block">
           <button
             type="button"
             class="brand-home"
@@ -22,6 +22,17 @@
             title="回首頁"
           >
             SEED
+          </button>
+          <span class="nav-current hidden" id="nav-current"></span>
+          <button
+            type="button"
+            class="nav-menu-btn"
+            id="nav-menu-btn"
+            aria-expanded="false"
+            aria-controls="nav-popover"
+            title="位置與版本"
+          >
+            <span class="nav-menu-chevron" aria-hidden="true">▼</span>
           </button>
         </div>
         <div class="top-end">
@@ -33,6 +44,12 @@
         </div>
         <p class="hint sr-only" id="status" aria-live="polite">正在載入…</p>
       </header>
+
+      <div class="popover nav-popover hidden" id="nav-popover" role="menu" aria-label="位置選單">
+        <div class="nav-version" id="nav-version" hidden></div>
+        <nav class="nav-choices" id="nav-choices"></nav>
+        <p class="nav-location" id="nav-location"></p>
+      </div>
 
       <div class="hidden" aria-hidden="true">
         <div id="me-popover"></div>
@@ -337,6 +354,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/mammoth@latest/mammoth.browser.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@latest/dist/xlsx.full.min.js"></script>
-  <script src="app.js?v=control30"></script>
+  <script src="app.js?v=control31"></script>
 </body>
 </html>

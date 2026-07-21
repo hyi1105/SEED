@@ -61,6 +61,7 @@ const state = {
     seedType: "",
     templateId: "",
   },
+  navMenuOpen: false,
 };
 
 const $ = (id) => document.getElementById(id);
@@ -161,7 +162,7 @@ function showPanel(name) {
   const panel = $(`panel-${name}`);
   if (panel) panel.scrollTop = 0;
   if (name === "system-seed") renderSystemSeedPanel();
-  updateBrandHome();
+  updateNavChrome();
   updateModeChips();
   updateSyncUi();
 }
@@ -2724,6 +2725,7 @@ async function saveCurrentVersion(actor = null) {
   state.current.lastActor = "人";
   if (state.current.localOnly) saveSeedTrayState();
   await loadVersions();
+  updateNavChrome();
   if (state.panel === "read" && (state.current?.seedType || "document") === "document" && !isPersonCardDocument(state.current)) {
     renderFrameBoard();
   } else if (state.panel === "read" && isPersonCardDocument(state.current)) {
@@ -2842,7 +2844,7 @@ function saveSeedMetadata(seed) {
   all[seed.id] = { title: seed.title, subtitle: seed.subtitle || "" };
   localStorage.setItem(SEED_META_KEY, JSON.stringify(all));
   if (seed.localOnly) saveSeedTrayState();
-  updateBrandHome();
+  updateNavChrome();
 }
 
 function saveSeedTrayState() {
@@ -4794,6 +4796,7 @@ async function loadVersions() {
     list.innerHTML = "<li class='meta'>還沒有版本紀錄</li>";
     fillDiffSelects();
     setStatus("還沒有版本紀錄；按 Save 建立第一版");
+    updateNavChrome();
     return;
   }
 
@@ -4837,6 +4840,7 @@ async function loadVersions() {
 
   fillDiffSelects();
   setStatus(`已載入 ${state.versions.length} 個版本`);
+  updateNavChrome();
 }
 
 function fillDiffSelects() {
@@ -5348,16 +5352,145 @@ $("document-file")?.addEventListener("change", () => {
 
 function closeAllPopovers() {
   setPopoverOpen(null);
+  setNavMenuOpen(false);
 }
 
-function updateBrandHome() {
-  const btn = $("brand-home");
-  if (!btn) return;
-  btn.title = "回首頁";
-  btn.classList.toggle("has-path", state.panel !== "list");
+function getVersionOrdinal(index, total) {
+  return `v${Math.max(1, total - index)}`;
+}
+
+function getNavLocationLabel() {
+  if (state.panel === "list") return "首頁";
+  if (state.panel === "system-seed") return "Seed";
+  if (state.panel === "history") return state.current ? `${state.current.title} · 版本` : "版本";
+  if (state.panel === "diff") return state.current ? `${state.current.title} · 歷程` : "歷程";
+  if (state.current) return state.current.title || "未命名 SEED";
+  return "首頁";
+}
+
+function getNavChoiceItems() {
+  const home = {
+    key: "home",
+    label: "首頁",
+    isCurrent: state.panel === "list",
+    go: () => showPanel("list"),
+  };
+  const items = [home];
+
+  if (state.panel === "system-seed") {
+    return items;
+  }
+
+  if (state.current && state.panel !== "list") {
+    const seed = {
+      key: "seed",
+      label: state.current.title || "未命名 SEED",
+      isCurrent: state.panel === "read",
+      go: async () => {
+        state.docMode = "edit";
+        showPanel("read");
+        if (!state.originalText) await loadSeedText();
+        setEditMode(state.workingText ?? state.originalText);
+      },
+    };
+    if (state.panel === "history" || state.panel === "diff") {
+      items.push({
+        key: "back",
+        label: `上一頁 · ${seed.label}`,
+        isCurrent: false,
+        go: seed.go,
+      });
+    } else if (state.panel === "read") {
+      seed.isCurrent = true;
+    }
+    if (!seed.isCurrent) items.push(seed);
+  }
+
+  return items;
+}
+
+function renderNavVersionRow() {
+  const wrap = $("nav-version");
+  if (!wrap) return;
+  if (!state.current || state.panel === "list") {
+    wrap.hidden = true;
+    wrap.innerHTML = "";
+    return;
+  }
+  const total = state.versions.length;
+  const latest = state.versions[0];
+  if (!total || !latest?.when) {
+    wrap.hidden = true;
+    wrap.innerHTML = "";
+    return;
+  }
+  wrap.hidden = false;
+  const left = `${getVersionOrdinal(0, total)} · 目前版`;
+  const right = formatWhen(latest.when);
+  wrap.innerHTML = `<span class="nav-version-left">${escapeHtml(left)}</span><span class="nav-version-right">${escapeHtml(right)}</span>`;
+}
+
+function renderNavChoices() {
+  const wrap = $("nav-choices");
+  if (!wrap) return;
+  wrap.innerHTML = "";
+  for (const item of getNavChoiceItems()) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "nav-choice" + (item.isCurrent ? " is-current" : "");
+    btn.textContent = item.label;
+    btn.disabled = item.isCurrent;
+    btn.addEventListener("click", () => {
+      setNavMenuOpen(false);
+      item.go();
+    });
+    wrap.appendChild(btn);
+  }
+}
+
+function renderNavLocation() {
+  const el = $("nav-location");
+  if (!el) return;
+  el.textContent = `目前位置：${getNavLocationLabel()}`;
+}
+
+function setNavMenuOpen(open) {
+  state.navMenuOpen = open;
+  const pop = $("nav-popover");
+  const btn = $("nav-menu-btn");
+  if (!pop || !btn) return;
+  if (open) {
+    renderNavVersionRow();
+    renderNavChoices();
+    renderNavLocation();
+    positionPopover(pop, $("brand-block") || btn);
+    setPopoverOpen(null);
+  }
+  pop.classList.toggle("hidden", !open);
+  btn.setAttribute("aria-expanded", open ? "true" : "false");
+}
+
+function updateNavChrome() {
+  const brand = $("brand-home");
+  const current = $("nav-current");
+  if (brand) {
+    brand.title = "回首頁";
+    brand.classList.toggle("has-path", state.panel !== "list");
+  }
+  if (current) {
+    const inSeed = state.current && state.panel !== "list" && state.panel !== "system-seed";
+    current.textContent = inSeed ? state.current.title || "未命名 SEED" : "";
+    current.classList.toggle("hidden", !inSeed);
+  }
+  if (state.navMenuOpen) {
+    renderNavVersionRow();
+    renderNavChoices();
+    renderNavLocation();
+  }
 }
 
 function setPopoverOpen(name) {
+  if (name) setNavMenuOpen(false);
   const me = $("me-popover");
   const notify = $("notify-popover");
   const meBtn = $("header-me-btn");
@@ -5451,7 +5584,13 @@ function handleNotifyInput(text) {
 
 $("brand-home").addEventListener("click", (e) => {
   e.stopPropagation();
+  setNavMenuOpen(false);
   showPanel("list");
+});
+
+$("nav-menu-btn")?.addEventListener("click", (e) => {
+  e.stopPropagation();
+  setNavMenuOpen(!state.navMenuOpen);
 });
 
 $("header-me-btn").addEventListener("click", (e) => {
@@ -5484,20 +5623,26 @@ $("notify-form").addEventListener("submit", (e) => {
 document.addEventListener("click", (e) => {
   const me = $("me-popover");
   const notify = $("notify-popover");
+  const nav = $("nav-popover");
   const meBtn = $("header-me-btn");
   const notifyBtn = $("notify-btn");
+  const navBtn = $("nav-menu-btn");
+  const brandBlock = document.querySelector(".brand-block");
   if (me && !me.classList.contains("hidden")) {
     if (!me.contains(e.target) && !meBtn.contains(e.target)) setPopoverOpen(null);
   }
   if (notify && !notify.classList.contains("hidden")) {
     if (!notify.contains(e.target) && !notifyBtn.contains(e.target)) setPopoverOpen(null);
   }
+  if (nav && state.navMenuOpen && navBtn && brandBlock) {
+    if (!nav.contains(e.target) && !brandBlock.contains(e.target)) setNavMenuOpen(false);
+  }
 });
 
 loadAppConfig()
   .then(() => loadCatalog())
   .then(() => {
-    updateBrandHome();
+    updateNavChrome();
     updateSyncUi();
     showToast("拖拉棋盤會自動存；點 SEED 直接編輯", "info");
   })
