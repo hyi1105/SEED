@@ -5,6 +5,126 @@
       "name": "7/21 上午7:30",
       "versions": [
         {
+          "rev": 21,
+          "savedAt": "2026-07-21T02:14:22.544Z",
+          "map": {
+            "cols": 10,
+            "rows": 10,
+            "title": "SEED 棋盤",
+            "note": "知識棋盤：拖曳擺放；點進去看完整標題",
+            "kind": "personal",
+            "visibility": "public",
+            "template": "demo-taiwan-roads"
+          },
+          "positions": [
+            {
+              "id": "beiheng",
+              "col": 5,
+              "row": 2
+            },
+            {
+              "id": "zhongheng",
+              "col": 6,
+              "row": 3
+            },
+            {
+              "id": "nanheng",
+              "col": 7,
+              "row": 6
+            },
+            {
+              "id": "suhua",
+              "col": 8,
+              "row": 3
+            },
+            {
+              "id": "mvp",
+              "col": 2,
+              "row": 3
+            },
+            {
+              "id": "map-spec",
+              "col": 4,
+              "row": 5
+            },
+            {
+              "id": "vision",
+              "col": 1,
+              "row": 5
+            },
+            {
+              "id": "github",
+              "col": 3,
+              "row": 3
+            },
+            {
+              "id": "setup",
+              "col": 2,
+              "row": 7
+            },
+            {
+              "id": "index",
+              "col": 3,
+              "row": 8
+            },
+            {
+              "id": "system-guide",
+              "col": 1,
+              "row": 1
+            },
+            {
+              "id": "core",
+              "col": 4,
+              "row": 6
+            },
+            {
+              "id": "seed-pack",
+              "col": 6,
+              "row": 9
+            },
+            {
+              "id": "monetize",
+              "col": 0,
+              "row": 0
+            },
+            {
+              "id": "progress",
+              "col": 5,
+              "row": 5
+            },
+            {
+              "id": "lang",
+              "col": 8,
+              "row": 7
+            },
+            {
+              "id": "learn-cursor",
+              "col": 4,
+              "row": 1
+            },
+            {
+              "id": "puzzle",
+              "col": 2,
+              "row": 8
+            },
+            {
+              "id": "local-mrty0wje",
+              "col": 5,
+              "row": 8
+            },
+            {
+              "id": "local-mrty1dhv",
+              "col": 4,
+              "row": 7
+            },
+            {
+              "id": "local-mrtzidii",
+              "col": 0,
+              "row": 0
+            }
+          ]
+        },
+        {
           "rev": 20,
           "savedAt": "2026-07-21T02:13:56.975Z",
           "map": {
