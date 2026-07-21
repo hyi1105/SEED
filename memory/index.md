@@ -10,6 +10,7 @@
 
 ## 場次
 
+- 2026-07-21 — System Seed 文件直接編輯 — 標籤：SEED、文件 — [sessions/2026-07-21-system-document-editor.md](sessions/2026-07-21-system-document-editor.md)
 - 2026-07-21 — 簽核問卷式設計畫面 — 標籤：SEED、簽核、問卷 — [sessions/2026-07-21-approval-form-designer.md](sessions/2026-07-21-approval-form-designer.md)
 - 2026-07-21 — System Seed 三層建立流程 — 標籤：SEED、System Seed、範本 — [sessions/2026-07-21-system-seed-flow.md](sessions/2026-07-21-system-seed-flow.md)
 - 2026-07-21 — 簽核申請單執行期 UX — 標籤：SEED、簽核、申請單 — [sessions/2026-07-21-approval-runtime-ux.md](sessions/2026-07-21-approval-runtime-ux.md)

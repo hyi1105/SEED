@@ -527,10 +527,7 @@ function renderFrameBoard() {
 
   state.frames = state.frames.map(normalizeFrame);
   renderSeedHeading(board, true);
-  const property = document.createElement("p");
-  property.className = "template-property";
-  property.textContent = "版型：文字模板";
-  board.appendChild(property);
+  renderDocumentMetaPanel(board, state.current);
   if (!state.frames.length) {
     board.appendChild(renderInsertGap(0));
   }
@@ -623,6 +620,95 @@ function renderFrameBoard() {
     group.append(tools, block);
     board.appendChild(group);
   });
+  renderDocumentHistoryPanel(board, state.current);
+}
+
+function renderDocumentMetaPanel(board, seed) {
+  const panel = document.createElement("section");
+  panel.className = "document-meta-panel";
+  const format = document.createElement("div");
+  format.className = "document-meta-item";
+  format.innerHTML = "<small>文件格式</small><strong>文字模板</strong>";
+  const descLabel = document.createElement("label");
+  descLabel.className = "document-meta-item document-meta-description";
+  const descTitle = document.createElement("small");
+  descTitle.textContent = "文件說明";
+  const desc = document.createElement("textarea");
+  desc.className = "document-description-input";
+  desc.rows = 2;
+  desc.placeholder = "簡短描述這份文件的用途（選填）";
+  desc.value = seed.blurb || "";
+  desc.addEventListener("input", () => {
+    seed.blurb = desc.value;
+    saveSeedTrayState();
+  });
+  descLabel.append(descTitle, desc);
+  panel.append(format, descLabel);
+  board.appendChild(panel);
+}
+
+function renderDocumentHistoryPanel(board, seed) {
+  const panel = document.createElement("section");
+  panel.className = "document-history-panel";
+  const head = document.createElement("div");
+  head.className = "document-history-head";
+  head.innerHTML = "<h3>歷程</h3>";
+  const viewAll = document.createElement("button");
+  viewAll.type = "button";
+  viewAll.className = "btn";
+  viewAll.textContent = "完整歷程記錄";
+  viewAll.addEventListener("click", () => {
+    setDocMode("diff").catch((err) => setStatus(err.message || String(err)));
+  });
+  head.appendChild(viewAll);
+  panel.appendChild(head);
+  const list = document.createElement("ul");
+  list.className = "document-history-list";
+  if (!state.versions.length) {
+    const empty = document.createElement("li");
+    empty.className = "meta";
+    empty.textContent = "尚無版本。編輯後按 Save 建立第一版。";
+    list.appendChild(empty);
+  } else {
+    state.versions.slice(0, 5).forEach((version) => {
+      const item = document.createElement("li");
+      item.className = "document-history-item";
+      const info = document.createElement("div");
+      info.innerHTML = `
+        <strong>${escapeHtml(formatWhen(version.when))}</strong>
+        <span class="meta">${escapeHtml(version.author || "未知")}－${version.actor === "AI" ? "AI 編輯" : "編輯"}－${escapeHtml(version.message || "")}</span>`;
+      const actions = document.createElement("div");
+      actions.className = "document-history-actions";
+      const openBtn = document.createElement("button");
+      openBtn.type = "button";
+      openBtn.className = "btn";
+      openBtn.textContent = "預覽";
+      openBtn.addEventListener("click", async () => {
+        const text = await fetchFileAt(version.sha);
+        state.workingText = text;
+        $("read-title").textContent = `${seed.title}（${formatWhen(version.when)}）`;
+        setViewMode(text);
+        setStatus("已打開舊版預覽");
+      });
+      const useBtn = document.createElement("button");
+      useBtn.type = "button";
+      useBtn.className = "btn btn-primary";
+      useBtn.textContent = "用這版繼續改";
+      useBtn.addEventListener("click", async () => {
+        const text = await fetchFileAt(version.sha);
+        if (!state.originalText) await loadSeedText();
+        state.workingText = text;
+        $("read-title").textContent = `${seed.title}（從舊版繼續）`;
+        setEditMode(text);
+        setStatus("已載入舊版當草稿；確認後按 Save");
+      });
+      actions.append(openBtn, useBtn);
+      item.append(info, actions);
+      list.appendChild(item);
+    });
+  }
+  panel.appendChild(list);
+  board.appendChild(panel);
 }
 
 function persistStructuredSeed(actor = "人") {
@@ -2288,6 +2374,10 @@ async function saveCurrentVersion(actor = null) {
   }
   state.current.lastActor = "人";
   if (state.current.localOnly) saveSeedTrayState();
+  await loadVersions();
+  if (state.panel === "read" && (state.current?.seedType || "document") === "document") {
+    renderFrameBoard();
+  }
   showToast("已建立新版本", "ok");
 }
 
@@ -2527,6 +2617,7 @@ function buildBlankSystemSnapshot(seedType) {
     seedType: "document",
     title: "未命名文件",
     subtitle: "",
+    blurb: "",
     text: "",
   };
 }
@@ -2590,6 +2681,7 @@ function captureSeedSnapshot(seed) {
     seedType: seed.seedType || "document",
     title: seed.title || "未命名 SEED",
     subtitle: seed.subtitle || "",
+    blurb: seed.blurb || "",
     approvalIsTemplate: seed.approvalIsTemplate !== false && !seed.approvalTemplateId,
     approvalTemplateId: seed.approvalTemplateId || "",
     formFields: JSON.parse(JSON.stringify(seed.formFields || [])),
@@ -2608,6 +2700,7 @@ function applySnapshotToSeed(seed, snapshot) {
   seed.seedType = snapshot.seedType || "document";
   seed.title = snapshot.title || seed.title;
   seed.subtitle = snapshot.subtitle || "";
+  seed.blurb = snapshot.blurb || "";
   seed.approvalTemplateId = snapshot.approvalTemplateId || "";
   seed.approvalIsTemplate = snapshot.seedType === "approval"
     ? snapshot.approvalIsTemplate !== false && !snapshot.approvalTemplateId
@@ -2617,7 +2710,7 @@ function applySnapshotToSeed(seed, snapshot) {
     seed.approvalConfig = JSON.parse(JSON.stringify(snapshot.approvalConfig || {}));
     ensureApprovalModel(seed);
     if (isApprovalTemplate(seed)) {
-      seed.approvalConfig.tab = "fields";
+      seed.approvalConfig.tab = "design";
       delete seed.approvalConfig.roleViewInitialized;
     } else if (isApprovalInstance(seed)) {
       seed.approvalConfig.tab = "fill";
@@ -2669,6 +2762,12 @@ function openSystemSeedTemplate(template, seedType) {
     seed.title = "未命名簽核";
     seed.alias = seed.title;
     seed.short = Array.from(seed.title).slice(0, 4).join("");
+    saveSeedTrayState();
+  } else if (seedType === "document") {
+    seed.title = "未命名文件";
+    seed.alias = seed.title;
+    seed.short = Array.from(seed.title).slice(0, 4).join("");
+    seed.blurb = version.snapshot?.blurb || "";
     saveSeedTrayState();
   }
   showToast(`已開啟「${seed.title}」`, "ok");
@@ -2751,7 +2850,9 @@ function renderSystemSeedPanel() {
     intro.className = "system-seed-help";
     intro.textContent = seedType === "approval"
       ? `${systemSeedTypeLabel(seedType)}範本：點進去直接設計問卷欄位。`
-      : `${systemSeedTypeLabel(seedType)}範本：點進去看版本，再建立你的 SEED。`;
+      : seedType === "document"
+        ? `${systemSeedTypeLabel(seedType)}範本：點進去直接建立文件。`
+        : `${systemSeedTypeLabel(seedType)}範本：點進去看版本，再建立你的 SEED。`;
     board.appendChild(intro);
     const list = document.createElement("ul");
     list.className = "system-seed-template-list";
@@ -2761,12 +2862,16 @@ function renderSystemSeedPanel() {
       button.type = "button";
       button.className = "system-seed-template-item";
       const latest = template.versions?.[0];
-      const actionHint = seedType === "approval" ? "點擊開始設計問卷" : `最新 v${latest?.rev || 1}`;
+      const actionHint = seedType === "approval"
+        ? "點擊開始設計問卷"
+        : seedType === "document"
+          ? "點擊開始建立文件"
+          : `最新 v${latest?.rev || 1}`;
       button.innerHTML = `
         <strong>${escapeHtml(template.name)}</strong>
         <span class="meta">${template.builtin ? "系統內建" : "自訂"} · ${escapeHtml(actionHint)}</span>`;
       button.addEventListener("click", () => {
-        if (seedType === "approval") {
+        if (seedType === "approval" || seedType === "document") {
           openSystemSeedTemplate(template, seedType);
           return;
         }
@@ -4840,10 +4945,10 @@ $("seed-create-dialog")?.addEventListener("click", (e) => {
   if (!choice) return;
   const seedType = choice.dataset.seedType;
   $("seed-create-dialog").close();
-  if (seedType === "approval") {
+  if (seedType === "approval" || seedType === "document") {
     const catalog = loadSystemSeedCatalog();
-    const blank = (catalog.approval || []).find((item) => item.builtin) || catalog.approval?.[0];
-    if (blank) openSystemSeedTemplate(blank, "approval");
+    const blank = (catalog[seedType] || []).find((item) => item.builtin) || catalog[seedType]?.[0];
+    if (blank) openSystemSeedTemplate(blank, seedType);
     else openSystemSeedBrowse("templates", seedType);
     return;
   }

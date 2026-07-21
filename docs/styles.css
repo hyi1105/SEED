@@ -947,6 +947,89 @@ html, body {
   font-size: 0.75rem;
 }
 
+.document-meta-panel {
+  display: grid;
+  gap: 0.65rem;
+  margin: 0.25rem 0 0.85rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #f7faf8;
+  padding: 0.75rem 0.85rem;
+}
+
+.document-meta-item small {
+  display: block;
+  margin-bottom: 0.15rem;
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.document-meta-item strong {
+  font-size: 0.9rem;
+}
+
+.document-meta-description {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.document-description-input {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 0.45rem 0.55rem;
+  resize: vertical;
+}
+
+.document-history-panel {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper);
+  padding: 0.75rem 0.85rem;
+}
+
+.document-history-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.document-history-head h3 {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.document-history-list {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.document-history-item {
+  display: grid;
+  gap: 0.4rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--card);
+  padding: 0.55rem 0.65rem;
+}
+
+.document-history-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
 .seed-title-input,
 .seed-subtitle-input {
   width: 100%;
