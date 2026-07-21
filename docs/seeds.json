@@ -9,9 +9,10 @@
     "cols": 10,
     "rows": 10,
     "note": "知識棋盤：拖曳擺放；點進去看完整標題",
-    "savedAt": "2026-07-21T01:07:46.631Z",
+    "savedAt": "2026-07-21T01:11:44.147Z",
     "layoutName": "7/21 上午7:30",
-    "layoutRev": 14
+    "layoutRev": 15,
+    "view": "fit"
   },
   "seeds": [
     {
@@ -53,8 +54,8 @@
       "alias": "蘇花交通",
       "path": "memory/maps/taiwan-roads/suhua.md",
       "blurb": "偏東",
-      "col": 7,
-      "row": 4,
+      "col": 8,
+      "row": 3,
       "cover": null,
       "archived": false
     },
@@ -86,8 +87,8 @@
       "alias": "產品願景",
       "path": "memory/sessions/2026-07-20-platform-vision.md",
       "blurb": "工作室",
-      "col": 3,
-      "row": 6,
+      "col": 1,
+      "row": 5,
       "cover": null,
       "archived": false
     },
@@ -108,8 +109,8 @@
       "alias": "知識起點",
       "path": "memory/sessions/2026-07-20-kb-setup.md",
       "blurb": "工作室",
-      "col": 4,
-      "row": 5,
+      "col": 1,
+      "row": 9,
       "cover": null,
       "archived": false
     },
@@ -119,7 +120,7 @@
       "alias": "總目錄",
       "path": "memory/index.md",
       "blurb": "工作室",
-      "col": 5,
+      "col": 3,
       "row": 8,
       "cover": null,
       "archived": false
@@ -142,7 +143,7 @@
       "path": "memory/topics/seed-pack.md",
       "blurb": "工作室",
       "col": 2,
-      "row": 5,
+      "row": 9,
       "cover": null,
       "archived": false
     },
@@ -152,8 +153,8 @@
       "alias": "怎麼賺錢",
       "path": "memory/topics/open-source-monetize.md",
       "blurb": "工作室",
-      "col": 1,
-      "row": 1,
+      "col": 0,
+      "row": 0,
       "cover": null,
       "archived": true
     },
@@ -163,10 +164,10 @@
       "alias": "進度總表",
       "path": "memory/topics/progress-final.md",
       "blurb": "工作室",
-      "col": 5,
-      "row": 7,
+      "col": 2,
+      "row": 6,
       "cover": null,
-      "archived": true
+      "archived": false
     },
     {
       "id": "lang",
@@ -174,7 +175,7 @@
       "alias": "繁體中文",
       "path": "memory/topics/language-zh-hant.md",
       "blurb": "工作室",
-      "col": 5,
+      "col": 0,
       "row": 9,
       "cover": null,
       "archived": false
