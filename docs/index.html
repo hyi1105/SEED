@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=control22" />
+  <link rel="stylesheet" href="styles.css?v=control23" />
   <!-- 預覽請用 raw.githack（會正確當成網頁）。不要用 raw.githubusercontent 或 jsDelivr 開 html，會變純文字。 -->
 </head>
 <body>
@@ -103,13 +103,12 @@
         <section class="seed-tray" aria-labelledby="seed-tray-title">
           <div class="seed-tray-head">
             <h2 id="seed-tray-title">我的 SEED</h2>
-            <div class="seed-tray-actions-head">
-              <button type="button" class="seed-tray-action" id="system-seed-open">建立 Seed</button>
-              <button type="button" class="seed-add-btn" id="seed-add">＋ 新增 SEED</button>
-            </div>
+            <button type="button" class="seed-add-btn" id="seed-add">＋ 新增 SEED</button>
           </div>
           <div class="seed-tray-list" id="seed-tray-list"></div>
+          <div class="seed-tray-support-pin" aria-hidden="true"><span></span></div>
         </section>
+        <div class="panel-map-support" aria-hidden="true"></div>
       </section>
 
       <section id="panel-read" class="panel hidden">
@@ -349,6 +348,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/mammoth@latest/mammoth.browser.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@latest/dist/xlsx.full.min.js"></script>
-  <script src="app.js?v=control22"></script>
+  <script src="app.js?v=control23"></script>
 </body>
 </html>
