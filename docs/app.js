@@ -144,8 +144,15 @@ function renderNotifyList() {
     .join("");
 }
 
+function hideToast() {
+  clearTimeout(toastTimer);
+  const el = $("toast");
+  if (el) el.classList.add("hidden");
+}
+
 function dismissNavMenu() {
   setNavMenuOpen(false);
+  hideToast();
 }
 
 function showPanel(name) {
@@ -5686,6 +5693,5 @@ loadAppConfig()
   .then(() => {
     updateNavChrome();
     updateSyncUi();
-    showToast("拖拉棋盤會自動存；點 SEED 直接編輯", "info");
   })
   .catch((err) => setStatus(err.message || String(err)));
