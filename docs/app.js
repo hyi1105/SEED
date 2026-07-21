@@ -15,7 +15,6 @@ const TOKEN_KEY = "seed-github-token-v1";
 const AI_KEY = "seed-openai-key-v1";
 const AI_BASE_KEY = "seed-openai-base-v1";
 const MEMBER_KEY = "seed-member-code-v1";
-const RECENT_PATH_KEY = "seed-recent-paths-v1";
 const SEED_TRAY_KEY = "seed-tray-v1";
 const SEED_META_KEY = "seed-meta-v1";
 const SYSTEM_SEED_KEY = "system-seed-catalog-v1";
@@ -62,7 +61,6 @@ const state = {
     seedType: "",
     templateId: "",
   },
-  versionStripOpen: false,
 };
 
 const $ = (id) => document.getElementById(id);
@@ -163,9 +161,7 @@ function showPanel(name) {
   const panel = $(`panel-${name}`);
   if (panel) panel.scrollTop = 0;
   if (name === "system-seed") renderSystemSeedPanel();
-  if (name === "list") state.versionStripOpen = false;
-  if (name !== "list") pushRecentPath();
-  updatePathBrand();
+  updateBrandHome();
   updateModeChips();
   updateSyncUi();
 }
@@ -2641,50 +2637,6 @@ function visibilityLabel() {
   return state.map.visibility === "private" ? "私人" : "公開";
 }
 
-function loadRecentPaths() {
-  try {
-    const raw = JSON.parse(localStorage.getItem(RECENT_PATH_KEY) || "[]");
-    return Array.isArray(raw) ? raw.slice(0, 5) : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveRecentPaths(list) {
-  localStorage.setItem(RECENT_PATH_KEY, JSON.stringify((list || []).slice(0, 5)));
-}
-
-function currentPathEntry() {
-  const steps = buildPathSteps();
-  return {
-    key: steps.map((s) => s.key).join("/"),
-    label: steps.map((s) => s.label).join(" › "),
-    panel: state.panel,
-    seedId: state.current?.id || null,
-    at: new Date().toISOString(),
-  };
-}
-
-function pushRecentPath() {
-  const entry = currentPathEntry();
-  if (!entry.key || entry.key === "list") return;
-  const list = loadRecentPaths().filter((x) => x.key !== entry.key);
-  list.unshift(entry);
-  saveRecentPaths(list);
-}
-
-function goRecentPath(entry) {
-  if (!entry) return;
-  if (entry.seedId) {
-    const seed = state.seeds.find((s) => s.id === entry.seedId);
-    if (seed) {
-      selectSeed(seed).catch((err) => setStatus(err.message || String(err)));
-      return;
-    }
-  }
-  showPanel("list");
-}
-
 function toggleVisibilityPresentation() {
   if (state.map.kind === "community") {
     showToast("社群版沒有公開／私人切換（展示用）", "info");
@@ -2772,7 +2724,6 @@ async function saveCurrentVersion(actor = null) {
   state.current.lastActor = "人";
   if (state.current.localOnly) saveSeedTrayState();
   await loadVersions();
-  updatePathBrand();
   if (state.panel === "read" && (state.current?.seedType || "document") === "document" && !isPersonCardDocument(state.current)) {
     renderFrameBoard();
   } else if (state.panel === "read" && isPersonCardDocument(state.current)) {
@@ -2891,7 +2842,7 @@ function saveSeedMetadata(seed) {
   all[seed.id] = { title: seed.title, subtitle: seed.subtitle || "" };
   localStorage.setItem(SEED_META_KEY, JSON.stringify(all));
   if (seed.localOnly) saveSeedTrayState();
-  updatePathBrand();
+  updateBrandHome();
 }
 
 function saveSeedTrayState() {
@@ -4843,7 +4794,6 @@ async function loadVersions() {
     list.innerHTML = "<li class='meta'>還沒有版本紀錄</li>";
     fillDiffSelects();
     setStatus("還沒有版本紀錄；按 Save 建立第一版");
-    updatePathBrand();
     return;
   }
 
@@ -4887,7 +4837,6 @@ async function loadVersions() {
 
   fillDiffSelects();
   setStatus(`已載入 ${state.versions.length} 個版本`);
-  updatePathBrand();
 }
 
 function fillDiffSelects() {
@@ -5399,163 +5348,16 @@ $("document-file")?.addEventListener("change", () => {
 
 function closeAllPopovers() {
   setPopoverOpen(null);
-  setPathOpen(false);
-  setVersionStripOpen(false);
 }
 
-function getVersionOrdinal(index, total) {
-  return `v${Math.max(1, total - index)}`;
-}
-
-function renderPathCrumbForSeed(title) {
-  const total = state.versions.length;
-  const latest = state.versions[0];
-  const open = state.versionStripOpen;
-
-  let strip = "";
-  if (!total || !latest?.when) {
-    strip = `<div class="path-version-strip is-empty">
-      <span class="path-version-left">尚未發布</span>
-      <span class="path-version-right">—</span>
-      <span class="path-version-chevron" aria-hidden="true">▼</span>
-    </div>`;
-  } else {
-    const left = `${getVersionOrdinal(0, total)} · 目前版`;
-    const right = formatWhen(latest.when);
-    strip = `<button type="button" class="path-version-strip" data-version-toggle aria-expanded="${open ? "true" : "false"}">
-      <span class="path-version-left">${escapeHtml(left)}</span>
-      <span class="path-version-right">${escapeHtml(right)}</span>
-      <span class="path-version-chevron${open ? " is-open" : ""}" aria-hidden="true">▼</span>
-    </button>`;
-  }
-
-  let panel = "";
-  if (total > 0) {
-    const rows = state.versions
-      .map((v, i) => {
-        const isCurrent = i === 0;
-        const left = isCurrent ? `${getVersionOrdinal(i, total)} · 目前版` : getVersionOrdinal(i, total);
-        const right = v.when ? formatWhen(v.when) : "—";
-        return `<div class="path-version-row${isCurrent ? " is-current" : ""}">
-          <span class="path-version-left">${escapeHtml(left)}</span>
-          <span class="path-version-right">${escapeHtml(right)}</span>
-        </div>`;
-      })
-      .join("");
-    panel = `<div class="path-version-panel${open ? "" : " hidden"}">${rows}</div>`;
-  }
-
-  return `<div class="path-crumb-seed">
-    <span class="path-crumb-title">${escapeHtml(title)}</span>
-    ${strip}
-    ${panel}
-  </div>`;
-}
-
-function setVersionStripOpen(open) {
-  state.versionStripOpen = open;
-  const panel = document.querySelector(".path-version-panel");
-  const toggle = document.querySelector("[data-version-toggle]");
-  const chevron = document.querySelector(".path-version-chevron");
-  if (panel) panel.classList.toggle("hidden", !open);
-  if (toggle) toggle.setAttribute("aria-expanded", open ? "true" : "false");
-  if (chevron) chevron.classList.toggle("is-open", open);
-}
-
-function buildPathSteps() {
-  const steps = [
-    {
-      key: "list",
-      label: "首頁",
-      depth: 0,
-      go: () => showPanel("list"),
-    },
-  ];
-  if (state.panel === "system-seed") {
-    steps.push({
-      key: "system-seed",
-      label: "Seed",
-      depth: 1,
-      go: () => openSystemSeedBrowse("types"),
-    });
-    return steps;
-  }
-  if (state.current && state.panel !== "list") {
-    steps.push({
-      key: "seed",
-      label: state.current.title,
-      depth: 1,
-      go: async () => {
-        state.docMode = "edit";
-        showPanel("read");
-        if (!state.originalText) await loadSeedText();
-        setEditMode(state.workingText ?? state.originalText);
-      },
-    });
-  }
-  return steps;
-}
-
-function renderPathRecent() {
-  const wrap = $("path-recent");
-  if (!wrap) return;
-  const list = loadRecentPaths();
-  wrap.innerHTML = "";
-  if (!list.length) {
-    const empty = document.createElement("p");
-    empty.className = "path-recent-empty";
-    empty.textContent = "還沒有最近位置。點進種子後會出現這裡。";
-    wrap.appendChild(empty);
-    return;
-  }
-  for (const entry of list.slice(0, 5)) {
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "path-recent-item";
-    btn.textContent = entry.label;
-    btn.title = entry.label;
-    btn.addEventListener("click", () => {
-      setPathOpen(false);
-      goRecentPath(entry);
-    });
-    wrap.appendChild(btn);
-  }
-}
-
-function setPathOpen(open) {
-  const pop = $("path-popover");
-  if (!pop) return;
-  if (open) {
-    renderPathRecent();
-    positionPopover(pop, $("brand-home"));
-    setPopoverOpen(null);
-  }
-  pop.classList.toggle("hidden", !open);
-  pop.hidden = !open;
-}
-
-function updatePathBrand() {
+function updateBrandHome() {
   const btn = $("brand-home");
-  const crumb = $("path-crumb");
   if (!btn) return;
-  if (crumb) {
-    if (state.panel === "list") {
-      crumb.innerHTML = `<span class="path-crumb-home">首頁</span>`;
-    } else if (state.panel === "system-seed") {
-      crumb.innerHTML = `<span class="path-crumb-home">Seed</span>`;
-    } else if (state.current) {
-      const title = state.current.title || "未命名 SEED";
-      crumb.innerHTML = renderPathCrumbForSeed(title);
-    } else {
-      crumb.innerHTML = `<span class="path-crumb-home">首頁</span>`;
-    }
-  }
   btn.title = "回首頁";
   btn.classList.toggle("has-path", state.panel !== "list");
 }
 
 function setPopoverOpen(name) {
-  if (name) setPathOpen(false);
   const me = $("me-popover");
   const notify = $("notify-popover");
   const meBtn = $("header-me-btn");
@@ -5649,16 +5451,7 @@ function handleNotifyInput(text) {
 
 $("brand-home").addEventListener("click", (e) => {
   e.stopPropagation();
-  setPathOpen(false);
-  setVersionStripOpen(false);
   showPanel("list");
-});
-
-document.querySelector(".brand-block")?.addEventListener("click", (e) => {
-  if (e.target.closest("[data-version-toggle]")) {
-    e.stopPropagation();
-    setVersionStripOpen(!state.versionStripOpen);
-  }
 });
 
 $("header-me-btn").addEventListener("click", (e) => {
@@ -5691,32 +5484,20 @@ $("notify-form").addEventListener("submit", (e) => {
 document.addEventListener("click", (e) => {
   const me = $("me-popover");
   const notify = $("notify-popover");
-  const path = $("path-popover");
   const meBtn = $("header-me-btn");
   const notifyBtn = $("notify-btn");
-  const brandBtn = $("brand-home");
   if (me && !me.classList.contains("hidden")) {
     if (!me.contains(e.target) && !meBtn.contains(e.target)) setPopoverOpen(null);
   }
   if (notify && !notify.classList.contains("hidden")) {
     if (!notify.contains(e.target) && !notifyBtn.contains(e.target)) setPopoverOpen(null);
   }
-  if (path && !path.classList.contains("hidden")) {
-    if (!path.contains(e.target) && !brandBtn.contains(e.target)) setPathOpen(false);
-  }
-  if (state.versionStripOpen) {
-    const strip = document.querySelector(".path-version-strip[data-version-toggle]");
-    const panel = document.querySelector(".path-version-panel");
-    if (strip && panel && !strip.contains(e.target) && !panel.contains(e.target)) {
-      setVersionStripOpen(false);
-    }
-  }
 });
 
 loadAppConfig()
   .then(() => loadCatalog())
   .then(() => {
-    updatePathBrand();
+    updateBrandHome();
     updateSyncUi();
     showToast("拖拉棋盤會自動存；點 SEED 直接編輯", "info");
   })
