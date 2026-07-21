@@ -3283,7 +3283,7 @@ function renderSeedTray() {
   root.innerHTML = "";
   const archived = state.seeds.filter((s) => s.archived);
   if (!archived.length) {
-    root.innerHTML = '<p class="seed-tray-empty">把 SEED 拖到這裡收回；也可拖到上方棋盤出戰。</p>';
+    root.innerHTML = '<p class="seed-tray-empty">按住左側 ⋮⋮ 拖到棋盤出戰；點名稱才打開。</p>';
     return;
   }
   for (const seed of archived) {
@@ -3298,6 +3298,10 @@ function renderSeedTray() {
     card.addEventListener("dragend", () => {
       state.dragId = null;
     });
+    const grip = document.createElement("span");
+    grip.className = "seed-tray-grip";
+    grip.setAttribute("aria-hidden", "true");
+    grip.title = "按住拖到棋盤";
     const open = document.createElement("button");
     open.type = "button";
     open.className = "seed-tray-open";
@@ -3309,9 +3313,13 @@ function renderSeedTray() {
     type.className = "seed-tray-type";
     type.textContent = typeLabel[seed.seedType || "document"];
     open.append(title, type);
-    open.addEventListener("click", () =>
-      selectSeed(seed).catch((err) => setStatus(err.message || String(err)))
-    );
+    open.addEventListener("click", () => {
+      if (state.suppressClick) {
+        state.suppressClick = false;
+        return;
+      }
+      selectSeed(seed).catch((err) => setStatus(err.message || String(err)));
+    });
     const actions = document.createElement("div");
     actions.className = "seed-tray-actions";
     if (isApprovalTemplate(seed)) {
@@ -3337,7 +3345,8 @@ function renderSeedTray() {
     remove.setAttribute("aria-label", `刪除 ${seed.title}`);
     remove.addEventListener("click", () => deleteSeed(seed.id));
     actions.appendChild(remove);
-    card.append(open, actions);
+    card.append(grip, open, actions);
+    bindSeedTrayCardTouchDrag(card, seed);
     root.appendChild(card);
   }
 }
@@ -3431,7 +3440,8 @@ function clearTouchHighlight() {
     state.touchHighlightCell.classList.remove("drop-target");
     state.touchHighlightCell = null;
   }
-  document.querySelectorAll(".map-seed.touch-dragging").forEach((el) => {
+  $("seed-tray-list")?.classList.remove("drop-target");
+  document.querySelectorAll(".map-seed.touch-dragging, .seed-tray-card.touch-dragging").forEach((el) => {
     el.classList.remove("touch-dragging");
   });
 }
@@ -3443,7 +3453,94 @@ function highlightCellAt(clientX, clientY) {
   if (cell) {
     cell.classList.add("drop-target");
     state.touchHighlightCell = cell;
+    return;
   }
+  const tray = el && el.closest("#seed-tray-list");
+  if (tray) tray.classList.add("drop-target");
+}
+
+function bindSeedTrayCardTouchDrag(card, seed) {
+  let startX = 0;
+  let startY = 0;
+  let active = false;
+  let dragging = false;
+  const threshold = 10;
+
+  const finish = (wasDragging, clientX, clientY) => {
+    active = false;
+    dragging = false;
+    state.touchDragging = false;
+    state.dragId = null;
+    card.classList.remove("touch-dragging");
+    clearTouchHighlight();
+    if (!wasDragging) return;
+    state.suppressClick = true;
+    const el = document.elementFromPoint(clientX, clientY);
+    const cell = el && el.closest(".map-cell");
+    if (cell) {
+      moveSeed(seed.id, Number(cell.dataset.col), Number(cell.dataset.row));
+    }
+  };
+
+  card.addEventListener(
+    "touchstart",
+    (e) => {
+      if (e.target.closest(".seed-tray-delete, .seed-tray-spawn")) return;
+      if (e.touches.length !== 1) return;
+      const touch = e.touches[0];
+      startX = touch.clientX;
+      startY = touch.clientY;
+      active = true;
+      dragging = Boolean(e.target.closest(".seed-tray-grip"));
+      state.dragId = seed.id;
+      if (dragging) {
+        state.touchDragging = true;
+        card.classList.add("touch-dragging");
+      }
+    },
+    { passive: true }
+  );
+
+  card.addEventListener(
+    "touchmove",
+    (e) => {
+      if (!active || state.dragId !== seed.id) return;
+      const touch = e.touches[0];
+      const dx = Math.abs(touch.clientX - startX);
+      const dy = Math.abs(touch.clientY - startY);
+      if (!dragging && (dx > threshold || dy > threshold)) {
+        dragging = true;
+        state.touchDragging = true;
+        card.classList.add("touch-dragging");
+      }
+      if (!dragging) return;
+      e.preventDefault();
+      highlightCellAt(touch.clientX, touch.clientY);
+    },
+    { passive: false }
+  );
+
+  card.addEventListener(
+    "touchend",
+    (e) => {
+      if (!active || state.dragId !== seed.id) return;
+      finish(dragging, e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+    },
+    { passive: true }
+  );
+
+  card.addEventListener(
+    "touchcancel",
+    () => {
+      active = false;
+      dragging = false;
+      if (state.dragId === seed.id) state.dragId = null;
+      state.touchDragging = false;
+      card.classList.remove("touch-dragging");
+      clearTouchHighlight();
+    },
+    { passive: true }
+  );
 }
 
 function puzzleKindLabel() {

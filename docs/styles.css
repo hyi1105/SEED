@@ -835,7 +835,32 @@ html, body {
   border: 1px solid var(--line);
   border-radius: 999px;
   background: var(--card);
-  padding: 0.2rem 0.25rem 0.2rem 0.55rem;
+  padding: 0.2rem 0.25rem 0.2rem 0.35rem;
+}
+
+.seed-tray-card.touch-dragging {
+  opacity: 0.9;
+  box-shadow: 0 4px 14px rgba(20, 32, 26, 0.14);
+  z-index: 2;
+}
+
+.seed-tray-grip {
+  flex: 0 0 auto;
+  width: 0.75rem;
+  color: var(--muted);
+  font-size: 0.72rem;
+  line-height: 1;
+  letter-spacing: -0.08em;
+  touch-action: none;
+  user-select: none;
+  cursor: grab;
+  padding: 0.2rem 0.05rem;
+}
+
+.seed-tray-grip::before {
+  content: "⋮⋮";
+  display: block;
+  transform: rotate(90deg);
 }
 
 .seed-tray-actions {
@@ -876,6 +901,7 @@ html, body {
   cursor: pointer;
   min-width: 0;
   max-width: 12rem;
+  touch-action: manipulation;
 }
 
 .seed-tray-title {
