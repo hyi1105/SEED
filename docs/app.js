@@ -377,12 +377,18 @@ function personFieldTypeLabel(type) {
 }
 
 function defaultPersonCardField(type = "text", label = "") {
+  const now = new Date().toISOString();
   return {
     id: makePersonFieldId(),
     type,
     label,
+    value: "",
     viewers: ["本人"],
     editors: ["本人"],
+    createdBy: "你",
+    createdAt: now,
+    lastEditor: "",
+    lastEditedAt: "",
     options: "",
     sourceType: "manual",
     sourceName: "",
@@ -396,11 +402,34 @@ function defaultPersonCardField(type = "text", label = "") {
 function defaultPersonCard() {
   return {
     fields: [
-      defaultPersonCardField("text", "簽名1"),
-      defaultPersonCardField("text", "簽名2"),
-      defaultPersonCardField("text", "簽名3"),
+      defaultPersonCardField("text", "欄位1"),
+      defaultPersonCardField("text", "欄位2"),
+      defaultPersonCardField("text", "欄位3"),
     ],
   };
+}
+
+function fileBoxDisplayType(field) {
+  if (field.type === "select") return "select";
+  const value = String(field.value || "");
+  if (value.includes("\n") || value.length > 60) return "textarea";
+  return field.type || "text";
+}
+
+function touchFileBoxMeta(field, actor = "你") {
+  field.lastEditor = actor;
+  field.lastEditedAt = new Date().toISOString();
+  if (!field.createdAt) field.createdAt = field.lastEditedAt;
+  if (!field.createdBy) field.createdBy = actor;
+}
+
+function formatFieldMetaTime(iso) {
+  if (!iso) return "—";
+  try {
+    return new Intl.DateTimeFormat("zh-TW", { dateStyle: "short", timeStyle: "short" }).format(new Date(iso));
+  } catch {
+    return iso;
+  }
 }
 
 function ensurePersonCardModel(seed) {
@@ -413,6 +442,11 @@ function ensurePersonCardModel(seed) {
     field.label ||= "";
     field.viewers = Array.isArray(field.viewers) && field.viewers.length ? field.viewers : ["本人"];
     field.editors = Array.isArray(field.editors) && field.editors.length ? field.editors : ["本人"];
+    field.value = field.value ?? "";
+    field.createdBy ||= "你";
+    field.createdAt ||= new Date().toISOString();
+    field.lastEditor ||= "";
+    field.lastEditedAt ||= "";
     if (field.type === "select") {
       field.options ||= "";
       field.sourceType ||= "manual";
@@ -431,7 +465,6 @@ function ensurePersonCardModel(seed) {
       delete field.firstRowHeader;
       delete field.allowManual;
     }
-    delete field.value;
   });
   delete card.photo;
   delete card.readers;
@@ -452,7 +485,7 @@ function personCardToText(seed) {
       ? `｜選項：${field.sourceType === "file" ? field.sourceName || "CSV／Excel" : (field.options || "手動")}`
       : "";
     lines.push(
-      `- 欄位 ${index + 1}｜${type}｜${field.label || "未命名"}｜可見：${personCardPermissionSummary(field.viewers)}｜可編輯：${personCardPermissionSummary(field.editors)}${extra}`
+      `- ${field.label || "欄位"}｜${type}｜${field.value || "（空）"}｜可見：${personCardPermissionSummary(field.viewers)}｜可編輯：${personCardPermissionSummary(field.editors)}｜編輯：${field.lastEditor || "—"} ${formatFieldMetaTime(field.lastEditedAt)}｜建立：${field.createdBy || "—"} ${formatFieldMetaTime(field.createdAt)}${extra}`
     );
   });
   return lines.join("\n");
@@ -743,10 +776,21 @@ function renderPersonCardPrintView(board, seed) {
   const card = ensurePersonCardModel(seed);
   renderSeedHeading(board, false, { showSubtitle: false });
   const grid = document.createElement("div");
-  grid.className = "person-card-print-fields";
+  grid.className = "file-seed-boxes";
   card.fields.forEach((field) => {
     const item = document.createElement("div");
-    item.innerHTML = `<small>${escapeHtml(personFieldTypeLabel(field.type))}</small><strong>${escapeHtml(field.label || "欄位")}</strong>`;
+    item.className = "file-seed-box";
+    const displayType = fileBoxDisplayType(field);
+    const content = document.createElement("div");
+    content.className = "file-seed-print-content";
+    content.textContent = field.value || "（空）";
+    if (displayType === "textarea" || field.value.includes("\n")) {
+      content.style.whiteSpace = "pre-wrap";
+    }
+    const head = document.createElement("div");
+    head.className = "file-seed-print-head";
+    head.innerHTML = `<strong>${escapeHtml(field.label || "欄位")}</strong><small>${escapeHtml(personFieldTypeLabel(field.type))}</small>`;
+    item.append(head, content, renderFileBoxMeta(field));
     grid.appendChild(item);
   });
   board.appendChild(grid);
@@ -893,49 +937,70 @@ function renderPersonCardSelectOptions(seed, field) {
   return panel;
 }
 
+function renderFileBoxContent(seed, field) {
+  const wrap = document.createElement("div");
+  wrap.className = "file-seed-content";
+  const displayType = fileBoxDisplayType(field);
+  let input;
+  if (displayType === "textarea") {
+    input = document.createElement("textarea");
+    input.rows = Math.max(3, String(field.value || "").split("\n").length);
+    input.placeholder = field.label || "多行內容";
+  } else if (displayType === "select") {
+    input = document.createElement("select");
+    input.innerHTML = `<option value="">請選擇</option>${String(field.options || "").split(",").filter(Boolean).map((item) => `<option value="${escapeHtml(item.trim())}"${field.value === item.trim() ? " selected" : ""}>${escapeHtml(item.trim())}</option>`).join("")}`;
+  } else {
+    input = document.createElement("input");
+    input.type = "text";
+    input.placeholder = field.label || "單行內容";
+  }
+  input.className = "file-seed-input";
+  if (displayType !== "select") input.value = field.value || "";
+  const onChange = () => {
+    field.value = displayType === "select" ? input.value : input.value;
+    if (displayType === "textarea") {
+      input.rows = Math.max(3, field.value.split("\n").length);
+    }
+    touchFileBoxMeta(field);
+    persistPersonCard(seed);
+  };
+  input.addEventListener("input", onChange);
+  if (displayType === "select") input.addEventListener("change", onChange);
+  wrap.appendChild(input);
+  return wrap;
+}
+
+function renderFileBoxMeta(field) {
+  const meta = document.createElement("div");
+  meta.className = "file-seed-meta";
+  [
+    ["編輯者", field.lastEditor || "—"],
+    ["編輯時間", formatFieldMetaTime(field.lastEditedAt)],
+    ["建立者", field.createdBy || "—"],
+    ["建立時間", formatFieldMetaTime(field.createdAt)],
+  ].forEach(([label, value]) => {
+    const item = document.createElement("div");
+    item.className = "file-seed-meta-item";
+    item.innerHTML = `<span class="info-label">${escapeHtml(label)}</span><span class="info-value">${escapeHtml(value)}</span>`;
+    meta.appendChild(item);
+  });
+  return meta;
+}
+
 function renderPersonCardEditor(board, seed) {
   const card = ensurePersonCardModel(seed);
   renderSeedHeading(board, true, { showSubtitle: false });
 
   const fields = document.createElement("div");
-  fields.className = "person-card-fields";
+  fields.className = "file-seed-boxes";
   card.fields.forEach((field, index) => {
     const item = document.createElement("div");
-    item.className = "person-card-field";
+    item.className = "file-seed-box";
 
-    const labelRow = document.createElement("div");
-    labelRow.className = "info-row person-card-label-row";
-    const nameLabel = document.createElement("span");
-    nameLabel.className = "info-label";
-    nameLabel.textContent = "名稱";
-    const typeLabel = document.createElement("span");
-    typeLabel.className = "info-label";
-    typeLabel.textContent = "類別";
-    const remove = document.createElement("button");
-    remove.type = "button";
-    remove.className = "frame-remove person-card-remove";
-    remove.textContent = "×";
-    remove.title = "刪除此欄";
-    remove.addEventListener("click", () => {
-      if (card.fields.length <= 1) return;
-      card.fields.splice(index, 1);
-      persistPersonCard(seed);
-      renderFrameBoard();
-    });
-    labelRow.append(nameLabel, typeLabel, remove);
-
-    const valueRow = document.createElement("div");
-    valueRow.className = "info-row person-card-value-row";
-    const nameInput = document.createElement("input");
-    nameInput.className = "person-card-value person-card-value-name";
-    nameInput.placeholder = "例如簽名1";
-    nameInput.value = field.label || "";
-    nameInput.addEventListener("input", () => {
-      field.label = nameInput.value;
-      persistPersonCard(seed);
-    });
+    const head = document.createElement("div");
+    head.className = "file-seed-box-head";
     const type = document.createElement("select");
-    type.className = "person-card-value person-card-value-type";
+    type.className = "file-seed-type";
     PERSON_FIELD_TYPES.forEach((option) => {
       const opt = document.createElement("option");
       opt.value = option.id;
@@ -946,12 +1011,37 @@ function renderPersonCardEditor(board, seed) {
     type.addEventListener("change", () => {
       field.type = type.value;
       ensurePersonCardModel(seed);
+      touchFileBoxMeta(field);
       persistPersonCard(seed);
       renderFrameBoard();
     });
-    valueRow.append(nameInput, type);
+    const label = document.createElement("input");
+    label.className = "file-seed-label";
+    label.placeholder = "欄位名稱";
+    label.value = field.label || "";
+    label.addEventListener("input", () => {
+      field.label = label.value;
+      persistPersonCard(seed);
+    });
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "frame-remove";
+    remove.textContent = "×";
+    remove.title = "刪除此欄";
+    remove.addEventListener("click", () => {
+      if (card.fields.length <= 1) return;
+      card.fields.splice(index, 1);
+      persistPersonCard(seed);
+      renderFrameBoard();
+    });
+    head.append(type, label, remove);
 
-    item.append(labelRow, valueRow, renderPersonCardPermissions(seed, field));
+    item.append(
+      head,
+      renderFileBoxContent(seed, field),
+      renderPersonCardPermissions(seed, field),
+      renderFileBoxMeta(field)
+    );
     if (field.type === "select") {
       item.appendChild(renderPersonCardSelectOptions(seed, field));
     }
@@ -973,7 +1063,7 @@ function renderPersonCardEditor(board, seed) {
     button.textContent = option.label;
     button.addEventListener("click", () => {
       const next = card.fields.length + 1;
-      card.fields.push(defaultPersonCardField(option.id, `簽名${next}`));
+      card.fields.push(defaultPersonCardField(option.id, `欄位${next}`));
       persistPersonCard(seed);
       renderFrameBoard();
     });
@@ -2963,10 +3053,18 @@ function deleteSeed(id) {
 }
 
 const SYSTEM_SEED_TYPES = [
-  { id: "document", label: "文件", desc: "人員卡片：照片＋三欄文字，可設權限" },
-  { id: "approval", label: "簽核", desc: "欄位、流程、權限與通知範本" },
-  { id: "discussion", label: "討論", desc: "直播風格畫面與評論截圖" },
+  { id: "document", label: "文件 Seed", desc: "欄位方塊：單行／多行／下拉，可設可見與可編輯" },
+  { id: "approval", label: "簽核 Seed", desc: "欄位、流程、權限與通知範本" },
+  { id: "discussion", label: "討論 Seed", desc: "直播風格畫面與評論截圖" },
 ];
+
+function seedTypeDisplayLabel(seedType) {
+  return {
+    document: "文件",
+    approval: "簽核",
+    discussion: "討論",
+  }[seedType || "document"] || "文件";
+}
 
 function systemSeedTypeLabel(seedType) {
   return SYSTEM_SEED_TYPES.find((item) => item.id === seedType)?.label || seedType;
@@ -3305,7 +3403,7 @@ function renderSeedTray() {
     const open = document.createElement("button");
     open.type = "button";
     open.className = "seed-tray-open";
-    const typeLabel = { document: "文件", approval: seed.approvalTemplateId ? "申請" : "簽核範本", discussion: "討論" };
+    const typeLabel = { document: "文件 Seed", approval: seed.approvalTemplateId ? "申請" : "簽核 Seed", discussion: "討論 Seed" };
     const title = document.createElement("span");
     title.className = "seed-tray-title";
     title.textContent = seed.title;
