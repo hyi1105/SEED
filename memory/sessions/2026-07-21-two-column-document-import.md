@@ -61,6 +61,20 @@ status: active
 - 歷程記錄移除頂部大標題，版本文字改成 `編輯者－編輯－日期時間`。
 - 本機瀏覽器已驗證快速建立、直播預覽、左下評論、段落控制位置、歷程格式與 SEED 清單捲動設定。
 
+## 10:46 簽核工作流原型
+
+- 編輯模式的正式版本 `Save` 移到整份內容最下方。
+- 簽核模板擴充為五個頁籤：申請單、欄位、流程、權限、通知。
+- 下拉選項可使用手動值或 CSV／TSV／Excel；支援指定 A／B／C 欄、標題列與允許手動輸入。
+- 加入 Requester、Filler、Approver、CopyTo、FYI、Admin、Owner 角色。
+- 加入依序／平行簽核、全數／任一通過、Return、Delegate、期間代理、Reminder 及超時動作設定。
+- Owner 可使用欄位 × 角色表格大量設定可看、可編輯、必填與條件／lookup。
+- 申請單以對話式欄位呈現，支援草稿、Submit、Approve、Deny、Return、Delegate、Call 與 Comment。
+- 流程圖可點人頭切換角色，箭頭可進入通知設定；通知區分固定前後段與可編輯中段。
+- 前端已保存 Status、Current Approver、Current Level、Last Submit Date、Last Approval Date 及操作紀錄。
+- 真實身分授權、寄信、排程、代理、多人交易與不可竄改稽核仍需後端。
+- 瀏覽器確認五個頁籤、角色流程、權限矩陣、通知模板、CSV 指定欄解析與 Submit 狀態轉換。
+
 ## 待續
 
 - 使用實際複雜 Word、掃描 PDF 與多欄 PDF 做內容抽取驗收。

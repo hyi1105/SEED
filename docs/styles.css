@@ -767,6 +767,10 @@ html, body {
   display: none;
 }
 
+.document-actions {
+  margin: 0.75rem auto 0;
+}
+
 .document-actions .btn,
 .export-bar .btn {
   border-radius: 999px;
@@ -984,6 +988,365 @@ html, body {
   border-left: 3px solid var(--line);
   padding-left: 0.75rem;
   white-space: pre-wrap;
+}
+
+.approval-editor {
+  gap: 0.8rem;
+}
+
+.approval-tabs,
+.approval-role-bar,
+.approval-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.approval-tabs {
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 0.55rem;
+}
+
+.approval-tabs .btn.is-active,
+.approval-role-bar .btn.is-active {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+}
+
+.approval-metrics {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.4rem;
+}
+
+.approval-metrics > div {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--paper);
+  padding: 0.55rem;
+}
+
+.approval-metrics small {
+  color: var(--muted);
+  font-size: 0.65rem;
+}
+
+.approval-metrics strong {
+  overflow: hidden;
+  font-size: 0.8rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.approval-flow {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  overflow-x: auto;
+  padding: 0.65rem 0.25rem;
+}
+
+.approval-person {
+  flex: 0 0 6.6rem;
+  display: grid;
+  justify-items: center;
+  gap: 0.15rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+  color: var(--ink);
+  padding: 0.55rem 0.35rem;
+  cursor: pointer;
+}
+
+.approval-person > span {
+  display: grid;
+  place-items: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.approval-person strong {
+  font-size: 0.72rem;
+}
+
+.approval-person small {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 0.62rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.approval-person.is-current {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+
+.approval-arrow {
+  flex: 0 0 2.8rem;
+  display: grid;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font-size: 1.3rem;
+  cursor: pointer;
+}
+
+.approval-arrow small {
+  color: var(--muted);
+  font-size: 0.55rem;
+}
+
+.approval-conversation {
+  display: grid;
+  gap: 0.65rem;
+  border-radius: 14px;
+  background: #eef5f2;
+  padding: 0.8rem;
+}
+
+.approval-question {
+  display: grid;
+  gap: 0.35rem;
+  width: min(92%, 40rem);
+  border-radius: 4px 12px 12px;
+  background: var(--card);
+  padding: 0.7rem;
+  box-shadow: 0 2px 8px rgba(20, 32, 26, 0.08);
+}
+
+.approval-question > span {
+  color: var(--accent);
+  font-size: 0.68rem;
+}
+
+.approval-question input,
+.approval-question textarea,
+.approval-question select,
+.approval-comment textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--paper);
+  padding: 0.55rem 0.65rem;
+  color: var(--ink);
+  font: inherit;
+}
+
+.approval-question textarea,
+.approval-comment textarea {
+  min-height: 4.5rem;
+  resize: vertical;
+}
+
+.approval-comment {
+  justify-self: end;
+  display: grid;
+  gap: 0.35rem;
+  width: min(86%, 36rem);
+  border-radius: 12px 4px 12px 12px;
+  background: #dcece6;
+  padding: 0.7rem;
+}
+
+.approval-comment .btn {
+  justify-self: end;
+}
+
+.approval-comment-item {
+  justify-self: end;
+  max-width: 86%;
+  margin: 0;
+  border-radius: 10px 3px 10px 10px;
+  background: #dcece6;
+  padding: 0.45rem 0.65rem;
+  font-size: 0.78rem;
+}
+
+.approval-actions {
+  border-top: 1px solid var(--line);
+  padding-top: 0.6rem;
+}
+
+.approval-approve {
+  border-color: #087a54 !important;
+  background: #087a54 !important;
+  color: #fff !important;
+}
+
+.approval-deny {
+  border-color: #a43f3f !important;
+  background: #a43f3f !important;
+  color: #fff !important;
+}
+
+.approval-field-card,
+.approval-stage-card,
+.approval-notification-card,
+.approval-config-section {
+  position: relative;
+  display: grid;
+  gap: 0.55rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper);
+  padding: 0.75rem 2.5rem 0.75rem 0.75rem;
+}
+
+.approval-field-card {
+  grid-template-columns: minmax(0, 1fr) 10rem;
+}
+
+.approval-field-card input,
+.approval-field-card select,
+.approval-stage-card input,
+.approval-stage-card select,
+.approval-config-section input,
+.approval-notification-card input,
+.approval-notification-card textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--card);
+  padding: 0.48rem 0.6rem;
+  color: var(--ink);
+  font: inherit;
+}
+
+.approval-source {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 0.5rem;
+  border-top: 1px solid var(--line);
+  padding-top: 0.55rem;
+}
+
+.approval-source label,
+.file-options label,
+.approval-stage-card label,
+.approval-notification-card label {
+  display: grid;
+  gap: 0.25rem;
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.file-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.file-options .source-name {
+  align-self: end;
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.file-options label:has(input[type="checkbox"]),
+.approval-stage-card label:has(input[type="checkbox"]),
+.approval-inline-check {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.file-options input[type="checkbox"],
+.approval-stage-card input[type="checkbox"],
+.approval-inline-check input {
+  width: auto;
+}
+
+.approval-stage-card {
+  grid-template-columns: 6rem minmax(8rem, 1fr) minmax(10rem, 1.3fr) 9rem 11rem;
+  align-items: end;
+}
+
+.approval-stage-card > strong {
+  align-self: center;
+  color: var(--accent);
+}
+
+.approval-config-section h3,
+.approval-config-section p,
+.approval-notification-card h3 {
+  margin: 0;
+}
+
+.approval-config-section > p,
+.approval-help {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.approval-delegate-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
+  gap: 0.4rem;
+}
+
+.approval-permission-table {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.permission-head,
+.permission-row {
+  display: grid;
+  grid-template-columns: minmax(10rem, 1.3fr) 7rem 3.5rem 4.5rem 3.5rem minmax(14rem, 1.5fr);
+  gap: 0.4rem;
+  align-items: center;
+  min-width: 50rem;
+  padding: 0.45rem 0.6rem;
+}
+
+.permission-head {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 0.72rem;
+}
+
+.permission-row {
+  border-top: 1px solid var(--line);
+  background: var(--card);
+  font-size: 0.76rem;
+}
+
+.permission-row input[type="checkbox"] {
+  justify-self: center;
+}
+
+.permission-row input[type="text"],
+.permission-row .permission-lookup {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0.35rem;
+}
+
+.approval-notification-card {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.approval-notification-card h3,
+.approval-notification-card .meta {
+  grid-column: 1 / -1;
+}
+
+.approval-notification-card textarea {
+  min-height: 4rem;
+  resize: vertical;
 }
 
 .live-content-editor {
@@ -1921,6 +2284,23 @@ h1 {
 
   .seed-type-choice {
     min-height: 4.5rem;
+  }
+
+  .approval-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .approval-field-card,
+  .approval-stage-card,
+  .approval-notification-card,
+  .file-options,
+  .approval-delegate-row {
+    grid-template-columns: 1fr;
+  }
+
+  .approval-field-card > *,
+  .approval-notification-card > * {
+    grid-column: 1;
   }
 }
 

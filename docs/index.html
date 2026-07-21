@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=control5" />
+  <link rel="stylesheet" href="styles.css?v=control8" />
   <!-- 預覽請用 raw.githack（會正確當成網頁）。不要用 raw.githubusercontent 或 jsDelivr 開 html，會變純文字。 -->
 </head>
 <body>
@@ -115,9 +115,6 @@
       </section>
 
       <section id="panel-read" class="panel hidden">
-        <div class="document-actions hidden" id="edit-actions" aria-label="編輯操作">
-          <button type="button" class="btn" id="edit-save">Save</button>
-        </div>
         <div class="export-bar hidden" id="export-bar" aria-label="文件匯入與匯出">
           <button type="button" class="btn" id="document-import">匯入檔案</button>
           <button type="button" class="btn" data-export="pdf">PDF 匯出</button>
@@ -130,6 +127,9 @@
         </div>
         <article id="read-body" class="prose frame-board" aria-label="段落框編輯"></article>
         <textarea id="edit-body" class="edit-body hidden" spellcheck="true" aria-label="編輯筆記"></textarea>
+        <div class="document-actions hidden" id="edit-actions" aria-label="編輯操作">
+          <button type="button" class="btn" id="edit-save">Save</button>
+        </div>
       </section>
 
       <section id="panel-history" class="panel hidden">
@@ -344,6 +344,7 @@
   <div class="toast hidden" id="toast" role="status" aria-live="polite"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/mammoth@latest/mammoth.browser.min.js"></script>
-  <script src="app.js?v=control5"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@latest/dist/xlsx.full.min.js"></script>
+  <script src="app.js?v=control8"></script>
 </body>
 </html>

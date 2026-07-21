@@ -30,6 +30,7 @@ status: active
 
 - **首頁棋盤**：看 `knowledge-puzzle.md`。
 - **三種 SEED**（文件、簽核、主題討論）：看 `knowledge-puzzle.md` 的「三種 SEED」。
+- **簽核的角色、權限、委派與通知**：看 `approval-workflow.md`。
 - **編輯、Save、版本、歷程差異**：看 `core-features.md` 的「煉化／版本」。
 - **文件匯入與匯出**：看 `knowledge-puzzle.md` 的「A4 匯出」及「連續正文＋文件匯入」。
 - **完整產品方向與完成度**：看 `personal-mvp-spec.md`、`progress-final.md`。

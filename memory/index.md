@@ -27,6 +27,7 @@
 ## 主題
 
 - **如何從 Markdown 讀懂 SEED 系統**— [topics/system-guide.md](topics/system-guide.md)
+- **簽核模板工作流（角色、權限、流程、通知）**— [topics/approval-workflow.md](topics/approval-workflow.md)
 - **最終版進度總表**— [topics/progress-final.md](topics/progress-final.md)
 - **SEED 棋盤（個人／社群／模板）**— [topics/knowledge-puzzle.md](topics/knowledge-puzzle.md)
 - 個人 MVP 一頁規格（阿嬤級六動作）— [topics/personal-mvp-spec.md](topics/personal-mvp-spec.md)
