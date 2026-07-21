@@ -201,6 +201,63 @@ function framesToPrintableText(frames) {
     .join("\n\n");
 }
 
+function isApprovalTemplate(seed) {
+  return seed?.seedType === "approval" && seed.approvalIsTemplate !== false && !seed.approvalTemplateId;
+}
+
+function isApprovalInstance(seed) {
+  return seed?.seedType === "approval" && Boolean(seed.approvalTemplateId);
+}
+
+function listApprovalInstances(templateId) {
+  return state.seeds.filter((seed) => seed.approvalTemplateId === templateId);
+}
+
+function cloneApprovalTemplate(templateSeed) {
+  ensureApprovalModel(templateSeed);
+  const config = templateSeed.approvalConfig;
+  const id = `local-${Date.now().toString(36)}`;
+  const instance = {
+    id,
+    title: `申請－${templateSeed.title}`,
+    alias: `申請－${templateSeed.title}`,
+    short: Array.from(`申請${templateSeed.title}`).slice(0, 4).join(""),
+    path: "",
+    blurb: "",
+    col: 0,
+    row: 0,
+    archived: true,
+    localOnly: true,
+    seedType: "approval",
+    approvalIsTemplate: false,
+    approvalTemplateId: templateSeed.id,
+    formFields: JSON.parse(JSON.stringify(templateSeed.formFields || [])),
+    approvalConfig: JSON.parse(JSON.stringify({
+      ...config,
+      tab: "fill",
+      activeRole: "Requester",
+      status: "Draft",
+      currentLevel: 0,
+      currentApprover: config.roles?.Requester || "申請人",
+      lastSubmitDate: "",
+      lastApprovalDate: "",
+      answers: {},
+      comments: [],
+      auditTrail: [],
+    })),
+  };
+  return instance;
+}
+
+function createApprovalInstance(templateSeed) {
+  const instance = cloneApprovalTemplate(templateSeed);
+  state.seeds.push(instance);
+  localStorage.setItem(`seed-draft:${instance.id}`, "");
+  saveSeedTrayState();
+  renderMap();
+  return instance;
+}
+
 function syncWorkingFromFrames() {
   if (state.current?.seedType === "approval") {
     state.workingText = approvalToText(state.current);
@@ -520,7 +577,8 @@ function ensureApprovalModel(seed) {
     });
   }
   const config = (seed.approvalConfig ||= {});
-  config.tab ||= "request";
+  config.tab ||= isApprovalTemplate(seed) ? "fields" : "fill";
+  if (config.tab === "request") config.tab = isApprovalTemplate(seed) ? "fields" : "fill";
   config.activeRole ||= "Requester";
   config.status ||= "Draft";
   config.currentLevel = Number(config.currentLevel) || 0;
@@ -664,52 +722,74 @@ function renderApprovalFlow(seed, compact = false) {
   return flow;
 }
 
-function renderApprovalRequest(board, seed) {
+function renderApprovalQuestionnaire(board, seed, options = {}) {
+  const {
+    readonly = false,
+    showActions = !readonly,
+    showRoleBar = !readonly,
+    showFlow = !readonly,
+    showMetrics = !readonly,
+    preview = false,
+  } = options;
   const config = ensureApprovalModel(seed);
-  const metrics = document.createElement("div");
-  metrics.className = "approval-metrics";
-  [
-    ["Current Approver", config.currentApprover],
-    ["Current Level", String(config.currentLevel)],
-    ["Status", config.status],
-    ["Last Submit", config.lastSubmitDate ? formatWhen(config.lastSubmitDate) : "—"],
-    ["Last Approval", config.lastApprovalDate ? formatWhen(config.lastApprovalDate) : "—"],
-  ].forEach(([label, value]) => {
-    const item = document.createElement("div");
-    item.innerHTML = `<small>${escapeHtml(label)}</small><strong>${escapeHtml(value)}</strong>`;
-    metrics.appendChild(item);
-  });
-  board.append(metrics, renderApprovalFlow(seed));
-
-  const roleBar = document.createElement("div");
-  roleBar.className = "approval-role-bar";
-  ["Requester", "Filler", ...config.stages.map((stage) => stage.name), "CopyTo", "FYI", "Owner", "Admin"].forEach((role) => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "btn";
-    button.classList.toggle("is-active", config.activeRole === role);
-    button.textContent = role;
-    button.addEventListener("click", () => {
-      config.activeRole = role;
-      persistStructuredSeed();
-      renderFrameBoard();
+  if (showMetrics) {
+    const metrics = document.createElement("div");
+    metrics.className = "approval-metrics";
+    [
+      ["Current Approver", config.currentApprover],
+      ["Current Level", String(config.currentLevel)],
+      ["Status", config.status],
+      ["Last Submit", config.lastSubmitDate ? formatWhen(config.lastSubmitDate) : "—"],
+      ["Last Approval", config.lastApprovalDate ? formatWhen(config.lastApprovalDate) : "—"],
+    ].forEach(([label, value]) => {
+      const item = document.createElement("div");
+      item.innerHTML = `<small>${escapeHtml(label)}</small><strong>${escapeHtml(value)}</strong>`;
+      metrics.appendChild(item);
     });
-    roleBar.appendChild(button);
-  });
-  board.appendChild(roleBar);
+    board.appendChild(metrics);
+  }
+  if (showFlow) board.appendChild(renderApprovalFlow(seed, true));
 
-  const conversation = document.createElement("div");
-  conversation.className = "approval-conversation";
-  seed.formFields.forEach((field) => {
+  if (showRoleBar) {
+    const roleBar = document.createElement("div");
+    roleBar.className = "approval-role-bar";
+    ["Requester", "Filler", ...config.stages.map((stage) => stage.name), "CopyTo", "FYI", "Owner", "Admin"].forEach((role) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "btn";
+      button.classList.toggle("is-active", config.activeRole === role);
+      button.textContent = role;
+      button.addEventListener("click", () => {
+        config.activeRole = role;
+        persistStructuredSeed();
+        renderFrameBoard();
+      });
+      roleBar.appendChild(button);
+    });
+    board.appendChild(roleBar);
+  }
+
+  const form = document.createElement("form");
+  form.className = `approval-questionnaire${preview ? " is-preview" : ""}`;
+  form.noValidate = true;
+  seed.formFields.forEach((field, index) => {
     const permissionRole = config.activeRole.startsWith("Approver") ? "Approver" : config.activeRole;
     const permission = config.permissions.find((item) => item.fieldId === field.id && item.role === permissionRole);
-    if (permission && !permission.view && !["Owner", "Admin"].includes(config.activeRole)) return;
+    if (!preview && permission && !permission.view && !["Owner", "Admin"].includes(config.activeRole)) return;
     const card = document.createElement("label");
-    card.className = "approval-question";
-    card.innerHTML = `<span><strong>${escapeHtml(config.activeRole)}</strong> 填寫</span><b>${escapeHtml(field.label || "未命名欄位")}${permission?.required ? " *" : ""}</b>`;
+    card.className = "questionnaire-field";
+    const number = document.createElement("span");
+    number.className = "questionnaire-number";
+    number.textContent = String(index + 1);
+    const label = document.createElement("span");
+    label.className = "questionnaire-label";
+    label.textContent = `${field.label || "未命名欄位"}${permission?.required ? " *" : ""}`;
+    card.append(number, label);
     let input;
-    if (field.type === "textarea") input = document.createElement("textarea");
-    else if (field.type === "select" && !field.allowManual) {
+    if (field.type === "textarea") {
+      input = document.createElement("textarea");
+      input.rows = 4;
+    } else if (field.type === "select" && !field.allowManual) {
       input = document.createElement("select");
       input.innerHTML = `<option value="">請選擇</option>${field.options.split(",").filter(Boolean).map((item) => `<option>${escapeHtml(item.trim())}</option>`).join("")}`;
     } else {
@@ -717,12 +797,16 @@ function renderApprovalRequest(board, seed) {
       input.type = "text";
       if (field.type === "select") input.setAttribute("list", `options-${field.id}`);
     }
+    input.className = "questionnaire-input";
     input.value = config.answers[field.id] || "";
-    input.disabled = Boolean(permission && !permission.edit && !["Owner", "Admin"].includes(config.activeRole));
-    input.addEventListener("input", () => {
-      config.answers[field.id] = input.value;
-      persistStructuredSeed();
-    });
+    input.readOnly = readonly;
+    input.disabled = readonly || Boolean(permission && !permission.edit && !["Owner", "Admin"].includes(config.activeRole));
+    if (!readonly && !input.disabled) {
+      input.addEventListener("input", () => {
+        config.answers[field.id] = input.value;
+        persistStructuredSeed();
+      });
+    }
     card.appendChild(input);
     if (field.type === "select" && field.allowManual) {
       const datalist = document.createElement("datalist");
@@ -734,13 +818,16 @@ function renderApprovalRequest(board, seed) {
       });
       card.appendChild(datalist);
     }
-    conversation.appendChild(card);
+    form.appendChild(card);
   });
-  if (config.commentsEnabled) {
+  board.appendChild(form);
+
+  if (!readonly && config.commentsEnabled) {
     const comment = document.createElement("label");
-    comment.className = "approval-comment";
-    comment.innerHTML = "<strong>Comment</strong>";
+    comment.className = "questionnaire-field questionnaire-comment";
+    comment.innerHTML = "<span class='questionnaire-label'>Comment</span>";
     const input = document.createElement("textarea");
+    input.className = "questionnaire-input";
     input.placeholder = "補充說明或簽核意見…";
     const add = document.createElement("button");
     add.type = "button";
@@ -753,16 +840,16 @@ function renderApprovalRequest(board, seed) {
       renderFrameBoard();
     });
     comment.append(input, add);
-    conversation.appendChild(comment);
+    board.appendChild(comment);
+    config.comments.slice(-5).forEach((item) => {
+      const commentItem = document.createElement("p");
+      commentItem.className = "approval-comment-item";
+      commentItem.textContent = `${item.role}－${formatWhen(item.when)}：${item.text}`;
+      board.appendChild(commentItem);
+    });
   }
-  config.comments.slice(-5).forEach((item) => {
-    const comment = document.createElement("p");
-    comment.className = "approval-comment-item";
-    comment.textContent = `${item.role}－${formatWhen(item.when)}：${item.text}`;
-    conversation.appendChild(comment);
-  });
-  board.appendChild(conversation);
 
+  if (!showActions) return;
   const actions = document.createElement("div");
   actions.className = "approval-actions";
   const addAction = (label, className, handler) => {
@@ -840,6 +927,49 @@ function renderApprovalRequest(board, seed) {
     });
   }
   board.appendChild(actions);
+}
+
+function renderApprovalTemplateInstances(board, seed) {
+  const instances = listApprovalInstances(seed.id);
+  const section = document.createElement("section");
+  section.className = "approval-instance-list";
+  section.innerHTML = "<h3>由此範本建立的申請單</h3><p>範本只負責設定；實際填寫會複製成獨立申請單。</p>";
+  const create = document.createElement("button");
+  create.type = "button";
+  create.className = "btn btn-primary";
+  create.textContent = "＋ 建立申請單";
+  create.addEventListener("click", () => {
+    const instance = createApprovalInstance(seed);
+    showToast(`已建立「${instance.title}」`, "ok");
+    selectSeed(instance).catch((err) => setStatus(err.message || String(err)));
+  });
+  section.appendChild(create);
+  if (!instances.length) {
+    const empty = document.createElement("p");
+    empty.className = "meta";
+    empty.textContent = "尚無申請單。按上方按鈕從此範本複製一份開始填寫。";
+    section.appendChild(empty);
+  } else {
+    const list = document.createElement("ul");
+    list.className = "approval-instance-items";
+    instances.forEach((instance) => {
+      const item = document.createElement("li");
+      const open = document.createElement("button");
+      open.type = "button";
+      open.className = "btn";
+      open.textContent = instance.title;
+      open.addEventListener("click", () => {
+        selectSeed(instance).catch((err) => setStatus(err.message || String(err)));
+      });
+      const status = document.createElement("span");
+      status.className = "meta";
+      status.textContent = instance.approvalConfig?.status || "Draft";
+      item.append(open, status);
+      list.appendChild(item);
+    });
+    section.appendChild(list);
+  }
+  board.appendChild(section);
 }
 
 function renderApprovalFields(board, seed) {
@@ -1089,24 +1219,31 @@ function renderApprovalNotifications(board, seed) {
   });
 }
 
-function renderApprovalEditor(board) {
+function renderApprovalTemplateEditor(board) {
   const seed = state.current;
   const config = ensureApprovalModel(seed);
-  board.className = "prose structured-editor approval-editor";
+  board.className = "prose structured-editor approval-editor approval-template-editor";
   board.classList.toggle("a4-view", state.docMode === "a4");
   board.innerHTML = "";
   if (state.docMode === "a4") {
     renderSeedHeading(board, false);
-    renderApprovalRequest(board, seed);
+    const property = document.createElement("p");
+    property.className = "template-property";
+    property.textContent = "版型：簽核範本（問卷預覽）";
+    board.appendChild(property);
+    renderApprovalQuestionnaire(board, seed, { readonly: true, preview: true, showActions: false, showRoleBar: false, showFlow: false, showMetrics: false });
     return;
   }
   renderSeedHeading(board, true);
   const property = document.createElement("p");
   property.className = "template-property";
-  property.textContent = "版型：簽核工作流";
+  property.textContent = "版型：簽核範本（設定）";
+  const intro = document.createElement("p");
+  intro.className = "approval-help";
+  intro.textContent = "這裡是範本設定。要實際填寫時，請建立申請單；系統會複製一份獨立表單給填寫者。";
   const tabs = document.createElement("div");
   tabs.className = "approval-tabs";
-  [["request", "申請單"], ["fields", "欄位"], ["workflow", "流程"], ["permissions", "權限"], ["notifications", "通知"]].forEach(([key, label]) => {
+  [["fields", "欄位"], ["workflow", "流程"], ["permissions", "權限"], ["notifications", "通知"], ["preview", "問卷預覽"], ["instances", "申請單"]].forEach(([key, label]) => {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "btn";
@@ -1119,12 +1256,42 @@ function renderApprovalEditor(board) {
     });
     tabs.appendChild(button);
   });
-  board.append(property, tabs);
-  if (config.tab === "request") renderApprovalRequest(board, seed);
+  board.append(property, intro, tabs);
   if (config.tab === "fields") renderApprovalFields(board, seed);
   if (config.tab === "workflow") renderApprovalWorkflow(board, seed);
   if (config.tab === "permissions") renderApprovalPermissions(board, seed);
   if (config.tab === "notifications") renderApprovalNotifications(board, seed);
+  if (config.tab === "preview") {
+    renderApprovalQuestionnaire(board, seed, { readonly: true, preview: true, showActions: false, showRoleBar: false, showFlow: false, showMetrics: false });
+  }
+  if (config.tab === "instances") renderApprovalTemplateInstances(board, seed);
+}
+
+function renderApprovalInstanceEditor(board) {
+  const seed = state.current;
+  const config = ensureApprovalModel(seed);
+  const template = state.seeds.find((item) => item.id === seed.approvalTemplateId);
+  board.className = "prose structured-editor approval-editor approval-instance-editor";
+  board.classList.toggle("a4-view", state.docMode === "a4");
+  board.innerHTML = "";
+  renderSeedHeading(board, state.docMode !== "a4");
+  const property = document.createElement("p");
+  property.className = "template-property";
+  property.textContent = `版型：簽核申請單${template ? `（來自「${template.title}」）` : ""}`;
+  board.appendChild(property);
+  if (state.docMode === "a4") {
+    renderApprovalQuestionnaire(board, seed, { readonly: true, showActions: false, showRoleBar: false, showFlow: true, showMetrics: true });
+    return;
+  }
+  renderApprovalQuestionnaire(board, seed, { readonly: false, showActions: true, showRoleBar: true, showFlow: true, showMetrics: true });
+}
+
+function renderApprovalEditor(board) {
+  if (isApprovalInstance(state.current)) {
+    renderApprovalInstanceEditor(board);
+    return;
+  }
+  renderApprovalTemplateEditor(board);
 }
 
 function renderLivePreview(seed) {
@@ -1836,6 +2003,8 @@ function createSeed(title, seedType) {
     archived: true,
     localOnly: true,
     seedType,
+    approvalIsTemplate: seedType === "approval",
+    approvalTemplateId: "",
     formFields: seedType === "approval" ? [{ label: "申請說明", type: "textarea", options: "" }] : [],
     approver: "",
     messages: [],
@@ -1873,7 +2042,7 @@ function renderSeedTray() {
     const open = document.createElement("button");
     open.type = "button";
     open.className = "seed-tray-open";
-    const typeLabel = { document: "文件", approval: "簽核", discussion: "討論" };
+    const typeLabel = { document: "文件", approval: seed.approvalTemplateId ? "申請" : "簽核範本", discussion: "討論" };
     open.textContent = seed.title;
     open.dataset.type = typeLabel[seed.seedType || "document"];
     open.addEventListener("click", () =>

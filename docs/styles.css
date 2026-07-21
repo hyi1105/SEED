@@ -1107,6 +1107,107 @@ html, body {
   font-size: 0.55rem;
 }
 
+.approval-questionnaire {
+  display: grid;
+  gap: 0.85rem;
+  margin-top: 0.5rem;
+}
+
+.approval-questionnaire.is-preview .questionnaire-input {
+  background: #f7faf8;
+  color: var(--muted);
+}
+
+.questionnaire-field {
+  display: grid;
+  gap: 0.35rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+  padding: 0.8rem 0.9rem;
+}
+
+.questionnaire-number {
+  color: var(--accent);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.questionnaire-label {
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.questionnaire-input,
+.questionnaire-field textarea,
+.questionnaire-field select {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--paper);
+  padding: 0.6rem 0.7rem;
+  color: var(--ink);
+  font: inherit;
+}
+
+.questionnaire-field textarea {
+  min-height: 5rem;
+  resize: vertical;
+}
+
+.questionnaire-comment {
+  margin-top: 0.25rem;
+}
+
+.approval-instance-list {
+  display: grid;
+  gap: 0.65rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper);
+  padding: 0.85rem;
+}
+
+.approval-instance-list h3 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.approval-instance-items {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.approval-instance-items li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--card);
+  padding: 0.45rem 0.55rem;
+}
+
+.approval-template-editor .approval-tabs {
+  margin-top: 0.25rem;
+}
+
+.approval-instance-editor {
+  gap: 0.75rem;
+}
+
+.approval-instance-editor.a4-view {
+  background: #fff;
+  border: 1px solid var(--line);
+  padding: 1.5rem 1.75rem;
+  min-height: 70vh;
+  box-shadow: 0 2px 12px rgba(20, 32, 26, 0.06);
+}
+
 .approval-conversation {
   display: grid;
   gap: 0.65rem;
