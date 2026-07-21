@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=control4" />
+  <link rel="stylesheet" href="styles.css?v=control5" />
   <!-- 預覽請用 raw.githack（會正確當成網頁）。不要用 raw.githubusercontent 或 jsDelivr 開 html，會變純文字。 -->
 </head>
 <body>
@@ -28,11 +28,16 @@
           <nav class="path-crumb" id="path-crumb" aria-label="目前階層">首頁</nav>
         </div>
         <div class="top-end">
+          <div class="map-view-chips" id="map-view-chips" role="toolbar" aria-label="棋盤顯示模式">
+            <button type="button" class="header-chip map-view-chip" data-map-view="width" aria-pressed="false">左右為主</button>
+            <button type="button" class="header-chip map-view-chip" data-map-view="height" aria-pressed="false">上下為主</button>
+            <button type="button" class="header-chip map-view-chip is-active" data-map-view="fit" aria-pressed="true">全部棋盤</button>
+          </div>
           <div class="mode-chips hidden" id="mode-chips" role="toolbar" aria-label="檢視模式">
-            <button type="button" class="header-chip mode-chip" data-mode="edit" aria-pressed="true">編輯</button>
-            <button type="button" class="header-chip mode-chip" data-mode="a4" aria-pressed="false">A4檢視</button>
-            <button type="button" class="header-chip mode-chip" data-mode="diff" aria-pressed="false">記錄比對</button>
             <button type="button" class="header-chip mode-chip mode-save" data-mode="save">Save</button>
+            <button type="button" class="header-chip mode-chip" data-mode="edit" aria-pressed="true">編輯</button>
+            <button type="button" class="header-chip mode-chip" data-mode="a4" aria-pressed="false">文件檢視</button>
+            <button type="button" class="header-chip mode-chip" data-mode="diff" aria-pressed="false">歷程記錄</button>
           </div>
         </div>
         <p class="hint sr-only" id="status" aria-live="polite">正在載入…</p>
@@ -111,11 +116,13 @@
       </section>
 
       <section id="panel-read" class="panel hidden">
-        <div class="export-bar hidden" id="export-bar" aria-label="匯出 A4">
+        <div class="export-bar hidden" id="export-bar" aria-label="文件匯入與匯出">
+          <button type="button" class="btn" id="document-import">匯入檔案</button>
           <button type="button" class="btn" data-export="pdf">PDF 匯出</button>
           <button type="button" class="btn" data-export="word">Word 匯出</button>
           <button type="button" class="btn" data-export="image">圖片匯出</button>
         </div>
+        <input type="file" id="document-file" accept=".docx,.pdf,.txt,.md,.csv,.tsv,.json,text/*,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden />
         <div class="read-head">
           <h1 id="read-title" class="sr-only">編輯</h1>
         </div>
@@ -130,13 +137,12 @@
       </section>
 
       <section id="panel-diff" class="panel hidden">
-        <h1 class="sr-only">記錄比對</h1>
+        <h1 class="sr-only">歷程記錄</h1>
         <div class="diff-picks">
           <label>
-            選擇編輯日期
+            歷程記錄
             <select id="diff-version"></select>
           </label>
-          <button type="button" class="btn btn-primary" id="run-diff">比對上一次</button>
         </div>
         <div class="diff-meta" id="diff-meta"></div>
         <div id="diff-out" class="diff-out diff-a4" aria-live="polite"></div>
@@ -346,6 +352,7 @@
 
   <div class="toast hidden" id="toast" role="status" aria-live="polite"></div>
 
-  <script src="app.js?v=control4"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mammoth@latest/mammoth.browser.min.js"></script>
+  <script src="app.js?v=control5"></script>
 </body>
 </html>

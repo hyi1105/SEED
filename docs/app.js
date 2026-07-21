@@ -17,6 +17,8 @@ const AI_BASE_KEY = "seed-openai-base-v1";
 const MEMBER_KEY = "seed-member-code-v1";
 const RECENT_PATH_KEY = "seed-recent-paths-v1";
 const SEED_TRAY_KEY = "seed-tray-v1";
+const SEED_META_KEY = "seed-meta-v1";
+const MAP_VIEW_KEY = "seed-map-view-v1";
 const DEFAULT_AI_BASE = "https://api.openai.com/v1";
 
 const state = {
@@ -29,6 +31,7 @@ const state = {
     kind: "personal",
     visibility: "public",
     template: "grid-10",
+    view: localStorage.getItem(MAP_VIEW_KEY) || "fit",
   },
   catalog: null,
   config: { apiBase: "" },
@@ -51,6 +54,8 @@ const state = {
   layoutSaveTimer: null,
   autosaving: false,
   archivedSeedIds: [],
+  importedOriginal: null,
+  importedText: "",
 };
 
 const $ = (id) => document.getElementById(id);
@@ -270,7 +275,7 @@ function renderInsertGap(index) {
   const gap = document.createElement("button");
   gap.type = "button";
   gap.className = "frame-insert-gap";
-  gap.textContent = "+";
+  gap.textContent = "＋ 新增";
   gap.title = "在這裡插入一格";
   gap.setAttribute("aria-label", "在這裡插入一格");
   gap.addEventListener("click", () => {
@@ -280,6 +285,47 @@ function renderInsertGap(index) {
     scheduleContentAutosave();
   });
   return gap;
+}
+
+function renderSeedHeading(board, editing) {
+  const seed = state.current;
+  const header = document.createElement("header");
+  header.className = editing ? "seed-heading-editor" : "seed-document-heading";
+  if (!editing) {
+    const title = document.createElement("h1");
+    title.textContent = seed.title;
+    header.appendChild(title);
+    if (seed.subtitle) {
+      const subtitle = document.createElement("p");
+      subtitle.textContent = seed.subtitle;
+      header.appendChild(subtitle);
+    }
+    board.appendChild(header);
+    return;
+  }
+  const title = document.createElement("input");
+  title.type = "text";
+  title.className = "seed-title-input";
+  title.value = seed.title || "";
+  title.placeholder = "文件標題";
+  title.setAttribute("aria-label", "文件標題");
+  const subtitle = document.createElement("input");
+  subtitle.type = "text";
+  subtitle.className = "seed-subtitle-input";
+  subtitle.value = seed.subtitle || "";
+  subtitle.placeholder = "副標題（選填）";
+  subtitle.setAttribute("aria-label", "文件副標題");
+  title.addEventListener("input", () => {
+    seed.title = title.value || "未命名 SEED";
+    $("read-title").textContent = seed.title;
+    saveSeedMetadata(seed);
+  });
+  subtitle.addEventListener("input", () => {
+    seed.subtitle = subtitle.value;
+    saveSeedMetadata(seed);
+  });
+  header.append(title, subtitle);
+  board.appendChild(header);
 }
 
 function renderFrameBoard() {
@@ -300,16 +346,31 @@ function renderFrameBoard() {
 
   if (state.docMode === "a4") {
     const printable = framesToPrintableText(state.frames);
-    board.textContent = printable || "（尚無可列印內容）";
+    renderSeedHeading(board, false);
+    const content = document.createElement("div");
+    content.className = "document-printable";
+    content.textContent = printable || "（尚無可列印內容）";
+    board.appendChild(content);
     return;
   }
 
   state.frames = state.frames.map(normalizeFrame);
+  renderSeedHeading(board, true);
   const intro = document.createElement("header");
   intro.className = "editor-intro";
   intro.innerHTML = "<h2>新增文字模板</h2><p>像填問卷一樣，一段一段建立最後的 A4 文件。</p>";
   board.appendChild(intro);
-  board.appendChild(renderInsertGap(0));
+  if (!state.frames.length) {
+    const empty = document.createElement("div");
+    empty.className = "frame-group frame-empty";
+    const tools = document.createElement("aside");
+    tools.className = "frame-tools";
+    tools.appendChild(renderInsertGap(0));
+    const hint = document.createElement("p");
+    hint.textContent = "從左側加入第一段內容";
+    empty.append(tools, hint);
+    board.appendChild(empty);
+  }
 
   state.frames.forEach((frame, index) => {
     const block = document.createElement("div");
@@ -341,9 +402,7 @@ function renderFrameBoard() {
     remove.setAttribute("aria-label", "刪除這一格");
     remove.addEventListener("click", () => deleteFrame(index));
 
-    block.appendChild(handle);
     block.appendChild(body);
-    block.appendChild(remove);
 
     const note = document.createElement("input");
     note.type = "text";
@@ -396,10 +455,14 @@ function renderFrameBoard() {
 
     const group = document.createElement("div");
     group.className = "frame-group";
-    group.appendChild(block);
-    group.appendChild(note);
+    const tools = document.createElement("aside");
+    tools.className = "frame-tools";
+    const number = document.createElement("strong");
+    number.className = "frame-number";
+    number.textContent = String(index + 1);
+    tools.append(number, handle, note, renderInsertGap(index + 1), remove);
+    group.append(tools, block);
     board.appendChild(group);
-    board.appendChild(renderInsertGap(index + 1));
   });
 }
 
@@ -416,9 +479,7 @@ function renderApprovalEditor(board) {
   board.classList.toggle("a4-view", state.docMode === "a4");
   board.innerHTML = "";
   if (state.docMode === "a4") {
-    const title = document.createElement("h1");
-    title.textContent = seed.title;
-    board.appendChild(title);
+    renderSeedHeading(board, false);
     seed.formFields.forEach((field) => {
       const group = document.createElement("section");
       group.className = "a4-form-field";
@@ -437,7 +498,11 @@ function renderApprovalEditor(board) {
     return;
   }
 
-  board.innerHTML = "<header class='editor-intro'><h2>簽核模板</h2><p>設定填寫欄位與預設簽核人，填寫者會看到熟悉的問卷介面。</p></header>";
+  renderSeedHeading(board, true);
+  const intro = document.createElement("header");
+  intro.className = "editor-intro";
+  intro.innerHTML = "<h2>簽核模板</h2><p>設定填寫欄位與預設簽核人，填寫者會看到熟悉的問卷介面。</p>";
+  board.appendChild(intro);
   const approverLabel = document.createElement("label");
   approverLabel.className = "structured-row";
   approverLabel.innerHTML = "<span>預設簽核人</span>";
@@ -512,8 +577,7 @@ function renderDiscussionEditor(board) {
   board.classList.toggle("a4-view", state.docMode === "a4");
   board.innerHTML = "";
   if (state.docMode === "a4") {
-    const title = document.createElement("h1");
-    title.textContent = seed.title;
+    renderSeedHeading(board, false);
     const draftTitle = document.createElement("h2");
     draftTitle.textContent = "AI 整理初版";
     const draft = document.createElement("div");
@@ -521,7 +585,7 @@ function renderDiscussionEditor(board) {
     draft.textContent = seed.aiDraft || "尚未由 AI 整理";
     const historyTitle = document.createElement("h2");
     historyTitle.textContent = "對話紀錄";
-    board.append(title, draftTitle, draft, historyTitle);
+    board.append(draftTitle, draft, historyTitle);
     seed.messages.forEach((message) => {
       const item = document.createElement("p");
       item.className = "discussion-export-message";
@@ -531,7 +595,11 @@ function renderDiscussionEditor(board) {
     return;
   }
 
-  board.innerHTML = "<header class='editor-intro'><h2>主題討論模板</h2><p>像群組對話一樣累積意見；AI 初版與完整對話會一起匯出。</p></header>";
+  renderSeedHeading(board, true);
+  const intro = document.createElement("header");
+  intro.className = "editor-intro";
+  intro.innerHTML = "<h2>主題討論模板</h2><p>像群組對話一樣累積意見；AI 初版與完整對話會一起匯出。</p>";
+  board.appendChild(intro);
   const messages = document.createElement("div");
   messages.className = "chat-thread";
   seed.messages.forEach((message) => {
@@ -608,13 +676,103 @@ function downloadBlob(blob, filename) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+function openOriginalDb() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open("seed-documents", 1);
+    request.onupgradeneeded = () => {
+      if (!request.result.objectStoreNames.contains("originals")) {
+        request.result.createObjectStore("originals");
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function storeOriginalDocument(seedId, record) {
+  const db = await openOriginalDb();
+  await new Promise((resolve, reject) => {
+    const tx = db.transaction("originals", "readwrite");
+    tx.objectStore("originals").put(record, seedId);
+    tx.oncomplete = resolve;
+    tx.onerror = () => reject(tx.error);
+  });
+  db.close();
+}
+
+async function loadOriginalDocument(seedId) {
+  if (!seedId) return null;
+  const db = await openOriginalDb();
+  const record = await new Promise((resolve, reject) => {
+    const request = db.transaction("originals", "readonly").objectStore("originals").get(seedId);
+    request.onsuccess = () => resolve(request.result || null);
+    request.onerror = () => reject(request.error);
+  });
+  db.close();
+  return record;
+}
+
+async function extractPdfText(buffer) {
+  const pdfjs = await import("https://cdn.jsdelivr.net/npm/pdfjs-dist@latest/build/pdf.mjs");
+  pdfjs.GlobalWorkerOptions.workerSrc =
+    "https://cdn.jsdelivr.net/npm/pdfjs-dist@latest/build/pdf.worker.mjs";
+  const pdf = await pdfjs.getDocument({ data: new Uint8Array(buffer) }).promise;
+  const pages = [];
+  for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
+    const page = await pdf.getPage(pageNumber);
+    const content = await page.getTextContent();
+    pages.push(content.items.map((item) => item.str).join(" "));
+  }
+  return pages.join("\n\n");
+}
+
+async function extractDocumentText(file, buffer) {
+  const ext = file.name.split(".").pop()?.toLowerCase();
+  if (ext === "docx") {
+    if (!window.mammoth) throw new Error("Word 解析元件尚未載入，請確認網路後重試");
+    const result = await window.mammoth.extractRawText({ arrayBuffer: buffer });
+    return result.value;
+  }
+  if (ext === "pdf") return extractPdfText(buffer);
+  if (["txt", "md", "csv", "tsv", "json"].includes(ext)) {
+    return new TextDecoder("utf-8").decode(buffer);
+  }
+  throw new Error("目前支援 Word .docx、PDF、TXT、Markdown、CSV、TSV、JSON");
+}
+
+async function importDocumentFile(file) {
+  if (!state.current || !file) return;
+  setStatus(`正在匯入 ${file.name}…`);
+  const buffer = await file.arrayBuffer();
+  const text = (await extractDocumentText(file, buffer)).trim();
+  state.current.seedType = "document";
+  state.frames = textToFrames(text);
+  state.workingText = framesToText(state.frames);
+  state.importedText = state.workingText;
+  if (!state.current.subtitle) state.current.subtitle = `匯入自 ${file.name}`;
+  state.importedOriginal = {
+    name: file.name,
+    type: file.type || "application/octet-stream",
+    bytes: buffer,
+    importedText: state.importedText,
+    seedTitle: state.current.title,
+    seedSubtitle: state.current.subtitle || "",
+  };
+  await storeOriginalDocument(state.current.id, state.importedOriginal);
+  saveSeedMetadata(state.current);
+  if (state.current.localOnly) saveSeedTrayState();
+  localStorage.setItem(`seed-draft:${state.current.id}`, state.workingText);
+  await setDocMode("edit");
+  showToast(`已把 ${file.name} 轉成 SEED 文字；原檔已保留`, "ok");
+}
+
 function exportWord() {
   const title = state.current?.title || "SEED";
   const body = $("read-body").innerText
     .split("\n")
     .map((line) => `<p>${escapeHtml(line) || "&nbsp;"}</p>`)
     .join("");
-  const html = `<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(title)}</title></head><body><h1>${escapeHtml(title)}</h1>${body}</body></html>`;
+  const html = `<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(title)}</title></head><body>${body}</body></html>`;
   downloadBlob(
     new Blob(["\ufeff", html], { type: "application/msword;charset=utf-8" }),
     `${safeFileName(title)}.doc`
@@ -661,11 +819,26 @@ function exportImage() {
   }, "image/png");
 }
 
-function exportA4(kind) {
+async function exportA4(kind) {
   if (state.docMode !== "a4") return;
+  syncWorkingFromFrames();
+  const original = state.importedOriginal || (await loadOriginalDocument(state.current?.id));
+  const unchanged =
+    original &&
+    state.workingText === original.importedText &&
+    state.current?.title === original.seedTitle &&
+    (state.current?.subtitle || "") === (original.seedSubtitle || "");
+  const ext = original?.name?.split(".").pop()?.toLowerCase();
+  if (unchanged && ((kind === "word" && ext === "docx") || (kind === "pdf" && ext === "pdf"))) {
+    downloadBlob(new Blob([original.bytes], { type: original.type }), original.name);
+    showToast("內容未修改，已匯出完全相同的原檔", "ok");
+    return;
+  }
   if (kind === "pdf") {
+    if (original && ext === "pdf") showToast("內容已修改，PDF 將依目前文件重新產生", "info");
     window.print();
   } else if (kind === "word") {
+    if (original && ext === "docx") showToast("內容已修改，Word 將依目前文件重新產生", "info");
     exportWord();
   } else if (kind === "image") {
     exportImage();
@@ -770,6 +943,7 @@ function updateModeChips() {
   if (!wrap) return;
   const show = state.panel !== "list" && !!state.current;
   wrap.classList.toggle("hidden", !show);
+  $("map-view-chips")?.classList.toggle("hidden", state.panel !== "list");
   const mode =
     state.panel === "diff" || state.panel === "history"
       ? "diff"
@@ -777,7 +951,10 @@ function updateModeChips() {
         ? "a4"
         : "edit";
   wrap.querySelectorAll(".mode-chip").forEach((btn) => {
-    if (btn.dataset.mode === "save") return;
+    if (btn.dataset.mode === "save") {
+      btn.classList.toggle("hidden", !show || mode !== "edit" || state.panel !== "read");
+      return;
+    }
     const on = btn.dataset.mode === mode;
     btn.setAttribute("aria-pressed", on ? "true" : "false");
     btn.classList.toggle("is-active", on);
@@ -798,7 +975,7 @@ async function setDocMode(mode) {
     if (!state.versions.length) await loadVersions();
     showPanel("diff");
     updateModeChips();
-    if (state.versions.length >= 2) await runDiff();
+    if (state.versions.length >= 1) await runDiff();
     return;
   }
   if (mode === "a4") {
@@ -808,7 +985,7 @@ async function setDocMode(mode) {
     renderFrameBoard();
     $("export-bar")?.classList.remove("hidden");
     updateModeChips();
-    setStatus("A4 檢視：只顯示可列印內容（框外註解不會出現）");
+    setStatus("文件檢視：可匯入或匯出；框外註解不會出現");
     return;
   }
   state.docMode = "edit";
@@ -829,9 +1006,27 @@ async function saveCurrentVersion(actor = null) {
   }
   const resolvedActor = actor || state.current.lastActor || "人";
   await saveVersionToRepo(defaultVersionName(), { actor: resolvedActor });
+  if (!state.current.localOnly) {
+    await saveSeedCatalogMetadata(state.current);
+  }
   state.current.lastActor = "人";
   if (state.current.localOnly) saveSeedTrayState();
   showToast("已建立新版本", "ok");
+}
+
+async function saveSeedCatalogMetadata(seed) {
+  const catalog = await fetchJson(`./seeds.json?ts=${Date.now()}`);
+  const target = (catalog.seeds || []).find((item) => item.id === seed.id);
+  if (!target) return;
+  if (target.title === seed.title && (target.subtitle || "") === (seed.subtitle || "")) return;
+  target.title = seed.title;
+  target.subtitle = seed.subtitle || "";
+  await putRepoFile(
+    SEEDS_PATH,
+    `${JSON.stringify(catalog, null, 2)}\n`,
+    `更新 SEED 標題：${seed.title}`
+  );
+  state.catalog = catalog;
 }
 function defaultVersionName() {
   try {
@@ -911,6 +1106,24 @@ function loadSeedTrayState() {
   }
 }
 
+function loadSeedMetadata() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(SEED_META_KEY) || "{}");
+    return raw && typeof raw === "object" ? raw : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveSeedMetadata(seed) {
+  if (!seed) return;
+  const all = loadSeedMetadata();
+  all[seed.id] = { title: seed.title, subtitle: seed.subtitle || "" };
+  localStorage.setItem(SEED_META_KEY, JSON.stringify(all));
+  if (seed.localOnly) saveSeedTrayState();
+  updatePathBrand();
+}
+
 function saveSeedTrayState() {
   const custom = state.seeds.filter((s) => s.localOnly);
   const deleted = loadSeedTrayState().deleted;
@@ -966,6 +1179,9 @@ function deleteSeed(id) {
     localStorage.removeItem(`seed-draft:${seed.id}`);
     localStorage.removeItem(`seed-versions:${seed.id}`);
   }
+  const metadata = loadSeedMetadata();
+  delete metadata[seed.id];
+  localStorage.setItem(SEED_META_KEY, JSON.stringify(metadata));
   const tray = loadSeedTrayState();
   if (!seed.localOnly && !tray.deleted.includes(id)) tray.deleted.push(id);
   state.seeds = state.seeds.filter((s) => s.id !== id);
@@ -1044,11 +1260,6 @@ function renderSeedTray() {
     open.addEventListener("click", () =>
       selectSeed(seed).catch((err) => setStatus(err.message || String(err)))
     );
-    const place = document.createElement("button");
-    place.type = "button";
-    place.className = "seed-tray-action";
-    place.textContent = "派到棋盤";
-    place.addEventListener("click", () => placeSeedOnMap(seed.id));
     const remove = document.createElement("button");
     remove.type = "button";
     remove.className = "seed-tray-delete";
@@ -1056,7 +1267,7 @@ function renderSeedTray() {
     remove.title = "刪除";
     remove.setAttribute("aria-label", `刪除 ${seed.title}`);
     remove.addEventListener("click", () => deleteSeed(seed.id));
-    card.append(open, place, remove);
+    card.append(open, remove);
     root.appendChild(card);
   }
 }
@@ -1549,8 +1760,30 @@ function iconHtml(seed) {
   return `${avatar}<span class="seed-caption">${escapeHtml(label)}</span>`;
 }
 
+function applyMapView() {
+  const view = state.map.view || "fit";
+  const shell = document.querySelector(".map-shell");
+  if (shell) shell.dataset.mapView = view;
+  $("map-view-chips")?.querySelectorAll("[data-map-view]").forEach((button) => {
+    const active = button.dataset.mapView === view;
+    button.classList.toggle("is-active", active);
+    button.setAttribute("aria-pressed", active ? "true" : "false");
+  });
+}
+
+function setMapView(view) {
+  if (!["width", "height", "fit"].includes(view)) return;
+  state.map.view = view;
+  localStorage.setItem(MAP_VIEW_KEY, view);
+  applyMapView();
+  setStatus(
+    view === "width" ? "棋盤以左右寬度為主" : view === "height" ? "棋盤以上下高度為主" : "顯示全部棋盤"
+  );
+}
+
 function renderMap() {
   const root = $("knowledge-map");
+  applyMapView();
   const { cols, rows } = state.map;
   root.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
   root.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
@@ -1656,19 +1889,6 @@ function renderMap() {
           selectSeed(seed).catch((err) => setStatus(err.message || String(err)));
         });
         cell.appendChild(btn);
-        if (state.map.kind !== "community") {
-          const archive = document.createElement("button");
-          archive.type = "button";
-          archive.className = "map-seed-archive";
-          archive.textContent = "↓";
-          archive.title = "收到我的 SEED";
-          archive.setAttribute("aria-label", `收起 ${seed.title}`);
-          archive.addEventListener("click", (e) => {
-            e.stopPropagation();
-            archiveSeed(seed.id);
-          });
-          cell.appendChild(archive);
-        }
       } else if (state.map.kind === "community") {
         const cost = cellClaimCost(col, row);
         const slot = document.createElement("button");
@@ -1750,17 +1970,20 @@ async function loadCatalog() {
     kind: data.map?.kind || "personal",
     visibility: data.map?.visibility || "public",
     template: data.map?.template || "grid-10",
+    view: localStorage.getItem(MAP_VIEW_KEY) || "fit",
     savedAt: data.map?.savedAt || null,
     layoutName: data.map?.layoutName || "",
     layoutRev: Number.isInteger(data.map?.layoutRev) ? data.map.layoutRev : 0,
   };
   const hasTrayState = localStorage.getItem(SEED_TRAY_KEY) !== null;
   const tray = loadSeedTrayState();
+  const metadata = loadSeedMetadata();
   if (!hasTrayState) {
     tray.archived = (data.seeds || []).slice(8).map((s) => s.id);
   }
   const custom = tray.custom.map((s) => ({
     ...s,
+    ...(metadata[s.id] || {}),
     seedType: s.seedType || "document",
     archived: tray.archived.includes(s.id),
     localOnly: true,
@@ -1769,6 +1992,7 @@ async function loadCatalog() {
     .filter((s) => !tray.deleted.includes(s.id))
     .map((s) => ({
     ...s,
+    ...(metadata[s.id] || {}),
     seedType: s.seedType || "document",
     col: Number.isInteger(s.col) ? s.col : 0,
     row: Number.isInteger(s.row) ? s.row : 0,
@@ -2226,6 +2450,8 @@ async function restoreSeedPack(pack) {
 
 async function selectSeed(seed) {
   state.current = seed;
+  state.importedOriginal = await loadOriginalDocument(seed.id).catch(() => null);
+  state.importedText = state.importedOriginal?.importedText || "";
   state.originalText = "";
   state.workingText = "";
   state.draftAccepted = false;
@@ -2469,8 +2695,11 @@ async function loadVersions() {
 function fillDiffSelects() {
   const single = $("diff-version");
   if (single) {
-    const previous = single.value;
     single.innerHTML = "";
+    const current = document.createElement("option");
+    current.value = "current";
+    current.textContent = "目前畫面內容 · 尚未 Save 的草稿";
+    single.appendChild(current);
     state.versions.forEach((v, index) => {
       const opt = document.createElement("option");
       opt.value = v.sha;
@@ -2479,11 +2708,7 @@ function fillDiffSelects() {
       opt.disabled = index === state.versions.length - 1;
       single.appendChild(opt);
     });
-    if (previous && [...single.options].some((o) => o.value === previous && !o.disabled)) {
-      single.value = previous;
-    } else if (state.versions.length >= 2) {
-      single.value = state.versions[0].sha;
-    }
+    single.value = "current";
   }
   for (const id of ["diff-old", "diff-new"]) {
     const sel = $(id);
@@ -2561,25 +2786,31 @@ async function runDiff() {
   }
   if (!state.versions.length) await loadVersions();
   const selectedSha = $("diff-version")?.value;
+  const isCurrent = selectedSha === "current";
   const selectedIndex = state.versions.findIndex((v) => v.sha === selectedSha);
-  if (selectedIndex < 0 || selectedIndex >= state.versions.length - 1) {
+  if ((!isCurrent && (selectedIndex < 0 || selectedIndex >= state.versions.length - 1)) || !state.versions.length) {
     $("diff-meta").textContent = "這筆紀錄沒有更早版本可比對。";
     $("diff-out").innerHTML = "";
     return;
   }
-  const newer = state.versions[selectedIndex];
-  const older = state.versions[selectedIndex + 1];
+  const newer = isCurrent
+    ? {
+        author: "你",
+        actor: state.current.lastActor || "人",
+        when: new Date().toISOString(),
+      }
+    : state.versions[selectedIndex];
+  const older = isCurrent ? state.versions[0] : state.versions[selectedIndex + 1];
   setStatus("正在比對差異…");
-  const [oldText, newText] = await Promise.all([
-    fetchFileAt(older.sha),
-    fetchFileAt(newer.sha),
-  ]);
+  if (isCurrent) syncWorkingFromFrames();
+  const oldText = await fetchFileAt(older.sha);
+  const newText = isCurrent ? state.workingText : await fetchFileAt(newer.sha);
   const actor = newer.actor || (/^AI[｜:]/.test(newer.message || "") ? "AI" : "人");
   $("diff-meta").innerHTML = `
     <strong>${escapeHtml(newer.author || "未知")}</strong>
     <span>${escapeHtml(actor)}編輯</span>
     <time>${escapeHtml(formatWhen(newer.when))}</time>
-    <span>自動比對上一次：${escapeHtml(formatWhen(older.when))}</span>
+    <span>${isCurrent ? "目前畫面自動比對上次 Save" : "自動比對上一次"}：${escapeHtml(formatWhen(older.when))}</span>
   `;
   const parts = diffLines(oldText, newText);
   renderDiffA4(parts);
@@ -2676,6 +2907,11 @@ $("mode-chips")?.addEventListener("click", (e) => {
   const btn = e.target.closest(".mode-chip");
   if (!btn) return;
   setDocMode(btn.dataset.mode).catch((err) => setStatus(err.message || String(err)));
+});
+
+$("map-view-chips")?.addEventListener("click", (e) => {
+  const button = e.target.closest("[data-map-view]");
+  if (button) setMapView(button.dataset.mapView);
 });
 
 $("version-form").addEventListener("submit", async (e) => {
@@ -2913,10 +3149,6 @@ $("pack-file").addEventListener("change", async () => {
   }
 });
 
-$("run-diff").addEventListener("click", () => {
-  runDiff().catch((err) => setStatus(err.message || String(err)));
-});
-
 $("seed-add")?.addEventListener("click", addSeed);
 
 $("seed-create-form")?.addEventListener("submit", (e) => {
@@ -2954,7 +3186,17 @@ $("diff-version")?.addEventListener("change", () => {
 
 $("export-bar")?.addEventListener("click", (e) => {
   const button = e.target.closest("[data-export]");
-  if (button) exportA4(button.dataset.export);
+  if (button) exportA4(button.dataset.export).catch((err) => setStatus(err.message || String(err)));
+});
+
+$("document-import")?.addEventListener("click", () => $("document-file").click());
+$("document-file")?.addEventListener("change", () => {
+  const file = $("document-file").files?.[0];
+  importDocumentFile(file)
+    .catch((err) => setStatus(err.message || String(err)))
+    .finally(() => {
+      $("document-file").value = "";
+    });
 });
 
 function closeAllPopovers() {

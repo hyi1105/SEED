@@ -137,14 +137,17 @@ html, body {
   background: var(--accent-soft);
 }
 
-.mode-chips {
+.mode-chips,
+.map-view-chips {
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
   flex: 0 0 auto;
 }
 
-.mode-chips.hidden {
+.mode-chips.hidden,
+.map-view-chips.hidden,
+.mode-save.hidden {
   display: none;
 }
 
@@ -446,9 +449,27 @@ html, body {
 }
 
 .frame-group {
+  display: grid;
+  grid-template-columns: 9rem minmax(0, 1fr);
+  align-items: stretch;
+  gap: 0.65rem;
+  border-bottom: 1px solid var(--line);
+  padding: 0.4rem 0;
+}
+
+.frame-tools {
   display: flex;
   flex-direction: column;
-  gap: 0.05rem;
+  align-items: stretch;
+  gap: 0.35rem;
+  border-right: 1px solid var(--line);
+  padding: 0.25rem 0.65rem 0.25rem 0;
+}
+
+.frame-number {
+  color: var(--accent);
+  font-size: 1.25rem;
+  line-height: 1;
 }
 
 .frame-board.a4-view {
@@ -468,16 +489,16 @@ html, body {
   background: transparent;
   color: var(--accent);
   font: inherit;
-  font-size: 1rem;
+  font-size: 0.75rem;
   font-weight: 700;
-  line-height: 1;
-  width: 1.35rem;
-  height: 1.35rem;
-  padding: 0;
-  border-radius: 999px;
+  line-height: 1.2;
+  width: 100%;
+  height: auto;
+  padding: 0.3rem 0.45rem;
+  border-radius: 7px;
   cursor: pointer;
   transition: 0.12s ease;
-  align-self: center;
+  align-self: stretch;
   opacity: 0.55;
 }
 
@@ -492,7 +513,7 @@ html, body {
 .frame-block {
   position: relative;
   border: 0;
-  border-bottom: 1px solid var(--line);
+  border-bottom: 0;
   border-radius: 0;
   background: transparent;
   padding: 0.35rem 0.25rem 0.45rem;
@@ -510,12 +531,13 @@ html, body {
 }
 
 .frame-note {
-  border: 0;
-  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--paper);
   font: inherit;
   font-size: 0.75rem;
   color: #4a5560;
-  padding: 0.1rem 0.55rem;
+  padding: 0.35rem 0.45rem;
   width: 100%;
 }
 
@@ -524,9 +546,7 @@ html, body {
 }
 
 .frame-handle {
-  position: absolute;
-  top: 0.45rem;
-  right: 2rem;
+  position: static;
   color: #8a949c;
   font-size: 0.75rem;
   letter-spacing: -0.08em;
@@ -535,15 +555,13 @@ html, body {
 }
 
 .frame-remove {
-  position: absolute;
-  top: 0.34rem;
-  right: 0.42rem;
+  position: static;
   appearance: none;
   border: 0;
   border-radius: 999px;
   background: transparent;
   color: #7b858d;
-  width: 1.45rem;
+  width: 100%;
   height: 1.45rem;
   padding: 0;
   font: inherit;
@@ -712,6 +730,53 @@ html, body {
   border-bottom: 1px solid var(--line);
   background: color-mix(in srgb, var(--card) 94%, transparent);
   backdrop-filter: blur(8px);
+}
+
+.seed-heading-editor {
+  display: grid;
+  gap: 0.35rem;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 0.65rem;
+  margin-bottom: 0.4rem;
+}
+
+.seed-title-input,
+.seed-subtitle-input {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  padding: 0.15rem 0;
+  font: inherit;
+}
+
+.seed-title-input {
+  font-family: "Noto Serif TC", serif;
+  font-size: 1.45rem;
+  font-weight: 700;
+}
+
+.seed-subtitle-input {
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.seed-document-heading {
+  margin-bottom: 1.35rem;
+}
+
+.seed-document-heading h1 {
+  margin-bottom: 0.25rem;
+  font-size: 1.65rem;
+}
+
+.seed-document-heading p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.document-printable {
+  white-space: pre-wrap;
 }
 
 .mode-save {
@@ -1605,12 +1670,16 @@ h1 {
 
 @media (min-width: 720px) {
   .diff-picks {
-    grid-template-columns: 1fr auto;
+    grid-template-columns: 1fr;
     align-items: end;
   }
 }
 
 @media (max-width: 680px) {
+  .frame-group {
+    grid-template-columns: 7.25rem minmax(0, 1fr);
+  }
+
   .form-builder-card,
   .chat-compose,
   .structured-row {
@@ -1662,6 +1731,36 @@ h1 {
   align-items: stretch;
   justify-content: flex-start;
   touch-action: pan-y;
+}
+
+.map-shell[data-map-view="width"] {
+  overflow: visible;
+}
+
+.map-shell[data-map-view="width"] .knowledge-map {
+  width: 100%;
+  height: auto;
+}
+
+.map-shell[data-map-view="height"] {
+  overflow-x: auto;
+  justify-content: flex-start;
+}
+
+.map-shell[data-map-view="height"] .knowledge-map {
+  width: calc(100vh - 9.5rem);
+  height: calc(100vh - 9.5rem);
+  max-width: none;
+  flex: 0 0 auto;
+}
+
+.map-shell[data-map-view="fit"] {
+  justify-content: center;
+}
+
+.map-shell[data-map-view="fit"] .knowledge-map {
+  width: min(100%, calc(100vh - 9.5rem));
+  height: auto;
 }
 
 
