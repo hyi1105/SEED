@@ -1106,32 +1106,52 @@ html, body {
   border: 1px solid var(--line);
   border-radius: 10px;
   background: var(--card);
-  padding: 1.55rem 0.55rem 0.45rem;
+  padding: 0.45rem 0.55rem;
 }
 
-.file-seed-corner-meta {
-  position: absolute;
-  top: 0.22rem;
-  left: 0.45rem;
-  right: 0.45rem;
+.file-seed-research {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.28rem;
+  align-self: center;
+  max-width: 100%;
+  margin: 0.05rem auto 0.2rem;
+  padding: 0.12rem 0.35rem;
+  color: var(--muted);
+  font-size: 0.56rem;
+  line-height: 1.25;
+  opacity: 0.55;
+  transition: opacity 0.12s ease;
+}
+
+.file-seed-content-only:hover .file-seed-research,
+.file-seed-research:hover {
+  opacity: 1;
+}
+
+.file-seed-research-icon {
+  flex: 0 0 auto;
+  font-size: 0.72rem;
+  line-height: 1.2;
+  color: var(--accent);
+  opacity: 0.85;
+}
+
+.file-seed-research-body {
   display: flex;
   flex-direction: column;
-  gap: 0.06rem;
-  font-size: 0.56rem;
-  line-height: 1.2;
-  color: var(--muted);
-  letter-spacing: 0.01em;
-  pointer-events: none;
+  gap: 0.04rem;
+  min-width: 0;
 }
 
-.file-seed-corner-row {
+.file-seed-research-row {
   display: block;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.file-seed-corner-label {
+.file-seed-research-label {
   display: inline-block;
   min-width: 1.65rem;
   margin-right: 0.2rem;
@@ -1174,13 +1194,20 @@ html, body {
 }
 
 .file-seed-content-item .file-seed-input {
+  display: block;
+  width: 100%;
   border: 0;
   border-bottom: 1px solid var(--line);
   border-radius: 0;
   background: transparent;
   padding: 0.35rem 0 0.42rem;
+  font: inherit;
   font-size: 0.95rem;
   line-height: 1.45;
+  resize: none;
+  overflow: hidden;
+  min-height: 1.45em;
+  field-sizing: content;
 }
 
 .file-seed-content-item .file-seed-input:focus {
@@ -1189,7 +1216,7 @@ html, body {
 }
 
 .file-seed-content-item textarea.file-seed-input {
-  display: none;
+  display: block;
 }
 
 .file-seed-boxes {

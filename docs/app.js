@@ -951,36 +951,53 @@ function renderFileFieldInsert(seed, index) {
   return gap;
 }
 
-function renderFileBoxCornerMeta(field) {
-  const meta = document.createElement("div");
-  meta.className = "file-seed-corner-meta";
+function renderFileFieldResearch(field) {
+  const wrap = document.createElement("div");
+  wrap.className = "file-seed-research";
+  wrap.title = "誰可以看／誰可以編輯";
+  const icon = document.createElement("span");
+  icon.className = "file-seed-research-icon";
+  icon.setAttribute("aria-hidden", "true");
+  icon.textContent = "⌕";
+  const body = document.createElement("div");
+  body.className = "file-seed-research-body";
   const editors = personCardPermissionSummary(field.editors);
   const viewers = personCardPermissionSummary(field.viewers);
-  meta.innerHTML = `<span class="file-seed-corner-row"><span class="file-seed-corner-label">可編</span>${escapeHtml(editors)}</span><span class="file-seed-corner-row"><span class="file-seed-corner-label">可見</span>${escapeHtml(viewers)}</span>`;
-  return meta;
+  body.innerHTML = `<span class="file-seed-research-row"><span class="file-seed-research-label">可編</span>${escapeHtml(editors)}</span><span class="file-seed-research-row"><span class="file-seed-research-label">可見</span>${escapeHtml(viewers)}</span>`;
+  wrap.append(icon, body);
+  return wrap;
+}
+
+function autosizeFileSeedTextarea(el) {
+  if (!el) return;
+  el.style.height = "auto";
+  el.style.height = `${Math.max(el.scrollHeight, 28)}px`;
 }
 
 function renderFileBoxContent(seed, field) {
   const wrap = document.createElement("div");
   wrap.className = "file-seed-content";
-  const input = document.createElement("input");
-  input.type = "text";
+  const input = document.createElement("textarea");
   input.className = "file-seed-input";
+  input.rows = 1;
   input.placeholder = field.label || "輸入內容";
   input.value = field.value || "";
-  input.addEventListener("input", () => {
+  input.setAttribute("aria-label", field.label || "輸入內容");
+  const onChange = () => {
     field.value = input.value;
+    autosizeFileSeedTextarea(input);
     touchFileBoxMeta(field);
     persistPersonCard(seed);
-  });
+  };
+  input.addEventListener("input", onChange);
   wrap.appendChild(input);
+  requestAnimationFrame(() => autosizeFileSeedTextarea(input));
   return wrap;
 }
 
 function renderFileBoxItem(seed, field) {
   const item = document.createElement("div");
   item.className = "file-seed-content-item";
-  item.appendChild(renderFileBoxCornerMeta(field));
   item.appendChild(renderFileBoxContent(seed, field));
   return item;
 }
@@ -1012,6 +1029,7 @@ function renderPersonCardEditor(board, seed) {
   } else {
     card.fields.forEach((field, index) => {
       if (index > 0) fields.appendChild(renderFileFieldInsert(seed, index));
+      fields.appendChild(renderFileFieldResearch(field));
       fields.appendChild(renderFileBoxItem(seed, field));
     });
   }
