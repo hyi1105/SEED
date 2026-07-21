@@ -350,10 +350,61 @@ function syncWorkingFromFrames() {
     state.workingText = approvalToText(state.current);
   } else if (state.current?.seedType === "discussion") {
     state.workingText = discussionToText(state.current);
+  } else if (isPersonCardDocument(state.current)) {
+    state.workingText = personCardToText(state.current);
   } else {
     state.workingText = framesToText(state.frames);
   }
   if ($("edit-body")) $("edit-body").value = state.workingText;
+}
+
+function isPersonCardDocument(seed) {
+  return seed?.seedType === "document" && seed.documentLayout === "person-card";
+}
+
+function makePersonFieldId() {
+  return `pcf-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+}
+
+function defaultPersonCard() {
+  return {
+    photo: "",
+    fields: [
+      { id: makePersonFieldId(), label: "姓名", value: "" },
+      { id: makePersonFieldId(), label: "電話", value: "" },
+      { id: makePersonFieldId(), label: "地址", value: "" },
+    ],
+    readers: ["本人"],
+    editors: ["本人"],
+  };
+}
+
+function ensurePersonCardModel(seed) {
+  seed.documentLayout = "person-card";
+  const card = (seed.personCard ||= defaultPersonCard());
+  card.fields = Array.isArray(card.fields) ? card.fields : defaultPersonCard().fields;
+  card.fields.forEach((field) => {
+    field.id ||= makePersonFieldId();
+    field.label ||= "";
+    field.value ||= "";
+  });
+  card.readers = Array.isArray(card.readers) && card.readers.length ? card.readers : ["本人"];
+  card.editors = Array.isArray(card.editors) && card.editors.length ? card.editors : ["本人"];
+  card.photo ||= "";
+  return card;
+}
+
+function personCardToText(seed) {
+  const card = ensurePersonCardModel(seed);
+  const lines = [`# ${seed.title}`, seed.subtitle || "", "", "## 人員卡片"];
+  if (card.photo) lines.push("- 照片：已設定");
+  card.fields.forEach((field, index) => {
+    lines.push(`- 欄位 ${index + 1}｜${field.label || "未命名"}：${field.value || ""}`);
+  });
+  lines.push("", "## 權限");
+  lines.push(`- 可閱讀：${card.readers.join("、")}`);
+  lines.push(`- 可編輯：${card.editors.join("、")}`);
+  return lines.join("\n");
 }
 
 function approvalToText(seed) {
@@ -511,6 +562,17 @@ function renderFrameBoard() {
     renderDiscussionEditor(board);
     return;
   }
+  if (isPersonCardDocument(state.current)) {
+    board.className = "prose frame-board person-card-board";
+    board.classList.toggle("a4-view", state.docMode === "a4");
+    board.innerHTML = "";
+    if (state.docMode === "a4") {
+      renderPersonCardPrintView(board, state.current);
+      return;
+    }
+    renderPersonCardEditor(board, state.current);
+    return;
+  }
   board.className = "prose frame-board";
   board.classList.toggle("a4-view", state.docMode === "a4");
   board.innerHTML = "";
@@ -527,7 +589,6 @@ function renderFrameBoard() {
 
   state.frames = state.frames.map(normalizeFrame);
   renderSeedHeading(board, true);
-  renderDocumentMetaPanel(board, state.current);
   if (!state.frames.length) {
     board.appendChild(renderInsertGap(0));
   }
@@ -620,7 +681,199 @@ function renderFrameBoard() {
     group.append(tools, block);
     board.appendChild(group);
   });
-  renderDocumentHistoryPanel(board, state.current);
+}
+
+function renderPersonCardPrintView(board, seed) {
+  const card = ensurePersonCardModel(seed);
+  renderSeedHeading(board, false);
+  const wrap = document.createElement("section");
+  wrap.className = "person-card-print";
+  if (card.photo) {
+    const img = document.createElement("img");
+    img.src = card.photo;
+    img.alt = "照片";
+    wrap.appendChild(img);
+  }
+  const grid = document.createElement("div");
+  grid.className = "person-card-print-fields";
+  card.fields.forEach((field) => {
+    const item = document.createElement("div");
+    item.innerHTML = `<small>${escapeHtml(field.label || "欄位")}</small><strong>${escapeHtml(field.value || "—")}</strong>`;
+    grid.appendChild(item);
+  });
+  wrap.appendChild(grid);
+  board.appendChild(wrap);
+}
+
+function renderPersonCardEditor(board, seed) {
+  const card = ensurePersonCardModel(seed);
+  renderSeedHeading(board, true);
+  const format = document.createElement("p");
+  format.className = "template-property";
+  format.textContent = "文件格式：人員卡片";
+  board.appendChild(format);
+
+  const section = document.createElement("section");
+  section.className = "person-card-editor";
+
+  const photoWrap = document.createElement("label");
+  photoWrap.className = "person-card-photo";
+  photoWrap.innerHTML = "<span>照片</span>";
+  const photoPreview = document.createElement("div");
+  photoPreview.className = "person-card-photo-preview";
+  if (card.photo) {
+    const img = document.createElement("img");
+    img.src = card.photo;
+    img.alt = "照片預覽";
+    photoPreview.appendChild(img);
+  } else {
+    photoPreview.textContent = "點擊上傳照片";
+  }
+  const photoInput = document.createElement("input");
+  photoInput.type = "file";
+  photoInput.accept = "image/*";
+  photoInput.hidden = true;
+  photoInput.addEventListener("change", () => {
+    const file = photoInput.files?.[0];
+    if (!file) return;
+    if (file.size > 800000) {
+      showToast("照片請小於 800KB", "warn");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      card.photo = String(reader.result || "");
+      persistPersonCard(seed);
+      renderFrameBoard();
+    };
+    reader.readAsDataURL(file);
+  });
+  photoPreview.addEventListener("click", () => photoInput.click());
+  const clearPhoto = document.createElement("button");
+  clearPhoto.type = "button";
+  clearPhoto.className = "btn";
+  clearPhoto.textContent = "移除照片";
+  clearPhoto.addEventListener("click", (event) => {
+    event.preventDefault();
+    card.photo = "";
+    persistPersonCard(seed);
+    renderFrameBoard();
+  });
+  photoWrap.append(photoPreview, photoInput, clearPhoto);
+  section.appendChild(photoWrap);
+
+  const fields = document.createElement("div");
+  fields.className = "person-card-fields";
+  card.fields.forEach((field, index) => {
+    const item = document.createElement("label");
+    item.className = "person-card-field";
+    item.innerHTML = `<span class="person-card-field-num">${index + 1}</span>`;
+    const label = document.createElement("input");
+    label.className = "person-card-label";
+    label.placeholder = "欄位名稱";
+    label.value = field.label || "";
+    label.addEventListener("input", () => {
+      field.label = label.value;
+      persistPersonCard(seed);
+    });
+    const value = document.createElement("input");
+    value.className = "person-card-value";
+    value.placeholder = "填寫內容";
+    value.value = field.value || "";
+    value.addEventListener("input", () => {
+      field.value = value.value;
+      persistPersonCard(seed);
+    });
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "frame-remove";
+    remove.textContent = "×";
+    remove.title = "刪除此欄";
+    remove.addEventListener("click", (event) => {
+      event.preventDefault();
+      if (card.fields.length <= 1) return;
+      card.fields.splice(index, 1);
+      persistPersonCard(seed);
+      renderFrameBoard();
+    });
+    item.append(label, value, remove);
+    fields.appendChild(item);
+  });
+  section.appendChild(fields);
+
+  const addField = document.createElement("button");
+  addField.type = "button";
+  addField.className = "btn";
+  addField.textContent = "＋ 新增文字欄位";
+  addField.addEventListener("click", () => {
+    card.fields.push({ id: makePersonFieldId(), label: "", value: "" });
+    persistPersonCard(seed);
+    renderFrameBoard();
+  });
+  section.appendChild(addField);
+
+  section.appendChild(renderPersonCardPermissions(seed, card));
+  board.appendChild(section);
+}
+
+function renderPersonCardPermissionGroup(title, list, presets, seed, card, key) {
+  const group = document.createElement("div");
+  group.className = "person-card-permission-group";
+  group.innerHTML = `<strong>${escapeHtml(title)}</strong>`;
+  const buttons = document.createElement("div");
+  buttons.className = "person-card-permission-buttons";
+  presets.forEach((name) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "btn";
+    button.classList.toggle("is-active", list.includes(name));
+    button.textContent = name;
+    button.addEventListener("click", () => {
+      if (list.includes(name)) {
+        list.splice(list.indexOf(name), 1);
+        if (!list.length) list.push("本人");
+      } else {
+        list.push(name);
+      }
+      persistPersonCard(seed);
+      renderFrameBoard();
+    });
+    buttons.appendChild(button);
+  });
+  const custom = document.createElement("button");
+  custom.type = "button";
+  custom.className = "btn";
+  custom.textContent = "＋ 指定人員";
+  custom.addEventListener("click", () => {
+    const name = window.prompt("加入可存取的人員名稱：");
+    if (!name) return;
+    if (!list.includes(name)) list.push(name.trim());
+    persistPersonCard(seed);
+    renderFrameBoard();
+  });
+  buttons.appendChild(custom);
+  group.appendChild(buttons);
+  const chips = document.createElement("p");
+  chips.className = "meta person-card-permission-list";
+  chips.textContent = list.length ? `目前：${list.join("、")}` : "尚未設定";
+  group.appendChild(chips);
+  return group;
+}
+
+function renderPersonCardPermissions(seed, card) {
+  const panel = document.createElement("section");
+  panel.className = "person-card-permissions";
+  panel.innerHTML = "<h3>權限</h3>";
+  panel.appendChild(renderPersonCardPermissionGroup("可閱讀", card.readers, ["本人", "所有人"], seed, card, "readers"));
+  panel.appendChild(renderPersonCardPermissionGroup("可編輯", card.editors, ["本人"], seed, card, "editors"));
+  return panel;
+}
+
+function persistPersonCard(seed) {
+  ensurePersonCardModel(seed);
+  syncWorkingFromFrames();
+  saveSeedTrayState();
+  scheduleContentAutosave();
 }
 
 function renderDocumentMetaPanel(board, seed) {
@@ -2228,11 +2481,17 @@ function setViewMode(text) {
 function setEditMode(text) {
   state.editing = true;
   state.docMode = "edit";
-  state.frames = textToFrames(text);
-  state.workingText = text;
+  if (isPersonCardDocument(state.current)) {
+    ensurePersonCardModel(state.current);
+    state.frames = [];
+    state.workingText = personCardToText(state.current);
+  } else {
+    state.frames = textToFrames(text);
+    state.workingText = text;
+  }
   $("read-body").classList.remove("hidden");
   $("edit-body").classList.add("hidden");
-  $("edit-body").value = text;
+  $("edit-body").value = isPersonCardDocument(state.current) ? state.workingText : text;
   $("export-bar")?.classList.add("hidden");
   renderFrameBoard();
   updateModeChips();
@@ -2375,7 +2634,9 @@ async function saveCurrentVersion(actor = null) {
   state.current.lastActor = "人";
   if (state.current.localOnly) saveSeedTrayState();
   await loadVersions();
-  if (state.panel === "read" && (state.current?.seedType || "document") === "document") {
+  if (state.panel === "read" && (state.current?.seedType || "document") === "document" && !isPersonCardDocument(state.current)) {
+    renderFrameBoard();
+  } else if (state.panel === "read" && isPersonCardDocument(state.current)) {
     renderFrameBoard();
   }
   showToast("已建立新版本", "ok");
@@ -2578,7 +2839,7 @@ function deleteSeed(id) {
 }
 
 const SYSTEM_SEED_TYPES = [
-  { id: "document", label: "文件", desc: "逐段建立文件，適合筆記與規格" },
+  { id: "document", label: "文件", desc: "人員卡片：照片＋三欄文字，可設權限" },
   { id: "approval", label: "簽核", desc: "欄位、流程、權限與通知範本" },
   { id: "discussion", label: "討論", desc: "直播風格畫面與評論截圖" },
 ];
@@ -2615,9 +2876,11 @@ function buildBlankSystemSnapshot(seedType) {
   }
   return {
     seedType: "document",
+    documentLayout: "person-card",
     title: "未命名文件",
     subtitle: "",
     blurb: "",
+    personCard: defaultPersonCard(),
     text: "",
   };
 }
@@ -2629,6 +2892,7 @@ function getBuiltinSystemSeedCatalog() {
       id: "sys-doc-blank",
       name: "空白文件",
       builtin: true,
+      desc: "人員卡片格式",
       versions: [{ rev: 1, label: "初版", savedAt: now, snapshot: buildBlankSystemSnapshot("document") }],
     }],
     approval: [{
@@ -2679,9 +2943,11 @@ function captureSeedSnapshot(seed) {
   syncWorkingFromFrames();
   const snapshot = {
     seedType: seed.seedType || "document",
+    documentLayout: seed.documentLayout || "",
     title: seed.title || "未命名 SEED",
     subtitle: seed.subtitle || "",
     blurb: seed.blurb || "",
+    personCard: seed.personCard ? JSON.parse(JSON.stringify(seed.personCard)) : null,
     approvalIsTemplate: seed.approvalIsTemplate !== false && !seed.approvalTemplateId,
     approvalTemplateId: seed.approvalTemplateId || "",
     formFields: JSON.parse(JSON.stringify(seed.formFields || [])),
@@ -2692,15 +2958,21 @@ function captureSeedSnapshot(seed) {
   };
   if (seed.seedType === "approval") snapshot.text = approvalToText(seed);
   else if (seed.seedType === "discussion") snapshot.text = discussionToText(seed);
+  else if (isPersonCardDocument(seed)) snapshot.text = personCardToText(seed);
   else snapshot.text = state.current?.id === seed.id ? state.workingText : (localStorage.getItem(`seed-draft:${seed.id}`) || "");
   return snapshot;
 }
 
 function applySnapshotToSeed(seed, snapshot) {
   seed.seedType = snapshot.seedType || "document";
+  seed.documentLayout = snapshot.documentLayout || "";
   seed.title = snapshot.title || seed.title;
   seed.subtitle = snapshot.subtitle || "";
   seed.blurb = snapshot.blurb || "";
+  if (snapshot.documentLayout === "person-card") {
+    seed.personCard = JSON.parse(JSON.stringify(snapshot.personCard || defaultPersonCard()));
+    ensurePersonCardModel(seed);
+  }
   seed.approvalTemplateId = snapshot.approvalTemplateId || "";
   seed.approvalIsTemplate = snapshot.seedType === "approval"
     ? snapshot.approvalIsTemplate !== false && !snapshot.approvalTemplateId
@@ -2764,6 +3036,12 @@ function openSystemSeedTemplate(template, seedType) {
     seed.short = Array.from(seed.title).slice(0, 4).join("");
     saveSeedTrayState();
   } else if (seedType === "document") {
+    seed.documentLayout = "person-card";
+    ensurePersonCardModel(seed);
+    if (version.snapshot?.personCard) {
+      seed.personCard = JSON.parse(JSON.stringify(version.snapshot.personCard));
+      ensurePersonCardModel(seed);
+    }
     seed.title = "未命名文件";
     seed.alias = seed.title;
     seed.short = Array.from(seed.title).slice(0, 4).join("");
@@ -2851,7 +3129,7 @@ function renderSystemSeedPanel() {
     intro.textContent = seedType === "approval"
       ? `${systemSeedTypeLabel(seedType)}範本：點進去直接設計問卷欄位。`
       : seedType === "document"
-        ? `${systemSeedTypeLabel(seedType)}範本：點進去直接建立文件。`
+        ? `${systemSeedTypeLabel(seedType)}範本：點進去直接建立人員卡片。`
         : `${systemSeedTypeLabel(seedType)}範本：點進去看版本，再建立你的 SEED。`;
     board.appendChild(intro);
     const list = document.createElement("ul");
@@ -2865,7 +3143,7 @@ function renderSystemSeedPanel() {
       const actionHint = seedType === "approval"
         ? "點擊開始設計問卷"
         : seedType === "document"
-          ? "點擊開始建立文件"
+          ? "點擊開始建立人員卡片"
           : `最新 v${latest?.rev || 1}`;
       button.innerHTML = `
         <strong>${escapeHtml(template.name)}</strong>

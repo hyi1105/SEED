@@ -1030,6 +1030,148 @@ html, body {
   gap: 0.35rem;
 }
 
+.person-card-board {
+  max-width: 42rem;
+}
+
+.person-card-editor {
+  display: grid;
+  gap: 0.85rem;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--card);
+  padding: 0.9rem 1rem;
+}
+
+.person-card-photo {
+  display: grid;
+  gap: 0.45rem;
+  justify-items: start;
+}
+
+.person-card-photo > span {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.person-card-photo-preview {
+  display: grid;
+  place-items: center;
+  width: 7.5rem;
+  height: 7.5rem;
+  overflow: hidden;
+  border: 1px dashed var(--line);
+  border-radius: 12px;
+  background: #f7faf8;
+  color: var(--muted);
+  font-size: 0.72rem;
+  text-align: center;
+  cursor: pointer;
+}
+
+.person-card-photo-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.person-card-fields {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.person-card-field {
+  display: grid;
+  gap: 0.3rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--paper);
+  padding: 0.55rem 0.6rem;
+  position: relative;
+}
+
+.person-card-field-num {
+  color: var(--accent);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.person-card-label,
+.person-card-value {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.82rem;
+  padding: 0.35rem 0.45rem;
+}
+
+.person-card-field .frame-remove {
+  position: absolute;
+  top: 0.25rem;
+  right: 0.25rem;
+}
+
+.person-card-permissions {
+  display: grid;
+  gap: 0.65rem;
+  border-top: 1px solid var(--line);
+  padding-top: 0.75rem;
+}
+
+.person-card-permissions h3 {
+  margin: 0;
+  font-size: 0.88rem;
+}
+
+.person-card-permission-group {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.person-card-permission-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.person-card-permission-buttons .btn.is-active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.person-card-permission-list {
+  margin: 0;
+}
+
+.person-card-print {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.person-card-print img {
+  width: 8rem;
+  height: 8rem;
+  object-fit: cover;
+  border-radius: 12px;
+}
+
+.person-card-print-fields {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.person-card-print-fields small {
+  display: block;
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
 .seed-title-input,
 .seed-subtitle-input {
   width: 100%;
@@ -2866,6 +3008,11 @@ h1 {
   .approval-designer-field .approval-source,
   .approval-designer-field .designer-preview {
     margin-left: 0;
+  }
+
+  .person-card-fields,
+  .person-card-print-fields {
+    grid-template-columns: 1fr;
   }
 }
 
