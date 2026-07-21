@@ -400,7 +400,10 @@ function defaultFormTemplate() {
       { type: "blank", id: makeFormBlankId(), label: "金額", value: "", placeholder: "金額" },
       { type: "text", content: "元整。\n\n三、其他約定\n" },
       { type: "blank", id: makeFormBlankId(), label: "其他", value: "", placeholder: "其他約定（選填）", multiline: true },
-      { type: "text", content: "\n\n以下為定型化條款本文，不可修改。凡依本範本建立之書面文件，固定文字皆相同，僅填空處可填寫。" },
+      { type: "text", content: "\n\n以下為定型化條款本文，不可修改。凡依本範本建立之書面文件，固定文字皆相同，僅填空處可填寫。\n\n甲方簽名\n" },
+      { type: "signature", id: makeFormBlankId(), label: "甲方簽名", value: "" },
+      { type: "text", content: "\n乙方簽名\n" },
+      { type: "signature", id: makeFormBlankId(), label: "乙方簽名", value: "" },
     ],
   };
 }
@@ -420,6 +423,10 @@ function ensureFormTemplateModel(seed) {
       seg.value = seg.value ?? "";
       seg.placeholder ||= "請填寫";
       seg.multiline = Boolean(seg.multiline);
+    } else if (seg.type === "signature") {
+      seg.id ||= makeFormBlankId();
+      seg.label ||= "簽名";
+      seg.value = seg.value ?? "";
     } else {
       seg.type = "text";
       let content = String(seg.content ?? "");
@@ -429,23 +436,33 @@ function ensureFormTemplateModel(seed) {
       seg.content = content;
     }
   });
+  if (!tmpl.segments.some((seg) => seg.type === "signature")) {
+    tmpl.segments.push(
+      { type: "text", content: "\n\n甲方簽名\n" },
+      { type: "signature", id: makeFormBlankId(), label: "甲方簽名", value: "" },
+      { type: "text", content: "\n乙方簽名\n" },
+      { type: "signature", id: makeFormBlankId(), label: "乙方簽名", value: "" }
+    );
+  }
   delete seed.personCard;
   return tmpl;
 }
 
+function formTemplateSegmentPlain(seg) {
+  if (seg.type === "blank") return seg.value || "";
+  if (seg.type === "signature") return seg.value ? "（已簽名）" : "";
+  return seg.content || "";
+}
+
 function formTemplateToText(seed) {
   const tmpl = ensureFormTemplateModel(seed);
-  const body = tmpl.segments
-    .map((seg) => (seg.type === "blank" ? seg.value || "" : seg.content || ""))
-    .join("");
+  const body = tmpl.segments.map(formTemplateSegmentPlain).join("");
   return [`# ${seed.title || "未命名書面文件"}`, seed.subtitle || "", "", body].join("\n");
 }
 
 function formTemplateFilledText(seed) {
   const tmpl = ensureFormTemplateModel(seed);
-  return tmpl.segments
-    .map((seg) => (seg.type === "blank" ? seg.value || "" : seg.content || ""))
-    .join("");
+  return tmpl.segments.map(formTemplateSegmentPlain).join("");
 }
 
 function persistFormTemplate(seed) {
@@ -1136,7 +1153,7 @@ function persistPersonCard(seed) {
 }
 
 function renderFormTemplatePrintView(board, seed) {
-  ensureFormTemplateModel(seed);
+  const tmpl = ensureFormTemplateModel(seed);
   const sheet = document.createElement("div");
   sheet.className = "form-template-sheet is-print";
   const title = document.createElement("h1");
@@ -1144,9 +1161,121 @@ function renderFormTemplatePrintView(board, seed) {
   title.textContent = seed.title || "未命名書面文件";
   const body = document.createElement("div");
   body.className = "form-template-body";
-  body.textContent = formTemplateFilledText(seed) || "（尚未填寫）";
+  tmpl.segments.forEach((seg) => {
+    if (seg.type === "text") {
+      const text = document.createElement("span");
+      text.className = "form-template-fixed";
+      text.textContent = seg.content || "";
+      body.appendChild(text);
+      return;
+    }
+    if (seg.type === "signature") {
+      if (seg.value) {
+        const img = document.createElement("img");
+        img.className = "form-template-signature-img";
+        img.src = seg.value;
+        img.alt = seg.label || "簽名";
+        body.appendChild(img);
+      } else {
+        const empty = document.createElement("span");
+        empty.className = "form-template-signature-empty";
+        empty.textContent = "　　";
+        body.appendChild(empty);
+      }
+      return;
+    }
+    const filled = document.createElement("span");
+    filled.className = "form-template-filled";
+    filled.textContent = seg.value || "";
+    body.appendChild(filled);
+  });
   sheet.append(title, body);
   board.appendChild(sheet);
+}
+
+function bindFormSignaturePad(canvas, seg, seed) {
+  const ctx = canvas.getContext("2d");
+  const ratio = Math.max(window.devicePixelRatio || 1, 1);
+  const cssW = canvas.clientWidth || 220;
+  const cssH = canvas.clientHeight || 88;
+  canvas.width = Math.round(cssW * ratio);
+  canvas.height = Math.round(cssH * ratio);
+  ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  ctx.lineWidth = 2.2;
+  ctx.strokeStyle = "#14201a";
+
+  if (seg.value) {
+    const img = new Image();
+    img.onload = () => ctx.drawImage(img, 0, 0, cssW, cssH);
+    img.src = seg.value;
+  }
+
+  let drawing = false;
+  let last = null;
+  const pos = (e) => {
+    const rect = canvas.getBoundingClientRect();
+    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  };
+  const start = (e) => {
+    e.preventDefault();
+    drawing = true;
+    last = pos(e);
+    try {
+      canvas.setPointerCapture(e.pointerId);
+    } catch {
+      /* ignore */
+    }
+  };
+  const move = (e) => {
+    if (!drawing) return;
+    e.preventDefault();
+    const next = pos(e);
+    ctx.beginPath();
+    ctx.moveTo(last.x, last.y);
+    ctx.lineTo(next.x, next.y);
+    ctx.stroke();
+    last = next;
+  };
+  const end = () => {
+    if (!drawing) return;
+    drawing = false;
+    last = null;
+    seg.value = canvas.toDataURL("image/png");
+    persistFormTemplate(seed);
+  };
+  canvas.addEventListener("pointerdown", start);
+  canvas.addEventListener("pointermove", move);
+  canvas.addEventListener("pointerup", end);
+  canvas.addEventListener("pointercancel", end);
+  return {
+    clear() {
+      ctx.clearRect(0, 0, cssW, cssH);
+      seg.value = "";
+      persistFormTemplate(seed);
+    },
+  };
+}
+
+function renderFormSignatureField(seg, seed) {
+  const wrap = document.createElement("span");
+  wrap.className = "form-template-signature";
+  wrap.setAttribute("aria-label", seg.label || "手寫簽名");
+  const canvas = document.createElement("canvas");
+  canvas.className = "form-template-signature-pad";
+  canvas.width = 220;
+  canvas.height = 88;
+  const clear = document.createElement("button");
+  clear.type = "button";
+  clear.className = "form-template-signature-clear";
+  clear.textContent = "清除";
+  wrap.append(canvas, clear);
+  requestAnimationFrame(() => {
+    const pad = bindFormSignaturePad(canvas, seg, seed);
+    clear.addEventListener("click", () => pad.clear());
+  });
+  return wrap;
 }
 
 function autosizeFormBlank(el, multiline = false) {
@@ -1172,7 +1301,7 @@ function renderFormTemplateEditor(board, seed) {
   sheet.className = "form-template-sheet";
   const hint = document.createElement("p");
   hint.className = "form-template-hint";
-  hint.textContent = "定型化書面文件：灰底文字固定不可改，僅底線填空可填。";
+  hint.textContent = "定型化書面文件：固定文字不可改；底線處可填；簽名區可手寫。";
   const title = document.createElement("input");
   title.type = "text";
   title.className = "form-template-title-input";
@@ -1192,6 +1321,10 @@ function renderFormTemplateEditor(board, seed) {
       text.className = "form-template-fixed";
       text.textContent = seg.content || "";
       body.appendChild(text);
+      return;
+    }
+    if (seg.type === "signature") {
+      body.appendChild(renderFormSignatureField(seg, seed));
       return;
     }
     const blank = seg.multiline

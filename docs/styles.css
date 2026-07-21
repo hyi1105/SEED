@@ -1187,6 +1187,60 @@ html, body {
   vertical-align: top;
 }
 
+.form-template-signature {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+  margin: 0.35rem 0.1rem;
+  vertical-align: top;
+}
+
+.form-template-signature-pad {
+  display: block;
+  width: min(14rem, 100%);
+  height: 5.5rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--accent-soft);
+  touch-action: none;
+  cursor: crosshair;
+}
+
+.form-template-signature-clear {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.72rem;
+  padding: 0;
+  cursor: pointer;
+}
+
+.form-template-signature-clear:hover {
+  color: var(--accent);
+}
+
+.form-template-signature-img {
+  display: inline-block;
+  width: min(14rem, 100%);
+  height: 5.5rem;
+  object-fit: contain;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--line);
+}
+
+.form-template-signature-empty {
+  display: inline-block;
+  min-width: 8rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.form-template-filled {
+  color: var(--ink);
+}
+
 .form-template-sheet.is-print .form-template-body {
   white-space: pre-wrap;
 }
