@@ -385,7 +385,7 @@ function defaultPersonCardField(type = "text", label = "") {
     value: "",
     viewers: ["本人"],
     editors: ["本人"],
-    createdBy: "你",
+    createdBy: getFileSeedActor(),
     createdAt: now,
     lastEditor: "",
     lastEditedAt: "",
@@ -409,14 +409,17 @@ function defaultPersonCard() {
   };
 }
 
-function fileBoxDisplayType(field) {
-  if (field.type === "select") return "select";
-  const value = String(field.value || "");
-  if (value.includes("\n") || value.length > 60) return "textarea";
-  return field.type || "text";
+const DEFAULT_FILE_SEED_ACTOR = "Eric";
+
+function getFileSeedActor() {
+  return DEFAULT_FILE_SEED_ACTOR;
 }
 
-function touchFileBoxMeta(field, actor = "你") {
+function fileBoxDisplayType() {
+  return "text";
+}
+
+function touchFileBoxMeta(field, actor = getFileSeedActor()) {
   field.lastEditor = actor;
   field.lastEditedAt = new Date().toISOString();
   if (!field.createdAt) field.createdAt = field.lastEditedAt;
@@ -438,12 +441,12 @@ function ensurePersonCardModel(seed) {
   card.fields = Array.isArray(card.fields) ? card.fields : defaultPersonCard().fields;
   card.fields.forEach((field) => {
     field.id ||= makePersonFieldId();
-    field.type ||= "text";
+    field.type = "text";
     field.label ||= "";
     field.viewers = Array.isArray(field.viewers) && field.viewers.length ? field.viewers : ["本人"];
     field.editors = Array.isArray(field.editors) && field.editors.length ? field.editors : ["本人"];
     field.value = field.value ?? "";
-    field.createdBy ||= "你";
+    field.createdBy ||= getFileSeedActor();
     field.createdAt ||= new Date().toISOString();
     field.lastEditor ||= "";
     field.lastEditedAt ||= "";
@@ -910,37 +913,55 @@ function renderPersonCardSelectOptions(seed, field) {
   return panel;
 }
 
+function renderFileFieldInsert(seed, index) {
+  const gap = document.createElement("button");
+  gap.type = "button";
+  gap.className = "file-seed-insert-gap";
+  gap.textContent = "+";
+  gap.title = "在這裡插入一格";
+  gap.setAttribute("aria-label", "在這裡插入一格");
+  gap.addEventListener("click", () => {
+    const card = ensurePersonCardModel(seed);
+    card.fields.splice(index, 0, defaultPersonCardField("text", ""));
+    persistPersonCard(seed);
+    renderFrameBoard();
+  });
+  return gap;
+}
+
+function renderFileBoxCornerMeta(field) {
+  const meta = document.createElement("div");
+  meta.className = "file-seed-corner-meta";
+  const editor = field.lastEditor || field.createdBy || getFileSeedActor();
+  const viewers = personCardPermissionSummary(field.viewers);
+  const editors = personCardPermissionSummary(field.editors);
+  meta.textContent = `編輯 ${editor} · 可編 ${editors} · 可見 ${viewers}`;
+  return meta;
+}
+
 function renderFileBoxContent(seed, field) {
   const wrap = document.createElement("div");
   wrap.className = "file-seed-content";
-  const displayType = fileBoxDisplayType(field);
-  let input;
-  if (displayType === "textarea") {
-    input = document.createElement("textarea");
-    input.rows = Math.max(3, String(field.value || "").split("\n").length);
-    input.placeholder = field.label || "輸入內容";
-  } else if (displayType === "select") {
-    input = document.createElement("select");
-    input.innerHTML = `<option value="">請選擇</option>${String(field.options || "").split(",").filter(Boolean).map((item) => `<option value="${escapeHtml(item.trim())}"${field.value === item.trim() ? " selected" : ""}>${escapeHtml(item.trim())}</option>`).join("")}`;
-  } else {
-    input = document.createElement("input");
-    input.type = "text";
-    input.placeholder = field.label || "輸入內容";
-  }
+  const input = document.createElement("input");
+  input.type = "text";
   input.className = "file-seed-input";
-  if (displayType !== "select") input.value = field.value || "";
-  const onChange = () => {
-    field.value = displayType === "select" ? input.value : input.value;
-    if (displayType === "textarea") {
-      input.rows = Math.max(3, field.value.split("\n").length);
-    }
+  input.placeholder = field.label || "輸入內容";
+  input.value = field.value || "";
+  input.addEventListener("input", () => {
+    field.value = input.value;
     touchFileBoxMeta(field);
     persistPersonCard(seed);
-  };
-  input.addEventListener("input", onChange);
-  if (displayType === "select") input.addEventListener("change", onChange);
+  });
   wrap.appendChild(input);
   return wrap;
+}
+
+function renderFileBoxItem(seed, field) {
+  const item = document.createElement("div");
+  item.className = "file-seed-content-item";
+  item.appendChild(renderFileBoxCornerMeta(field));
+  item.appendChild(renderFileBoxContent(seed, field));
+  return item;
 }
 
 function renderFileBoxMeta(field) {
@@ -964,12 +985,14 @@ function renderPersonCardEditor(board, seed) {
   const card = ensurePersonCardModel(seed);
   const fields = document.createElement("div");
   fields.className = "file-seed-content-only";
-  card.fields.forEach((field) => {
-    const item = document.createElement("div");
-    item.className = "file-seed-content-item";
-    item.appendChild(renderFileBoxContent(seed, field));
-    fields.appendChild(item);
-  });
+  if (!card.fields.length) {
+    fields.appendChild(renderFileFieldInsert(seed, 0));
+  } else {
+    card.fields.forEach((field, index) => {
+      if (index > 0) fields.appendChild(renderFileFieldInsert(seed, index));
+      fields.appendChild(renderFileBoxItem(seed, field));
+    });
+  }
   board.appendChild(fields);
 }
 
