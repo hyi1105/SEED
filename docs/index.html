@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=control8" />
+  <link rel="stylesheet" href="styles.css?v=home1" />
   <!-- 預覽請用 raw.githack（會正確當成網頁）。不要用 raw.githubusercontent 或 jsDelivr 開 html，會變純文字。 -->
 </head>
 <body>
@@ -30,8 +30,8 @@
         <div class="top-end">
           <div class="map-view-chips" id="map-view-chips" role="toolbar" aria-label="棋盤顯示模式">
             <button type="button" class="header-chip map-view-chip" data-map-view="width" aria-pressed="false">左右為主</button>
-            <button type="button" class="header-chip map-view-chip" data-map-view="height" aria-pressed="false">上下為主</button>
-            <button type="button" class="header-chip map-view-chip is-active" data-map-view="fit" aria-pressed="true">全部棋盤</button>
+            <button type="button" class="header-chip map-view-chip is-active" data-map-view="height" aria-pressed="true">上下為主</button>
+            <button type="button" class="header-chip map-view-chip" data-map-view="fit" aria-pressed="false">全部棋盤</button>
           </div>
           <div class="mode-chips hidden" id="mode-chips" role="toolbar" aria-label="檢視模式">
             <button type="button" class="header-chip mode-chip" data-mode="edit" aria-pressed="true">編輯</button>
@@ -102,7 +102,7 @@
       <section id="panel-list" class="panel panel-map">
         <h1 id="map-title" class="sr-only">SEED 棋盤</h1>
         <p id="map-note" class="sr-only"></p>
-        <div class="map-shell">
+        <div class="map-shell" data-map-view="height">
           <div id="knowledge-map" class="knowledge-map" role="grid" aria-label="SEED 棋盤"></div>
         </div>
         <section class="seed-tray" aria-labelledby="seed-tray-title">
@@ -345,6 +345,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/mammoth@latest/mammoth.browser.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@latest/dist/xlsx.full.min.js"></script>
-  <script src="app.js?v=control8"></script>
+  <script src="app.js?v=home1"></script>
 </body>
 </html>
