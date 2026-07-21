@@ -677,7 +677,6 @@ function renderFrameBoard() {
   }
 
   state.frames = state.frames.map(normalizeFrame);
-  renderSeedHeading(board, true);
   if (!state.frames.length) {
     board.appendChild(renderInsertGap(0));
   }
@@ -690,12 +689,13 @@ function renderFrameBoard() {
 
     const body = document.createElement("textarea");
     body.className = "frame-body";
-    body.rows = Math.max(2, String(frame.body || "").split("\n").length);
-    body.placeholder = "這一格的內容（會列印）";
+    body.rows = Math.max(3, String(frame.body || "").split("\n").length);
+    body.placeholder = "輸入內容";
     body.value = frame.body || "";
     body.addEventListener("input", () => {
       state.frames[index].body = body.value;
-      body.rows = Math.max(2, body.value.split("\n").length);
+      state.frames[index].note = "";
+      body.rows = Math.max(3, body.value.split("\n").length);
       scheduleContentAutosave();
     });
 
@@ -707,28 +707,14 @@ function renderFrameBoard() {
     remove.setAttribute("aria-label", "刪除這一格");
     remove.addEventListener("click", () => deleteFrame(index));
 
-    block.appendChild(body);
-
-    const note = document.createElement("input");
-    note.type = "text";
-    note.className = "frame-note";
-    note.placeholder = "註解（不列印）";
-    note.value = frame.note || "";
-    note.addEventListener("input", () => {
-      state.frames[index].note = note.value;
-      scheduleContentAutosave();
-    });
-    const removeIfEmpty = () => {
+    body.addEventListener("blur", () => {
       setTimeout(() => {
-        if (group.contains(document.activeElement)) return;
+        if (block.contains(document.activeElement)) return;
         const currentIndex = state.frames.indexOf(frame);
         if (currentIndex < 0) return;
-        const current = state.frames[currentIndex];
-        if (!current.body.trim() && !current.note.trim()) deleteFrame(currentIndex, true);
+        if (!state.frames[currentIndex].body.trim()) deleteFrame(currentIndex, true);
       }, 0);
-    };
-    body.addEventListener("blur", removeIfEmpty);
-    note.addEventListener("blur", removeIfEmpty);
+    });
 
     block.addEventListener("dragstart", (e) => {
       state.frameDragFrom = index;
@@ -758,17 +744,8 @@ function renderFrameBoard() {
       scheduleContentAutosave();
     });
 
-    const group = document.createElement("div");
-    group.className = "frame-group";
-    const tools = document.createElement("aside");
-    tools.className = "frame-tools";
-    const number = document.createElement("strong");
-    number.className = "frame-number";
-    number.textContent = String(index + 1);
-    tools.append(number, note);
-    block.append(remove, renderInsertGap(index + 1));
-    group.append(tools, block);
-    board.appendChild(group);
+    block.append(body, remove, renderInsertGap(index + 1));
+    board.appendChild(block);
   });
 }
 
@@ -985,8 +962,6 @@ function renderFileBoxMeta(field) {
 
 function renderPersonCardEditor(board, seed) {
   const card = ensurePersonCardModel(seed);
-  renderSeedHeading(board, true, { showSubtitle: false });
-
   const fields = document.createElement("div");
   fields.className = "file-seed-content-only";
   card.fields.forEach((field) => {
