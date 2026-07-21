@@ -9,9 +9,9 @@
     "cols": 10,
     "rows": 10,
     "note": "知識拼圖：拖曳擺放；點進去看完整標題",
-    "savedAt": "2026-07-20T23:58:21.491Z",
+    "savedAt": "2026-07-21T00:17:09.370Z",
     "layoutName": "7/21 上午7:30",
-    "layoutRev": 4
+    "layoutRev": 5
   },
   "seeds": [
     {
@@ -32,7 +32,7 @@
       "path": "memory/maps/taiwan-roads/zhongheng.md",
       "blurb": "偏中",
       "col": 6,
-      "row": 6,
+      "row": 5,
       "cover": null,
       "archived": false
     },
@@ -42,7 +42,7 @@
       "alias": "南橫交通",
       "path": "memory/maps/taiwan-roads/nanheng.md",
       "blurb": "偏南",
-      "col": 7,
+      "col": 5,
       "row": 4,
       "cover": null,
       "archived": false
@@ -64,8 +64,8 @@
       "alias": "規格草稿",
       "path": "memory/topics/personal-mvp-spec.md",
       "blurb": "工作室",
-      "col": 2,
-      "row": 3,
+      "col": 3,
+      "row": 5,
       "cover": null,
       "archived": false
     },
@@ -111,7 +111,7 @@
       "col": 0,
       "row": 0,
       "cover": null,
-      "archived": false
+      "archived": true
     },
     {
       "id": "index",
