@@ -766,6 +766,13 @@ html, body {
   margin-bottom: 0.5rem;
 }
 
+.seed-tray-actions-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.35rem;
+}
+
 .seed-tray-head h2 {
   margin: 0;
   font-size: 0.9rem;
@@ -841,6 +848,9 @@ html, body {
 }
 
 .seed-tray-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
   appearance: none;
   border: 0;
   background: transparent;
@@ -848,6 +858,25 @@ html, body {
   font: inherit;
   font-size: 0.8rem;
   cursor: pointer;
+  min-width: 0;
+  max-width: 12rem;
+}
+
+.seed-tray-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.seed-tray-type {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  padding: 0.05rem 0.32rem;
+  font-size: 0.65rem;
+  line-height: 1.35;
 }
 
 .seed-tray-delete {
@@ -866,17 +895,6 @@ html, body {
   margin: 0;
   color: var(--muted);
   font-size: 0.78rem;
-}
-
-.seed-tray-open::before {
-  content: attr(data-type);
-  display: inline-block;
-  margin-right: 0.35rem;
-  border-radius: 999px;
-  background: var(--accent-soft);
-  color: var(--accent);
-  padding: 0.05rem 0.32rem;
-  font-size: 0.65rem;
 }
 
 .document-actions,

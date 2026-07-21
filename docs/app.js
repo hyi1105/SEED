@@ -3302,8 +3302,13 @@ function renderSeedTray() {
     open.type = "button";
     open.className = "seed-tray-open";
     const typeLabel = { document: "文件", approval: seed.approvalTemplateId ? "申請" : "簽核範本", discussion: "討論" };
-    open.textContent = seed.title;
-    open.dataset.type = typeLabel[seed.seedType || "document"];
+    const title = document.createElement("span");
+    title.className = "seed-tray-title";
+    title.textContent = seed.title;
+    const type = document.createElement("span");
+    type.className = "seed-tray-type";
+    type.textContent = typeLabel[seed.seedType || "document"];
+    open.append(title, type);
     open.addEventListener("click", () =>
       selectSeed(seed).catch((err) => setStatus(err.message || String(err)))
     );
