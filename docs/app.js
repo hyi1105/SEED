@@ -395,8 +395,8 @@ function defaultPersonCardField(type = "text", label = "") {
     type,
     label,
     value: "",
-    viewers: ["本人"],
-    editors: ["本人"],
+    viewers: [getFileSeedActor(), "本人"],
+    editors: [getFileSeedActor(), "本人"],
     createdBy: getFileSeedActor(),
     createdAt: now,
     lastEditor: "",
@@ -945,10 +945,9 @@ function renderFileFieldInsert(seed, index) {
 function renderFileBoxCornerMeta(field) {
   const meta = document.createElement("div");
   meta.className = "file-seed-corner-meta";
-  const editor = field.lastEditor || field.createdBy || getFileSeedActor();
-  const viewers = personCardPermissionSummary(field.viewers);
   const editors = personCardPermissionSummary(field.editors);
-  meta.textContent = `編輯 ${editor} · 可編 ${editors} · 可見 ${viewers}`;
+  const viewers = personCardPermissionSummary(field.viewers);
+  meta.innerHTML = `<span class="file-seed-corner-row"><span class="file-seed-corner-label">可編</span>${escapeHtml(editors)}</span><span class="file-seed-corner-row"><span class="file-seed-corner-label">可見</span>${escapeHtml(viewers)}</span>`;
   return meta;
 }
 
