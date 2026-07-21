@@ -1154,10 +1154,11 @@ html, body {
 }
 
 .form-template-blank {
-  display: inline;
-  min-width: 5.5rem;
+  display: inline-block;
+  width: 2.5ch;
+  min-width: 2.5ch;
   max-width: 100%;
-  margin: 0 0.1rem;
+  margin: 0 0.08rem;
   border: 0;
   border-bottom: 1.5px solid var(--accent);
   border-radius: 0;
@@ -1166,8 +1167,9 @@ html, body {
   font: inherit;
   font-size: inherit;
   line-height: inherit;
-  padding: 0.05rem 0.2rem;
+  padding: 0.02rem 0.12rem;
   vertical-align: baseline;
+  box-sizing: content-box;
 }
 
 .form-template-blank:focus {
@@ -1176,13 +1178,14 @@ html, body {
 }
 
 .form-template-blank.is-multiline {
-  display: block;
-  width: 100%;
-  min-height: 2.4rem;
-  margin: 0.35rem 0;
+  display: inline-block;
+  min-width: 2.5ch;
+  min-height: 1.6em;
+  margin: 0.15rem 0.08rem;
   resize: none;
   overflow: hidden;
   white-space: pre-wrap;
+  vertical-align: top;
 }
 
 .form-template-sheet.is-print .form-template-body {

@@ -17,6 +17,7 @@ status: active
 - 技術：`documentLayout: "form-template"`（仍屬 document）
 - 資料：`formTemplate.segments`＝`text`（固定）＋`blank`（可填）
 - 編輯畫面：灰底固定文＋底線填空；文件檢視為合併後全文
+- 填空預設約 **兩字寬**，字多時寬度跟著變
 - MVP 先用內建契約範本；之後可再做「設計公版」模式
 
 ## 決定／偏好

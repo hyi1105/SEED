@@ -1145,6 +1145,23 @@ function renderFormTemplatePrintView(board, seed) {
   board.appendChild(sheet);
 }
 
+function autosizeFormBlank(el, multiline = false) {
+  if (!el) return;
+  const minChars = 2;
+  const raw = String(el.value || "");
+  if (multiline) {
+    const lines = raw.split("\n");
+    const longest = lines.reduce((max, line) => Math.max(max, line.length), 0);
+    const chars = Math.max(minChars, longest);
+    el.style.width = `${chars + 1}ch`;
+    el.style.height = "auto";
+    el.style.height = `${Math.max(el.scrollHeight, 28)}px`;
+    return;
+  }
+  const chars = Math.max(minChars, raw.length);
+  el.style.width = `${chars + 1}ch`;
+}
+
 function renderFormTemplateEditor(board, seed) {
   const tmpl = ensureFormTemplateModel(seed);
   const sheet = document.createElement("div");
@@ -1179,23 +1196,16 @@ function renderFormTemplateEditor(board, seed) {
     if (!seg.multiline) blank.type = "text";
     blank.className = "form-template-blank" + (seg.multiline ? " is-multiline" : "");
     blank.value = seg.value || "";
-    blank.placeholder = seg.placeholder || seg.label || "請填寫";
-    blank.setAttribute("aria-label", seg.label || "填空");
+    blank.placeholder = "";
+    blank.setAttribute("aria-label", seg.label || seg.placeholder || "填空");
+    blank.title = seg.placeholder || seg.label || "請填寫";
     blank.addEventListener("input", () => {
       seg.value = blank.value;
-      if (seg.multiline) {
-        blank.style.height = "auto";
-        blank.style.height = `${Math.max(blank.scrollHeight, 28)}px`;
-      }
+      autosizeFormBlank(blank, Boolean(seg.multiline));
       persistFormTemplate(seed);
     });
     body.appendChild(blank);
-    if (seg.multiline) {
-      requestAnimationFrame(() => {
-        blank.style.height = "auto";
-        blank.style.height = `${Math.max(blank.scrollHeight, 28)}px`;
-      });
-    }
+    requestAnimationFrame(() => autosizeFormBlank(blank, Boolean(seg.multiline)));
   });
   sheet.append(hint, title, body);
   board.appendChild(sheet);
