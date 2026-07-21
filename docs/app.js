@@ -776,21 +776,17 @@ function renderPersonCardPrintView(board, seed) {
   const card = ensurePersonCardModel(seed);
   renderSeedHeading(board, false, { showSubtitle: false });
   const grid = document.createElement("div");
-  grid.className = "file-seed-boxes";
+  grid.className = "file-seed-content-only";
   card.fields.forEach((field) => {
     const item = document.createElement("div");
-    item.className = "file-seed-box";
-    const displayType = fileBoxDisplayType(field);
+    item.className = "file-seed-content-item";
     const content = document.createElement("div");
     content.className = "file-seed-print-content";
-    content.textContent = field.value || "（空）";
-    if (displayType === "textarea" || field.value.includes("\n")) {
+    content.textContent = field.value || "";
+    if (field.value && field.value.includes("\n")) {
       content.style.whiteSpace = "pre-wrap";
     }
-    const head = document.createElement("div");
-    head.className = "file-seed-print-head";
-    head.innerHTML = `<strong>${escapeHtml(field.label || "欄位")}</strong><small>${escapeHtml(personFieldTypeLabel(field.type))}</small>`;
-    item.append(head, content, renderFileBoxMeta(field));
+    item.appendChild(content);
     grid.appendChild(item);
   });
   board.appendChild(grid);
@@ -945,14 +941,14 @@ function renderFileBoxContent(seed, field) {
   if (displayType === "textarea") {
     input = document.createElement("textarea");
     input.rows = Math.max(3, String(field.value || "").split("\n").length);
-    input.placeholder = field.label || "多行內容";
+    input.placeholder = field.label || "輸入內容";
   } else if (displayType === "select") {
     input = document.createElement("select");
     input.innerHTML = `<option value="">請選擇</option>${String(field.options || "").split(",").filter(Boolean).map((item) => `<option value="${escapeHtml(item.trim())}"${field.value === item.trim() ? " selected" : ""}>${escapeHtml(item.trim())}</option>`).join("")}`;
   } else {
     input = document.createElement("input");
     input.type = "text";
-    input.placeholder = field.label || "單行內容";
+    input.placeholder = field.label || "輸入內容";
   }
   input.className = "file-seed-input";
   if (displayType !== "select") input.value = field.value || "";
@@ -992,85 +988,14 @@ function renderPersonCardEditor(board, seed) {
   renderSeedHeading(board, true, { showSubtitle: false });
 
   const fields = document.createElement("div");
-  fields.className = "file-seed-boxes";
-  card.fields.forEach((field, index) => {
+  fields.className = "file-seed-content-only";
+  card.fields.forEach((field) => {
     const item = document.createElement("div");
-    item.className = "file-seed-box";
-
-    const head = document.createElement("div");
-    head.className = "file-seed-box-head";
-    const type = document.createElement("select");
-    type.className = "file-seed-type";
-    PERSON_FIELD_TYPES.forEach((option) => {
-      const opt = document.createElement("option");
-      opt.value = option.id;
-      opt.textContent = option.label;
-      type.appendChild(opt);
-    });
-    type.value = field.type || "text";
-    type.addEventListener("change", () => {
-      field.type = type.value;
-      ensurePersonCardModel(seed);
-      touchFileBoxMeta(field);
-      persistPersonCard(seed);
-      renderFrameBoard();
-    });
-    const label = document.createElement("input");
-    label.className = "file-seed-label";
-    label.placeholder = "欄位名稱";
-    label.value = field.label || "";
-    label.addEventListener("input", () => {
-      field.label = label.value;
-      persistPersonCard(seed);
-    });
-    const remove = document.createElement("button");
-    remove.type = "button";
-    remove.className = "frame-remove";
-    remove.textContent = "×";
-    remove.title = "刪除此欄";
-    remove.addEventListener("click", () => {
-      if (card.fields.length <= 1) return;
-      card.fields.splice(index, 1);
-      persistPersonCard(seed);
-      renderFrameBoard();
-    });
-    head.append(type, label, remove);
-
-    item.append(
-      head,
-      renderFileBoxContent(seed, field),
-      renderPersonCardPermissions(seed, field),
-      renderFileBoxMeta(field)
-    );
-    if (field.type === "select") {
-      item.appendChild(renderPersonCardSelectOptions(seed, field));
-    }
+    item.className = "file-seed-content-item";
+    item.appendChild(renderFileBoxContent(seed, field));
     fields.appendChild(item);
   });
   board.appendChild(fields);
-
-  const addWrap = document.createElement("div");
-  addWrap.className = "person-card-add-wrap";
-  const addLabel = document.createElement("p");
-  addLabel.className = "person-card-add-label";
-  addLabel.textContent = "＋ 新增欄位";
-  const addTypes = document.createElement("div");
-  addTypes.className = "person-card-add-types";
-  PERSON_FIELD_TYPES.forEach((option) => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "btn person-card-add-type";
-    button.textContent = option.label;
-    button.addEventListener("click", () => {
-      const next = card.fields.length + 1;
-      card.fields.push(defaultPersonCardField(option.id, `欄位${next}`));
-      persistPersonCard(seed);
-      renderFrameBoard();
-    });
-    addTypes.appendChild(button);
-  });
-  addWrap.append(addLabel, addTypes);
-  board.appendChild(addWrap);
 }
 
 function persistPersonCard(seed) {

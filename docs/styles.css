@@ -1088,6 +1088,38 @@ html, body {
   max-width: 42rem;
 }
 
+.file-seed-content-only {
+  display: grid;
+  gap: 0.65rem;
+  margin-top: 0.5rem;
+  max-width: 42rem;
+  margin-left: auto;
+}
+
+.file-seed-content-item {
+  display: block;
+}
+
+.file-seed-content-item .file-seed-content {
+  width: 100%;
+}
+
+.file-seed-content-item .file-seed-input {
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  padding: 0.45rem 0;
+}
+
+.file-seed-content-item textarea.file-seed-input {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--paper);
+  padding: 0.55rem 0.65rem;
+  min-height: 5rem;
+}
+
 .file-seed-boxes {
   display: grid;
   gap: 0.75rem;
