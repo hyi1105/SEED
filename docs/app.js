@@ -368,14 +368,11 @@ function makePersonFieldId() {
 
 function defaultPersonCard() {
   return {
-    photo: "",
     fields: [
-      { id: makePersonFieldId(), label: "姓名", value: "" },
-      { id: makePersonFieldId(), label: "電話", value: "" },
-      { id: makePersonFieldId(), label: "地址", value: "" },
+      { id: makePersonFieldId(), label: "簽名1", viewers: ["本人"] },
+      { id: makePersonFieldId(), label: "簽名2", viewers: ["本人"] },
+      { id: makePersonFieldId(), label: "簽名3", viewers: ["本人"] },
     ],
-    readers: ["本人"],
-    editors: ["本人"],
   };
 }
 
@@ -386,24 +383,21 @@ function ensurePersonCardModel(seed) {
   card.fields.forEach((field) => {
     field.id ||= makePersonFieldId();
     field.label ||= "";
-    field.value ||= "";
+    field.viewers = Array.isArray(field.viewers) && field.viewers.length ? field.viewers : ["本人"];
+    delete field.value;
   });
-  card.readers = Array.isArray(card.readers) && card.readers.length ? card.readers : ["本人"];
-  card.editors = Array.isArray(card.editors) && card.editors.length ? card.editors : ["本人"];
-  card.photo ||= "";
+  delete card.photo;
+  delete card.readers;
+  delete card.editors;
   return card;
 }
 
 function personCardToText(seed) {
   const card = ensurePersonCardModel(seed);
-  const lines = [`# ${seed.title}`, seed.subtitle || "", "", "## 人員卡片"];
-  if (card.photo) lines.push("- 照片：已設定");
+  const lines = [`# ${seed.title}`, seed.subtitle || "", "", "## 欄位設計"];
   card.fields.forEach((field, index) => {
-    lines.push(`- 欄位 ${index + 1}｜${field.label || "未命名"}：${field.value || ""}`);
+    lines.push(`- 欄位 ${index + 1}｜${field.label || "未命名"}｜可見：${(field.viewers || ["本人"]).join("、")}`);
   });
-  lines.push("", "## 權限");
-  lines.push(`- 可閱讀：${card.readers.join("、")}`);
-  lines.push(`- 可編輯：${card.editors.join("、")}`);
   return lines.join("\n");
 }
 
@@ -503,7 +497,8 @@ function renderInsertGap(index) {
   return gap;
 }
 
-function renderSeedHeading(board, editing) {
+function renderSeedHeading(board, editing, options = {}) {
+  const { showSubtitle = true } = options;
   const seed = state.current;
   const header = document.createElement("header");
   header.className = editing ? "seed-heading-editor" : "seed-document-heading";
@@ -525,12 +520,6 @@ function renderSeedHeading(board, editing) {
   title.value = seed.title || "";
   title.placeholder = "文件標題";
   title.setAttribute("aria-label", "文件標題");
-  const subtitle = document.createElement("input");
-  subtitle.type = "text";
-  subtitle.className = "seed-subtitle-input";
-  subtitle.value = seed.subtitle || "";
-  subtitle.placeholder = "副標題（選填）";
-  subtitle.setAttribute("aria-label", "文件副標題");
   title.addEventListener("input", () => {
     seed.title = title.value || "未命名 SEED";
     $("read-title").textContent = seed.title;
@@ -539,14 +528,24 @@ function renderSeedHeading(board, editing) {
       board.querySelector(".live-preview")?.replaceWith(renderLivePreview(seed));
     }
   });
-  subtitle.addEventListener("input", () => {
-    seed.subtitle = subtitle.value;
-    saveSeedMetadata(seed);
-    if (seed.seedType === "discussion") {
-      board.querySelector(".live-preview")?.replaceWith(renderLivePreview(seed));
-    }
-  });
-  header.append(title, subtitle);
+  if (showSubtitle) {
+    const subtitle = document.createElement("input");
+    subtitle.type = "text";
+    subtitle.className = "seed-subtitle-input";
+    subtitle.value = seed.subtitle || "";
+    subtitle.placeholder = "副標題（選填）";
+    subtitle.setAttribute("aria-label", "文件副標題");
+    subtitle.addEventListener("input", () => {
+      seed.subtitle = subtitle.value;
+      saveSeedMetadata(seed);
+      if (seed.seedType === "discussion") {
+        board.querySelector(".live-preview")?.replaceWith(renderLivePreview(seed));
+      }
+    });
+    header.append(title, subtitle);
+  } else {
+    header.append(title);
+  }
   board.appendChild(header);
 }
 
@@ -685,103 +684,79 @@ function renderFrameBoard() {
 
 function renderPersonCardPrintView(board, seed) {
   const card = ensurePersonCardModel(seed);
-  renderSeedHeading(board, false);
-  const wrap = document.createElement("section");
-  wrap.className = "person-card-print";
-  if (card.photo) {
-    const img = document.createElement("img");
-    img.src = card.photo;
-    img.alt = "照片";
-    wrap.appendChild(img);
-  }
+  renderSeedHeading(board, false, { showSubtitle: false });
   const grid = document.createElement("div");
   grid.className = "person-card-print-fields";
   card.fields.forEach((field) => {
     const item = document.createElement("div");
-    item.innerHTML = `<small>${escapeHtml(field.label || "欄位")}</small><strong>${escapeHtml(field.value || "—")}</strong>`;
+    item.innerHTML = `<small>${escapeHtml(field.label || "欄位")}</small>`;
     grid.appendChild(item);
   });
-  wrap.appendChild(grid);
-  board.appendChild(wrap);
+  board.appendChild(grid);
+}
+
+function renderPersonCardFieldVisibility(seed, field) {
+  const row = document.createElement("div");
+  row.className = "person-card-field-visibility";
+  ["本人", "所有人"].forEach((name) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "btn person-card-visibility-btn";
+    button.classList.toggle("is-active", (field.viewers || []).includes(name));
+    button.textContent = name;
+    button.addEventListener("click", () => {
+      field.viewers ||= ["本人"];
+      if (field.viewers.includes(name)) {
+        field.viewers = field.viewers.filter((item) => item !== name);
+        if (!field.viewers.length) field.viewers = ["本人"];
+      } else if (name === "所有人") {
+        field.viewers = ["所有人"];
+      } else {
+        field.viewers = field.viewers.filter((item) => item !== "所有人");
+        if (!field.viewers.includes(name)) field.viewers.push(name);
+      }
+      persistPersonCard(seed);
+      renderFrameBoard();
+    });
+    row.appendChild(button);
+  });
+  const custom = document.createElement("button");
+  custom.type = "button";
+  custom.className = "btn person-card-visibility-btn";
+  custom.textContent = "＋ 指定人員";
+  custom.addEventListener("click", () => {
+    const name = window.prompt("指定可見人員：");
+    if (!name) return;
+    field.viewers ||= [];
+    field.viewers = field.viewers.filter((item) => item !== "所有人");
+    if (!field.viewers.includes(name.trim())) field.viewers.push(name.trim());
+    persistPersonCard(seed);
+    renderFrameBoard();
+  });
+  row.appendChild(custom);
+  return row;
 }
 
 function renderPersonCardEditor(board, seed) {
   const card = ensurePersonCardModel(seed);
-  renderSeedHeading(board, true);
-  const format = document.createElement("p");
-  format.className = "template-property";
-  format.textContent = "文件格式：人員卡片";
-  board.appendChild(format);
-
-  const section = document.createElement("section");
-  section.className = "person-card-editor";
-
-  const photoWrap = document.createElement("label");
-  photoWrap.className = "person-card-photo";
-  photoWrap.innerHTML = "<span>照片</span>";
-  const photoPreview = document.createElement("div");
-  photoPreview.className = "person-card-photo-preview";
-  if (card.photo) {
-    const img = document.createElement("img");
-    img.src = card.photo;
-    img.alt = "照片預覽";
-    photoPreview.appendChild(img);
-  } else {
-    photoPreview.textContent = "點擊上傳照片";
-  }
-  const photoInput = document.createElement("input");
-  photoInput.type = "file";
-  photoInput.accept = "image/*";
-  photoInput.hidden = true;
-  photoInput.addEventListener("change", () => {
-    const file = photoInput.files?.[0];
-    if (!file) return;
-    if (file.size > 800000) {
-      showToast("照片請小於 800KB", "warn");
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => {
-      card.photo = String(reader.result || "");
-      persistPersonCard(seed);
-      renderFrameBoard();
-    };
-    reader.readAsDataURL(file);
-  });
-  photoPreview.addEventListener("click", () => photoInput.click());
-  const clearPhoto = document.createElement("button");
-  clearPhoto.type = "button";
-  clearPhoto.className = "btn";
-  clearPhoto.textContent = "移除照片";
-  clearPhoto.addEventListener("click", (event) => {
-    event.preventDefault();
-    card.photo = "";
-    persistPersonCard(seed);
-    renderFrameBoard();
-  });
-  photoWrap.append(photoPreview, photoInput, clearPhoto);
-  section.appendChild(photoWrap);
+  renderSeedHeading(board, true, { showSubtitle: false });
 
   const fields = document.createElement("div");
   fields.className = "person-card-fields";
   card.fields.forEach((field, index) => {
-    const item = document.createElement("label");
+    const item = document.createElement("div");
     item.className = "person-card-field";
-    item.innerHTML = `<span class="person-card-field-num">${index + 1}</span>`;
+    const head = document.createElement("div");
+    head.className = "person-card-field-head";
+    const number = document.createElement("span");
+    number.className = "person-card-field-num";
+    number.textContent = String(index + 1);
     const label = document.createElement("input");
     label.className = "person-card-label";
-    label.placeholder = "欄位名稱";
+    label.placeholder = "欄位名稱，例如簽名1";
     label.value = field.label || "";
     label.addEventListener("input", () => {
       field.label = label.value;
-      persistPersonCard(seed);
-    });
-    const value = document.createElement("input");
-    value.className = "person-card-value";
-    value.placeholder = "填寫內容";
-    value.value = field.value || "";
-    value.addEventListener("input", () => {
-      field.value = value.value;
       persistPersonCard(seed);
     });
     const remove = document.createElement("button");
@@ -789,84 +764,29 @@ function renderPersonCardEditor(board, seed) {
     remove.className = "frame-remove";
     remove.textContent = "×";
     remove.title = "刪除此欄";
-    remove.addEventListener("click", (event) => {
-      event.preventDefault();
+    remove.addEventListener("click", () => {
       if (card.fields.length <= 1) return;
       card.fields.splice(index, 1);
       persistPersonCard(seed);
       renderFrameBoard();
     });
-    item.append(label, value, remove);
+    head.append(number, label, remove);
+    item.append(head, renderPersonCardFieldVisibility(seed, field));
     fields.appendChild(item);
   });
-  section.appendChild(fields);
+  board.appendChild(fields);
 
   const addField = document.createElement("button");
   addField.type = "button";
-  addField.className = "btn";
-  addField.textContent = "＋ 新增文字欄位";
+  addField.className = "btn person-card-add";
+  addField.textContent = "＋ 新增欄位";
   addField.addEventListener("click", () => {
-    card.fields.push({ id: makePersonFieldId(), label: "", value: "" });
+    const next = card.fields.length + 1;
+    card.fields.push({ id: makePersonFieldId(), label: `簽名${next}`, viewers: ["本人"] });
     persistPersonCard(seed);
     renderFrameBoard();
   });
-  section.appendChild(addField);
-
-  section.appendChild(renderPersonCardPermissions(seed, card));
-  board.appendChild(section);
-}
-
-function renderPersonCardPermissionGroup(title, list, presets, seed, card, key) {
-  const group = document.createElement("div");
-  group.className = "person-card-permission-group";
-  group.innerHTML = `<strong>${escapeHtml(title)}</strong>`;
-  const buttons = document.createElement("div");
-  buttons.className = "person-card-permission-buttons";
-  presets.forEach((name) => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "btn";
-    button.classList.toggle("is-active", list.includes(name));
-    button.textContent = name;
-    button.addEventListener("click", () => {
-      if (list.includes(name)) {
-        list.splice(list.indexOf(name), 1);
-        if (!list.length) list.push("本人");
-      } else {
-        list.push(name);
-      }
-      persistPersonCard(seed);
-      renderFrameBoard();
-    });
-    buttons.appendChild(button);
-  });
-  const custom = document.createElement("button");
-  custom.type = "button";
-  custom.className = "btn";
-  custom.textContent = "＋ 指定人員";
-  custom.addEventListener("click", () => {
-    const name = window.prompt("加入可存取的人員名稱：");
-    if (!name) return;
-    if (!list.includes(name)) list.push(name.trim());
-    persistPersonCard(seed);
-    renderFrameBoard();
-  });
-  buttons.appendChild(custom);
-  group.appendChild(buttons);
-  const chips = document.createElement("p");
-  chips.className = "meta person-card-permission-list";
-  chips.textContent = list.length ? `目前：${list.join("、")}` : "尚未設定";
-  group.appendChild(chips);
-  return group;
-}
-
-function renderPersonCardPermissions(seed, card) {
-  const panel = document.createElement("section");
-  panel.className = "person-card-permissions";
-  panel.innerHTML = "<h3>權限</h3>";
-  panel.appendChild(renderPersonCardPermissionGroup("可閱讀", card.readers, ["本人", "所有人"], seed, card, "readers"));
-  panel.appendChild(renderPersonCardPermissionGroup("可編輯", card.editors, ["本人"], seed, card, "editors"));
-  return panel;
+  board.appendChild(addField);
 }
 
 function persistPersonCard(seed) {
@@ -3047,6 +2967,11 @@ function openSystemSeedTemplate(template, seedType) {
     seed.short = Array.from(seed.title).slice(0, 4).join("");
     seed.blurb = version.snapshot?.blurb || "";
     saveSeedTrayState();
+  } else if (seedType === "discussion") {
+    seed.title = "未命名討論";
+    seed.alias = seed.title;
+    seed.short = Array.from(seed.title).slice(0, 4).join("");
+    saveSeedTrayState();
   }
   showToast(`已開啟「${seed.title}」`, "ok");
   selectSeed(seed).catch((err) => setStatus(err.message || String(err)));
@@ -3096,118 +3021,23 @@ function saveCurrentAsSystemSeedTemplate() {
 function renderSystemSeedPanel() {
   const board = $("system-seed-board");
   if (!board) return;
-  const catalog = loadSystemSeedCatalog();
-  const { step, seedType, templateId } = state.systemBrowse;
   board.innerHTML = "";
-
-  if (step === "types") {
-    const intro = document.createElement("p");
-    intro.className = "system-seed-help";
-    intro.textContent = "選一種 SEED 類型。下一步會看到系統範本與版本。";
-    board.appendChild(intro);
-    const grid = document.createElement("div");
-    grid.className = "system-seed-type-grid";
-    SYSTEM_SEED_TYPES.forEach((type) => {
-      const card = document.createElement("button");
-      card.type = "button";
-      card.className = "system-seed-type-card";
-      card.innerHTML = `<strong>${escapeHtml(type.label)}</strong><span>${escapeHtml(type.desc)}</span>`;
-      card.addEventListener("click", () => {
-        state.systemBrowse = { step: "templates", seedType: type.id, templateId: "" };
-        renderSystemSeedPanel();
-        updatePathBrand();
-      });
-      grid.appendChild(card);
+  const grid = document.createElement("div");
+  grid.className = "system-seed-type-grid";
+  SYSTEM_SEED_TYPES.forEach((type) => {
+    const card = document.createElement("button");
+    card.type = "button";
+    card.className = "system-seed-type-card";
+    card.textContent = type.label;
+    card.addEventListener("click", () => {
+      const catalog = loadSystemSeedCatalog();
+      const blank = (catalog[type.id] || []).find((item) => item.builtin) || catalog[type.id]?.[0];
+      if (blank) openSystemSeedTemplate(blank, type.id);
+      else showToast("尚無此類型範本", "warn");
     });
-    board.appendChild(grid);
-    return;
-  }
-
-  if (step === "templates") {
-    const intro = document.createElement("p");
-    intro.className = "system-seed-help";
-    intro.textContent = seedType === "approval"
-      ? `${systemSeedTypeLabel(seedType)}範本：點進去直接設計問卷欄位。`
-      : seedType === "document"
-        ? `${systemSeedTypeLabel(seedType)}範本：點進去直接建立人員卡片。`
-        : `${systemSeedTypeLabel(seedType)}範本：點進去看版本，再建立你的 SEED。`;
-    board.appendChild(intro);
-    const list = document.createElement("ul");
-    list.className = "system-seed-template-list";
-    (catalog[seedType] || []).forEach((template) => {
-      const item = document.createElement("li");
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = "system-seed-template-item";
-      const latest = template.versions?.[0];
-      const actionHint = seedType === "approval"
-        ? "點擊開始設計問卷"
-        : seedType === "document"
-          ? "點擊開始建立人員卡片"
-          : `最新 v${latest?.rev || 1}`;
-      button.innerHTML = `
-        <strong>${escapeHtml(template.name)}</strong>
-        <span class="meta">${template.builtin ? "系統內建" : "自訂"} · ${escapeHtml(actionHint)}</span>`;
-      button.addEventListener("click", () => {
-        if (seedType === "approval" || seedType === "document") {
-          openSystemSeedTemplate(template, seedType);
-          return;
-        }
-        state.systemBrowse = { step: "versions", seedType, templateId: template.id };
-        renderSystemSeedPanel();
-        updatePathBrand();
-      });
-      item.appendChild(button);
-      list.appendChild(item);
-    });
-    board.appendChild(list);
-    if (state.current) {
-      const saveCurrent = document.createElement("button");
-      saveCurrent.type = "button";
-      saveCurrent.className = "btn";
-      saveCurrent.textContent = "把目前 SEED 另存為此類型範本";
-      saveCurrent.addEventListener("click", () => saveCurrentAsSystemSeedTemplate());
-      board.appendChild(saveCurrent);
-    }
-    return;
-  }
-
-  if (step === "versions") {
-    const template = findSystemTemplate(catalog, seedType, templateId);
-    if (!template) {
-      board.innerHTML = "<p class='meta'>找不到這個範本。</p>";
-      return;
-    }
-    const intro = document.createElement("p");
-    intro.className = "system-seed-help";
-    intro.textContent = `「${template.name}」的版本。選一版建立 SEED，進入後再修改並 Save。`;
-    board.appendChild(intro);
-    const list = document.createElement("ul");
-    list.className = "system-seed-version-list";
-    (template.versions || []).forEach((version) => {
-      const item = document.createElement("li");
-      item.className = "system-seed-version-row";
-      const meta = document.createElement("div");
-      meta.innerHTML = `
-        <strong>v${version.rev}</strong>
-        <span class="meta">${escapeHtml(version.label || "")} · ${escapeHtml(formatWhen(version.savedAt))}</span>`;
-      const actions = document.createElement("div");
-      actions.className = "system-seed-version-actions";
-      const fork = document.createElement("button");
-      fork.type = "button";
-      fork.className = "btn btn-primary";
-      fork.textContent = "用這版建立 SEED";
-      fork.addEventListener("click", () => {
-        const seed = forkSystemSeedVersion(template, version);
-        showToast(`已建立「${seed.title}」到我的 SEED`, "ok");
-        selectSeed(seed).catch((err) => setStatus(err.message || String(err)));
-      });
-      actions.appendChild(fork);
-      item.append(meta, actions);
-      list.appendChild(item);
-    });
-    board.appendChild(list);
-  }
+    grid.appendChild(card);
+  });
+  board.appendChild(grid);
 }
 
 function addSeed() {
@@ -4723,25 +4553,7 @@ async function loadVersions() {
       setStatus("已載入舊版當草稿；確認後按「存成一版」才會寫回倉庫");
       showPanel("read");
     });
-    const systemBtn = document.createElement("button");
-    systemBtn.type = "button";
-    systemBtn.className = "btn";
-    systemBtn.textContent = "存成 System Seed";
-    systemBtn.addEventListener("click", async () => {
-      const text = await fetchFileAt(v.sha);
-      const seedType = state.current.seedType || "document";
-      const templateName = window.prompt(
-        "存成 System Seed 範本名稱：",
-        `${state.current.title}（${formatWhen(v.when)}）`
-      );
-      if (!templateName) return;
-      const snapshot = captureSeedSnapshot(state.current);
-      snapshot.text = text;
-      const { template, rev } = appendSystemSeedVersion(seedType, templateName.trim(), snapshot, `來自版本 ${formatWhen(v.when)}`);
-      showToast(`已存成 System Seed「${template.name}」v${rev}`, "ok");
-      openSystemSeedBrowse("versions", seedType, template.id);
-    });
-    li.querySelector(".row-actions").appendChild(systemBtn);
+    li.querySelector(".row-actions").appendChild(useBtn);
     list.appendChild(li);
   }
 
@@ -5212,7 +5024,6 @@ $("pack-file").addEventListener("change", async () => {
 
 $("seed-add")?.addEventListener("click", addSeed);
 $("system-seed-open")?.addEventListener("click", () => openSystemSeedBrowse("types"));
-$("save-as-system-seed")?.addEventListener("click", () => saveCurrentAsSystemSeedTemplate());
 
 $("seed-create-dialog")?.addEventListener("click", (e) => {
   if (e.target.closest("[data-seed-create-close]")) {
@@ -5223,14 +5034,10 @@ $("seed-create-dialog")?.addEventListener("click", (e) => {
   if (!choice) return;
   const seedType = choice.dataset.seedType;
   $("seed-create-dialog").close();
-  if (seedType === "approval" || seedType === "document") {
-    const catalog = loadSystemSeedCatalog();
-    const blank = (catalog[seedType] || []).find((item) => item.builtin) || catalog[seedType]?.[0];
-    if (blank) openSystemSeedTemplate(blank, seedType);
-    else openSystemSeedBrowse("templates", seedType);
-    return;
-  }
-  openSystemSeedBrowse("templates", seedType);
+  const catalog = loadSystemSeedCatalog();
+  const blank = (catalog[seedType] || []).find((item) => item.builtin) || catalog[seedType]?.[0];
+  if (blank) openSystemSeedTemplate(blank, seedType);
+  else openSystemSeedBrowse("types");
 });
 
 $("seed-tray-list")?.addEventListener("dragover", (e) => {
@@ -5283,31 +5090,10 @@ function buildPathSteps() {
   if (state.panel === "system-seed") {
     steps.push({
       key: "system-seed",
-      label: "System Seed",
+      label: "Seed",
       depth: 1,
       go: () => openSystemSeedBrowse("types"),
     });
-    const { step, seedType, templateId } = state.systemBrowse;
-    if (step === "templates" || step === "versions") {
-      const catalog = loadSystemSeedCatalog();
-      steps.push({
-        key: `system-type-${seedType}`,
-        label: systemSeedTypeLabel(seedType),
-        depth: 2,
-        go: () => openSystemSeedBrowse("templates", seedType),
-      });
-    }
-    if (step === "versions") {
-      const template = findSystemTemplate(loadSystemSeedCatalog(), seedType, templateId);
-      if (template) {
-        steps.push({
-          key: `system-template-${templateId}`,
-          label: template.name,
-          depth: 3,
-          go: () => openSystemSeedBrowse("versions", seedType, templateId),
-        });
-      }
-    }
     return steps;
   }
   if (state.current && state.panel !== "list") {

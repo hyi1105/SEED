@@ -695,24 +695,18 @@ html, body {
 }
 
 .system-seed-type-card {
-  display: grid;
-  gap: 0.2rem;
+  display: block;
+  width: 100%;
   border: 1px solid var(--line);
   border-radius: 12px;
   background: var(--card);
   color: var(--ink);
   padding: 0.85rem 0.95rem;
-  text-align: left;
-  cursor: pointer;
-}
-
-.system-seed-type-card strong {
+  text-align: center;
+  font: inherit;
   font-size: 0.95rem;
-}
-
-.system-seed-type-card span {
-  color: var(--muted);
-  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
 }
 
 .system-seed-template-list,
@@ -1034,142 +1028,72 @@ html, body {
   max-width: 42rem;
 }
 
-.person-card-editor {
-  display: grid;
-  gap: 0.85rem;
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  background: var(--card);
-  padding: 0.9rem 1rem;
-}
-
-.person-card-photo {
-  display: grid;
-  gap: 0.45rem;
-  justify-items: start;
-}
-
-.person-card-photo > span {
-  color: var(--muted);
-  font-size: 0.75rem;
-}
-
-.person-card-photo-preview {
-  display: grid;
-  place-items: center;
-  width: 7.5rem;
-  height: 7.5rem;
-  overflow: hidden;
-  border: 1px dashed var(--line);
-  border-radius: 12px;
-  background: #f7faf8;
-  color: var(--muted);
-  font-size: 0.72rem;
-  text-align: center;
-  cursor: pointer;
-}
-
-.person-card-photo-preview img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
 .person-card-fields {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.55rem;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
 }
 
 .person-card-field {
   display: grid;
-  gap: 0.3rem;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  background: var(--paper);
-  padding: 0.55rem 0.6rem;
-  position: relative;
+  gap: 0.45rem;
+}
+
+.person-card-field-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.45rem;
+  align-items: center;
 }
 
 .person-card-field-num {
   color: var(--accent);
-  font-size: 0.68rem;
+  font-size: 0.85rem;
   font-weight: 700;
 }
 
-.person-card-label,
-.person-card-value {
+.person-card-label {
   width: 100%;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: #fff;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: transparent;
   color: var(--ink);
   font: inherit;
-  font-size: 0.82rem;
-  padding: 0.35rem 0.45rem;
+  font-size: 0.95rem;
+  padding: 0.25rem 0;
 }
 
-.person-card-field .frame-remove {
-  position: absolute;
-  top: 0.25rem;
-  right: 0.25rem;
-}
-
-.person-card-permissions {
+.person-card-field-visibility {
   display: grid;
-  gap: 0.65rem;
-  border-top: 1px solid var(--line);
-  padding-top: 0.75rem;
-}
-
-.person-card-permissions h3 {
-  margin: 0;
-  font-size: 0.88rem;
-}
-
-.person-card-permission-group {
-  display: grid;
+  grid-template-columns: 1fr;
   gap: 0.35rem;
 }
 
-.person-card-permission-buttons {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
+.person-card-visibility-btn {
+  width: 100%;
+  justify-content: center;
 }
 
-.person-card-permission-buttons .btn.is-active {
+.person-card-visibility-btn.is-active {
   border-color: var(--accent);
   background: var(--accent-soft);
   color: var(--accent);
 }
 
-.person-card-permission-list {
-  margin: 0;
-}
-
-.person-card-print {
-  display: grid;
-  gap: 0.75rem;
-}
-
-.person-card-print img {
-  width: 8rem;
-  height: 8rem;
-  object-fit: cover;
-  border-radius: 12px;
+.person-card-add {
+  margin-top: 0.35rem;
 }
 
 .person-card-print-fields {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.55rem;
+  gap: 0.45rem;
+  margin-top: 0.5rem;
 }
 
 .person-card-print-fields small {
   display: block;
   color: var(--muted);
-  font-size: 0.72rem;
+  font-size: 0.82rem;
 }
 
 .seed-title-input,
@@ -3009,11 +2933,6 @@ h1 {
   .approval-designer-field .designer-preview {
     margin-left: 0;
   }
-
-  .person-card-fields,
-  .person-card-print-fields {
-    grid-template-columns: 1fr;
-  }
 }
 
 .panel-map {
@@ -3026,7 +2945,8 @@ h1 {
 
 .panel-map:has(.map-shell[data-map-view="height"]),
 .panel-map:has(.map-shell[data-map-view="fit"]) {
-  overflow-y: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .puzzle-meta {

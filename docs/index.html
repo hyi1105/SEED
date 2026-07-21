@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=control15" />
+  <link rel="stylesheet" href="styles.css?v=control16" />
   <!-- 預覽請用 raw.githack（會正確當成網頁）。不要用 raw.githubusercontent 或 jsDelivr 開 html，會變純文字。 -->
 </head>
 <body>
@@ -28,7 +28,7 @@
           <nav class="path-crumb" id="path-crumb" aria-label="目前階層">首頁</nav>
         </div>
         <div class="top-end">
-          <div class="map-view-chips" id="map-view-chips" role="toolbar" aria-label="棋盤顯示模式">
+          <div class="map-view-chips hidden" id="map-view-chips" role="toolbar" aria-label="棋盤顯示模式">
             <button type="button" class="header-chip map-view-chip" data-map-view="width" aria-pressed="false">左右為主</button>
             <button type="button" class="header-chip map-view-chip" data-map-view="height" aria-pressed="false">上下為主</button>
             <button type="button" class="header-chip map-view-chip is-active" data-map-view="fit" aria-pressed="true">全部棋盤</button>
@@ -85,7 +85,7 @@
         </form>
       </div>
 
-      <nav class="doc-bar" id="doc-bar" aria-label="筆記操作" hidden>
+      <nav class="doc-bar hidden" id="doc-bar" aria-label="筆記操作" hidden>
         <button type="button" class="btn" data-action="list">回棋盤</button>
         <button type="button" class="btn" data-action="read">讀現在的</button>
         <button type="button" class="btn" data-action="edit">自己改</button>
@@ -107,10 +107,9 @@
         </div>
         <section class="system-seed-entry" aria-labelledby="system-seed-title">
           <div class="system-seed-head">
-            <h2 id="system-seed-title">System Seed</h2>
-            <p class="meta">先選類型 → 再選範本與版本 → 修改後存成我的 SEED</p>
+            <h2 id="system-seed-title">Seed</h2>
           </div>
-          <button type="button" class="btn btn-primary" id="system-seed-open">進入 System Seed</button>
+          <button type="button" class="btn btn-primary" id="system-seed-open">建立 Seed</button>
         </section>
         <section class="seed-tray" aria-labelledby="seed-tray-title">
           <div class="seed-tray-head">
@@ -136,16 +135,11 @@
         <textarea id="edit-body" class="edit-body hidden" spellcheck="true" aria-label="編輯筆記"></textarea>
         <div class="document-actions hidden" id="edit-actions" aria-label="編輯操作">
           <button type="button" class="btn" id="edit-save">Save</button>
-          <button type="button" class="btn" id="save-as-system-seed">另存為 System Seed</button>
         </div>
       </section>
 
       <section id="panel-system-seed" class="panel hidden">
         <div class="system-seed-panel">
-          <header class="system-seed-panel-head">
-            <h1>System Seed</h1>
-            <p class="lead">從系統範本或既有版本開始；修改後按 Save 才會成為你的 SEED。</p>
-          </header>
           <div id="system-seed-board" class="system-seed-board" aria-live="polite"></div>
         </div>
       </section>
@@ -348,11 +342,11 @@
     <dialog id="seed-create-dialog" class="token-dialog">
       <div class="seed-type-picker">
         <h2>新增 SEED</h2>
-        <p>選擇類型後，進入 System Seed 範本與版本，再建立你的 SEED。</p>
+        <p class="sr-only">選擇類型後建立 Seed。</p>
         <div class="seed-type-options">
-          <button type="button" class="seed-type-choice" data-seed-type="document"><strong>文件</strong><span>逐段建立文件</span></button>
-          <button type="button" class="seed-type-choice" data-seed-type="approval"><strong>簽核</strong><span>欄位與簽核人</span></button>
-          <button type="button" class="seed-type-choice" data-seed-type="discussion"><strong>討論</strong><span>直播畫面與評論截圖</span></button>
+          <button type="button" class="seed-type-choice" data-seed-type="document">文件</button>
+          <button type="button" class="seed-type-choice" data-seed-type="approval">簽核</button>
+          <button type="button" class="seed-type-choice" data-seed-type="discussion">討論</button>
         </div>
         <button type="button" class="btn seed-type-cancel" data-seed-create-close>取消</button>
       </div>
@@ -363,6 +357,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/mammoth@latest/mammoth.browser.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@latest/dist/xlsx.full.min.js"></script>
-  <script src="app.js?v=control15"></script>
+  <script src="app.js?v=control16"></script>
 </body>
 </html>

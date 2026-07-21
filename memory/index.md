@@ -10,6 +10,7 @@
 
 ## 場次
 
+- 2026-07-21 — 手機版 Seed 介面簡化 — 標籤：SEED、手機、Seed — [sessions/2026-07-21-mobile-seed-ui.md](sessions/2026-07-21-mobile-seed-ui.md)
 - 2026-07-21 — 空白文件改為人員卡片 — 標籤：SEED、文件 — [sessions/2026-07-21-person-card-document.md](sessions/2026-07-21-person-card-document.md)
 - 2026-07-21 — System Seed 文件直接編輯 — 標籤：SEED、文件 — [sessions/2026-07-21-system-document-editor.md](sessions/2026-07-21-system-document-editor.md)
 - 2026-07-21 — 簽核問卷式設計畫面 — 標籤：SEED、簽核、問卷 — [sessions/2026-07-21-approval-form-designer.md](sessions/2026-07-21-approval-form-designer.md)
