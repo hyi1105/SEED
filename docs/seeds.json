@@ -9,10 +9,10 @@
     "cols": 10,
     "rows": 10,
     "note": "知識棋盤：拖曳擺放；點進去看完整標題",
-    "savedAt": "2026-07-21T02:17:26.103Z",
+    "savedAt": "2026-07-21T05:32:48.096Z",
     "layoutName": "7/21 上午7:30",
-    "layoutRev": 22,
-    "view": "height"
+    "layoutRev": 23,
+    "view": "fit"
   },
   "seeds": [
     {
@@ -55,7 +55,7 @@
       "path": "memory/maps/taiwan-roads/suhua.md",
       "blurb": "偏東",
       "col": 8,
-      "row": 3,
+      "row": 4,
       "cover": null,
       "archived": false
     },
