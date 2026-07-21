@@ -388,19 +388,19 @@ function defaultFormTemplate() {
   return {
     name: "書面文件",
     segments: [
-      { type: "text", content: "本契約由甲方「" },
+      { type: "text", content: "本契約由甲方" },
       { type: "blank", id: makeFormBlankId(), label: "甲方", value: "", placeholder: "甲方名稱" },
-      { type: "text", content: "」與乙方「" },
+      { type: "text", content: "與乙方" },
       { type: "blank", id: makeFormBlankId(), label: "乙方", value: "", placeholder: "乙方名稱" },
-      { type: "text", content: "」於「" },
+      { type: "text", content: "於" },
       { type: "blank", id: makeFormBlankId(), label: "簽約日", value: "", placeholder: "年／月／日" },
-      { type: "text", content: "」簽訂。\n\n一、標的\n乙方應提供「" },
+      { type: "text", content: "簽訂。\n\n一、標的\n乙方應提供" },
       { type: "blank", id: makeFormBlankId(), label: "標的", value: "", placeholder: "服務或標的" },
-      { type: "text", content: "」。\n\n二、金額\n契約總價為新台幣「" },
+      { type: "text", content: "。\n\n二、金額\n契約總價為新台幣" },
       { type: "blank", id: makeFormBlankId(), label: "金額", value: "", placeholder: "金額" },
-      { type: "text", content: "」元整。\n\n三、其他約定\n" },
+      { type: "text", content: "元整。\n\n三、其他約定\n" },
       { type: "blank", id: makeFormBlankId(), label: "其他", value: "", placeholder: "其他約定（選填）", multiline: true },
-      { type: "text", content: "\n\n（以下為定型化條款本文，不可修改。凡依本範本建立之書面文件，固定文字皆相同，僅填空處可填寫。）" },
+      { type: "text", content: "\n\n以下為定型化條款本文，不可修改。凡依本範本建立之書面文件，固定文字皆相同，僅填空處可填寫。" },
     ],
   };
 }
@@ -413,7 +413,7 @@ function ensureFormTemplateModel(seed) {
   tmpl.segments = Array.isArray(tmpl.segments) && tmpl.segments.length
     ? tmpl.segments
     : defaultFormTemplate().segments;
-  tmpl.segments.forEach((seg) => {
+  tmpl.segments.forEach((seg, index) => {
     if (seg.type === "blank") {
       seg.id ||= makeFormBlankId();
       seg.label ||= "填空";
@@ -422,7 +422,11 @@ function ensureFormTemplateModel(seed) {
       seg.multiline = Boolean(seg.multiline);
     } else {
       seg.type = "text";
-      seg.content = String(seg.content ?? "");
+      let content = String(seg.content ?? "");
+      // 舊範本若用「」包住填空，載入時拿掉
+      if (tmpl.segments[index + 1]?.type === "blank" && content.endsWith("「")) content = content.slice(0, -1);
+      if (tmpl.segments[index - 1]?.type === "blank" && content.startsWith("」")) content = content.slice(1);
+      seg.content = content;
     }
   });
   delete seed.personCard;
@@ -432,7 +436,7 @@ function ensureFormTemplateModel(seed) {
 function formTemplateToText(seed) {
   const tmpl = ensureFormTemplateModel(seed);
   const body = tmpl.segments
-    .map((seg) => (seg.type === "blank" ? seg.value || `【${seg.label || "填空"}】` : seg.content || ""))
+    .map((seg) => (seg.type === "blank" ? seg.value || "" : seg.content || ""))
     .join("");
   return [`# ${seed.title || "未命名書面文件"}`, seed.subtitle || "", "", body].join("\n");
 }

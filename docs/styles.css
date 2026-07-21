@@ -1144,10 +1144,9 @@ html, body {
 }
 
 .form-template-fixed {
-  color: var(--muted);
-  background: color-mix(in srgb, var(--paper) 70%, #e8ebe9);
-  border-radius: 3px;
-  padding: 0.05rem 0.05rem;
+  color: var(--ink);
+  background: transparent;
+  padding: 0;
   user-select: none;
   cursor: default;
   white-space: pre-wrap;
@@ -1161,8 +1160,8 @@ html, body {
   margin: 0 0.08rem;
   border: 0;
   border-bottom: 1.5px solid var(--accent);
-  border-radius: 0;
-  background: transparent;
+  border-radius: 3px;
+  background: var(--accent-soft);
   color: var(--ink);
   font: inherit;
   font-size: inherit;
@@ -1174,7 +1173,7 @@ html, body {
 
 .form-template-blank:focus {
   outline: none;
-  background: var(--accent-soft);
+  background: color-mix(in srgb, var(--accent-soft) 70%, #fff);
 }
 
 .form-template-blank.is-multiline {
