@@ -13,9 +13,10 @@ status: active
 
 ## 重點
 
-- 首頁 **System Seed → Seed**；按鈕 **建立 Seed**
+- 首頁 **System Seed → Seed**；按鈕 **建立 Seed 版本**（類型選擇）
+- **＋ 新增 SEED** 直達空白文件編輯，不經類型選單
 - Seed 面板：僅 **文件／簽核／討論** 三鍵，點即開空白範本編輯
-- 隱藏 `map-view-chips`（左右／上下／全部棋盤）與 `doc-bar`（回棋盤、讀現在的等重複功能）
+- **隱藏首頁棋盤**（含左右／上下／全部模式）與 `doc-bar`
 - 保留模式列：**編輯／文件檢視／歷程記錄**
 - 移除 **另存為 System Seed**（編輯列、版本歷程）
 - 首頁 palm rest 區（棋盤＋Seed＋我的 SEED）可上下捲動
