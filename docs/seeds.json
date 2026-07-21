@@ -9,9 +9,9 @@
     "cols": 10,
     "rows": 10,
     "note": "知識棋盤：拖曳擺放；點進去看完整標題",
-    "savedAt": "2026-07-21T00:42:37.779Z",
+    "savedAt": "2026-07-21T00:49:49.422Z",
     "layoutName": "7/21 上午7:30",
-    "layoutRev": 9
+    "layoutRev": 10
   },
   "seeds": [
     {
@@ -75,7 +75,7 @@
       "alias": "地圖構想",
       "path": "memory/topics/knowledge-map-home.md",
       "blurb": "工作室",
-      "col": 3,
+      "col": 4,
       "row": 7,
       "cover": null,
       "archived": false
@@ -97,8 +97,8 @@
       "alias": "入門指南",
       "path": "memory/topics/github-for-seed.md",
       "blurb": "工作室",
-      "col": 4,
-      "row": 0,
+      "col": 3,
+      "row": 3,
       "cover": null,
       "archived": false
     },
@@ -108,10 +108,10 @@
       "alias": "知識起點",
       "path": "memory/sessions/2026-07-20-kb-setup.md",
       "blurb": "工作室",
-      "col": 0,
-      "row": 0,
+      "col": 1,
+      "row": 9,
       "cover": null,
-      "archived": true
+      "archived": false
     },
     {
       "id": "index",
@@ -119,10 +119,10 @@
       "alias": "總目錄",
       "path": "memory/index.md",
       "blurb": "工作室",
-      "col": 1,
-      "row": 0,
+      "col": 3,
+      "row": 8,
       "cover": null,
-      "archived": true
+      "archived": false
     },
     {
       "id": "core",
@@ -130,10 +130,10 @@
       "alias": "核心清單",
       "path": "memory/topics/core-features.md",
       "blurb": "工作室",
-      "col": 0,
-      "row": 1,
+      "col": 4,
+      "row": 6,
       "cover": null,
-      "archived": true
+      "archived": false
     },
     {
       "id": "seed-pack",
@@ -141,10 +141,10 @@
       "alias": "打包帶走",
       "path": "memory/topics/seed-pack.md",
       "blurb": "工作室",
-      "col": 6,
-      "row": 3,
+      "col": 2,
+      "row": 9,
       "cover": null,
-      "archived": true
+      "archived": false
     },
     {
       "id": "monetize",
