@@ -1036,7 +1036,45 @@ html, body {
 
 .person-card-field {
   display: grid;
+  gap: 0.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.person-card-field:last-child {
+  border-bottom: 0;
+}
+
+.person-card-field-type-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   gap: 0.45rem;
+  align-items: center;
+}
+
+.person-card-type {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.9rem;
+  padding: 0.45rem 0.55rem;
+}
+
+.person-card-field-name {
+  display: block;
+}
+
+.person-card-permission {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.person-card-permission-label {
+  font-size: 0.82rem;
+  color: var(--muted);
 }
 
 .person-card-field-head {
@@ -1084,6 +1122,68 @@ html, body {
   margin-top: 0.35rem;
 }
 
+.person-card-add-wrap {
+  display: grid;
+  gap: 0.45rem;
+  margin-top: 0.75rem;
+}
+
+.person-card-add-label {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.person-card-add-types {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.35rem;
+}
+
+.person-card-add-type {
+  width: 100%;
+  justify-content: center;
+}
+
+.person-card-select-options {
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--card);
+}
+
+.person-card-select-options label {
+  display: grid;
+  gap: 0.25rem;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.person-card-select-options input,
+.person-card-select-options select {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--ink);
+  font: inherit;
+  padding: 0.4rem 0.5rem;
+}
+
+.person-card-checkbox {
+  display: flex !important;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--ink) !important;
+}
+
+.person-card-select-options .source-name {
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
 .person-card-print-fields {
   display: grid;
   gap: 0.45rem;
@@ -1093,7 +1193,11 @@ html, body {
 .person-card-print-fields small {
   display: block;
   color: var(--muted);
-  font-size: 0.82rem;
+}
+
+.person-card-print-fields strong {
+  display: block;
+  font-size: 1rem;
 }
 
 .seed-title-input,

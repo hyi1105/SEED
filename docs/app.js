@@ -366,12 +366,39 @@ function makePersonFieldId() {
   return `pcf-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
 }
 
+const PERSON_FIELD_TYPES = [
+  { id: "text", label: "單行文字" },
+  { id: "textarea", label: "多行文字" },
+  { id: "select", label: "下拉選單" },
+];
+
+function personFieldTypeLabel(type) {
+  return PERSON_FIELD_TYPES.find((item) => item.id === type)?.label || "單行文字";
+}
+
+function defaultPersonCardField(type = "text", label = "") {
+  return {
+    id: makePersonFieldId(),
+    type,
+    label,
+    viewers: ["本人"],
+    editors: ["本人"],
+    options: "",
+    sourceType: "manual",
+    sourceName: "",
+    sourceRows: [],
+    sourceColumn: 0,
+    firstRowHeader: true,
+    allowManual: false,
+  };
+}
+
 function defaultPersonCard() {
   return {
     fields: [
-      { id: makePersonFieldId(), label: "簽名1", viewers: ["本人"] },
-      { id: makePersonFieldId(), label: "簽名2", viewers: ["本人"] },
-      { id: makePersonFieldId(), label: "簽名3", viewers: ["本人"] },
+      defaultPersonCardField("text", "簽名1"),
+      defaultPersonCardField("text", "簽名2"),
+      defaultPersonCardField("text", "簽名3"),
     ],
   };
 }
@@ -382,8 +409,28 @@ function ensurePersonCardModel(seed) {
   card.fields = Array.isArray(card.fields) ? card.fields : defaultPersonCard().fields;
   card.fields.forEach((field) => {
     field.id ||= makePersonFieldId();
+    field.type ||= "text";
     field.label ||= "";
     field.viewers = Array.isArray(field.viewers) && field.viewers.length ? field.viewers : ["本人"];
+    field.editors = Array.isArray(field.editors) && field.editors.length ? field.editors : ["本人"];
+    if (field.type === "select") {
+      field.options ||= "";
+      field.sourceType ||= "manual";
+      field.sourceName ||= "";
+      field.sourceRows = Array.isArray(field.sourceRows) ? field.sourceRows : [];
+      field.sourceColumn = Number.isFinite(field.sourceColumn) ? field.sourceColumn : 0;
+      field.firstRowHeader = field.firstRowHeader !== false;
+      field.allowManual = Boolean(field.allowManual);
+      if (field.sourceType === "file") refreshFieldOptionsFromFile(field);
+    } else {
+      delete field.options;
+      delete field.sourceType;
+      delete field.sourceName;
+      delete field.sourceRows;
+      delete field.sourceColumn;
+      delete field.firstRowHeader;
+      delete field.allowManual;
+    }
     delete field.value;
   });
   delete card.photo;
@@ -392,11 +439,21 @@ function ensurePersonCardModel(seed) {
   return card;
 }
 
+function personCardPermissionSummary(list) {
+  return (list || ["本人"]).join("、");
+}
+
 function personCardToText(seed) {
   const card = ensurePersonCardModel(seed);
   const lines = [`# ${seed.title}`, seed.subtitle || "", "", "## 欄位設計"];
   card.fields.forEach((field, index) => {
-    lines.push(`- 欄位 ${index + 1}｜${field.label || "未命名"}｜可見：${(field.viewers || ["本人"]).join("、")}`);
+    const type = personFieldTypeLabel(field.type);
+    const extra = field.type === "select"
+      ? `｜選項：${field.sourceType === "file" ? field.sourceName || "CSV／Excel" : (field.options || "手動")}`
+      : "";
+    lines.push(
+      `- 欄位 ${index + 1}｜${type}｜${field.label || "未命名"}｜可見：${personCardPermissionSummary(field.viewers)}｜可編輯：${personCardPermissionSummary(field.editors)}${extra}`
+    );
   });
   return lines.join("\n");
 }
@@ -689,31 +746,36 @@ function renderPersonCardPrintView(board, seed) {
   grid.className = "person-card-print-fields";
   card.fields.forEach((field) => {
     const item = document.createElement("div");
-    item.innerHTML = `<small>${escapeHtml(field.label || "欄位")}</small>`;
+    item.innerHTML = `<small>${escapeHtml(personFieldTypeLabel(field.type))}</small><strong>${escapeHtml(field.label || "欄位")}</strong>`;
     grid.appendChild(item);
   });
   board.appendChild(grid);
 }
 
-function renderPersonCardFieldVisibility(seed, field) {
+function renderPersonCardPermissionRow(seed, field, key, title) {
+  const wrap = document.createElement("div");
+  wrap.className = "person-card-permission";
+  const label = document.createElement("span");
+  label.className = "person-card-permission-label";
+  label.textContent = title;
   const row = document.createElement("div");
   row.className = "person-card-field-visibility";
   ["本人", "所有人"].forEach((name) => {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "btn person-card-visibility-btn";
-    button.classList.toggle("is-active", (field.viewers || []).includes(name));
+    button.classList.toggle("is-active", (field[key] || []).includes(name));
     button.textContent = name;
     button.addEventListener("click", () => {
-      field.viewers ||= ["本人"];
-      if (field.viewers.includes(name)) {
-        field.viewers = field.viewers.filter((item) => item !== name);
-        if (!field.viewers.length) field.viewers = ["本人"];
+      field[key] ||= ["本人"];
+      if (field[key].includes(name)) {
+        field[key] = field[key].filter((item) => item !== name);
+        if (!field[key].length) field[key] = ["本人"];
       } else if (name === "所有人") {
-        field.viewers = ["所有人"];
+        field[key] = ["所有人"];
       } else {
-        field.viewers = field.viewers.filter((item) => item !== "所有人");
-        if (!field.viewers.includes(name)) field.viewers.push(name);
+        field[key] = field[key].filter((item) => item !== "所有人");
+        if (!field[key].includes(name)) field[key].push(name);
       }
       persistPersonCard(seed);
       renderFrameBoard();
@@ -725,16 +787,100 @@ function renderPersonCardFieldVisibility(seed, field) {
   custom.className = "btn person-card-visibility-btn";
   custom.textContent = "＋ 指定人員";
   custom.addEventListener("click", () => {
-    const name = window.prompt("指定可見人員：");
+    const name = window.prompt(`指定${title.replace("：", "")}：`);
     if (!name) return;
-    field.viewers ||= [];
-    field.viewers = field.viewers.filter((item) => item !== "所有人");
-    if (!field.viewers.includes(name.trim())) field.viewers.push(name.trim());
+    field[key] ||= [];
+    field[key] = field[key].filter((item) => item !== "所有人");
+    const trimmed = name.trim();
+    if (!field[key].includes(trimmed)) field[key].push(trimmed);
     persistPersonCard(seed);
     renderFrameBoard();
   });
   row.appendChild(custom);
-  return row;
+  wrap.append(label, row);
+  return wrap;
+}
+
+function renderPersonCardSelectOptions(seed, field) {
+  const panel = document.createElement("div");
+  panel.className = "person-card-select-options";
+  panel.innerHTML = `
+    <label class="person-card-select-source">選項來源
+      <select class="source-type">
+        <option value="manual">手動輸入</option>
+        <option value="file">CSV／Excel</option>
+      </select>
+    </label>
+    <label class="manual-options">選項
+      <input class="manual-options-input" placeholder="選項，用逗號分隔">
+    </label>
+    <div class="file-options hidden">
+      <label>參考檔案<input class="source-file" type="file" accept=".csv,.tsv,.txt,.xlsx,.xls"></label>
+      <span class="source-name"></span>
+      <label>使用欄位<select class="source-column"></select></label>
+      <label class="person-card-checkbox"><input class="source-header" type="checkbox"> 第一列是標題，不列入選項</label>
+      <label class="person-card-checkbox"><input class="source-manual" type="checkbox"> 允許手動輸入</label>
+    </div>`;
+  const sourceType = panel.querySelector(".source-type");
+  const manual = panel.querySelector(".manual-options");
+  const manualInput = panel.querySelector(".manual-options-input");
+  const fileOptions = panel.querySelector(".file-options");
+  const column = panel.querySelector(".source-column");
+  const header = panel.querySelector(".source-header");
+  const allowManual = panel.querySelector(".source-manual");
+  const sourceName = panel.querySelector(".source-name");
+
+  const renderSource = () => {
+    manual.classList.toggle("hidden", sourceType.value !== "manual");
+    fileOptions.classList.toggle("hidden", sourceType.value !== "file");
+    const count = Math.max(1, ...(field.sourceRows || []).map((row) => row.length));
+    column.innerHTML = Array.from({ length: count }, (_, i) => `<option value="${i}">${approvalColumnName(i)}${field.firstRowHeader && field.sourceRows?.[0]?.[i] ? `－${escapeHtml(String(field.sourceRows[0][i]))}` : ""}</option>`).join("");
+    column.value = String(field.sourceColumn || 0);
+    sourceName.textContent = field.sourceName || "尚未選擇檔案";
+  };
+
+  sourceType.value = field.sourceType || "manual";
+  manualInput.value = field.options || "";
+  header.checked = field.firstRowHeader !== false;
+  allowManual.checked = Boolean(field.allowManual);
+  renderSource();
+
+  sourceType.addEventListener("change", () => {
+    field.sourceType = sourceType.value;
+    renderSource();
+    persistPersonCard(seed);
+  });
+  manualInput.addEventListener("input", () => {
+    field.options = manualInput.value;
+    persistPersonCard(seed);
+  });
+  panel.querySelector(".source-file").addEventListener("change", async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    try {
+      await importFieldOptionsFromFile(field, file);
+      persistPersonCard(seed);
+      renderFrameBoard();
+    } catch (err) {
+      setStatus(err.message || String(err));
+    }
+  });
+  column.addEventListener("change", () => {
+    field.sourceColumn = Number(column.value);
+    refreshFieldOptionsFromFile(field);
+    persistPersonCard(seed);
+  });
+  header.addEventListener("change", () => {
+    field.firstRowHeader = header.checked;
+    refreshFieldOptionsFromFile(field);
+    renderSource();
+    persistPersonCard(seed);
+  });
+  allowManual.addEventListener("change", () => {
+    field.allowManual = allowManual.checked;
+    persistPersonCard(seed);
+  });
+  return panel;
 }
 
 function renderPersonCardEditor(board, seed) {
@@ -746,18 +892,26 @@ function renderPersonCardEditor(board, seed) {
   card.fields.forEach((field, index) => {
     const item = document.createElement("div");
     item.className = "person-card-field";
-    const head = document.createElement("div");
-    head.className = "person-card-field-head";
+
+    const typeRow = document.createElement("div");
+    typeRow.className = "person-card-field-type-row";
     const number = document.createElement("span");
     number.className = "person-card-field-num";
     number.textContent = String(index + 1);
-    const label = document.createElement("input");
-    label.className = "person-card-label";
-    label.placeholder = "欄位名稱，例如簽名1";
-    label.value = field.label || "";
-    label.addEventListener("input", () => {
-      field.label = label.value;
+    const type = document.createElement("select");
+    type.className = "person-card-type";
+    PERSON_FIELD_TYPES.forEach((option) => {
+      const opt = document.createElement("option");
+      opt.value = option.id;
+      opt.textContent = option.label;
+      type.appendChild(opt);
+    });
+    type.value = field.type || "text";
+    type.addEventListener("change", () => {
+      field.type = type.value;
+      ensurePersonCardModel(seed);
       persistPersonCard(seed);
+      renderFrameBoard();
     });
     const remove = document.createElement("button");
     remove.type = "button";
@@ -770,23 +924,55 @@ function renderPersonCardEditor(board, seed) {
       persistPersonCard(seed);
       renderFrameBoard();
     });
-    head.append(number, label, remove);
-    item.append(head, renderPersonCardFieldVisibility(seed, field));
+    typeRow.append(number, type, remove);
+
+    const nameRow = document.createElement("label");
+    nameRow.className = "person-card-field-name";
+    const nameInput = document.createElement("input");
+    nameInput.className = "person-card-label";
+    nameInput.placeholder = "欄位名稱，例如簽名1";
+    nameInput.value = field.label || "";
+    nameInput.addEventListener("input", () => {
+      field.label = nameInput.value;
+      persistPersonCard(seed);
+    });
+    nameRow.append(nameInput);
+
+    item.append(
+      typeRow,
+      nameRow,
+      renderPersonCardPermissionRow(seed, field, "viewers", "可見："),
+      renderPersonCardPermissionRow(seed, field, "editors", "可編輯：")
+    );
+    if (field.type === "select") {
+      item.appendChild(renderPersonCardSelectOptions(seed, field));
+    }
     fields.appendChild(item);
   });
   board.appendChild(fields);
 
-  const addField = document.createElement("button");
-  addField.type = "button";
-  addField.className = "btn person-card-add";
-  addField.textContent = "＋ 新增欄位";
-  addField.addEventListener("click", () => {
-    const next = card.fields.length + 1;
-    card.fields.push({ id: makePersonFieldId(), label: `簽名${next}`, viewers: ["本人"] });
-    persistPersonCard(seed);
-    renderFrameBoard();
+  const addWrap = document.createElement("div");
+  addWrap.className = "person-card-add-wrap";
+  const addLabel = document.createElement("p");
+  addLabel.className = "person-card-add-label";
+  addLabel.textContent = "＋ 新增欄位";
+  const addTypes = document.createElement("div");
+  addTypes.className = "person-card-add-types";
+  PERSON_FIELD_TYPES.forEach((option) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "btn person-card-add-type";
+    button.textContent = option.label;
+    button.addEventListener("click", () => {
+      const next = card.fields.length + 1;
+      card.fields.push(defaultPersonCardField(option.id, `簽名${next}`));
+      persistPersonCard(seed);
+      renderFrameBoard();
+    });
+    addTypes.appendChild(button);
   });
-  board.appendChild(addField);
+  addWrap.append(addLabel, addTypes);
+  board.appendChild(addWrap);
 }
 
 function persistPersonCard(seed) {
@@ -1180,6 +1366,10 @@ function approvalColumnName(index) {
 }
 
 function refreshApprovalFieldOptions(field) {
+  refreshFieldOptionsFromFile(field);
+}
+
+function refreshFieldOptionsFromFile(field) {
   if (field.sourceType !== "file" || !field.sourceRows.length) return;
   const start = field.firstRowHeader ? 1 : 0;
   field.options = field.sourceRows
@@ -1190,6 +1380,10 @@ function refreshApprovalFieldOptions(field) {
 }
 
 async function importApprovalLookup(field, file) {
+  await importFieldOptionsFromFile(field, file);
+}
+
+async function importFieldOptionsFromFile(field, file) {
   const ext = file.name.split(".").pop()?.toLowerCase();
   let rows = [];
   if (ext === "csv" || ext === "tsv" || ext === "txt") {
@@ -2560,6 +2754,9 @@ async function saveCurrentVersion(actor = null) {
     renderFrameBoard();
   }
   showToast("已建立新版本", "ok");
+  if (isPersonCardDocument(state.current)) {
+    showPanel("list");
+  }
 }
 
 async function saveSeedCatalogMetadata(seed) {
