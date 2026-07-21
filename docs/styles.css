@@ -1495,6 +1495,75 @@ html, body {
   height: 1.8rem;
 }
 
+.approval-form-designer {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 0.35rem;
+}
+
+.approval-designer-empty {
+  margin: 0;
+  padding: 1rem;
+  border: 1px dashed var(--line);
+  border-radius: 12px;
+  text-align: center;
+}
+
+.approval-designer-field {
+  gap: 0.55rem;
+}
+
+.approval-designer-field-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) minmax(7rem, 9rem) auto;
+  gap: 0.45rem;
+  align-items: start;
+}
+
+.approval-designer-field .approval-source {
+  display: grid;
+  gap: 0.4rem;
+  margin-left: 1.6rem;
+}
+
+.approval-designer-field .designer-preview {
+  margin-left: 1.6rem;
+}
+
+.approval-designer-add {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.25rem;
+}
+
+.approval-designer-instances {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 0.35rem;
+}
+
+.approval-advanced {
+  margin-top: 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #f7faf8;
+  padding: 0.65rem 0.75rem;
+}
+
+.approval-advanced > summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.approval-advanced-body {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 0.65rem;
+}
+
 .approval-template-editor .approval-tabs {
   margin-top: 0.25rem;
 }
@@ -2705,6 +2774,15 @@ h1 {
   .approval-field-card > *,
   .approval-notification-card > * {
     grid-column: 1;
+  }
+
+  .approval-designer-field-head {
+    grid-template-columns: 1fr;
+  }
+
+  .approval-designer-field .approval-source,
+  .approval-designer-field .designer-preview {
+    margin-left: 0;
   }
 }
 

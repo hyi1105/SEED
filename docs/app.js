@@ -649,7 +649,7 @@ function ensureApprovalModel(seed) {
     field.firstRowHeader = field.firstRowHeader !== false;
     field.allowManual = Boolean(field.allowManual);
   });
-  if (!seed.formFields.length) {
+  if (!seed.formFields.length && !isApprovalTemplate(seed)) {
     seed.formFields.push({
       id: makeApprovalId("field"),
       label: "申請說明",
@@ -664,8 +664,10 @@ function ensureApprovalModel(seed) {
     });
   }
   const config = (seed.approvalConfig ||= {});
-  config.tab ||= isApprovalTemplate(seed) ? "fields" : "fill";
-  if (config.tab === "request") config.tab = isApprovalTemplate(seed) ? "fields" : "fill";
+  config.tab ||= isApprovalTemplate(seed) ? "design" : "fill";
+  if (config.tab === "request" || config.tab === "fields" || config.tab === "preview") {
+    config.tab = isApprovalTemplate(seed) ? "design" : "fill";
+  }
   config.activeRole ||= "Requester";
   config.status ||= "Draft";
   config.currentLevel = Number(config.currentLevel) || 0;
@@ -1515,9 +1517,210 @@ function renderApprovalNotifications(board, seed) {
   });
 }
 
+function appendApprovalDesignerField(seed, type = "text") {
+  const field = {
+    id: makeApprovalId("field"),
+    label: "",
+    type,
+    options: "",
+    sourceType: "manual",
+    sourceName: "",
+    sourceRows: [],
+    sourceColumn: 0,
+    firstRowHeader: true,
+    allowManual: false,
+  };
+  seed.formFields.push(field);
+  ensureApprovalModel(seed);
+  persistStructuredSeed();
+  renderFrameBoard();
+}
+
+function bindApprovalDesignerField(card, seed, field, index) {
+  const label = card.querySelector(".designer-label");
+  const type = card.querySelector(".designer-type");
+  const source = card.querySelector(".approval-source");
+  const sourceType = card.querySelector(".source-type");
+  const manual = card.querySelector(".manual-options");
+  const manualInput = manual?.querySelector("input");
+  const fileOptions = card.querySelector(".file-options");
+  const column = card.querySelector(".source-column");
+  const header = card.querySelector(".source-header");
+  const allowManual = card.querySelector(".source-manual");
+  const preview = card.querySelector(".designer-preview");
+  const renderSource = () => {
+    if (!source) return;
+    source.classList.toggle("hidden", type.value !== "select");
+    manual?.classList.toggle("hidden", sourceType.value !== "manual");
+    fileOptions?.classList.toggle("hidden", sourceType.value !== "file");
+    const count = Math.max(1, ...field.sourceRows.map((row) => row.length));
+    if (column) {
+      column.innerHTML = Array.from({ length: count }, (_, i) => `<option value="${i}">${approvalColumnName(i)}${field.firstRowHeader && field.sourceRows[0]?.[i] ? `－${escapeHtml(String(field.sourceRows[0][i]))}` : ""}</option>`).join("");
+      column.value = String(field.sourceColumn);
+    }
+  };
+  const renderPreview = () => {
+    if (!preview) return;
+    preview.innerHTML = "";
+    let input;
+    if (field.type === "textarea") {
+      input = document.createElement("textarea");
+      input.rows = 3;
+      input.placeholder = "填寫者會在這裡輸入多行文字";
+    } else if (field.type === "select" && !field.allowManual) {
+      input = document.createElement("select");
+      input.innerHTML = `<option value="">請選擇</option>${field.options.split(",").filter(Boolean).map((item) => `<option>${escapeHtml(item.trim())}</option>`).join("")}`;
+    } else {
+      input = document.createElement("input");
+      input.type = "text";
+      input.placeholder = field.type === "select" ? "可選清單或手動輸入" : "填寫者會在這裡輸入";
+    }
+    input.className = "questionnaire-input";
+    input.disabled = true;
+    preview.appendChild(input);
+  };
+  type.value = field.type;
+  if (sourceType) sourceType.value = field.sourceType;
+  if (header) header.checked = field.firstRowHeader;
+  if (allowManual) allowManual.checked = field.allowManual;
+  renderSource();
+  renderPreview();
+  label.addEventListener("input", () => { field.label = label.value; persistStructuredSeed(); });
+  type.addEventListener("change", () => {
+    field.type = type.value;
+    renderSource();
+    renderPreview();
+    persistStructuredSeed();
+  });
+  sourceType?.addEventListener("change", () => { field.sourceType = sourceType.value; renderSource(); persistStructuredSeed(); });
+  manualInput?.addEventListener("input", () => { field.options = manualInput.value; renderPreview(); persistStructuredSeed(); });
+  card.querySelector(".source-file")?.addEventListener("change", async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    try {
+      await importApprovalLookup(field, file);
+      renderSource();
+      renderPreview();
+      persistStructuredSeed();
+      renderFrameBoard();
+    } catch (err) {
+      setStatus(err.message || String(err));
+    }
+  });
+  column?.addEventListener("change", () => {
+    field.sourceColumn = Number(column.value);
+    refreshApprovalFieldOptions(field);
+    renderPreview();
+    persistStructuredSeed();
+  });
+  header?.addEventListener("change", () => {
+    field.firstRowHeader = header.checked;
+    refreshApprovalFieldOptions(field);
+    renderSource();
+    persistStructuredSeed();
+  });
+  allowManual?.addEventListener("change", () => { field.allowManual = allowManual.checked; renderPreview(); persistStructuredSeed(); });
+  card.querySelector(".frame-remove")?.addEventListener("click", () => {
+    seed.formFields.splice(index, 1);
+    seed.approvalConfig.permissions = seed.approvalConfig.permissions.filter((item) => item.fieldId !== field.id);
+    persistStructuredSeed();
+    renderFrameBoard();
+  });
+}
+
+function renderApprovalDesignerField(board, seed, field, index) {
+  const card = document.createElement("section");
+  card.className = "questionnaire-field approval-designer-field";
+  card.innerHTML = `
+    <div class="approval-designer-field-head">
+      <span class="questionnaire-number">${index + 1}</span>
+      <input class="designer-label questionnaire-input" value="${escapeHtml(field.label)}" placeholder="題目名稱，例如：申請事由">
+      <select class="designer-type questionnaire-input">
+        <option value="text">單行文字</option>
+        <option value="textarea">多行文字</option>
+        <option value="select">下拉選單</option>
+      </select>
+      <button type="button" class="frame-remove" title="刪除此題">×</button>
+    </div>
+    <div class="approval-source hidden">
+      <label>選項來源<select class="source-type"><option value="manual">手動輸入</option><option value="file">CSV／Excel</option></select></label>
+      <label class="manual-options">選項<input value="${escapeHtml(field.options)}" placeholder="選項，用逗號分隔"></label>
+      <div class="file-options hidden">
+        <label>參考檔案<input class="source-file" type="file" accept=".csv,.tsv,.txt,.xlsx,.xls"></label>
+        <span class="source-name">${escapeHtml(field.sourceName || "尚未選擇檔案")}</span>
+        <label>使用欄位<select class="source-column"></select></label>
+        <label><input class="source-header" type="checkbox"> 第一列是標題，不列入選項</label>
+        <label><input class="source-manual" type="checkbox"> 允許使用者手動輸入</label>
+      </div>
+    </div>
+    <div class="designer-preview" aria-hidden="true"></div>`;
+  bindApprovalDesignerField(card, seed, field, index);
+  board.appendChild(card);
+}
+
+function renderApprovalFormDesigner(board, seed) {
+  const intro = document.createElement("p");
+  intro.className = "approval-help";
+  intro.textContent = "像問卷一樣設計欄位。每題會依序顯示給填寫者；下方可加入單行、多行或下拉選單。";
+  board.appendChild(intro);
+
+  const form = document.createElement("div");
+  form.className = "approval-form-designer";
+  if (!seed.formFields.length) {
+    const empty = document.createElement("p");
+    empty.className = "approval-designer-empty meta";
+    empty.textContent = "還沒有題目。從下方選一種欄位類型開始設計。";
+    form.appendChild(empty);
+  }
+  seed.formFields.forEach((field, index) => renderApprovalDesignerField(form, seed, field, index));
+  board.appendChild(form);
+
+  const addBar = document.createElement("div");
+  addBar.className = "approval-designer-add";
+  [
+    ["text", "＋ 單行文字"],
+    ["textarea", "＋ 多行文字"],
+    ["select", "＋ 下拉選單"],
+  ].forEach(([type, label]) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "btn";
+    button.textContent = label;
+    button.addEventListener("click", () => appendApprovalDesignerField(seed, type));
+    addBar.appendChild(button);
+  });
+  board.appendChild(addBar);
+
+  const instances = document.createElement("section");
+  instances.className = "approval-designer-instances";
+  const create = document.createElement("button");
+  create.type = "button";
+  create.className = "btn btn-primary";
+  create.textContent = "＋ 建立申請單（試填）";
+  create.addEventListener("click", () => {
+    const instance = createApprovalInstance(seed);
+    showToast(`已建立「${instance.title}」`, "ok");
+    selectSeed(instance).catch((err) => setStatus(err.message || String(err)));
+  });
+  instances.appendChild(create);
+  board.appendChild(instances);
+
+  const advanced = document.createElement("details");
+  advanced.className = "approval-advanced";
+  advanced.innerHTML = "<summary>進階設定（流程、權限、通知）</summary>";
+  const advancedBody = document.createElement("div");
+  advancedBody.className = "approval-advanced-body";
+  renderApprovalWorkflow(advancedBody, seed);
+  renderApprovalPermissions(advancedBody, seed);
+  renderApprovalNotifications(advancedBody, seed);
+  renderApprovalTemplateInstances(advancedBody, seed);
+  advanced.appendChild(advancedBody);
+  board.appendChild(advanced);
+}
+
 function renderApprovalTemplateEditor(board) {
   const seed = state.current;
-  const config = ensureApprovalModel(seed);
+  ensureApprovalModel(seed);
   board.className = "prose structured-editor approval-editor approval-template-editor";
   board.classList.toggle("a4-view", state.docMode === "a4");
   board.innerHTML = "";
@@ -1533,34 +1736,9 @@ function renderApprovalTemplateEditor(board) {
   renderSeedHeading(board, true);
   const property = document.createElement("p");
   property.className = "template-property";
-  property.textContent = "版型：簽核範本（設定）";
-  const intro = document.createElement("p");
-  intro.className = "approval-help";
-  intro.textContent = "這裡是範本設定。要實際填寫時，請建立申請單；系統會複製一份獨立表單給填寫者。";
-  const tabs = document.createElement("div");
-  tabs.className = "approval-tabs";
-  [["fields", "欄位"], ["workflow", "流程"], ["permissions", "權限"], ["notifications", "通知"], ["preview", "問卷預覽"], ["instances", "申請單"]].forEach(([key, label]) => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "btn";
-    button.classList.toggle("is-active", config.tab === key);
-    button.textContent = label;
-    button.addEventListener("click", () => {
-      config.tab = key;
-      persistStructuredSeed();
-      renderFrameBoard();
-    });
-    tabs.appendChild(button);
-  });
-  board.append(property, intro, tabs);
-  if (config.tab === "fields") renderApprovalFields(board, seed);
-  if (config.tab === "workflow") renderApprovalWorkflow(board, seed);
-  if (config.tab === "permissions") renderApprovalPermissions(board, seed);
-  if (config.tab === "notifications") renderApprovalNotifications(board, seed);
-  if (config.tab === "preview") {
-    renderApprovalQuestionnaire(board, seed, { readonly: true, preview: true, showActions: false, showRoleBar: false, showFlow: false, showMetrics: false });
-  }
-  if (config.tab === "instances") renderApprovalTemplateInstances(board, seed);
+  property.textContent = "版型：簽核範本（問卷設計）";
+  board.append(property);
+  renderApprovalFormDesigner(board, seed);
 }
 
 function renderApprovalInstanceEditor(board) {
@@ -2325,7 +2503,7 @@ function buildBlankSystemSnapshot(seedType) {
       seedType: "approval",
       title: "未命名簽核",
       approvalIsTemplate: true,
-      formFields: [{ label: "申請說明", type: "textarea", options: "" }],
+      formFields: [],
     };
     ensureApprovalModel(seed);
     return captureSeedSnapshot(seed);
@@ -2364,7 +2542,7 @@ function getBuiltinSystemSeedCatalog() {
     }],
     approval: [{
       id: "sys-approval-blank",
-      name: "空白簽核範本",
+      name: "空白簽核",
       builtin: true,
       versions: [{ rev: 1, label: "初版", savedAt: now, snapshot: buildBlankSystemSnapshot("approval") }],
     }],
@@ -2477,6 +2655,26 @@ function forkSystemSeedVersion(template, version) {
   return seed;
 }
 
+function openSystemSeedTemplate(template, seedType) {
+  const version = template.versions?.[0];
+  if (!version) {
+    showToast("這個範本還沒有版本", "warn");
+    return;
+  }
+  const seed = forkSystemSeedVersion(template, version);
+  if (seedType === "approval") {
+    ensureApprovalModel(seed);
+    seed.approvalConfig.tab = "design";
+    seed.formFields = Array.isArray(version.snapshot?.formFields) ? JSON.parse(JSON.stringify(version.snapshot.formFields)) : [];
+    seed.title = "未命名簽核";
+    seed.alias = seed.title;
+    seed.short = Array.from(seed.title).slice(0, 4).join("");
+    saveSeedTrayState();
+  }
+  showToast(`已開啟「${seed.title}」`, "ok");
+  selectSeed(seed).catch((err) => setStatus(err.message || String(err)));
+}
+
 function appendSystemSeedVersion(seedType, templateName, snapshot, sourceLabel = "") {
   const custom = listCustomSystemTemplates();
   custom[seedType] ||= [];
@@ -2551,7 +2749,9 @@ function renderSystemSeedPanel() {
   if (step === "templates") {
     const intro = document.createElement("p");
     intro.className = "system-seed-help";
-    intro.textContent = `${systemSeedTypeLabel(seedType)}範本：點進去看版本，再建立你的 SEED。`;
+    intro.textContent = seedType === "approval"
+      ? `${systemSeedTypeLabel(seedType)}範本：點進去直接設計問卷欄位。`
+      : `${systemSeedTypeLabel(seedType)}範本：點進去看版本，再建立你的 SEED。`;
     board.appendChild(intro);
     const list = document.createElement("ul");
     list.className = "system-seed-template-list";
@@ -2561,10 +2761,15 @@ function renderSystemSeedPanel() {
       button.type = "button";
       button.className = "system-seed-template-item";
       const latest = template.versions?.[0];
+      const actionHint = seedType === "approval" ? "點擊開始設計問卷" : `最新 v${latest?.rev || 1}`;
       button.innerHTML = `
         <strong>${escapeHtml(template.name)}</strong>
-        <span class="meta">${template.builtin ? "系統內建" : "自訂"} · 最新 v${latest?.rev || 1}</span>`;
+        <span class="meta">${template.builtin ? "系統內建" : "自訂"} · ${escapeHtml(actionHint)}</span>`;
       button.addEventListener("click", () => {
+        if (seedType === "approval") {
+          openSystemSeedTemplate(template, seedType);
+          return;
+        }
         state.systemBrowse = { step: "versions", seedType, templateId: template.id };
         renderSystemSeedPanel();
         updatePathBrand();
@@ -2642,7 +2847,7 @@ function createSeed(title, seedType) {
     seedType,
     approvalIsTemplate: seedType === "approval",
     approvalTemplateId: "",
-    formFields: seedType === "approval" ? [{ label: "申請說明", type: "textarea", options: "" }] : [],
+    formFields: seedType === "approval" ? [] : [],
     approver: "",
     messages: [],
     liveContent: "",
@@ -4635,6 +4840,13 @@ $("seed-create-dialog")?.addEventListener("click", (e) => {
   if (!choice) return;
   const seedType = choice.dataset.seedType;
   $("seed-create-dialog").close();
+  if (seedType === "approval") {
+    const catalog = loadSystemSeedCatalog();
+    const blank = (catalog.approval || []).find((item) => item.builtin) || catalog.approval?.[0];
+    if (blank) openSystemSeedTemplate(blank, "approval");
+    else openSystemSeedBrowse("templates", seedType);
+    return;
+  }
   openSystemSeedBrowse("templates", seedType);
 });
 
