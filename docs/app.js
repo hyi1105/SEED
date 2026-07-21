@@ -3381,10 +3381,10 @@ const SYSTEM_SEED_TYPES = [
 ];
 
 const WRITTEN_SEGMENT_TYPES = [
-  { id: "text", label: "文字" },
-  { id: "blank", label: "填空" },
-  { id: "select", label: "下拉" },
-  { id: "signature", label: "簽名" },
+  { id: "text", label: "文字", glyph: "文", hint: "固定文字" },
+  { id: "blank", label: "填空", glyph: "＿", hint: "可填空格" },
+  { id: "select", label: "下拉", glyph: "▾", hint: "下拉選單" },
+  { id: "signature", label: "簽名", glyph: "簽", hint: "手寫簽名" },
 ];
 
 function writtenSegmentTypeLabel(type) {
@@ -3815,6 +3815,10 @@ function renderWrittenDesignPanel(board) {
   };
   draft.segments.forEach((seg, index) => normalizeFormSegment(seg, index, draft.segments));
 
+  let selectedIndex = draft.segments.length ? 0 : -1;
+  let insertAt = draft.segments.length;
+  let dragState = null; // { kind: "palette"|"reorder", type?, from? }
+
   const wrap = document.createElement("div");
   wrap.className = "written-design";
 
@@ -3829,7 +3833,7 @@ function renderWrittenDesignPanel(board) {
   title.textContent = "編輯合約書模板";
   const lead = document.createElement("p");
   lead.className = "lead";
-  lead.textContent = "擁有者可編輯公版：固定文字、填空、下拉、簽名。填寫者之後只能填可編元件。";
+  lead.textContent = "像加表情符號一樣：從下方托盤拖元件進文件，或點一下插入；文件裡也可拖移重排。";
   head.append(back, title, lead);
 
   const nameLabel = document.createElement("label");
@@ -3844,22 +3848,21 @@ function renderWrittenDesignPanel(board) {
   });
   nameLabel.appendChild(nameInput);
 
-  const toolbar = document.createElement("div");
-  toolbar.className = "written-design-toolbar";
-  WRITTEN_SEGMENT_TYPES.forEach((type) => {
-    const add = document.createElement("button");
-    add.type = "button";
-    add.className = "btn";
-    add.textContent = `＋${type.label}`;
-    add.addEventListener("click", () => {
-      draft.segments.push(createWrittenDesignSegment(type.id));
-      paint();
-    });
-    toolbar.appendChild(add);
-  });
+  const canvas = document.createElement("div");
+  canvas.className = "written-design-canvas";
+  canvas.setAttribute("aria-label", "合約書模板預覽");
 
-  const list = document.createElement("div");
-  list.className = "written-design-list";
+  const inspector = document.createElement("div");
+  inspector.className = "written-design-inspector";
+
+  const palette = document.createElement("div");
+  palette.className = "written-design-palette";
+  const paletteTitle = document.createElement("p");
+  paletteTitle.className = "written-design-palette-title";
+  paletteTitle.textContent = "元件托盤（拖進文件，或先點插入位置再點元件）";
+  const paletteRow = document.createElement("div");
+  paletteRow.className = "written-design-palette-row";
+  palette.append(paletteTitle, paletteRow);
 
   const actions = document.createElement("div");
   actions.className = "written-design-actions";
@@ -3872,6 +3875,8 @@ function renderWrittenDesignPanel(board) {
     draft.name = fresh.name;
     draft.segments = JSON.parse(JSON.stringify(fresh.segments));
     nameInput.value = draft.name;
+    selectedIndex = 0;
+    insertAt = draft.segments.length;
     paint();
   });
   const save = document.createElement("button");
@@ -3897,145 +3902,252 @@ function renderWrittenDesignPanel(board) {
   });
   actions.append(reset, save);
 
-  const paint = () => {
-    list.innerHTML = "";
-    if (!draft.segments.length) {
-      list.innerHTML = '<p class="written-design-empty">還沒有元件。用上方按鈕加入文字、填空、下拉或簽名。</p>';
-      return;
-    }
-    draft.segments.forEach((seg, index) => {
-      const row = document.createElement("div");
-      row.className = "written-design-row";
+  const insertSegment = (type, at = insertAt) => {
+    const next = createWrittenDesignSegment(type);
+    const index = Math.max(0, Math.min(at, draft.segments.length));
+    draft.segments.splice(index, 0, next);
+    selectedIndex = index;
+    insertAt = index + 1;
+    paint();
+  };
 
-      const meta = document.createElement("div");
-      meta.className = "written-design-row-meta";
-      const typeSelect = document.createElement("select");
-      typeSelect.className = "written-design-type";
-      WRITTEN_SEGMENT_TYPES.forEach((type) => {
-        const opt = document.createElement("option");
-        opt.value = type.id;
-        opt.textContent = type.label;
-        if (seg.type === type.id) opt.selected = true;
-        typeSelect.appendChild(opt);
-      });
-      typeSelect.addEventListener("change", () => {
-        const next = createWrittenDesignSegment(typeSelect.value);
-        if (typeSelect.value === "text" && seg.content) next.content = seg.content;
-        if (typeSelect.value === "blank" && seg.label) next.label = seg.label;
-        if (typeSelect.value === "select") {
-          if (seg.label) next.label = seg.label;
-          if (seg.options) next.options = seg.options;
-        }
-        if (typeSelect.value === "signature" && seg.label) next.label = seg.label;
-        draft.segments[index] = next;
-        paint();
-      });
-      const order = document.createElement("div");
-      order.className = "written-design-order";
-      const up = document.createElement("button");
-      up.type = "button";
-      up.className = "btn";
-      up.textContent = "↑";
-      up.disabled = index === 0;
-      up.addEventListener("click", () => {
-        const [item] = draft.segments.splice(index, 1);
-        draft.segments.splice(index - 1, 0, item);
-        paint();
-      });
-      const down = document.createElement("button");
-      down.type = "button";
-      down.className = "btn";
-      down.textContent = "↓";
-      down.disabled = index === draft.segments.length - 1;
-      down.addEventListener("click", () => {
-        const [item] = draft.segments.splice(index, 1);
-        draft.segments.splice(index + 1, 0, item);
-        paint();
-      });
-      const remove = document.createElement("button");
-      remove.type = "button";
-      remove.className = "btn";
-      remove.textContent = "刪";
-      remove.addEventListener("click", () => {
-        draft.segments.splice(index, 1);
-        paint();
-      });
-      order.append(up, down, remove);
-      meta.append(typeSelect, order);
+  const moveSegment = (from, to) => {
+    if (from < 0 || from >= draft.segments.length) return;
+    let target = Math.max(0, Math.min(to, draft.segments.length));
+    const [item] = draft.segments.splice(from, 1);
+    if (from < target) target -= 1;
+    draft.segments.splice(target, 0, item);
+    selectedIndex = target;
+    insertAt = target + 1;
+    paint();
+  };
 
-      const body = document.createElement("div");
-      body.className = "written-design-row-body";
-      if (seg.type === "text") {
-        const area = document.createElement("textarea");
-        area.rows = 3;
-        area.placeholder = "固定文字（填寫者不能改）";
-        area.value = seg.content || "";
-        area.addEventListener("input", () => {
-          seg.content = area.value;
-        });
-        body.appendChild(area);
-      } else if (seg.type === "blank") {
-        const label = document.createElement("input");
-        label.type = "text";
-        label.placeholder = "填空標籤";
-        label.value = seg.label || "";
-        label.addEventListener("input", () => {
-          seg.label = label.value;
-        });
-        const placeholder = document.createElement("input");
-        placeholder.type = "text";
-        placeholder.placeholder = "提示文字";
-        placeholder.value = seg.placeholder || "";
-        placeholder.addEventListener("input", () => {
-          seg.placeholder = placeholder.value;
-        });
-        const multi = document.createElement("label");
-        multi.className = "written-design-check";
-        const box = document.createElement("input");
-        box.type = "checkbox";
-        box.checked = Boolean(seg.multiline);
-        box.addEventListener("change", () => {
-          seg.multiline = box.checked;
-        });
-        multi.append(box, document.createTextNode("多行"));
-        body.append(label, placeholder, multi);
-      } else if (seg.type === "select") {
-        const label = document.createElement("input");
-        label.type = "text";
-        label.placeholder = "下拉標籤";
-        label.value = seg.label || "";
-        label.addEventListener("input", () => {
-          seg.label = label.value;
-        });
-        const options = document.createElement("input");
-        options.type = "text";
-        options.placeholder = "選項（用逗號分隔）";
-        options.value = seg.options || "";
-        options.addEventListener("input", () => {
-          seg.options = options.value;
-        });
-        body.append(label, options);
-      } else {
-        const label = document.createElement("input");
-        label.type = "text";
-        label.placeholder = "簽名標籤";
-        label.value = seg.label || "";
-        label.addEventListener("input", () => {
-          seg.label = label.value;
-        });
-        const note = document.createElement("p");
-        note.className = "form-template-hint";
-        note.textContent = "填寫時會出現手寫簽名板。";
-        body.append(label, note);
-      }
+  const acceptDrop = (at) => {
+    if (!dragState) return;
+    if (dragState.kind === "palette") insertSegment(dragState.type, at);
+    else if (dragState.kind === "reorder") moveSegment(dragState.from, at);
+    dragState = null;
+  };
 
-      row.append(meta, body);
-      list.appendChild(row);
+  const bindDropSlot = (slot, at) => {
+    slot.addEventListener("dragover", (e) => {
+      if (!dragState) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = dragState.kind === "palette" ? "copy" : "move";
+      slot.classList.add("is-hot");
+    });
+    slot.addEventListener("dragleave", () => slot.classList.remove("is-hot"));
+    slot.addEventListener("drop", (e) => {
+      e.preventDefault();
+      slot.classList.remove("is-hot");
+      acceptDrop(at);
+    });
+    slot.addEventListener("click", () => {
+      insertAt = at;
+      paint();
     });
   };
 
+  const renderInspector = () => {
+    inspector.innerHTML = "";
+    if (selectedIndex < 0 || !draft.segments[selectedIndex]) {
+      inspector.innerHTML = '<p class="written-design-empty">點文件裡的元件可編輯內容；或從下方托盤拖進來。</p>';
+      return;
+    }
+    const seg = draft.segments[selectedIndex];
+    const headRow = document.createElement("div");
+    headRow.className = "written-design-inspector-head";
+    const label = document.createElement("strong");
+    label.textContent = `編輯：${writtenSegmentTypeLabel(seg.type)}`;
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "btn";
+    remove.textContent = "刪除";
+    remove.addEventListener("click", () => {
+      draft.segments.splice(selectedIndex, 1);
+      selectedIndex = Math.min(selectedIndex, draft.segments.length - 1);
+      insertAt = Math.min(insertAt, draft.segments.length);
+      paint();
+    });
+    headRow.append(label, remove);
+    inspector.appendChild(headRow);
+
+    const body = document.createElement("div");
+    body.className = "written-design-row-body";
+    if (seg.type === "text") {
+      const area = document.createElement("textarea");
+      area.rows = 4;
+      area.placeholder = "固定文字（填寫者不能改）";
+      area.value = seg.content || "";
+      area.addEventListener("input", () => {
+        seg.content = area.value;
+        const token = canvas.querySelector(`.written-design-token[data-index="${selectedIndex}"] .written-design-token-preview`);
+        if (token) token.textContent = seg.content || "（空文字）";
+      });
+      body.appendChild(area);
+    } else if (seg.type === "blank") {
+      const name = document.createElement("input");
+      name.type = "text";
+      name.placeholder = "填空標籤";
+      name.value = seg.label || "";
+      name.addEventListener("input", () => {
+        seg.label = name.value;
+        paintTokenPreview(selectedIndex);
+      });
+      const placeholder = document.createElement("input");
+      placeholder.type = "text";
+      placeholder.placeholder = "提示文字";
+      placeholder.value = seg.placeholder || "";
+      placeholder.addEventListener("input", () => {
+        seg.placeholder = placeholder.value;
+      });
+      const multi = document.createElement("label");
+      multi.className = "written-design-check";
+      const box = document.createElement("input");
+      box.type = "checkbox";
+      box.checked = Boolean(seg.multiline);
+      box.addEventListener("change", () => {
+        seg.multiline = box.checked;
+      });
+      multi.append(box, document.createTextNode("多行"));
+      body.append(name, placeholder, multi);
+    } else if (seg.type === "select") {
+      const name = document.createElement("input");
+      name.type = "text";
+      name.placeholder = "下拉標籤";
+      name.value = seg.label || "";
+      name.addEventListener("input", () => {
+        seg.label = name.value;
+        paintTokenPreview(selectedIndex);
+      });
+      const options = document.createElement("input");
+      options.type = "text";
+      options.placeholder = "選項（用逗號分隔）";
+      options.value = seg.options || "";
+      options.addEventListener("input", () => {
+        seg.options = options.value;
+        paintTokenPreview(selectedIndex);
+      });
+      body.append(name, options);
+    } else {
+      const name = document.createElement("input");
+      name.type = "text";
+      name.placeholder = "簽名標籤";
+      name.value = seg.label || "";
+      name.addEventListener("input", () => {
+        seg.label = name.value;
+        paintTokenPreview(selectedIndex);
+      });
+      const note = document.createElement("p");
+      note.className = "form-template-hint";
+      note.textContent = "填寫時會出現手寫簽名板。";
+      body.append(name, note);
+    }
+    inspector.appendChild(body);
+  };
+
+  const paintTokenPreview = (index) => {
+    const seg = draft.segments[index];
+    const token = canvas.querySelector(`.written-design-token[data-index="${index}"] .written-design-token-preview`);
+    if (!token || !seg) return;
+    token.textContent = segmentPreviewLabel(seg);
+  };
+
+  const segmentPreviewLabel = (seg) => {
+    if (seg.type === "text") return seg.content || "（空文字）";
+    if (seg.type === "blank") return seg.label || "填空";
+    if (seg.type === "select") return seg.label || "下拉";
+    return seg.label || "簽名";
+  };
+
+  const paintPalette = () => {
+    paletteRow.innerHTML = "";
+    WRITTEN_SEGMENT_TYPES.forEach((type) => {
+      const chip = document.createElement("button");
+      chip.type = "button";
+      chip.className = "written-design-chip";
+      chip.draggable = true;
+      chip.title = `拖進文件，或點一下插入「${type.label}」`;
+      chip.innerHTML = `<span class="written-design-chip-glyph" aria-hidden="true">${type.glyph}</span><span>${type.label}</span>`;
+      chip.addEventListener("dragstart", (e) => {
+        dragState = { kind: "palette", type: type.id };
+        chip.classList.add("is-dragging");
+        e.dataTransfer.effectAllowed = "copy";
+        e.dataTransfer.setData("text/written-palette", type.id);
+      });
+      chip.addEventListener("dragend", () => {
+        chip.classList.remove("is-dragging");
+        dragState = null;
+        canvas.querySelectorAll(".written-design-drop.is-hot").forEach((el) => el.classList.remove("is-hot"));
+      });
+      chip.addEventListener("click", () => insertSegment(type.id, insertAt));
+      paletteRow.appendChild(chip);
+    });
+  };
+
+  const paint = () => {
+    canvas.innerHTML = "";
+    const sheet = document.createElement("div");
+    sheet.className = "written-design-sheet";
+
+    const makeDrop = (at) => {
+      const slot = document.createElement("button");
+      slot.type = "button";
+      slot.className = "written-design-drop" + (insertAt === at ? " is-active" : "");
+      slot.title = "插入位置";
+      slot.setAttribute("aria-label", `插入位置 ${at}`);
+      bindDropSlot(slot, at);
+      return slot;
+    };
+
+    sheet.appendChild(makeDrop(0));
+    if (!draft.segments.length) {
+      const empty = document.createElement("p");
+      empty.className = "written-design-empty";
+      empty.textContent = "把下方元件拖到這裡，或點元件插入。";
+      sheet.appendChild(empty);
+    } else {
+      draft.segments.forEach((seg, index) => {
+        const token = document.createElement("button");
+        token.type = "button";
+        token.className = `written-design-token is-${seg.type}` + (selectedIndex === index ? " is-selected" : "");
+        token.draggable = true;
+        token.dataset.index = String(index);
+        token.title = "拖移可換位置；點一下可編輯";
+        const kind = document.createElement("span");
+        kind.className = "written-design-token-kind";
+        kind.textContent = writtenSegmentTypeLabel(seg.type);
+        const preview = document.createElement("span");
+        preview.className = "written-design-token-preview";
+        preview.textContent = segmentPreviewLabel(seg);
+        token.append(kind, preview);
+        token.addEventListener("click", () => {
+          selectedIndex = index;
+          insertAt = index + 1;
+          paint();
+        });
+        token.addEventListener("dragstart", (e) => {
+          dragState = { kind: "reorder", from: index };
+          token.classList.add("is-dragging");
+          e.dataTransfer.effectAllowed = "move";
+          e.dataTransfer.setData("text/written-reorder", String(index));
+        });
+        token.addEventListener("dragend", () => {
+          token.classList.remove("is-dragging");
+          dragState = null;
+          canvas.querySelectorAll(".written-design-drop.is-hot").forEach((el) => el.classList.remove("is-hot"));
+        });
+        sheet.append(token, makeDrop(index + 1));
+      });
+    }
+
+    canvas.appendChild(sheet);
+    renderInspector();
+  };
+
+  paintPalette();
   paint();
-  wrap.append(head, nameLabel, toolbar, list, actions);
+  wrap.append(head, nameLabel, canvas, inspector, palette, actions);
   board.appendChild(wrap);
 }
 
