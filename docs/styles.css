@@ -430,10 +430,25 @@ html, body {
   margin: 0 auto;
 }
 
+.editor-intro {
+  margin: 0 0 0.55rem;
+}
+
+.editor-intro h2 {
+  margin: 0 0 0.15rem;
+  font-size: 1rem;
+}
+
+.editor-intro p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
 .frame-group {
   display: flex;
   flex-direction: column;
-  gap: 0.18rem;
+  gap: 0.05rem;
 }
 
 .frame-board.a4-view {
@@ -476,10 +491,11 @@ html, body {
 
 .frame-block {
   position: relative;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  background: var(--card);
-  padding: 0.55rem 0.7rem 0.7rem;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  padding: 0.35rem 0.25rem 0.45rem;
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
@@ -545,12 +561,12 @@ html, body {
   width: 100%;
   border: 0;
   background: var(--paper);
-  border-radius: 8px;
+  border-radius: 6px;
   font: inherit;
   font-size: 0.98rem;
   line-height: 1.55;
   color: var(--ink);
-  padding: 0.55rem 0.65rem;
+  padding: 0.42rem 0.55rem;
   resize: vertical;
   min-height: 2.8rem;
 }
@@ -627,6 +643,14 @@ html, body {
   gap: 0.4rem;
 }
 
+.seed-tray-list.drop-target {
+  min-height: 2.25rem;
+  border-radius: 10px;
+  outline: 2px dashed var(--accent);
+  outline-offset: 3px;
+  background: var(--accent-soft);
+}
+
 .seed-tray-card {
   display: inline-flex;
   align-items: center;
@@ -665,13 +689,188 @@ html, body {
   font-size: 0.78rem;
 }
 
+.seed-tray-open::before {
+  content: attr(data-type);
+  display: inline-block;
+  margin-right: 0.35rem;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  padding: 0.05rem 0.32rem;
+  font-size: 0.65rem;
+}
+
+.export-bar {
+  position: sticky;
+  top: -0.85rem;
+  z-index: 15;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.4rem;
+  margin: -0.85rem -0.85rem 0.8rem;
+  padding: 0.65rem 0.85rem;
+  border-bottom: 1px solid var(--line);
+  background: color-mix(in srgb, var(--card) 94%, transparent);
+  backdrop-filter: blur(8px);
+}
+
+.mode-save {
+  margin-left: 0.2rem;
+  background: var(--accent) !important;
+  border-color: var(--accent) !important;
+  color: #fff !important;
+}
+
+.structured-editor,
+.discussion-editor {
+  max-width: 48rem;
+  margin: 0 auto;
+  display: grid;
+  gap: 0.65rem;
+  white-space: normal;
+}
+
+.structured-row {
+  display: grid;
+  grid-template-columns: 8rem minmax(0, 1fr);
+  align-items: center;
+  gap: 0.7rem;
+  border-bottom: 1px solid var(--line);
+  padding: 0.55rem 0;
+  font-size: 0.88rem;
+}
+
+.structured-row input,
+.form-builder-card input,
+.form-builder-card select,
+.chat-compose input,
+.chat-compose textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--ink);
+  padding: 0.55rem 0.65rem;
+  font: inherit;
+}
+
+.form-builder-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 9rem minmax(0, 1fr);
+  gap: 0.45rem;
+  padding: 0.6rem 2.2rem 0.6rem 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--paper);
+}
+
+.form-add {
+  justify-self: start;
+}
+
+.structured-editor.a4-view,
+.discussion-editor.a4-view {
+  background: #fff;
+  border: 1px solid var(--line);
+  padding: 1.5rem 1.75rem;
+  min-height: 70vh;
+  box-shadow: 0 2px 12px rgba(20, 32, 26, 0.06);
+}
+
+.a4-form-field {
+  display: grid;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+}
+
+.a4-answer-space {
+  min-height: 2.8rem;
+  border-bottom: 1px solid #9aa19d;
+  color: var(--muted);
+  padding: 0.45rem 0;
+}
+
+.a4-approver {
+  margin-top: 2rem;
+  border-top: 1px solid var(--line);
+  padding-top: 0.7rem;
+}
+
+.chat-thread {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.chat-message {
+  max-width: 85%;
+  border-radius: 12px 12px 12px 3px;
+  background: var(--accent-soft);
+  padding: 0.55rem 0.7rem;
+}
+
+.chat-message small {
+  color: var(--muted);
+}
+
+.chat-message p {
+  margin: 0.15rem 0 0;
+  white-space: pre-wrap;
+}
+
+.chat-compose {
+  display: grid;
+  grid-template-columns: 8rem minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 0.45rem;
+}
+
+.chat-compose textarea {
+  min-height: 4.5rem;
+  resize: vertical;
+}
+
+.discussion-ai {
+  justify-self: start;
+}
+
+.discussion-draft {
+  white-space: pre-wrap;
+  line-height: 1.7;
+}
+
+.discussion-export-message {
+  border-left: 3px solid var(--line);
+  padding-left: 0.75rem;
+  white-space: pre-wrap;
+}
+
 @media print {
   .chrome,
+  .export-bar,
   .frame-note,
   .frame-handle,
   .frame-insert-gap,
   .mode-chips {
     display: none !important;
+  }
+  body,
+  .stage,
+  .panel {
+    overflow: visible !important;
+    background: #fff !important;
+  }
+  .panel:not(#panel-read) {
+    display: none !important;
+  }
+  #panel-read {
+    padding: 0 !important;
+  }
+  #read-body {
+    border: 0 !important;
+    box-shadow: none !important;
+    max-width: none !important;
+    min-height: 0 !important;
   }
   .frame-block {
     border: none;
@@ -1336,6 +1535,20 @@ h1 {
   margin-bottom: 1rem;
 }
 
+.diff-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.75rem;
+  max-width: 48rem;
+  margin: 0 auto 0.7rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.diff-meta strong {
+  color: var(--ink);
+}
+
 .diff-picks label {
   display: grid;
   gap: 0.35rem;
@@ -1392,8 +1605,16 @@ h1 {
 
 @media (min-width: 720px) {
   .diff-picks {
-    grid-template-columns: 1fr 1fr auto;
+    grid-template-columns: 1fr auto;
     align-items: end;
+  }
+}
+
+@media (max-width: 680px) {
+  .form-builder-card,
+  .chat-compose,
+  .structured-row {
+    grid-template-columns: 1fr;
   }
 }
 

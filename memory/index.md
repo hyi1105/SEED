@@ -10,6 +10,7 @@
 
 ## 場次
 
+- 2026-07-21 — 三種 SEED＋手動版本＋棋盤 — 標籤：SEED、版本、簽核、討論、棋盤、匯出 — [sessions/2026-07-21-seed-types-manual-versions.md](sessions/2026-07-21-seed-types-manual-versions.md)
 - 2026-07-21 — 所見即所得階層＋我的 SEED — 標籤：ux、框編輯、我的SEED、比對 — [sessions/2026-07-21-wysiwyg-seed-tray.md](sessions/2026-07-21-wysiwyg-seed-tray.md)
 - 2026-07-21 — 階層常駐＋框外註解＋自動存 — 標籤：ux、自動儲存、框編輯 — [sessions/2026-07-21-autosave-frames.md](sessions/2026-07-21-autosave-frames.md)
 - 2026-07-21 — 角色選擇＋控制台框編輯 — 標籤：ux、角色、控制台、路徑 — [sessions/2026-07-21-agent-control-panel.md](sessions/2026-07-21-agent-control-panel.md)
@@ -25,7 +26,7 @@
 ## 主題
 
 - **最終版進度總表**— [topics/progress-final.md](topics/progress-final.md)
-- **知識拼圖（個人／社群／模板）**— [topics/knowledge-puzzle.md](topics/knowledge-puzzle.md)
+- **SEED 棋盤（個人／社群／模板）**— [topics/knowledge-puzzle.md](topics/knowledge-puzzle.md)
 - 個人 MVP 一頁規格（阿嬤級六動作）— [topics/personal-mvp-spec.md](topics/personal-mvp-spec.md)
 - **Cursor 上手示範 seed（E 驗收）**— [topics/learn-cursor-demo.md](topics/learn-cursor-demo.md)
 - GitHub 入門（搭配 SEED／Pages／Actions）— [topics/github-for-seed.md](topics/github-for-seed.md)

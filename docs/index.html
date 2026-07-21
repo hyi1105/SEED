@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>SEED — 知識拼圖</title>
+  <title>SEED — 知識棋盤</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=control3" />
+  <link rel="stylesheet" href="styles.css?v=control4" />
   <!-- 預覽請用 raw.githack（會正確當成網頁）。不要用 raw.githubusercontent 或 jsDelivr 開 html，會變純文字。 -->
 </head>
 <body>
@@ -32,6 +32,7 @@
             <button type="button" class="header-chip mode-chip" data-mode="edit" aria-pressed="true">編輯</button>
             <button type="button" class="header-chip mode-chip" data-mode="a4" aria-pressed="false">A4檢視</button>
             <button type="button" class="header-chip mode-chip" data-mode="diff" aria-pressed="false">記錄比對</button>
+            <button type="button" class="header-chip mode-chip mode-save" data-mode="save">Save</button>
           </div>
         </div>
         <p class="hint sr-only" id="status" aria-live="polite">正在載入…</p>
@@ -55,12 +56,12 @@
         <span id="info-saved-at"></span>
         <span id="info-extra"></span>
         <button type="button" id="info-kind-switch"></button>
-        <button type="button" class="hidden" id="save-layout" tabindex="-1" aria-hidden="true">存拼圖位置</button>
+        <button type="button" class="hidden" id="save-layout" tabindex="-1" aria-hidden="true">存棋盤位置</button>
         <button type="button" class="hidden" id="reset-layout" tabindex="-1" aria-hidden="true">重置位置</button>
         <button type="button" class="hidden" id="token-setup" tabindex="-1" aria-hidden="true">設定鑰匙</button>
         <button type="button" class="hidden" id="ai-key-setup" tabindex="-1" aria-hidden="true">AI 鑰匙</button>
         <button type="button" class="hidden" id="member-setup" tabindex="-1" aria-hidden="true">會員碼</button>
-        <button type="button" class="hidden" id="template-setup" tabindex="-1" aria-hidden="true">拼圖模板</button>
+        <button type="button" class="hidden" id="template-setup" tabindex="-1" aria-hidden="true">棋盤模板</button>
         <button type="button" class="hidden" id="info-template" tabindex="-1" aria-hidden="true">模板標籤</button>
         <button type="button" class="hidden" id="info-layout-history" tabindex="-1" aria-hidden="true">排版紀錄</button>
         <button type="button" class="hidden" id="pack-export" tabindex="-1" aria-hidden="true">打包帶走</button>
@@ -81,7 +82,7 @@
       </div>
 
       <nav class="doc-bar" id="doc-bar" aria-label="筆記操作" hidden>
-        <button type="button" class="btn" data-action="list">回拼圖</button>
+        <button type="button" class="btn" data-action="list">回棋盤</button>
         <button type="button" class="btn" data-action="read">讀現在的</button>
         <button type="button" class="btn" data-action="edit">自己改</button>
         <button type="button" class="btn btn-primary" data-action="save-version">存成一版</button>
@@ -95,10 +96,10 @@
 
     <main class="stage">
       <section id="panel-list" class="panel panel-map">
-        <h1 id="map-title" class="sr-only">知識拼圖</h1>
+        <h1 id="map-title" class="sr-only">SEED 棋盤</h1>
         <p id="map-note" class="sr-only"></p>
         <div class="map-shell">
-          <div id="knowledge-map" class="knowledge-map" role="grid" aria-label="知識拼圖格子"></div>
+          <div id="knowledge-map" class="knowledge-map" role="grid" aria-label="SEED 棋盤"></div>
         </div>
         <section class="seed-tray" aria-labelledby="seed-tray-title">
           <div class="seed-tray-head">
@@ -110,6 +111,11 @@
       </section>
 
       <section id="panel-read" class="panel hidden">
+        <div class="export-bar hidden" id="export-bar" aria-label="匯出 A4">
+          <button type="button" class="btn" data-export="pdf">PDF 匯出</button>
+          <button type="button" class="btn" data-export="word">Word 匯出</button>
+          <button type="button" class="btn" data-export="image">圖片匯出</button>
+        </div>
         <div class="read-head">
           <h1 id="read-title" class="sr-only">編輯</h1>
         </div>
@@ -127,34 +133,33 @@
         <h1 class="sr-only">記錄比對</h1>
         <div class="diff-picks">
           <label>
-            舊的（左）
-            <select id="diff-old"></select>
+            選擇編輯日期
+            <select id="diff-version"></select>
           </label>
-          <label>
-            新的（右）
-            <select id="diff-new"></select>
-          </label>
-          <button type="button" class="btn btn-primary" id="run-diff">顯示差異</button>
+          <button type="button" class="btn btn-primary" id="run-diff">比對上一次</button>
         </div>
+        <div class="diff-meta" id="diff-meta"></div>
         <div id="diff-out" class="diff-out diff-a4" aria-live="polite"></div>
+        <select id="diff-old" class="hidden" aria-hidden="true"></select>
+        <select id="diff-new" class="hidden" aria-hidden="true"></select>
       </section>
     </main>
 
     <dialog id="template-dialog" class="token-dialog">
       <form method="dialog" id="template-form">
-        <h2>選擇拼圖模板</h2>
+        <h2>選擇棋盤模板</h2>
         <p>模板決定格子大小與擺法。之後可加更多樣式；現在先這幾種。</p>
         <label class="token-label">
           模板
           <select id="template-select">
-            <option value="grid-8">空白拼圖 8×8</option>
-            <option value="grid-10">空白拼圖 10×10</option>
-            <option value="grid-12">空白拼圖 12×12</option>
+            <option value="grid-8">空白棋盤 8×8</option>
+            <option value="grid-10">空白棋盤 10×10</option>
+            <option value="grid-12">空白棋盤 12×12</option>
             <option value="demo-taiwan-roads">示範：台灣橫貫公路</option>
           </select>
         </label>
         <label class="token-label">
-          拼圖類型
+          棋盤類型
           <select id="puzzle-kind">
             <option value="personal">個人版（可設公開／私人）</option>
             <option value="community">社群版（搶位置，像菜市場攤位）</option>
@@ -167,7 +172,7 @@
             <option value="private">私人</option>
           </select>
         </label>
-        <p class="lead" id="template-hint">個人版可設公開或私人。套用模板會改格子大小；記得再「存拼圖位置」。</p>
+        <p class="lead" id="template-hint">個人版可設公開或私人。套用模板會改格子大小；記得再「存棋盤位置」。</p>
         <div class="token-actions">
           <button type="submit" class="btn btn-primary" value="save">套用</button>
           <button type="submit" class="btn" value="cancel">取消</button>
@@ -276,7 +281,7 @@
 
     <dialog id="layout-name-dialog" class="token-dialog">
       <form method="dialog" id="layout-name-form">
-        <h2>存拼圖位置</h2>
+        <h2>存棋盤位置</h2>
         <p id="layout-name-hint" class="lead">留空 = 更新目前模板小版本；輸入新名稱 = 另存新模板。</p>
         <label class="token-label">
           模板名稱
@@ -314,10 +319,33 @@
         </div>
       </form>
     </dialog>
+
+    <dialog id="seed-create-dialog" class="token-dialog">
+      <form method="dialog" id="seed-create-form">
+        <h2>新增 SEED</h2>
+        <p>先選用途；之後的編輯方式會跟著模板改變。</p>
+        <label class="token-label">
+          SEED 名稱
+          <input type="text" id="seed-create-title" maxlength="60" placeholder="例如：採購申請" />
+        </label>
+        <label class="token-label">
+          類型
+          <select id="seed-create-type">
+            <option value="document">文件模板（新增文字）</option>
+            <option value="approval">簽核模板（欄位＋簽核人）</option>
+            <option value="discussion">主題討論模板（對話＋A4整理）</option>
+          </select>
+        </label>
+        <div class="token-actions">
+          <button type="submit" class="btn btn-primary" value="save">建立</button>
+          <button type="submit" class="btn" value="cancel">取消</button>
+        </div>
+      </form>
+    </dialog>
   </div>
 
   <div class="toast hidden" id="toast" role="status" aria-live="polite"></div>
 
-  <script src="app.js?v=control3"></script>
+  <script src="app.js?v=control4"></script>
 </body>
 </html>

@@ -24,7 +24,7 @@ const state = {
   map: {
     cols: 10,
     rows: 10,
-    title: "知識拼圖",
+    title: "SEED 棋盤",
     note: "",
     kind: "personal",
     visibility: "public",
@@ -92,7 +92,7 @@ function formatSavedAtDate(iso) {
 function templateDisplayLabel() {
   const id = state.map.template || "grid-10";
   const full = PUZZLE_TEMPLATES[id]?.label || id;
-  return full.replace(/^空白拼圖\s*/, "");
+  return full.replace(/^空白(?:拼圖|棋盤)\s*/, "");
 }
 
 function showToast(msg, type = "info") {
@@ -197,16 +197,41 @@ function framesToPrintableText(frames) {
 }
 
 function syncWorkingFromFrames() {
-  state.workingText = framesToText(state.frames);
+  if (state.current?.seedType === "approval") {
+    state.workingText = approvalToText(state.current);
+  } else if (state.current?.seedType === "discussion") {
+    state.workingText = discussionToText(state.current);
+  } else {
+    state.workingText = framesToText(state.frames);
+  }
   if ($("edit-body")) $("edit-body").value = state.workingText;
 }
 
-function scheduleContentAutosave() {
+function approvalToText(seed) {
+  const lines = [`# ${seed.title}`, "", "## 填寫欄位"];
+  (seed.formFields || []).forEach((field) => {
+    const kind = field.type === "select" ? `選單：${field.options || "尚未設定"}` : field.type === "textarea" ? "多行文字" : "單行文字";
+    lines.push(`- ${field.label || "未命名欄位"}（${kind}）`);
+  });
+  lines.push("", `## 預設簽核人`, seed.approver || "尚未設定");
+  return lines.join("\n");
+}
+
+function discussionToText(seed) {
+  const lines = [`# ${seed.title}`, "", "## AI 整理初版", seed.aiDraft || "尚未整理", "", "## 對話紀錄"];
+  (seed.messages || []).forEach((message) => {
+    lines.push(`- ${message.name || "匿名"}｜${formatWhen(message.when)}：${message.text}`);
+  });
+  return lines.join("\n");
+}
+
+function scheduleContentAutosave(actor = "人") {
+  if (state.current) state.current.lastActor = actor;
   syncWorkingFromFrames();
   if (state.contentSaveTimer) clearTimeout(state.contentSaveTimer);
   state.contentSaveTimer = setTimeout(() => {
-    autosaveSeedContent().catch((err) => setStatus(err.message || String(err)));
-  }, 900);
+    saveDraftLocally();
+  }, 500);
 }
 
 function scheduleLayoutAutosave() {
@@ -217,38 +242,25 @@ function scheduleLayoutAutosave() {
   }, 900);
 }
 
-async function autosaveSeedContent() {
-  if (!state.current || state.autosaving) return;
+function saveDraftLocally() {
+  if (!state.current) return;
   syncWorkingFromFrames();
   const text = state.workingText;
-  if (text === state.originalText) return;
-  if (state.current.localOnly || !getToken()) {
-    localStorage.setItem(`seed-draft:${state.current.id}`, text);
-    state.originalText = text;
-    setStatus(state.current.localOnly ? "已自動儲存在這台裝置" : "已暫存本機（尚未設定鑰匙）");
-    updateSyncUi();
-    return;
-  }
-  state.autosaving = true;
-  try {
-    await saveVersionToRepo("自動儲存", { silent: true });
-    setStatus("已自動儲存");
-  } finally {
-    state.autosaving = false;
-    updateSyncUi();
-  }
+  localStorage.setItem(`seed-draft:${state.current.id}`, text);
+  setStatus(text === state.originalText ? "沒有未存變更" : "草稿已暫存；按 Save 建立版本");
+  updateSyncUi();
 }
 
 async function autosavePuzzleLayout() {
   if (!getToken()) {
-    setStatus("拼圖位置已暫存本機（尚未設定鑰匙）");
+    setStatus("棋盤位置已暫存本機（尚未設定鑰匙）");
     updateSyncUi();
     return;
   }
   if (!hasUnsavedPuzzleChanges()) return;
   try {
     await savePuzzleLayout({ forceDialog: false, silent: true });
-    setStatus("拼圖位置已自動儲存");
+    setStatus("棋盤位置已自動儲存");
   } catch (err) {
     setStatus(err.message || String(err));
   }
@@ -273,6 +285,15 @@ function renderInsertGap(index) {
 function renderFrameBoard() {
   const board = $("read-body");
   if (!board) return;
+  const seedType = state.current?.seedType || "document";
+  if (seedType === "approval") {
+    renderApprovalEditor(board);
+    return;
+  }
+  if (seedType === "discussion") {
+    renderDiscussionEditor(board);
+    return;
+  }
   board.className = "prose frame-board";
   board.classList.toggle("a4-view", state.docMode === "a4");
   board.innerHTML = "";
@@ -284,6 +305,10 @@ function renderFrameBoard() {
   }
 
   state.frames = state.frames.map(normalizeFrame);
+  const intro = document.createElement("header");
+  intro.className = "editor-intro";
+  intro.innerHTML = "<h2>新增文字模板</h2><p>像填問卷一樣，一段一段建立最後的 A4 文件。</p>";
+  board.appendChild(intro);
   board.appendChild(renderInsertGap(0));
 
   state.frames.forEach((frame, index) => {
@@ -378,6 +403,275 @@ function renderFrameBoard() {
   });
 }
 
+function persistStructuredSeed(actor = "人") {
+  if (state.current) state.current.lastActor = actor;
+  saveSeedTrayState();
+  scheduleContentAutosave(actor);
+}
+
+function renderApprovalEditor(board) {
+  const seed = state.current;
+  seed.formFields = Array.isArray(seed.formFields) ? seed.formFields : [];
+  board.className = "prose structured-editor";
+  board.classList.toggle("a4-view", state.docMode === "a4");
+  board.innerHTML = "";
+  if (state.docMode === "a4") {
+    const title = document.createElement("h1");
+    title.textContent = seed.title;
+    board.appendChild(title);
+    seed.formFields.forEach((field) => {
+      const group = document.createElement("section");
+      group.className = "a4-form-field";
+      const label = document.createElement("strong");
+      label.textContent = field.label || "未命名欄位";
+      const blank = document.createElement("div");
+      blank.className = "a4-answer-space";
+      blank.textContent = field.type === "select" ? field.options || "請選擇" : "";
+      group.append(label, blank);
+      board.appendChild(group);
+    });
+    const approver = document.createElement("p");
+    approver.className = "a4-approver";
+    approver.textContent = `預設簽核人：${seed.approver || "尚未設定"}`;
+    board.appendChild(approver);
+    return;
+  }
+
+  board.innerHTML = "<header class='editor-intro'><h2>簽核模板</h2><p>設定填寫欄位與預設簽核人，填寫者會看到熟悉的問卷介面。</p></header>";
+  const approverLabel = document.createElement("label");
+  approverLabel.className = "structured-row";
+  approverLabel.innerHTML = "<span>預設簽核人</span>";
+  const approver = document.createElement("input");
+  approver.type = "text";
+  approver.placeholder = "姓名或角色，例如：部門主管";
+  approver.value = seed.approver || "";
+  approver.addEventListener("input", () => {
+    seed.approver = approver.value;
+    persistStructuredSeed();
+  });
+  approverLabel.appendChild(approver);
+  board.appendChild(approverLabel);
+
+  seed.formFields.forEach((field, index) => {
+    const card = document.createElement("section");
+    card.className = "form-builder-card";
+    const label = document.createElement("input");
+    label.type = "text";
+    label.value = field.label || "";
+    label.placeholder = "欄位名稱";
+    label.addEventListener("input", () => {
+      field.label = label.value;
+      persistStructuredSeed();
+    });
+    const type = document.createElement("select");
+    type.innerHTML = "<option value='text'>單行文字</option><option value='textarea'>多行文字</option><option value='select'>下拉選單</option>";
+    type.value = field.type || "text";
+    const options = document.createElement("input");
+    options.type = "text";
+    options.value = field.options || "";
+    options.placeholder = "選項，用逗號分隔";
+    options.classList.toggle("hidden", type.value !== "select");
+    type.addEventListener("change", () => {
+      field.type = type.value;
+      options.classList.toggle("hidden", type.value !== "select");
+      persistStructuredSeed();
+    });
+    options.addEventListener("input", () => {
+      field.options = options.value;
+      persistStructuredSeed();
+    });
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "frame-remove";
+    remove.textContent = "×";
+    remove.title = "刪除欄位";
+    remove.addEventListener("click", () => {
+      seed.formFields.splice(index, 1);
+      persistStructuredSeed();
+      renderFrameBoard();
+    });
+    card.append(label, type, options, remove);
+    board.appendChild(card);
+  });
+  const add = document.createElement("button");
+  add.type = "button";
+  add.className = "btn form-add";
+  add.textContent = "＋ 新增欄位";
+  add.addEventListener("click", () => {
+    seed.formFields.push({ label: "", type: "text", options: "" });
+    persistStructuredSeed();
+    renderFrameBoard();
+  });
+  board.appendChild(add);
+}
+
+function renderDiscussionEditor(board) {
+  const seed = state.current;
+  seed.messages = Array.isArray(seed.messages) ? seed.messages : [];
+  board.className = "prose discussion-editor";
+  board.classList.toggle("a4-view", state.docMode === "a4");
+  board.innerHTML = "";
+  if (state.docMode === "a4") {
+    const title = document.createElement("h1");
+    title.textContent = seed.title;
+    const draftTitle = document.createElement("h2");
+    draftTitle.textContent = "AI 整理初版";
+    const draft = document.createElement("div");
+    draft.className = "discussion-draft";
+    draft.textContent = seed.aiDraft || "尚未由 AI 整理";
+    const historyTitle = document.createElement("h2");
+    historyTitle.textContent = "對話紀錄";
+    board.append(title, draftTitle, draft, historyTitle);
+    seed.messages.forEach((message) => {
+      const item = document.createElement("p");
+      item.className = "discussion-export-message";
+      item.textContent = `${message.name || "匿名"}｜${formatWhen(message.when)}\n${message.text}`;
+      board.appendChild(item);
+    });
+    return;
+  }
+
+  board.innerHTML = "<header class='editor-intro'><h2>主題討論模板</h2><p>像群組對話一樣累積意見；AI 初版與完整對話會一起匯出。</p></header>";
+  const messages = document.createElement("div");
+  messages.className = "chat-thread";
+  seed.messages.forEach((message) => {
+    const bubble = document.createElement("article");
+    bubble.className = "chat-message";
+    const meta = document.createElement("small");
+    meta.textContent = `${message.name || "匿名"} · ${formatWhen(message.when)}`;
+    const text = document.createElement("p");
+    text.textContent = message.text;
+    bubble.append(meta, text);
+    messages.appendChild(bubble);
+  });
+  if (!seed.messages.length) messages.innerHTML = "<p class='meta'>還沒有對話，先留下第一則意見。</p>";
+  board.appendChild(messages);
+
+  const compose = document.createElement("form");
+  compose.className = "chat-compose";
+  compose.innerHTML = "<input name='name' placeholder='你的名字' maxlength='30'><textarea name='message' placeholder='輸入想法…' required></textarea><button class='btn btn-primary' type='submit'>送出</button>";
+  compose.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const data = new FormData(compose);
+    const text = String(data.get("message") || "").trim();
+    if (!text) return;
+    seed.messages.push({
+      name: String(data.get("name") || "").trim() || "你",
+      text,
+      when: new Date().toISOString(),
+    });
+    persistStructuredSeed();
+    renderFrameBoard();
+  });
+  const ai = document.createElement("button");
+  ai.type = "button";
+  ai.className = "btn discussion-ai";
+  ai.textContent = "AI 整理 A4 初版";
+  ai.disabled = !seed.messages.length;
+  ai.addEventListener("click", async () => {
+    if (!getAiKey() && !usePaidProxy()) {
+      $("ai-key-dialog").showModal();
+      setStatus("請先設定 AI 鑰匙，再整理討論初版");
+      return;
+    }
+    ai.disabled = true;
+    ai.textContent = "AI 整理中…";
+    try {
+      const transcript = seed.messages.map((m) => `${m.name}：${m.text}`).join("\n");
+      seed.aiDraft = await askAiToRespond(
+        "請把群組討論整理成可放入 A4 文件的繁體中文初稿，保留共識、分歧與待辦，不要捏造內容。",
+        transcript
+      );
+      persistStructuredSeed("AI");
+      showToast("AI 初版已完成", "ok");
+    } catch (err) {
+      setStatus(err.message || String(err));
+    } finally {
+      renderFrameBoard();
+    }
+  });
+  board.append(compose, ai);
+}
+
+function safeFileName(name) {
+  return String(name || "SEED").replace(/[\\/:*?"<>|]+/g, "-").trim() || "SEED";
+}
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function exportWord() {
+  const title = state.current?.title || "SEED";
+  const body = $("read-body").innerText
+    .split("\n")
+    .map((line) => `<p>${escapeHtml(line) || "&nbsp;"}</p>`)
+    .join("");
+  const html = `<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(title)}</title></head><body><h1>${escapeHtml(title)}</h1>${body}</body></html>`;
+  downloadBlob(
+    new Blob(["\ufeff", html], { type: "application/msword;charset=utf-8" }),
+    `${safeFileName(title)}.doc`
+  );
+}
+
+function exportImage() {
+  const title = state.current?.title || "SEED";
+  const canvas = document.createElement("canvas");
+  const width = 1240;
+  const padding = 110;
+  const lineHeight = 38;
+  const ctx = canvas.getContext("2d");
+  ctx.font = "28px system-ui, sans-serif";
+  const wrapped = [];
+  for (const rawLine of $("read-body").innerText.split("\n")) {
+    if (!rawLine) {
+      wrapped.push("");
+      continue;
+    }
+    let line = "";
+    for (const char of Array.from(rawLine)) {
+      const next = line + char;
+      if (ctx.measureText(next).width > width - padding * 2 && line) {
+        wrapped.push(line);
+        line = char;
+      } else {
+        line = next;
+      }
+    }
+    wrapped.push(line);
+  }
+  canvas.width = width;
+  canvas.height = Math.max(1754, padding * 2 + 90 + wrapped.length * lineHeight);
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = "#171717";
+  ctx.font = "bold 42px system-ui, sans-serif";
+  ctx.fillText(title, padding, padding);
+  ctx.font = "28px system-ui, sans-serif";
+  wrapped.forEach((line, index) => ctx.fillText(line, padding, padding + 85 + index * lineHeight));
+  canvas.toBlob((blob) => {
+    if (blob) downloadBlob(blob, `${safeFileName(title)}.png`);
+  }, "image/png");
+}
+
+function exportA4(kind) {
+  if (state.docMode !== "a4") return;
+  if (kind === "pdf") {
+    window.print();
+  } else if (kind === "word") {
+    exportWord();
+  } else if (kind === "image") {
+    exportImage();
+  }
+}
+
 function deleteFrame(index, silent = false) {
   if (!state.frames[index]) return;
   state.frames.splice(index, 1);
@@ -403,6 +697,7 @@ function setEditMode(text) {
   $("read-body").classList.remove("hidden");
   $("edit-body").classList.add("hidden");
   $("edit-body").value = text;
+  $("export-bar")?.classList.add("hidden");
   renderFrameBoard();
   updateModeChips();
 }
@@ -482,6 +777,7 @@ function updateModeChips() {
         ? "a4"
         : "edit";
   wrap.querySelectorAll(".mode-chip").forEach((btn) => {
+    if (btn.dataset.mode === "save") return;
     const on = btn.dataset.mode === mode;
     btn.setAttribute("aria-pressed", on ? "true" : "false");
     btn.classList.toggle("is-active", on);
@@ -493,11 +789,11 @@ async function setDocMode(mode) {
     showPanel("list");
     return;
   }
+  if (mode === "save") {
+    await saveCurrentVersion();
+    return;
+  }
   if (mode === "diff") {
-    if (state.current.localOnly) {
-      showToast("這顆 SEED 還沒有可比對的版本", "info");
-      return;
-    }
     state.docMode = "diff";
     if (!state.versions.length) await loadVersions();
     showPanel("diff");
@@ -510,6 +806,7 @@ async function setDocMode(mode) {
     syncWorkingFromFrames();
     showPanel("read");
     renderFrameBoard();
+    $("export-bar")?.classList.remove("hidden");
     updateModeChips();
     setStatus("A4 檢視：只顯示可列印內容（框外註解不會出現）");
     return;
@@ -518,8 +815,23 @@ async function setDocMode(mode) {
   state.editing = true;
   showPanel("read");
   renderFrameBoard();
+  $("export-bar")?.classList.add("hidden");
   updateModeChips();
-  setStatus("編輯模式：框內可直接改，會自動儲存");
+  setStatus("編輯模式：草稿會暫存；按 Save 才建立版本");
+}
+
+async function saveCurrentVersion(actor = null) {
+  if (!state.current) return;
+  if (!state.current.localOnly && !getToken()) {
+    $("token-dialog").showModal();
+    setStatus("請先設定鑰匙，再建立正式版本");
+    return;
+  }
+  const resolvedActor = actor || state.current.lastActor || "人";
+  await saveVersionToRepo(defaultVersionName(), { actor: resolvedActor });
+  state.current.lastActor = "人";
+  if (state.current.localOnly) saveSeedTrayState();
+  showToast("已建立新版本", "ok");
 }
 function defaultVersionName() {
   try {
@@ -635,7 +947,7 @@ function placeSeedOnMap(id) {
   const seed = state.seeds.find((s) => s.id === id);
   const cell = findFreeMapCell();
   if (!seed || !cell) {
-    showToast("拼圖上沒有空位", "warn");
+    showToast("棋盤上沒有空位", "warn");
     return;
   }
   seed.archived = false;
@@ -644,12 +956,16 @@ function placeSeedOnMap(id) {
   saveSeedTrayState();
   renderMap();
   scheduleLayoutAutosave();
-  setStatus(`「${seed.title}」已放到拼圖`);
+  setStatus(`「${seed.title}」已派到棋盤`);
 }
 
 function deleteSeed(id) {
   const seed = state.seeds.find((s) => s.id === id);
   if (!seed || !window.confirm(`刪除「${seed.title}」？`)) return;
+  if (seed.localOnly) {
+    localStorage.removeItem(`seed-draft:${seed.id}`);
+    localStorage.removeItem(`seed-versions:${seed.id}`);
+  }
   const tray = loadSeedTrayState();
   if (!seed.localOnly && !tray.deleted.includes(id)) tray.deleted.push(id);
   state.seeds = state.seeds.filter((s) => s.id !== id);
@@ -667,20 +983,29 @@ function deleteSeed(id) {
 }
 
 function addSeed() {
-  const title = window.prompt("新的 SEED 名稱");
-  if (!title?.trim()) return;
+  $("seed-create-title").value = "";
+  $("seed-create-type").value = "document";
+  $("seed-create-dialog").showModal();
+  $("seed-create-title").focus();
+}
+
+function createSeed(title, seedType) {
   const id = `local-${Date.now().toString(36)}`;
   const seed = {
     id,
-    title: title.trim(),
-    alias: title.trim(),
-    short: Array.from(title.trim()).slice(0, 4).join(""),
+    title,
+    alias: title,
+    short: Array.from(title).slice(0, 4).join(""),
     path: "",
     blurb: "",
     col: 0,
     row: 0,
     archived: true,
     localOnly: true,
+    seedType,
+    formFields: seedType === "approval" ? [{ label: "申請說明", type: "textarea", options: "" }] : [],
+    approver: "",
+    messages: [],
   };
   state.seeds.push(seed);
   localStorage.setItem(`seed-draft:${id}`, "");
@@ -695,23 +1020,34 @@ function renderSeedTray() {
   root.innerHTML = "";
   const archived = state.seeds.filter((s) => s.archived);
   if (!archived.length) {
-    root.innerHTML = '<p class="seed-tray-empty">這裡可收納暫時不放在拼圖上的 SEED。</p>';
+    root.innerHTML = '<p class="seed-tray-empty">把 SEED 拖到這裡收回；也可拖到上方棋盤出戰。</p>';
     return;
   }
   for (const seed of archived) {
     const card = document.createElement("div");
     card.className = "seed-tray-card";
+    card.draggable = true;
+    card.addEventListener("dragstart", (e) => {
+      state.dragId = seed.id;
+      e.dataTransfer.setData("text/seed-id", seed.id);
+      e.dataTransfer.effectAllowed = "move";
+    });
+    card.addEventListener("dragend", () => {
+      state.dragId = null;
+    });
     const open = document.createElement("button");
     open.type = "button";
     open.className = "seed-tray-open";
+    const typeLabel = { document: "文件", approval: "簽核", discussion: "討論" };
     open.textContent = seed.title;
+    open.dataset.type = typeLabel[seed.seedType || "document"];
     open.addEventListener("click", () =>
       selectSeed(seed).catch((err) => setStatus(err.message || String(err)))
     );
     const place = document.createElement("button");
     place.type = "button";
     place.className = "seed-tray-action";
-    place.textContent = "放到拼圖";
+    place.textContent = "派到棋盤";
     place.addEventListener("click", () => placeSeedOnMap(seed.id));
     const remove = document.createElement("button");
     remove.type = "button";
@@ -906,8 +1242,8 @@ function getCurrentLayoutRev() {
 }
 
 function layoutSaveLabel(saveInfo, name, rev) {
-  if (saveInfo.mode === "new") return `另存拼圖：${name} v1`;
-  return `存拼圖：${name} v${rev}`;
+  if (saveInfo.mode === "new") return `另存棋盤：${name} v1`;
+  return `存棋盤：${name} v${rev}`;
 }
 
 async function appendLayoutVersion(saveInfo) {
@@ -955,7 +1291,7 @@ async function appendLayoutVersion(saveInfo) {
 function applyLayoutSnapshot(snapshot, meta = {}) {
   if (snapshot.map) {
     state.map = { ...state.map, ...snapshot.map };
-    $("map-title").textContent = state.map.title || "知識拼圖";
+    $("map-title").textContent = state.map.title || "SEED 棋盤";
     $("map-note").textContent = state.map.note || "";
   }
   if (meta.layoutName) state.map.layoutName = meta.layoutName;
@@ -982,7 +1318,7 @@ async function openLayoutHistoryDialog() {
   list.innerHTML = "";
   const layouts = history.layouts || [];
   if (!layouts.length) {
-    list.innerHTML = '<li class="layout-history-empty">還沒有排版紀錄。先按存檔圖示或選單「存拼圖位置」。</li>';
+    list.innerHTML = '<li class="layout-history-empty">還沒有排版紀錄。先按存檔圖示或選單「存棋盤位置」。</li>';
   } else {
     for (const layout of layouts) {
       const group = document.createElement("li");
@@ -1159,7 +1495,7 @@ async function savePuzzleLayout(opts = {}) {
   if (!getToken()) {
     if (!silent) {
       $("token-dialog").showModal();
-      showToast("請先設定鑰匙，再存拼圖", "warn");
+      showToast("請先設定鑰匙，再存棋盤", "warn");
     }
     return;
   }
@@ -1175,7 +1511,7 @@ async function savePuzzleLayout(opts = {}) {
 
 async function maybePromptSaveLayout(reason) {
   if (!getToken()) return;
-  const ok = window.confirm(`${reason}\n\n要把拼圖設定寫進倉庫嗎？`);
+  const ok = window.confirm(`${reason}\n\n要把棋盤設定寫進倉庫嗎？`);
   if (!ok) return;
   try {
     const saveInfo = getCurrentLayoutName() ? { mode: "minor" } : await promptLayoutName();
@@ -1356,20 +1692,26 @@ function moveSeed(id, col, row) {
   if (!seed) return;
   const occupant = seedAt(col, row);
   if (occupant && occupant.id !== id) {
-    occupant.col = seed.col;
-    occupant.row = seed.row;
+    if (seed.archived) {
+      occupant.archived = true;
+    } else {
+      occupant.col = seed.col;
+      occupant.row = seed.row;
+    }
   }
+  seed.archived = false;
   seed.col = col;
   seed.row = row;
+  saveSeedTrayState();
   scheduleLayoutAutosave();
   renderMap();
-  setStatus(`已移動「${seed.title}」· 自動儲存中`);
+  setStatus(`已把「${seed.title}」派到棋盤 · 自動儲存中`);
 }
 
 const PUZZLE_TEMPLATES = {
-  "grid-8": { cols: 8, rows: 8, label: "空白拼圖 8×8" },
-  "grid-10": { cols: 10, rows: 10, label: "空白拼圖 10×10" },
-  "grid-12": { cols: 12, rows: 12, label: "空白拼圖 12×12" },
+  "grid-8": { cols: 8, rows: 8, label: "空白棋盤 8×8" },
+  "grid-10": { cols: 10, rows: 10, label: "空白棋盤 10×10" },
+  "grid-12": { cols: 12, rows: 12, label: "空白棋盤 12×12" },
   "demo-taiwan-roads": { cols: 10, rows: 10, label: "示範：台灣橫貫公路" },
 };
 
@@ -1387,8 +1729,8 @@ function applyPuzzleTemplate(templateId) {
   state.map.template = templateId;
   state.map.cols = tpl.cols;
   state.map.rows = tpl.rows;
-  state.map.title = "知識拼圖";
-  state.map.note = `${tpl.label}；拖曳擺放，點進去看完整內容`;
+  state.map.title = "SEED 棋盤";
+  state.map.note = `${tpl.label}；把我的 SEED 派到棋盤，點進去編輯`;
   clampSeedsToMap();
   localStorage.removeItem(LAYOUT_KEY);
   $("map-title").textContent = state.map.title;
@@ -1403,8 +1745,8 @@ async function loadCatalog() {
   state.map = {
     cols: data.map?.cols || 10,
     rows: data.map?.rows || 10,
-    title: data.map?.title || "知識拼圖",
-    note: data.map?.note || "",
+    title: "SEED 棋盤",
+    note: String(data.map?.note || "").replaceAll("拼圖", "棋盤"),
     kind: data.map?.kind || "personal",
     visibility: data.map?.visibility || "public",
     template: data.map?.template || "grid-10",
@@ -1417,11 +1759,17 @@ async function loadCatalog() {
   if (!hasTrayState) {
     tray.archived = (data.seeds || []).slice(8).map((s) => s.id);
   }
-  const custom = tray.custom.map((s) => ({ ...s, archived: true, localOnly: true }));
+  const custom = tray.custom.map((s) => ({
+    ...s,
+    seedType: s.seedType || "document",
+    archived: tray.archived.includes(s.id),
+    localOnly: true,
+  }));
   state.seeds = (data.seeds || [])
     .filter((s) => !tray.deleted.includes(s.id))
     .map((s) => ({
     ...s,
+    seedType: s.seedType || "document",
     col: Number.isInteger(s.col) ? s.col : 0,
     row: Number.isInteger(s.row) ? s.row : 0,
     archived: tray.archived.includes(s.id) || s.archived === true,
@@ -1573,7 +1921,7 @@ async function askAiDirect(systemPrompt, userResponse) {
 }
 
 async function askAiToRespond(systemPrompt, userResponse) {
-  if (!state.current) throw new Error("請先在拼圖上點一份筆記");
+  if (!state.current) throw new Error("請先在棋盤上點一份 SEED");
   setStatus("AI 正在回應，請稍候…");
   if (usePaidProxy()) return askAiViaProxy(systemPrompt, userResponse);
   return askAiDirect(systemPrompt, userResponse);
@@ -1708,7 +2056,7 @@ async function putRepoFile(path, text, message) {
 
 async function saveLayoutToRepo(saveInfo, opts = {}) {
   const { silent = false } = opts;
-  if (!silent) setStatus("正在存拼圖…");
+  if (!silent) setStatus("正在存棋盤…");
   const now = new Date().toISOString();
   let historyResult;
   try {
@@ -1741,14 +2089,14 @@ async function saveLayoutToRepo(saveInfo, opts = {}) {
       ? `另存模板 · ${layout.name} v1`
       : `已存檔 · ${layout.name} v${rev}`;
   if (!silent) showToast(toastMsg, "ok");
-  setStatus(silent ? `拼圖已自動儲存 · ${layout.name} v${rev}` : toastMsg);
+  setStatus(silent ? `棋盤已自動儲存 · ${layout.name} v${rev}` : toastMsg);
   await refreshLayoutHistorySummary();
   updateSyncUi();
   return result;
 }
 
 async function buildSeedPack() {
-  setStatus("正在打包全部筆記與拼圖設定…");
+  setStatus("正在打包全部筆記與棋盤設定…");
   // Prefer live positions from state
   const catalog = buildSeedsPayload();
   const files = {};
@@ -1882,27 +2230,28 @@ async function selectSeed(seed) {
   state.workingText = "";
   state.draftAccepted = false;
   setStatus(`已選：${seed.title}`);
-  await Promise.all([readCurrent(), seed.localOnly ? Promise.resolve() : loadVersions()]);
+  await Promise.all([readCurrent(), loadVersions()]);
   showPanel("read");
 }
 
 async function loadSeedText() {
-  if (!state.current) throw new Error("請先在拼圖上點一份筆記");
+  if (!state.current) throw new Error("請先在棋盤上點一份 SEED");
   if (state.current.localOnly) {
     const text = localStorage.getItem(`seed-draft:${state.current.id}`) || "";
     state.originalText = text;
     state.workingText = text;
     return text;
   }
-  const text = await fetchText(`${RAW}${state.current.path}?ts=${Date.now()}`);
-  state.originalText = text;
-  state.workingText = text;
-  return text;
+  const original = await fetchText(`${RAW}${state.current.path}?ts=${Date.now()}`);
+  const draft = localStorage.getItem(`seed-draft:${state.current.id}`);
+  state.originalText = original;
+  state.workingText = draft !== null ? draft : original;
+  return state.workingText;
 }
 
 async function readCurrent() {
   if (!state.current) {
-    setStatus("請先在拼圖上點一份筆記");
+    setStatus("請先在棋盤上點一份 SEED");
     showPanel("list");
     return;
   }
@@ -1910,13 +2259,13 @@ async function readCurrent() {
   const text = await loadSeedText();
   if ($("read-title")) $("read-title").textContent = state.current.title;
   setEditMode(text);
-  setStatus(`編輯：${state.current.title}（自動儲存）`);
+  setStatus(`編輯：${state.current.title}（按 Save 建立版本）`);
   showPanel("read");
 }
 
 async function startEdit() {
   if (!state.current) {
-    setStatus("請先在拼圖上點一份筆記");
+    setStatus("請先在棋盤上點一份 SEED");
     showPanel("list");
     return;
   }
@@ -1971,20 +2320,38 @@ function discardDraft() {
 }
 
 async function saveVersionToRepo(versionName, opts = {}) {
-  const { silent = false } = opts;
+  const { silent = false, actor = "人" } = opts;
   if (!state.current) throw new Error("請先選一份筆記");
   if (state.editing || state.frames?.length) syncWorkingFromFrames();
   const text = state.workingText ?? state.originalText;
   if (text == null) throw new Error("沒有可存的內容");
+  const label = versionName || defaultVersionName();
+  if (state.current.localOnly) {
+    const versions = loadLocalVersions(state.current.id);
+    const version = {
+      sha: `local-${Date.now().toString(36)}`,
+      when: new Date().toISOString(),
+      message: `${actor}｜Save｜${label}`,
+      author: actor === "AI" ? "AI" : "你",
+      actor,
+      text,
+    };
+    versions.unshift(version);
+    localStorage.setItem(`seed-versions:${state.current.id}`, JSON.stringify(versions.slice(0, 30)));
+    state.originalText = text;
+    localStorage.removeItem(`seed-draft:${state.current.id}`);
+    await loadVersions();
+    setStatus(`已建立版本：${formatWhen(version.when)} · ${version.author}`);
+    return version;
+  }
   if (!silent) setStatus("正在存成一版…");
   const content = bytesToBase64(new TextEncoder().encode(text));
   const path = state.current.path;
   const meta = await githubFetch(`${API}/contents/${path}?ref=${BRANCH}`);
-  const label = versionName || defaultVersionName();
   const result = await githubFetch(`${API}/contents/${path}`, {
     method: "PUT",
     body: JSON.stringify({
-      message: `存成一版：${label}`,
+      message: `${actor}｜Save｜${label}`,
       content,
       sha: meta.sha,
       branch: BRANCH,
@@ -2008,6 +2375,15 @@ async function saveVersionToRepo(versionName, opts = {}) {
   return result;
 }
 
+function loadLocalVersions(id) {
+  try {
+    const versions = JSON.parse(localStorage.getItem(`seed-versions:${id}`) || "[]");
+    return Array.isArray(versions) ? versions : [];
+  } catch {
+    return [];
+  }
+}
+
 function formatWhen(iso) {
   try {
     return new Intl.DateTimeFormat("zh-TW", {
@@ -2022,21 +2398,29 @@ function formatWhen(iso) {
 async function loadVersions() {
   if (!state.current) return;
   setStatus("正在載入舊版本…");
-  const path = encodeURIComponent(state.current.path);
-  const commits = await fetchJson(
-    `${API}/commits?sha=${BRANCH}&path=${path}&per_page=30`
-  );
-  state.versions = commits.map((c) => ({
-    sha: c.sha,
-    short: c.sha.slice(0, 7),
-    when: c.commit.author?.date || c.commit.committer?.date,
-    message: (c.commit.message || "").split("\n")[0],
-  }));
+  if (state.current.localOnly) {
+    state.versions = loadLocalVersions(state.current.id);
+  } else {
+    const path = encodeURIComponent(state.current.path);
+    const commits = await fetchJson(
+      `${API}/commits?sha=${BRANCH}&path=${path}&per_page=30`
+    );
+    state.versions = commits.map((c) => ({
+      sha: c.sha,
+      short: c.sha.slice(0, 7),
+      when: c.commit.author?.date || c.commit.committer?.date,
+      message: (c.commit.message || "").split("\n")[0],
+      author: c.commit.author?.name || c.author?.login || "未知",
+      actor: /^AI[｜:]/.test(c.commit.message || "") ? "AI" : "人",
+    }));
+  }
 
   const list = $("version-list");
   list.innerHTML = "";
   if (!state.versions.length) {
     list.innerHTML = "<li class='meta'>還沒有版本紀錄</li>";
+    fillDiffSelects();
+    setStatus("還沒有版本紀錄；按 Save 建立第一版");
     return;
   }
 
@@ -2046,22 +2430,12 @@ async function loadVersions() {
     li.innerHTML = `
       <div>
         <strong>${escapeHtml(formatWhen(v.when))}</strong>
-        <div class="meta">${escapeHtml(v.message)}</div>
+        <div class="meta">${escapeHtml(v.author || "未知")} · ${escapeHtml(v.actor || "人")}編輯 · ${escapeHtml(v.message)}</div>
       </div>
       <div class="row-actions">
-        <button type="button" class="btn" data-side="old">當成舊的（左）</button>
-        <button type="button" class="btn" data-side="new">當成新的（右）</button>
         <button type="button" class="btn" data-side="open">打開這版</button>
       </div>
     `;
-    li.querySelector('[data-side="old"]').addEventListener("click", () => {
-      $("diff-old").value = v.sha;
-      setStatus(`已選舊的：${formatWhen(v.when)}`);
-    });
-    li.querySelector('[data-side="new"]').addEventListener("click", () => {
-      $("diff-new").value = v.sha;
-      setStatus(`已選新的：${formatWhen(v.when)}`);
-    });
     li.querySelector('[data-side="open"]').addEventListener("click", async () => {
       const text = await fetchFileAt(v.sha);
       state.originalText = state.originalText || text;
@@ -2089,10 +2463,28 @@ async function loadVersions() {
   }
 
   fillDiffSelects();
-  setStatus(`已載入 ${state.versions.length} 個舊版本`);
+  setStatus(`已載入 ${state.versions.length} 個版本`);
 }
 
 function fillDiffSelects() {
+  const single = $("diff-version");
+  if (single) {
+    const previous = single.value;
+    single.innerHTML = "";
+    state.versions.forEach((v, index) => {
+      const opt = document.createElement("option");
+      opt.value = v.sha;
+      const actor = v.actor || (/^AI[｜:]/.test(v.message || "") ? "AI" : "人");
+      opt.textContent = `${formatWhen(v.when)} · ${actor} · ${v.author || "未知"}`;
+      opt.disabled = index === state.versions.length - 1;
+      single.appendChild(opt);
+    });
+    if (previous && [...single.options].some((o) => o.value === previous && !o.disabled)) {
+      single.value = previous;
+    } else if (state.versions.length >= 2) {
+      single.value = state.versions[0].sha;
+    }
+  }
   for (const id of ["diff-old", "diff-new"]) {
     const sel = $(id);
     const prev = sel.value;
@@ -2114,6 +2506,10 @@ function fillDiffSelects() {
 }
 
 async function fetchFileAt(sha) {
+  if (String(sha).startsWith("local-")) {
+    const version = state.versions.find((v) => v.sha === sha);
+    if (version) return version.text || "";
+  }
   const url = `${API}/contents/${state.current.path}?ref=${sha}`;
   const data = await fetchJson(url);
   if (data.encoding === "base64" && data.content) {
@@ -2159,26 +2555,32 @@ function diffLines(aText, bText) {
 
 async function runDiff() {
   if (!state.current) {
-    setStatus("請先在拼圖上點一份筆記");
+    setStatus("請先在棋盤上點一份 SEED");
     showPanel("list");
     return;
   }
-  const oldSha = $("diff-old").value;
-  const newSha = $("diff-new").value;
-  if (oldSha === "original" && newSha === "draft") {
-    showDraftDiff();
-    return;
-  }
   if (!state.versions.length) await loadVersions();
-  if (!oldSha || !newSha) {
-    setStatus("請先在「回到舊的」選兩個版本");
+  const selectedSha = $("diff-version")?.value;
+  const selectedIndex = state.versions.findIndex((v) => v.sha === selectedSha);
+  if (selectedIndex < 0 || selectedIndex >= state.versions.length - 1) {
+    $("diff-meta").textContent = "這筆紀錄沒有更早版本可比對。";
+    $("diff-out").innerHTML = "";
     return;
   }
+  const newer = state.versions[selectedIndex];
+  const older = state.versions[selectedIndex + 1];
   setStatus("正在比對差異…");
   const [oldText, newText] = await Promise.all([
-    fetchFileAt(oldSha),
-    fetchFileAt(newSha),
+    fetchFileAt(older.sha),
+    fetchFileAt(newer.sha),
   ]);
+  const actor = newer.actor || (/^AI[｜:]/.test(newer.message || "") ? "AI" : "人");
+  $("diff-meta").innerHTML = `
+    <strong>${escapeHtml(newer.author || "未知")}</strong>
+    <span>${escapeHtml(actor)}編輯</span>
+    <time>${escapeHtml(formatWhen(newer.when))}</time>
+    <span>自動比對上一次：${escapeHtml(formatWhen(older.when))}</span>
+  `;
   const parts = diffLines(oldText, newText);
   renderDiffA4(parts);
   const adds = parts.filter((p) => p.type === "add").length;
@@ -2197,7 +2599,7 @@ document.querySelector("#chrome").addEventListener("click", async (e) => {
     if (action === "edit") await startEdit();
     if (action === "ai") {
       if (!state.current) {
-        setStatus("請先在拼圖上點一份筆記");
+        setStatus("請先在棋盤上點一份 SEED");
         showPanel("list");
         return;
       }
@@ -2223,7 +2625,7 @@ document.querySelector("#chrome").addEventListener("click", async (e) => {
     }
     if (action === "save-version") {
       if (!state.current) {
-        setStatus("請先在拼圖上點一份筆記");
+        setStatus("請先在棋盤上點一份 SEED");
         showPanel("list");
         return;
       }
@@ -2238,7 +2640,7 @@ document.querySelector("#chrome").addEventListener("click", async (e) => {
     }
     if (action === "history") {
       if (!state.current) {
-        setStatus("請先在拼圖上點一份筆記");
+        setStatus("請先在棋盤上點一份 SEED");
         showPanel("list");
         return;
       }
@@ -2247,7 +2649,7 @@ document.querySelector("#chrome").addEventListener("click", async (e) => {
     }
     if (action === "diff") {
       if (!state.current) {
-        setStatus("請先在拼圖上點一份筆記");
+        setStatus("請先在棋盤上點一份 SEED");
         showPanel("list");
         return;
       }
@@ -2427,7 +2829,7 @@ function syncVisibilityField() {
   const personal = $("puzzle-kind").value === "personal";
   $("visibility-label").style.display = personal ? "" : "none";
   $("template-hint").textContent = personal
-    ? "個人版可設公開或私人。套用模板會改格子大小；記得再「存拼圖位置」。"
+    ? "個人版可設公開或私人。套用模板會改格子大小；記得再「存棋盤位置」。"
     : "社群版：點數搶空格。越靠近中心越貴；存成一版可賺點數。";
 }
 
@@ -2464,7 +2866,7 @@ $("template-form").addEventListener("submit", async (e) => {
   setStatus(
     state.map.kind === "community"
       ? `已套用「${tplLabel}」（社群版搶位之後再接）`
-      : `已套用「${tplLabel}」；要永久保存請「存拼圖位置」`
+      : `已套用「${tplLabel}」；要永久保存請「存棋盤位置」`
   );
   if (state.map.kind !== "community") {
     await maybePromptSaveLayout(`已套用「${tplLabel}」`);
@@ -2517,6 +2919,44 @@ $("run-diff").addEventListener("click", () => {
 
 $("seed-add")?.addEventListener("click", addSeed);
 
+$("seed-create-form")?.addEventListener("submit", (e) => {
+  e.preventDefault();
+  if (e.submitter?.value === "cancel") {
+    $("seed-create-dialog").close();
+    return;
+  }
+  const title = $("seed-create-title").value.trim();
+  if (!title) {
+    setStatus("請輸入 SEED 名稱");
+    return;
+  }
+  createSeed(title, $("seed-create-type").value);
+  $("seed-create-dialog").close();
+});
+
+$("seed-tray-list")?.addEventListener("dragover", (e) => {
+  e.preventDefault();
+  $("seed-tray-list").classList.add("drop-target");
+});
+$("seed-tray-list")?.addEventListener("dragleave", () => {
+  $("seed-tray-list").classList.remove("drop-target");
+});
+$("seed-tray-list")?.addEventListener("drop", (e) => {
+  e.preventDefault();
+  $("seed-tray-list").classList.remove("drop-target");
+  const id = e.dataTransfer.getData("text/seed-id") || state.dragId;
+  if (id) archiveSeed(id);
+});
+
+$("diff-version")?.addEventListener("change", () => {
+  runDiff().catch((err) => setStatus(err.message || String(err)));
+});
+
+$("export-bar")?.addEventListener("click", (e) => {
+  const button = e.target.closest("[data-export]");
+  if (button) exportA4(button.dataset.export);
+});
+
 function closeAllPopovers() {
   setPopoverOpen(null);
   setPathOpen(false);
@@ -2531,7 +2971,7 @@ function buildPathSteps() {
       go: () => showPanel("list"),
     },
   ];
-  if (state.current) {
+  if (state.current && state.panel !== "list") {
     steps.push({
       key: "seed",
       label: state.current.title,
@@ -2679,12 +3119,12 @@ function renderNotifyChips() {
   const chips =
     state.panel === "list"
       ? [
-          { label: "存拼圖", run: () => savePuzzleLayout() },
+          { label: "存棋盤", run: () => savePuzzleLayout() },
           { label: "排版紀錄", run: () => openLayoutHistoryDialog() },
           { label: "打包帶走", run: () => exportSeedPack() },
         ]
       : [
-          { label: "回拼圖", run: () => showPanel("list") },
+          { label: "回棋盤", run: () => showPanel("list") },
           { label: "存成一版", run: () => $("version-dialog").showModal() },
           { label: "AI 回答", run: () => $("ai-dialog").showModal() },
         ];
@@ -2786,6 +3226,6 @@ loadAppConfig()
   .then(() => {
     updatePathBrand();
     updateSyncUi();
-    showToast("拖拉拼圖會自動存；點種子直接編輯每一格", "info");
+    showToast("拖拉棋盤會自動存；點 SEED 直接編輯", "info");
   })
   .catch((err) => setStatus(err.message || String(err)));
