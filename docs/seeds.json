@@ -9,9 +9,9 @@
     "cols": 10,
     "rows": 10,
     "note": "知識棋盤：拖曳擺放；點進去看完整標題",
-    "savedAt": "2026-07-21T02:14:22.243Z",
+    "savedAt": "2026-07-21T02:17:26.103Z",
     "layoutName": "7/21 上午7:30",
-    "layoutRev": 21,
+    "layoutRev": 22,
     "view": "height"
   },
   "seeds": [
@@ -164,10 +164,10 @@
       "alias": "怎麼賺錢",
       "path": "memory/topics/open-source-monetize.md",
       "blurb": "工作室",
-      "col": 0,
-      "row": 0,
+      "col": 6,
+      "row": 8,
       "cover": null,
-      "archived": true
+      "archived": false
     },
     {
       "id": "progress",
