@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=control11" />
+  <link rel="stylesheet" href="styles.css?v=control12" />
   <!-- 預覽請用 raw.githack（會正確當成網頁）。不要用 raw.githubusercontent 或 jsDelivr 開 html，會變純文字。 -->
 </head>
 <body>
@@ -105,6 +105,13 @@
         <div class="map-shell">
           <div id="knowledge-map" class="knowledge-map" role="grid" aria-label="SEED 棋盤"></div>
         </div>
+        <section class="system-seed-entry" aria-labelledby="system-seed-title">
+          <div class="system-seed-head">
+            <h2 id="system-seed-title">System Seed</h2>
+            <p class="meta">先選類型 → 再選範本與版本 → 修改後存成我的 SEED</p>
+          </div>
+          <button type="button" class="btn btn-primary" id="system-seed-open">進入 System Seed</button>
+        </section>
         <section class="seed-tray" aria-labelledby="seed-tray-title">
           <div class="seed-tray-head">
             <h2 id="seed-tray-title">我的 SEED</h2>
@@ -129,6 +136,17 @@
         <textarea id="edit-body" class="edit-body hidden" spellcheck="true" aria-label="編輯筆記"></textarea>
         <div class="document-actions hidden" id="edit-actions" aria-label="編輯操作">
           <button type="button" class="btn" id="edit-save">Save</button>
+          <button type="button" class="btn" id="save-as-system-seed">另存為 System Seed</button>
+        </div>
+      </section>
+
+      <section id="panel-system-seed" class="panel hidden">
+        <div class="system-seed-panel">
+          <header class="system-seed-panel-head">
+            <h1>System Seed</h1>
+            <p class="lead">從系統範本或既有版本開始；修改後按 Save 才會成為你的 SEED。</p>
+          </header>
+          <div id="system-seed-board" class="system-seed-board" aria-live="polite"></div>
         </div>
       </section>
 
@@ -330,7 +348,7 @@
     <dialog id="seed-create-dialog" class="token-dialog">
       <div class="seed-type-picker">
         <h2>新增 SEED</h2>
-        <p>選擇類型後，直接開始編輯。</p>
+        <p>選擇類型後，進入 System Seed 範本與版本，再建立你的 SEED。</p>
         <div class="seed-type-options">
           <button type="button" class="seed-type-choice" data-seed-type="document"><strong>文件</strong><span>逐段建立文件</span></button>
           <button type="button" class="seed-type-choice" data-seed-type="approval"><strong>簽核</strong><span>欄位與簽核人</span></button>
@@ -345,6 +363,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/mammoth@latest/mammoth.browser.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@latest/dist/xlsx.full.min.js"></script>
-  <script src="app.js?v=control11"></script>
+  <script src="app.js?v=control12"></script>
 </body>
 </html>

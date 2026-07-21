@@ -18,6 +18,7 @@ const MEMBER_KEY = "seed-member-code-v1";
 const RECENT_PATH_KEY = "seed-recent-paths-v1";
 const SEED_TRAY_KEY = "seed-tray-v1";
 const SEED_META_KEY = "seed-meta-v1";
+const SYSTEM_SEED_KEY = "system-seed-catalog-v1";
 const MAP_VIEW_KEY = "seed-map-view-v1";
 const DEFAULT_AI_BASE = "https://api.openai.com/v1";
 
@@ -56,6 +57,11 @@ const state = {
   archivedSeedIds: [],
   importedOriginal: null,
   importedText: "",
+  systemBrowse: {
+    step: "types",
+    seedType: "",
+    templateId: "",
+  },
 };
 
 const $ = (id) => document.getElementById(id);
@@ -139,14 +145,14 @@ function renderNotifyList() {
 
 function showPanel(name) {
   state.panel = name;
-  for (const id of ["list", "read", "history", "diff"]) {
+  for (const id of ["list", "read", "history", "diff", "system-seed"]) {
     $(`panel-${id}`).classList.toggle("hidden", id !== name);
   }
 
   const onMap = name === "list";
   const chrome = $("chrome");
   const docBar = $("doc-bar");
-  if (chrome) chrome.dataset.mode = onMap ? "map" : "doc";
+  if (chrome) chrome.dataset.mode = onMap || name === "system-seed" ? "map" : "doc";
   // 種子內操作列先隱藏：路徑用 SEED、段落用框編輯
   if (docBar) docBar.setAttribute("hidden", "");
   closeAllPopovers();
@@ -155,6 +161,7 @@ function showPanel(name) {
   if (stage) stage.scrollTop = 0;
   const panel = $(`panel-${name}`);
   if (panel) panel.scrollTop = 0;
+  if (name === "system-seed") renderSystemSeedPanel();
   if (name !== "list") pushRecentPath();
   updatePathBrand();
   updateModeChips();
@@ -2035,7 +2042,7 @@ function updateModeChips() {
   if (!wrap) return;
   const show = state.panel !== "list" && !!state.current;
   wrap.classList.toggle("hidden", !show);
-  $("map-view-chips")?.classList.toggle("hidden", state.panel !== "list");
+  $("map-view-chips")?.classList.toggle("hidden", state.panel !== "list" && state.panel !== "system-seed");
   const mode =
     state.panel === "diff" || state.panel === "history"
       ? "diff"
@@ -2302,9 +2309,321 @@ function deleteSeed(id) {
   showToast("已刪除 SEED", "ok");
 }
 
+const SYSTEM_SEED_TYPES = [
+  { id: "document", label: "文件", desc: "逐段建立文件，適合筆記與規格" },
+  { id: "approval", label: "簽核", desc: "欄位、流程、權限與通知範本" },
+  { id: "discussion", label: "討論", desc: "直播風格畫面與評論截圖" },
+];
+
+function systemSeedTypeLabel(seedType) {
+  return SYSTEM_SEED_TYPES.find((item) => item.id === seedType)?.label || seedType;
+}
+
+function buildBlankSystemSnapshot(seedType) {
+  if (seedType === "approval") {
+    const seed = {
+      seedType: "approval",
+      title: "未命名簽核",
+      approvalIsTemplate: true,
+      formFields: [{ label: "申請說明", type: "textarea", options: "" }],
+    };
+    ensureApprovalModel(seed);
+    return captureSeedSnapshot(seed);
+  }
+  if (seedType === "discussion") {
+    return {
+      seedType: "discussion",
+      title: "未命名討論",
+      subtitle: "",
+      messages: [],
+      liveContent: "",
+      text: discussionToText({
+        title: "未命名討論",
+        subtitle: "",
+        messages: [],
+        liveContent: "",
+      }),
+    };
+  }
+  return {
+    seedType: "document",
+    title: "未命名文件",
+    subtitle: "",
+    text: "",
+  };
+}
+
+function getBuiltinSystemSeedCatalog() {
+  const now = "2026-07-21T12:00:00.000Z";
+  return {
+    document: [{
+      id: "sys-doc-blank",
+      name: "空白文件",
+      builtin: true,
+      versions: [{ rev: 1, label: "初版", savedAt: now, snapshot: buildBlankSystemSnapshot("document") }],
+    }],
+    approval: [{
+      id: "sys-approval-blank",
+      name: "空白簽核範本",
+      builtin: true,
+      versions: [{ rev: 1, label: "初版", savedAt: now, snapshot: buildBlankSystemSnapshot("approval") }],
+    }],
+    discussion: [{
+      id: "sys-discussion-blank",
+      name: "空白討論",
+      builtin: true,
+      versions: [{ rev: 1, label: "初版", savedAt: now, snapshot: buildBlankSystemSnapshot("discussion") }],
+    }],
+  };
+}
+
+function loadSystemSeedCatalog() {
+  const catalog = getBuiltinSystemSeedCatalog();
+  try {
+    const raw = JSON.parse(localStorage.getItem(SYSTEM_SEED_KEY) || "{}");
+    for (const type of Object.keys(catalog)) {
+      const custom = Array.isArray(raw[type]) ? raw[type] : [];
+      catalog[type] = [...catalog[type], ...custom];
+    }
+  } catch {
+    /* ignore */
+  }
+  return catalog;
+}
+
+function saveSystemSeedCustomCatalog(customOnly) {
+  localStorage.setItem(SYSTEM_SEED_KEY, JSON.stringify(customOnly));
+}
+
+function listCustomSystemTemplates() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(SYSTEM_SEED_KEY) || "{}");
+    return raw && typeof raw === "object" ? raw : {};
+  } catch {
+    return {};
+  }
+}
+
+function captureSeedSnapshot(seed) {
+  if (!seed) return buildBlankSystemSnapshot("document");
+  if (seed.seedType === "approval") ensureApprovalModel(seed);
+  syncWorkingFromFrames();
+  const snapshot = {
+    seedType: seed.seedType || "document",
+    title: seed.title || "未命名 SEED",
+    subtitle: seed.subtitle || "",
+    approvalIsTemplate: seed.approvalIsTemplate !== false && !seed.approvalTemplateId,
+    approvalTemplateId: seed.approvalTemplateId || "",
+    formFields: JSON.parse(JSON.stringify(seed.formFields || [])),
+    approvalConfig: seed.approvalConfig ? JSON.parse(JSON.stringify(seed.approvalConfig)) : null,
+    messages: JSON.parse(JSON.stringify(seed.messages || [])),
+    liveContent: seed.liveContent || "",
+    text: "",
+  };
+  if (seed.seedType === "approval") snapshot.text = approvalToText(seed);
+  else if (seed.seedType === "discussion") snapshot.text = discussionToText(seed);
+  else snapshot.text = state.current?.id === seed.id ? state.workingText : (localStorage.getItem(`seed-draft:${seed.id}`) || "");
+  return snapshot;
+}
+
+function applySnapshotToSeed(seed, snapshot) {
+  seed.seedType = snapshot.seedType || "document";
+  seed.title = snapshot.title || seed.title;
+  seed.subtitle = snapshot.subtitle || "";
+  seed.approvalTemplateId = snapshot.approvalTemplateId || "";
+  seed.approvalIsTemplate = snapshot.seedType === "approval"
+    ? snapshot.approvalIsTemplate !== false && !snapshot.approvalTemplateId
+    : false;
+  if (seed.seedType === "approval") {
+    seed.formFields = JSON.parse(JSON.stringify(snapshot.formFields || []));
+    seed.approvalConfig = JSON.parse(JSON.stringify(snapshot.approvalConfig || {}));
+    ensureApprovalModel(seed);
+    if (isApprovalTemplate(seed)) {
+      seed.approvalConfig.tab = "fields";
+      delete seed.approvalConfig.roleViewInitialized;
+    } else if (isApprovalInstance(seed)) {
+      seed.approvalConfig.tab = "fill";
+      seed.approvalConfig.status ||= "Draft";
+    }
+  } else if (seed.seedType === "discussion") {
+    seed.messages = JSON.parse(JSON.stringify(snapshot.messages || []));
+    seed.liveContent = snapshot.liveContent || "";
+  }
+  localStorage.setItem(`seed-draft:${seed.id}`, snapshot.text || "");
+}
+
+function resetSystemBrowse(step = "types", seedType = "", templateId = "") {
+  state.systemBrowse = { step, seedType, templateId };
+}
+
+function openSystemSeedBrowse(step = "types", seedType = "", templateId = "") {
+  resetSystemBrowse(step, seedType, templateId);
+  showPanel("system-seed");
+}
+
+function findSystemTemplate(catalog, seedType, templateId) {
+  return (catalog[seedType] || []).find((item) => item.id === templateId) || null;
+}
+
+function forkSystemSeedVersion(template, version) {
+  const seedType = version.snapshot?.seedType || template.seedType || "document";
+  const title = `${template.name}（v${version.rev}）`;
+  const seed = createSeed(title, seedType);
+  applySnapshotToSeed(seed, version.snapshot);
+  seed.title = title;
+  seed.alias = title;
+  seed.short = Array.from(title).slice(0, 4).join("");
+  saveSeedTrayState();
+  return seed;
+}
+
+function appendSystemSeedVersion(seedType, templateName, snapshot, sourceLabel = "") {
+  const custom = listCustomSystemTemplates();
+  custom[seedType] ||= [];
+  let template = custom[seedType].find((item) => item.name === templateName);
+  if (!template) {
+    template = {
+      id: `custom-${Date.now().toString(36)}`,
+      name: templateName,
+      builtin: false,
+      versions: [],
+    };
+    custom[seedType].unshift(template);
+  }
+  const rev = (template.versions[0]?.rev || 0) + 1;
+  template.versions.unshift({
+    rev,
+    label: sourceLabel || `v${rev}`,
+    savedAt: new Date().toISOString(),
+    snapshot,
+  });
+  template.versions = template.versions.slice(0, 30);
+  saveSystemSeedCustomCatalog(custom);
+  return { template, rev };
+}
+
+function saveCurrentAsSystemSeedTemplate() {
+  if (!state.current) {
+    showToast("請先打開一份 SEED", "warn");
+    return;
+  }
+  const seedType = state.current.seedType || "document";
+  const defaultName = state.current.title || `我的${systemSeedTypeLabel(seedType)}`;
+  const templateName = window.prompt(`存成 System Seed 範本名稱：`, defaultName);
+  if (!templateName) return;
+  syncWorkingFromFrames();
+  const snapshot = captureSeedSnapshot(state.current);
+  const { template, rev } = appendSystemSeedVersion(seedType, templateName.trim(), snapshot, "從目前 SEED");
+  showToast(`已存成 System Seed「${template.name}」v${rev}`, "ok");
+  openSystemSeedBrowse("versions", seedType, template.id);
+}
+
+function renderSystemSeedPanel() {
+  const board = $("system-seed-board");
+  if (!board) return;
+  const catalog = loadSystemSeedCatalog();
+  const { step, seedType, templateId } = state.systemBrowse;
+  board.innerHTML = "";
+
+  if (step === "types") {
+    const intro = document.createElement("p");
+    intro.className = "system-seed-help";
+    intro.textContent = "選一種 SEED 類型。下一步會看到系統範本與版本。";
+    board.appendChild(intro);
+    const grid = document.createElement("div");
+    grid.className = "system-seed-type-grid";
+    SYSTEM_SEED_TYPES.forEach((type) => {
+      const card = document.createElement("button");
+      card.type = "button";
+      card.className = "system-seed-type-card";
+      card.innerHTML = `<strong>${escapeHtml(type.label)}</strong><span>${escapeHtml(type.desc)}</span>`;
+      card.addEventListener("click", () => {
+        state.systemBrowse = { step: "templates", seedType: type.id, templateId: "" };
+        renderSystemSeedPanel();
+        updatePathBrand();
+      });
+      grid.appendChild(card);
+    });
+    board.appendChild(grid);
+    return;
+  }
+
+  if (step === "templates") {
+    const intro = document.createElement("p");
+    intro.className = "system-seed-help";
+    intro.textContent = `${systemSeedTypeLabel(seedType)}範本：點進去看版本，再建立你的 SEED。`;
+    board.appendChild(intro);
+    const list = document.createElement("ul");
+    list.className = "system-seed-template-list";
+    (catalog[seedType] || []).forEach((template) => {
+      const item = document.createElement("li");
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "system-seed-template-item";
+      const latest = template.versions?.[0];
+      button.innerHTML = `
+        <strong>${escapeHtml(template.name)}</strong>
+        <span class="meta">${template.builtin ? "系統內建" : "自訂"} · 最新 v${latest?.rev || 1}</span>`;
+      button.addEventListener("click", () => {
+        state.systemBrowse = { step: "versions", seedType, templateId: template.id };
+        renderSystemSeedPanel();
+        updatePathBrand();
+      });
+      item.appendChild(button);
+      list.appendChild(item);
+    });
+    board.appendChild(list);
+    if (state.current) {
+      const saveCurrent = document.createElement("button");
+      saveCurrent.type = "button";
+      saveCurrent.className = "btn";
+      saveCurrent.textContent = "把目前 SEED 另存為此類型範本";
+      saveCurrent.addEventListener("click", () => saveCurrentAsSystemSeedTemplate());
+      board.appendChild(saveCurrent);
+    }
+    return;
+  }
+
+  if (step === "versions") {
+    const template = findSystemTemplate(catalog, seedType, templateId);
+    if (!template) {
+      board.innerHTML = "<p class='meta'>找不到這個範本。</p>";
+      return;
+    }
+    const intro = document.createElement("p");
+    intro.className = "system-seed-help";
+    intro.textContent = `「${template.name}」的版本。選一版建立 SEED，進入後再修改並 Save。`;
+    board.appendChild(intro);
+    const list = document.createElement("ul");
+    list.className = "system-seed-version-list";
+    (template.versions || []).forEach((version) => {
+      const item = document.createElement("li");
+      item.className = "system-seed-version-row";
+      const meta = document.createElement("div");
+      meta.innerHTML = `
+        <strong>v${version.rev}</strong>
+        <span class="meta">${escapeHtml(version.label || "")} · ${escapeHtml(formatWhen(version.savedAt))}</span>`;
+      const actions = document.createElement("div");
+      actions.className = "system-seed-version-actions";
+      const fork = document.createElement("button");
+      fork.type = "button";
+      fork.className = "btn btn-primary";
+      fork.textContent = "用這版建立 SEED";
+      fork.addEventListener("click", () => {
+        const seed = forkSystemSeedVersion(template, version);
+        showToast(`已建立「${seed.title}」到我的 SEED`, "ok");
+        selectSeed(seed).catch((err) => setStatus(err.message || String(err)));
+      });
+      actions.appendChild(fork);
+      item.append(meta, actions);
+      list.appendChild(item);
+    });
+    board.appendChild(list);
+  }
+}
+
 function addSeed() {
-  $("seed-create-dialog").showModal();
-  $("seed-create-dialog").querySelector(".seed-type-choice")?.focus();
+  openSystemSeedBrowse("types");
 }
 
 function createSeed(title, seedType) {
@@ -3816,7 +4135,25 @@ async function loadVersions() {
       setStatus("已載入舊版當草稿；確認後按「存成一版」才會寫回倉庫");
       showPanel("read");
     });
-    li.querySelector(".row-actions").appendChild(useBtn);
+    const systemBtn = document.createElement("button");
+    systemBtn.type = "button";
+    systemBtn.className = "btn";
+    systemBtn.textContent = "存成 System Seed";
+    systemBtn.addEventListener("click", async () => {
+      const text = await fetchFileAt(v.sha);
+      const seedType = state.current.seedType || "document";
+      const templateName = window.prompt(
+        "存成 System Seed 範本名稱：",
+        `${state.current.title}（${formatWhen(v.when)}）`
+      );
+      if (!templateName) return;
+      const snapshot = captureSeedSnapshot(state.current);
+      snapshot.text = text;
+      const { template, rev } = appendSystemSeedVersion(seedType, templateName.trim(), snapshot, `來自版本 ${formatWhen(v.when)}`);
+      showToast(`已存成 System Seed「${template.name}」v${rev}`, "ok");
+      openSystemSeedBrowse("versions", seedType, template.id);
+    });
+    li.querySelector(".row-actions").appendChild(systemBtn);
     list.appendChild(li);
   }
 
@@ -4286,6 +4623,8 @@ $("pack-file").addEventListener("change", async () => {
 });
 
 $("seed-add")?.addEventListener("click", addSeed);
+$("system-seed-open")?.addEventListener("click", () => openSystemSeedBrowse("types"));
+$("save-as-system-seed")?.addEventListener("click", () => saveCurrentAsSystemSeedTemplate());
 
 $("seed-create-dialog")?.addEventListener("click", (e) => {
   if (e.target.closest("[data-seed-create-close]")) {
@@ -4295,14 +4634,8 @@ $("seed-create-dialog")?.addEventListener("click", (e) => {
   const choice = e.target.closest("[data-seed-type]");
   if (!choice) return;
   const seedType = choice.dataset.seedType;
-  const defaultTitle = {
-    document: "未命名文件",
-    approval: "未命名簽核",
-    discussion: "未命名討論",
-  }[seedType];
-  const seed = createSeed(defaultTitle, seedType);
   $("seed-create-dialog").close();
-  selectSeed(seed).catch((err) => setStatus(err.message || String(err)));
+  openSystemSeedBrowse("templates", seedType);
 });
 
 $("seed-tray-list")?.addEventListener("dragover", (e) => {
@@ -4352,6 +4685,36 @@ function buildPathSteps() {
       go: () => showPanel("list"),
     },
   ];
+  if (state.panel === "system-seed") {
+    steps.push({
+      key: "system-seed",
+      label: "System Seed",
+      depth: 1,
+      go: () => openSystemSeedBrowse("types"),
+    });
+    const { step, seedType, templateId } = state.systemBrowse;
+    if (step === "templates" || step === "versions") {
+      const catalog = loadSystemSeedCatalog();
+      steps.push({
+        key: `system-type-${seedType}`,
+        label: systemSeedTypeLabel(seedType),
+        depth: 2,
+        go: () => openSystemSeedBrowse("templates", seedType),
+      });
+    }
+    if (step === "versions") {
+      const template = findSystemTemplate(loadSystemSeedCatalog(), seedType, templateId);
+      if (template) {
+        steps.push({
+          key: `system-template-${templateId}`,
+          label: template.name,
+          depth: 3,
+          go: () => openSystemSeedBrowse("versions", seedType, templateId),
+        });
+      }
+    }
+    return steps;
+  }
   if (state.current && state.panel !== "list") {
     steps.push({
       key: "seed",

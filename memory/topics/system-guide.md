@@ -29,6 +29,7 @@ status: active
 ## 功能對照
 
 - **首頁棋盤**：看 `knowledge-puzzle.md`。
+- **System Seed（類型 → 範本 → 版本 → 建立 SEED）**：看 `knowledge-puzzle.md` 首頁排版與 `sessions/2026-07-21-system-seed-flow.md`。
 - **三種 SEED**（文件、簽核、主題討論）：看 `knowledge-puzzle.md` 的「三種 SEED」。
 - **簽核的角色、權限、委派與通知**：看 `approval-workflow.md`。
 - **編輯、Save、版本、歷程差異**：看 `core-features.md` 的「煉化／版本」。

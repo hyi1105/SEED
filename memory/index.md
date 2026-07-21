@@ -10,6 +10,7 @@
 
 ## 場次
 
+- 2026-07-21 — System Seed 三層建立流程 — 標籤：SEED、System Seed、範本 — [sessions/2026-07-21-system-seed-flow.md](sessions/2026-07-21-system-seed-flow.md)
 - 2026-07-21 — 簽核申請單執行期 UX — 標籤：SEED、簽核、申請單 — [sessions/2026-07-21-approval-runtime-ux.md](sessions/2026-07-21-approval-runtime-ux.md)
 - 2026-07-21 — 兩欄編輯＋文件匯入 — 標籤：SEED、兩欄編輯、文件匯入、棋盤模式、歷程 — [sessions/2026-07-21-two-column-document-import.md](sessions/2026-07-21-two-column-document-import.md)
 - 2026-07-21 — 三種 SEED＋手動版本＋棋盤 — 標籤：SEED、版本、簽核、討論、棋盤、匯出 — [sessions/2026-07-21-seed-types-manual-versions.md](sessions/2026-07-21-seed-types-manual-versions.md)

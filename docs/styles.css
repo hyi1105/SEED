@@ -642,6 +642,116 @@ html, body {
   }
 }
 
+.system-seed-entry {
+  display: grid;
+  gap: 0.55rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: linear-gradient(180deg, #f4faf7 0%, var(--paper) 100%);
+  padding: 0.85rem;
+  margin-bottom: 0.65rem;
+}
+
+.system-seed-head h2 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.system-seed-head .meta {
+  margin: 0.2rem 0 0;
+}
+
+.system-seed-panel {
+  display: grid;
+  gap: 0.75rem;
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: 1rem 0.75rem 2rem;
+}
+
+.system-seed-panel-head h1 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.system-seed-panel-head .lead {
+  margin: 0.35rem 0 0;
+}
+
+.system-seed-board {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.system-seed-help {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.system-seed-type-grid {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.system-seed-type-card {
+  display: grid;
+  gap: 0.2rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+  color: var(--ink);
+  padding: 0.85rem 0.95rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.system-seed-type-card strong {
+  font-size: 0.95rem;
+}
+
+.system-seed-type-card span {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.system-seed-template-list,
+.system-seed-version-list {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.system-seed-template-item {
+  display: grid;
+  gap: 0.15rem;
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--card);
+  color: var(--ink);
+  padding: 0.65rem 0.75rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.system-seed-version-row {
+  display: grid;
+  gap: 0.45rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--card);
+  padding: 0.65rem 0.75rem;
+}
+
+.system-seed-version-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
 .seed-tray {
   display: flex;
   flex-direction: column;
