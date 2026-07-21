@@ -9,9 +9,9 @@
     "cols": 10,
     "rows": 10,
     "note": "知識拼圖：拖曳擺放；點進去看完整標題",
-    "savedAt": "2026-07-21T00:18:13.099Z",
+    "savedAt": "2026-07-21T00:21:44.592Z",
     "layoutName": "7/21 上午7:30",
-    "layoutRev": 6
+    "layoutRev": 7
   },
   "seeds": [
     {
@@ -31,8 +31,8 @@
       "alias": "中橫交通",
       "path": "memory/maps/taiwan-roads/zhongheng.md",
       "blurb": "偏中",
-      "col": 6,
-      "row": 5,
+      "col": 7,
+      "row": 4,
       "cover": null,
       "archived": false
     },
@@ -64,8 +64,8 @@
       "alias": "規格草稿",
       "path": "memory/topics/personal-mvp-spec.md",
       "blurb": "工作室",
-      "col": 3,
-      "row": 5,
+      "col": 2,
+      "row": 4,
       "cover": null,
       "archived": false
     },
@@ -75,8 +75,8 @@
       "alias": "地圖構想",
       "path": "memory/topics/knowledge-map-home.md",
       "blurb": "工作室",
-      "col": 4,
-      "row": 6,
+      "col": 5,
+      "row": 5,
       "cover": null,
       "archived": false
     },
@@ -86,8 +86,8 @@
       "alias": "產品願景",
       "path": "memory/sessions/2026-07-20-platform-vision.md",
       "blurb": "工作室",
-      "col": 1,
-      "row": 5,
+      "col": 3,
+      "row": 6,
       "cover": null,
       "archived": false
     },
@@ -130,8 +130,8 @@
       "alias": "核心清單",
       "path": "memory/topics/core-features.md",
       "blurb": "工作室",
-      "col": 0,
-      "row": 0,
+      "col": 4,
+      "row": 4,
       "cover": null,
       "archived": false
     },
