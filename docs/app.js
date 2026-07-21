@@ -767,22 +767,31 @@ function renderFrameBoard() {
 
 function renderPersonCardPrintView(board, seed) {
   const card = ensurePersonCardModel(seed);
-  renderSeedHeading(board, false, { showSubtitle: false });
-  const grid = document.createElement("div");
-  grid.className = "file-seed-content-only";
-  card.fields.forEach((field) => {
-    const item = document.createElement("div");
-    item.className = "file-seed-content-item";
-    const content = document.createElement("div");
-    content.className = "file-seed-print-content";
-    content.textContent = field.value || "";
-    if (field.value && field.value.includes("\n")) {
-      content.style.whiteSpace = "pre-wrap";
-    }
-    item.appendChild(content);
-    grid.appendChild(item);
-  });
-  board.appendChild(grid);
+  board.classList.add("file-seed-print");
+  const sheet = document.createElement("div");
+  sheet.className = "file-seed-print-sheet";
+  const title = document.createElement("h1");
+  title.className = "file-seed-print-title";
+  title.textContent = seed.title || "未命名文件";
+  sheet.appendChild(title);
+  const body = document.createElement("div");
+  body.className = "file-seed-print-body";
+  const values = card.fields.map((field) => String(field.value || "").trim()).filter(Boolean);
+  if (!values.length) {
+    const empty = document.createElement("p");
+    empty.className = "file-seed-print-empty";
+    empty.textContent = "（尚無內容）";
+    body.appendChild(empty);
+  } else {
+    values.forEach((value) => {
+      const line = document.createElement("p");
+      line.className = "file-seed-print-line";
+      line.textContent = value;
+      body.appendChild(line);
+    });
+  }
+  sheet.appendChild(body);
+  board.appendChild(sheet);
 }
 
 function renderPersonCardPermissionCol(seed, field, key, title) {
@@ -995,6 +1004,7 @@ function renderFileBoxMeta(field) {
 
 function renderPersonCardEditor(board, seed) {
   const card = ensurePersonCardModel(seed);
+  board.classList.remove("file-seed-print");
   const fields = document.createElement("div");
   fields.className = "file-seed-content-only";
   if (!card.fields.length) {

@@ -1287,15 +1287,42 @@ textarea.file-seed-input {
   font-size: 0.78rem;
 }
 
-.file-seed-print-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 0.5rem;
+.file-seed-print-sheet {
+  width: 100%;
+  max-width: 40rem;
+  margin: 0 auto;
+  padding: 0.35rem 0.15rem 1.5rem;
 }
 
-.file-seed-print-head small {
+.file-seed-print-title {
+  margin: 0 0 1rem;
+  font-family: "Noto Serif TC", serif;
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--ink);
+}
+
+.file-seed-print-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.file-seed-print-line {
+  margin: 0;
+  padding: 0;
+  font-size: 1rem;
+  line-height: 1.7;
+  color: var(--ink);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.file-seed-print-empty {
+  margin: 0;
   color: var(--muted);
+  font-size: 0.92rem;
 }
 
 .file-seed-print-content {
