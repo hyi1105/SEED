@@ -188,12 +188,76 @@ html, body {
   opacity: 0.85;
 }
 
-.nav-location {
-  margin: 0.45rem 0 0;
-  padding: 0.35rem 0.45rem 0;
-  border-top: 1px solid var(--line);
-  font-size: 0.72rem;
+.nav-choice[data-depth="1"],
+.nav-choice[data-depth="2"] {
+  padding-left: 1.15rem;
+}
+
+.nav-choice[data-depth="2"] {
+  padding-left: 2rem;
+}
+
+.nav-choice[data-depth="1"]::before,
+.nav-choice[data-depth="2"]::before {
+  content: "└ ";
   color: var(--muted);
+  opacity: 0.55;
+  margin-right: 0.1rem;
+}
+
+.nav-login {
+  margin-top: 0.45rem;
+  padding-top: 0.4rem;
+  border-top: 1px solid var(--line);
+}
+
+.nav-login-heading {
+  margin: 0 0 0.35rem;
+  padding: 0 0.45rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.nav-login-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.06rem;
+}
+
+.nav-login-row {
+  appearance: none;
+  border: none;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.38rem 0.45rem;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+  color: var(--ink);
+}
+
+.nav-login-row:hover {
+  background: var(--accent-soft);
+}
+
+.nav-login-label {
+  color: var(--ink);
+}
+
+.nav-login-value {
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.nav-login-row.is-ok .nav-login-value {
+  color: var(--accent);
+  font-weight: 600;
 }
 
 .mode-chips,
