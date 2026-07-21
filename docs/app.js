@@ -2679,7 +2679,6 @@ function updateModeChips() {
   if (!wrap) return;
   const show = state.panel !== "list" && !!state.current;
   wrap.classList.toggle("hidden", !show);
-  $("map-view-chips")?.classList.toggle("hidden", state.panel !== "list" && state.panel !== "system-seed");
   const mode =
     state.panel === "diff" || state.panel === "history"
       ? "diff"
@@ -3822,11 +3821,6 @@ function applyMapView() {
   const view = state.map.view || "fit";
   const shell = document.querySelector(".map-shell");
   if (shell) shell.dataset.mapView = view;
-  $("map-view-chips")?.querySelectorAll("[data-map-view]").forEach((button) => {
-    const active = button.dataset.mapView === view;
-    button.classList.toggle("is-active", active);
-    button.setAttribute("aria-pressed", active ? "true" : "false");
-  });
 }
 
 function setMapView(view) {
@@ -4977,11 +4971,6 @@ $("mode-chips")?.addEventListener("click", (e) => {
 
 $("edit-save")?.addEventListener("click", () => {
   saveCurrentVersion().catch((err) => setStatus(err.message || String(err)));
-});
-
-$("map-view-chips")?.addEventListener("click", (e) => {
-  const button = e.target.closest("[data-map-view]");
-  if (button) setMapView(button.dataset.mapView);
 });
 
 $("version-form").addEventListener("submit", async (e) => {
