@@ -752,14 +752,14 @@ function renderPersonCardPrintView(board, seed) {
   board.appendChild(grid);
 }
 
-function renderPersonCardPermissionRow(seed, field, key, title) {
+function renderPersonCardPermissionCol(seed, field, key, title) {
   const wrap = document.createElement("div");
-  wrap.className = "person-card-permission";
+  wrap.className = "person-card-perm-col";
   const label = document.createElement("span");
-  label.className = "person-card-permission-label";
+  label.className = "info-label";
   label.textContent = title;
   const row = document.createElement("div");
-  row.className = "person-card-field-visibility";
+  row.className = "person-card-perm-btns";
   ["本人", "所有人"].forEach((name) => {
     const button = document.createElement("button");
     button.type = "button";
@@ -785,9 +785,9 @@ function renderPersonCardPermissionRow(seed, field, key, title) {
   const custom = document.createElement("button");
   custom.type = "button";
   custom.className = "btn person-card-visibility-btn";
-  custom.textContent = "＋ 指定人員";
+  custom.textContent = "＋ 指定";
   custom.addEventListener("click", () => {
-    const name = window.prompt(`指定${title.replace("：", "")}：`);
+    const name = window.prompt(`指定${title}：`);
     if (!name) return;
     field[key] ||= [];
     field[key] = field[key].filter((item) => item !== "所有人");
@@ -799,6 +799,16 @@ function renderPersonCardPermissionRow(seed, field, key, title) {
   row.appendChild(custom);
   wrap.append(label, row);
   return wrap;
+}
+
+function renderPersonCardPermissions(seed, field) {
+  const row = document.createElement("div");
+  row.className = "person-card-perm-row";
+  row.append(
+    renderPersonCardPermissionCol(seed, field, "editors", "可編輯"),
+    renderPersonCardPermissionCol(seed, field, "viewers", "可見")
+  );
+  return row;
 }
 
 function renderPersonCardSelectOptions(seed, field) {
@@ -893,13 +903,39 @@ function renderPersonCardEditor(board, seed) {
     const item = document.createElement("div");
     item.className = "person-card-field";
 
-    const typeRow = document.createElement("div");
-    typeRow.className = "person-card-field-type-row";
-    const number = document.createElement("span");
-    number.className = "person-card-field-num";
-    number.textContent = String(index + 1);
+    const labelRow = document.createElement("div");
+    labelRow.className = "info-row person-card-label-row";
+    const nameLabel = document.createElement("span");
+    nameLabel.className = "info-label";
+    nameLabel.textContent = "名稱";
+    const typeLabel = document.createElement("span");
+    typeLabel.className = "info-label";
+    typeLabel.textContent = "類別";
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "frame-remove person-card-remove";
+    remove.textContent = "×";
+    remove.title = "刪除此欄";
+    remove.addEventListener("click", () => {
+      if (card.fields.length <= 1) return;
+      card.fields.splice(index, 1);
+      persistPersonCard(seed);
+      renderFrameBoard();
+    });
+    labelRow.append(nameLabel, typeLabel, remove);
+
+    const valueRow = document.createElement("div");
+    valueRow.className = "info-row person-card-value-row";
+    const nameInput = document.createElement("input");
+    nameInput.className = "person-card-value person-card-value-name";
+    nameInput.placeholder = "例如簽名1";
+    nameInput.value = field.label || "";
+    nameInput.addEventListener("input", () => {
+      field.label = nameInput.value;
+      persistPersonCard(seed);
+    });
     const type = document.createElement("select");
-    type.className = "person-card-type";
+    type.className = "person-card-value person-card-value-type";
     PERSON_FIELD_TYPES.forEach((option) => {
       const opt = document.createElement("option");
       opt.value = option.id;
@@ -913,37 +949,9 @@ function renderPersonCardEditor(board, seed) {
       persistPersonCard(seed);
       renderFrameBoard();
     });
-    const remove = document.createElement("button");
-    remove.type = "button";
-    remove.className = "frame-remove";
-    remove.textContent = "×";
-    remove.title = "刪除此欄";
-    remove.addEventListener("click", () => {
-      if (card.fields.length <= 1) return;
-      card.fields.splice(index, 1);
-      persistPersonCard(seed);
-      renderFrameBoard();
-    });
-    typeRow.append(number, type, remove);
+    valueRow.append(nameInput, type);
 
-    const nameRow = document.createElement("label");
-    nameRow.className = "person-card-field-name";
-    const nameInput = document.createElement("input");
-    nameInput.className = "person-card-label";
-    nameInput.placeholder = "欄位名稱，例如簽名1";
-    nameInput.value = field.label || "";
-    nameInput.addEventListener("input", () => {
-      field.label = nameInput.value;
-      persistPersonCard(seed);
-    });
-    nameRow.append(nameInput);
-
-    item.append(
-      typeRow,
-      nameRow,
-      renderPersonCardPermissionRow(seed, field, "viewers", "可見："),
-      renderPersonCardPermissionRow(seed, field, "editors", "可編輯：")
-    );
+    item.append(labelRow, valueRow, renderPersonCardPermissions(seed, field));
     if (field.type === "select") {
       item.appendChild(renderPersonCardSelectOptions(seed, field));
     }

@@ -1036,8 +1036,8 @@ html, body {
 
 .person-card-field {
   display: grid;
-  gap: 0.5rem;
-  padding-bottom: 0.75rem;
+  gap: 0;
+  padding-bottom: 0.85rem;
   border-bottom: 1px solid var(--line);
 }
 
@@ -1045,71 +1045,86 @@ html, body {
   border-bottom: 0;
 }
 
-.person-card-field-type-row {
+.person-card-label-row,
+.person-card-value-row {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
   gap: 0.45rem;
   align-items: center;
 }
 
-.person-card-type {
-  width: 100%;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  background: var(--card);
-  color: var(--ink);
-  font: inherit;
-  font-size: 0.9rem;
-  padding: 0.45rem 0.55rem;
+.person-card-label-row {
+  padding-top: 0.15rem;
 }
 
-.person-card-field-name {
-  display: block;
+.person-card-label-row .info-label:last-of-type {
+  text-align: right;
 }
 
-.person-card-permission {
-  display: grid;
-  gap: 0.3rem;
+.person-card-remove {
+  grid-column: 3;
+  grid-row: 1;
 }
 
-.person-card-permission-label {
-  font-size: 0.82rem;
-  color: var(--muted);
-}
-
-.person-card-field-head {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  gap: 0.45rem;
-  align-items: center;
-}
-
-.person-card-field-num {
-  color: var(--accent);
-  font-size: 0.85rem;
-  font-weight: 700;
-}
-
-.person-card-label {
-  width: 100%;
-  border: 0;
+.person-card-value-row {
+  padding-top: 0.15rem;
+  padding-bottom: 0.35rem;
   border-bottom: 1px solid var(--line);
+}
+
+.person-card-value-row .person-card-value-type {
+  grid-column: 2;
+}
+
+.person-card-value-row .person-card-value-name {
+  grid-column: 1;
+}
+
+.person-card-value {
+  flex: 1 1 0;
+  min-width: 0;
+  border: 0;
   background: transparent;
-  color: var(--ink);
   font: inherit;
   font-size: 0.95rem;
-  padding: 0.25rem 0;
+  font-weight: 600;
+  color: var(--accent);
+  padding: 0.15rem 0;
 }
 
-.person-card-field-visibility {
+.person-card-value-name {
+  text-align: left;
+}
+
+.person-card-value-type {
+  text-align: right;
+  text-align-last: right;
+  cursor: pointer;
+}
+
+.person-card-perm-row {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0.65rem;
+  padding-top: 0.45rem;
+}
+
+.person-card-perm-col {
+  display: grid;
   gap: 0.35rem;
+  min-width: 0;
+}
+
+.person-card-perm-btns {
+  display: grid;
+  gap: 0.3rem;
 }
 
 .person-card-visibility-btn {
   width: 100%;
   justify-content: center;
+  font-size: 0.82rem;
+  padding: 0.35rem 0.45rem;
 }
 
 .person-card-visibility-btn.is-active {
