@@ -106,6 +106,35 @@ html, body {
   color: var(--muted);
 }
 
+.path-crumb-home {
+  white-space: nowrap;
+}
+
+.path-crumb-seed {
+  display: flex;
+  flex-direction: column;
+  gap: 0.08rem;
+  min-width: 0;
+  line-height: 1.25;
+}
+
+.path-crumb-title {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.path-crumb-version {
+  font-size: 0.68rem;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .crumb-sep {
   color: var(--line);
   flex: 0 0 auto;

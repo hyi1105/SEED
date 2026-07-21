@@ -2770,6 +2770,7 @@ async function saveCurrentVersion(actor = null) {
   state.current.lastActor = "人";
   if (state.current.localOnly) saveSeedTrayState();
   await loadVersions();
+  updatePathBrand();
   if (state.panel === "read" && (state.current?.seedType || "document") === "document" && !isPersonCardDocument(state.current)) {
     renderFrameBoard();
   } else if (state.panel === "read" && isPersonCardDocument(state.current)) {
@@ -4840,6 +4841,7 @@ async function loadVersions() {
     list.innerHTML = "<li class='meta'>還沒有版本紀錄</li>";
     fillDiffSelects();
     setStatus("還沒有版本紀錄；按 Save 建立第一版");
+    updatePathBrand();
     return;
   }
 
@@ -4883,6 +4885,7 @@ async function loadVersions() {
 
   fillDiffSelects();
   setStatus(`已載入 ${state.versions.length} 個版本`);
+  updatePathBrand();
 }
 
 function fillDiffSelects() {
@@ -5397,6 +5400,13 @@ function closeAllPopovers() {
   setPathOpen(false);
 }
 
+function getSeedReleaseVersionLabel() {
+  if (!state.current) return "";
+  const latest = state.versions[0];
+  if (!latest?.when) return "";
+  return `發布版本 ${formatWhen(latest.when)}`;
+}
+
 function buildPathSteps() {
   const steps = [
     {
@@ -5431,26 +5441,6 @@ function buildPathSteps() {
   return steps;
 }
 
-function renderPathLadder() {
-  const ladder = $("path-ladder");
-  if (!ladder) return;
-  const steps = buildPathSteps();
-  ladder.innerHTML = "";
-  steps.forEach((step, index) => {
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "path-step";
-    if (index === steps.length - 1) btn.classList.add("is-current");
-    btn.dataset.depth = String(step.depth);
-    btn.textContent = step.label;
-    btn.addEventListener("click", () => {
-      step.go();
-      setPathOpen(false);
-    });
-    ladder.appendChild(btn);
-  });
-}
-
 function renderPathRecent() {
   const wrap = $("path-recent");
   if (!wrap) return;
@@ -5479,45 +5469,37 @@ function renderPathRecent() {
 
 function setPathOpen(open) {
   const pop = $("path-popover");
-  const btn = $("brand-home");
   if (!pop) return;
   if (open) {
-    renderPathLadder();
     renderPathRecent();
-    positionPopover(pop, btn);
+    positionPopover(pop, $("brand-home"));
     setPopoverOpen(null);
   }
   pop.classList.toggle("hidden", !open);
-  if (btn) btn.setAttribute("aria-expanded", open ? "true" : "false");
-  updatePathBrand();
+  pop.hidden = !open;
 }
 
 function updatePathBrand() {
   const btn = $("brand-home");
   const crumb = $("path-crumb");
   if (!btn) return;
-  const steps = buildPathSteps();
   if (crumb) {
-    crumb.innerHTML = "";
-    steps.forEach((step, index) => {
-      if (index > 0) {
-        const sep = document.createElement("span");
-        sep.className = "crumb-sep";
-        sep.textContent = "›";
-        crumb.appendChild(sep);
-      }
-      const el = document.createElement("button");
-      el.type = "button";
-      el.className = "crumb-item" + (index === steps.length - 1 ? " is-current" : "");
-      el.textContent = step.label;
-      el.addEventListener("click", (e) => {
-        e.stopPropagation();
-        step.go();
-      });
-      crumb.appendChild(el);
-    });
+    if (state.panel === "list") {
+      crumb.innerHTML = `<span class="path-crumb-home">首頁</span>`;
+    } else if (state.panel === "system-seed") {
+      crumb.innerHTML = `<span class="path-crumb-home">Seed</span>`;
+    } else if (state.current) {
+      const title = state.current.title || "未命名 SEED";
+      const versionLabel = getSeedReleaseVersionLabel();
+      crumb.innerHTML = `<div class="path-crumb-seed">
+        <span class="path-crumb-title">${escapeHtml(title)}</span>
+        ${versionLabel ? `<span class="path-crumb-version">${escapeHtml(versionLabel)}</span>` : ""}
+      </div>`;
+    } else {
+      crumb.innerHTML = `<span class="path-crumb-home">首頁</span>`;
+    }
   }
-  btn.title = "點 SEED 開啟路徑選單";
+  btn.title = "回首頁";
   btn.classList.toggle("has-path", state.panel !== "list");
 }
 
@@ -5616,8 +5598,8 @@ function handleNotifyInput(text) {
 
 $("brand-home").addEventListener("click", (e) => {
   e.stopPropagation();
-  const open = $("path-popover").classList.contains("hidden");
-  setPathOpen(open);
+  setPathOpen(false);
+  showPanel("list");
 });
 
 $("header-me-btn").addEventListener("click", (e) => {
