@@ -711,6 +711,31 @@ html, body {
   padding: 0.2rem 0.25rem 0.2rem 0.55rem;
 }
 
+.seed-tray-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.seed-tray-spawn {
+  appearance: none;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  width: 1.4rem;
+  height: 1.4rem;
+  padding: 0;
+  font-size: 0.85rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.seed-tray-spawn:hover {
+  background: var(--accent);
+  color: #fff;
+}
+
 .seed-tray-open {
   appearance: none;
   border: 0;
@@ -1040,6 +1065,63 @@ html, body {
   font-size: 0.8rem;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.approval-flow-wrap {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.approval-flow-toggle {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.approval-flow-toggle .btn.is-active {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+}
+
+.approval-flow.is-people .approval-person strong {
+  font-size: 0.68rem;
+}
+
+.approval-mail-preview {
+  display: grid;
+  gap: 0.35rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #f7faf8;
+  padding: 0.65rem 0.75rem;
+}
+
+.approval-mail-preview header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.approval-mail-preview pre {
+  margin: 0;
+  white-space: pre-wrap;
+  font: inherit;
+  font-size: 0.78rem;
+  color: var(--ink);
+}
+
+.approval-instance-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.approval-instance-head .template-property {
+  margin: 0;
 }
 
 .approval-flow {

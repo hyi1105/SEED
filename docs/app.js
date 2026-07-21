@@ -638,7 +638,140 @@ function ensureApprovalModel(seed) {
   config.comments = Array.isArray(config.comments) ? config.comments : [];
   config.auditTrail = Array.isArray(config.auditTrail) ? config.auditTrail : [];
   config.delegations = Array.isArray(config.delegations) ? config.delegations : [];
+  config.flowView ||= "stage";
+  config.mailPreviewKey ||= "";
   return config;
+}
+
+function approvalFlowNotificationKey(stepIndex, nodeCount) {
+  if (stepIndex <= 0) return "submit";
+  if (stepIndex >= nodeCount - 2) return "complete";
+  return "approve";
+}
+
+function formatApprovalMailPreview(notification, seed) {
+  if (!notification) return "";
+  const title = seed?.title || "申請單";
+  return [
+    notification.subject.replace("{{title}}", title),
+    "",
+    notification.prefix,
+    notification.editable,
+    notification.suffix,
+    notification.reminderDays ? `\nReminder：${notification.reminderDays} 天後` : "",
+  ].filter(Boolean).join("\n");
+}
+
+function renderApprovalMailPreview(board, seed, key) {
+  const config = ensureApprovalModel(seed);
+  const notification = config.notifications[key];
+  if (!notification) return;
+  const panel = document.createElement("section");
+  panel.className = "approval-mail-preview";
+  panel.innerHTML = `
+    <header><strong>${escapeHtml(notification.label || key)} 通知預覽</strong><button type="button" class="frame-remove" title="關閉">×</button></header>
+    <p class="meta">尚未寄出；實際寄信需後端服務。</p>
+    <pre>${escapeHtml(formatApprovalMailPreview(notification, seed))}</pre>`;
+  panel.querySelector(".frame-remove").addEventListener("click", () => {
+    config.mailPreviewKey = "";
+    persistStructuredSeed();
+    renderFrameBoard();
+  });
+  board.appendChild(panel);
+}
+
+function buildApprovalStageNodes(config) {
+  return [
+    { role: "Requester", name: config.roles.Requester || "申請人" },
+    { role: "Filler", name: config.roles.Filler || "填寫人" },
+    ...config.stages.map((stage) => ({ role: stage.name, name: stage.people || stage.name, stage })),
+    { role: "Complete", name: "完成" },
+  ];
+}
+
+function buildApprovalPeopleNodes(config) {
+  const nodes = [];
+  const seen = new Set();
+  [
+    config.roles.Requester || "申請人",
+    config.roles.Filler || "填寫人",
+    ...config.stages.flatMap((stage) => String(stage.people || stage.name || "").split(",")),
+  ].forEach((raw) => {
+    const name = raw.trim();
+    if (!name || seen.has(name)) return;
+    seen.add(name);
+    nodes.push({ role: name, name });
+  });
+  nodes.push({ role: "Complete", name: "完成" });
+  return nodes;
+}
+
+function renderApprovalFlow(seed, options = {}) {
+  const { compact = false, allowRoleSwitch = true, allowMailPreview = true } = options;
+  const config = ensureApprovalModel(seed);
+  const wrap = document.createElement("div");
+  wrap.className = "approval-flow-wrap";
+
+  const toggle = document.createElement("div");
+  toggle.className = "approval-flow-toggle";
+  [["stage", "依階段"], ["people", "以人為主"]].forEach(([key, label]) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "btn";
+    button.classList.toggle("is-active", config.flowView === key);
+    button.textContent = label;
+    button.addEventListener("click", () => {
+      config.flowView = key;
+      persistStructuredSeed();
+      renderFrameBoard();
+    });
+    toggle.appendChild(button);
+  });
+  wrap.appendChild(toggle);
+
+  const flow = document.createElement("div");
+  flow.className = `approval-flow${compact ? " compact" : ""}${config.flowView === "people" ? " is-people" : ""}`;
+  const nodes = config.flowView === "people" ? buildApprovalPeopleNodes(config) : buildApprovalStageNodes(config);
+  nodes.forEach((node, index) => {
+    const person = document.createElement("button");
+    person.type = "button";
+    person.className = "approval-person";
+    if (config.flowView === "stage" && index === config.currentLevel) person.classList.add("is-current");
+    person.innerHTML = `<span>${escapeHtml(node.name.slice(0, 1) || "?")}</span><strong>${escapeHtml(node.role)}</strong><small>${escapeHtml(node.name)}</small>`;
+    if (allowRoleSwitch) {
+      person.title = node.role === config.activeRole ? "目前檢視角色" : `切換為 ${node.role}`;
+      person.addEventListener("click", () => {
+        config.activeRole = node.role;
+        if (node.stage) config.currentApprover = node.name;
+        persistStructuredSeed();
+        renderFrameBoard();
+      });
+    } else {
+      person.disabled = true;
+      person.title = node.name;
+    }
+    flow.appendChild(person);
+    if (index < nodes.length - 1) {
+      const arrow = document.createElement("button");
+      arrow.type = "button";
+      arrow.className = "approval-arrow";
+      arrow.innerHTML = "→<small>通知</small>";
+      const mailKey = approvalFlowNotificationKey(index, nodes.length);
+      arrow.title = "查看這個階段的通知內容";
+      arrow.addEventListener("click", () => {
+        if (!allowMailPreview) return;
+        config.mailPreviewKey = config.mailPreviewKey === mailKey ? "" : mailKey;
+        persistStructuredSeed();
+        renderFrameBoard();
+      });
+      flow.appendChild(arrow);
+    }
+  });
+  wrap.appendChild(flow);
+  if (config.mailPreviewKey && allowMailPreview) {
+    renderApprovalMailPreview(wrap, seed, config.mailPreviewKey);
+  }
+  return wrap;
 }
 
 function approvalColumnName(index) {
@@ -681,55 +814,15 @@ async function importApprovalLookup(field, file) {
   refreshApprovalFieldOptions(field);
 }
 
-function renderApprovalFlow(seed, compact = false) {
-  const config = ensureApprovalModel(seed);
-  const flow = document.createElement("div");
-  flow.className = `approval-flow${compact ? " compact" : ""}`;
-  const nodes = [
-    { role: "Requester", name: config.roles.Requester || "申請人" },
-    { role: "Filler", name: config.roles.Filler || "填寫人" },
-    ...config.stages.map((stage) => ({ role: stage.name, name: stage.people || stage.name, stage })),
-    { role: "Complete", name: "完成" },
-  ];
-  nodes.forEach((node, index) => {
-    const person = document.createElement("button");
-    person.type = "button";
-    person.className = "approval-person";
-    if (index === config.currentLevel) person.classList.add("is-current");
-    person.innerHTML = `<span>${escapeHtml(node.name.slice(0, 1) || "?")}</span><strong>${escapeHtml(node.role)}</strong><small>${escapeHtml(node.name)}</small>`;
-    person.title = node.role === config.activeRole ? "目前檢視角色" : `切換為 ${node.role}`;
-    person.addEventListener("click", () => {
-      config.activeRole = node.role;
-      if (node.stage) config.currentApprover = node.name;
-      persistStructuredSeed();
-      renderFrameBoard();
-    });
-    flow.appendChild(person);
-    if (index < nodes.length - 1) {
-      const arrow = document.createElement("button");
-      arrow.type = "button";
-      arrow.className = "approval-arrow";
-      arrow.innerHTML = "→<small>通知</small>";
-      arrow.title = "查看這個階段會寄出的通知";
-      arrow.addEventListener("click", () => {
-        config.tab = "notifications";
-        persistStructuredSeed();
-        renderFrameBoard();
-      });
-      flow.appendChild(arrow);
-    }
-  });
-  return flow;
-}
-
 function renderApprovalQuestionnaire(board, seed, options = {}) {
   const {
     readonly = false,
     showActions = !readonly,
-    showRoleBar = !readonly,
+    showRoleBar = false,
     showFlow = !readonly,
     showMetrics = !readonly,
     preview = false,
+    fillMode = false,
   } = options;
   const config = ensureApprovalModel(seed);
   if (showMetrics) {
@@ -748,7 +841,13 @@ function renderApprovalQuestionnaire(board, seed, options = {}) {
     });
     board.appendChild(metrics);
   }
-  if (showFlow) board.appendChild(renderApprovalFlow(seed, true));
+  if (showFlow) {
+    board.appendChild(renderApprovalFlow(seed, {
+      compact: true,
+      allowRoleSwitch: !fillMode,
+      allowMailPreview: true,
+    }));
+  }
 
   if (showRoleBar) {
     const roleBar = document.createElement("div");
@@ -1086,7 +1185,7 @@ function renderApprovalWorkflow(board, seed) {
     persistStructuredSeed();
   });
   roles.appendChild(commentToggle);
-  board.append(roles, renderApprovalFlow(seed));
+  board.append(roles, renderApprovalFlow(seed, { allowRoleSwitch: true, allowMailPreview: true }));
 
   config.stages.forEach((stage, index) => {
     const card = document.createElement("section");
@@ -1269,21 +1368,38 @@ function renderApprovalTemplateEditor(board) {
 
 function renderApprovalInstanceEditor(board) {
   const seed = state.current;
-  const config = ensureApprovalModel(seed);
+  ensureApprovalModel(seed);
   const template = state.seeds.find((item) => item.id === seed.approvalTemplateId);
   board.className = "prose structured-editor approval-editor approval-instance-editor";
   board.classList.toggle("a4-view", state.docMode === "a4");
   board.innerHTML = "";
   renderSeedHeading(board, state.docMode !== "a4");
+  const head = document.createElement("div");
+  head.className = "approval-instance-head";
   const property = document.createElement("p");
   property.className = "template-property";
   property.textContent = `版型：簽核申請單${template ? `（來自「${template.title}」）` : ""}`;
-  board.appendChild(property);
-  if (state.docMode === "a4") {
-    renderApprovalQuestionnaire(board, seed, { readonly: true, showActions: false, showRoleBar: false, showFlow: true, showMetrics: true });
-    return;
+  head.appendChild(property);
+  if (template) {
+    const back = document.createElement("button");
+    back.type = "button";
+    back.className = "btn";
+    back.textContent = "← 回到範本";
+    back.addEventListener("click", () => {
+      selectSeed(template).catch((err) => setStatus(err.message || String(err)));
+    });
+    head.appendChild(back);
   }
-  renderApprovalQuestionnaire(board, seed, { readonly: false, showActions: true, showRoleBar: true, showFlow: true, showMetrics: true });
+  board.appendChild(head);
+  const questionnaireOptions = {
+    readonly: state.docMode === "a4",
+    showActions: state.docMode !== "a4",
+    showRoleBar: false,
+    showFlow: true,
+    showMetrics: true,
+    fillMode: state.docMode !== "a4",
+  };
+  renderApprovalQuestionnaire(board, seed, questionnaireOptions);
 }
 
 function renderApprovalEditor(board) {
@@ -1961,16 +2077,28 @@ function placeSeedOnMap(id) {
 function deleteSeed(id) {
   const seed = state.seeds.find((s) => s.id === id);
   if (!seed || !window.confirm(`刪除「${seed.title}」？`)) return;
-  if (seed.localOnly) {
-    localStorage.removeItem(`seed-draft:${seed.id}`);
-    localStorage.removeItem(`seed-versions:${seed.id}`);
+  const removeLocalSeed = (target) => {
+    if (!target.localOnly) return;
+    localStorage.removeItem(`seed-draft:${target.id}`);
+    localStorage.removeItem(`seed-versions:${target.id}`);
+  };
+  removeLocalSeed(seed);
+  if (isApprovalTemplate(seed)) {
+    listApprovalInstances(seed.id).forEach(removeLocalSeed);
   }
   const metadata = loadSeedMetadata();
   delete metadata[seed.id];
+  if (isApprovalTemplate(seed)) {
+    listApprovalInstances(seed.id).forEach((instance) => delete metadata[instance.id]);
+  }
   localStorage.setItem(SEED_META_KEY, JSON.stringify(metadata));
   const tray = loadSeedTrayState();
   if (!seed.localOnly && !tray.deleted.includes(id)) tray.deleted.push(id);
-  state.seeds = state.seeds.filter((s) => s.id !== id);
+  state.seeds = state.seeds.filter((s) => {
+    if (s.id === id) return false;
+    if (isApprovalTemplate(seed) && s.approvalTemplateId === id) return false;
+    return true;
+  });
   localStorage.setItem(
     SEED_TRAY_KEY,
     JSON.stringify({
@@ -2048,6 +2176,23 @@ function renderSeedTray() {
     open.addEventListener("click", () =>
       selectSeed(seed).catch((err) => setStatus(err.message || String(err)))
     );
+    const actions = document.createElement("div");
+    actions.className = "seed-tray-actions";
+    if (isApprovalTemplate(seed)) {
+      const spawn = document.createElement("button");
+      spawn.type = "button";
+      spawn.className = "seed-tray-spawn";
+      spawn.textContent = "＋";
+      spawn.title = "建立申請單";
+      spawn.setAttribute("aria-label", `從「${seed.title}」建立申請單`);
+      spawn.addEventListener("click", (event) => {
+        event.stopPropagation();
+        const instance = createApprovalInstance(seed);
+        showToast(`已建立「${instance.title}」`, "ok");
+        selectSeed(instance).catch((err) => setStatus(err.message || String(err)));
+      });
+      actions.appendChild(spawn);
+    }
     const remove = document.createElement("button");
     remove.type = "button";
     remove.className = "seed-tray-delete";
@@ -2055,7 +2200,8 @@ function renderSeedTray() {
     remove.title = "刪除";
     remove.setAttribute("aria-label", `刪除 ${seed.title}`);
     remove.addEventListener("click", () => deleteSeed(seed.id));
-    card.append(open, remove);
+    actions.appendChild(remove);
+    card.append(open, actions);
     root.appendChild(card);
   }
 }
