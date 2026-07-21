@@ -808,8 +808,7 @@ html, body {
 
 .written-design-name input,
 .written-design-row-body input,
-.written-design-row-body textarea,
-.written-design-type {
+.written-design-row-body textarea {
   width: 100%;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -820,45 +819,119 @@ html, body {
   box-sizing: border-box;
 }
 
-.written-design-toolbar,
-.written-design-actions,
-.written-design-order {
+.written-design-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 0.35rem;
 }
 
-.written-design-list {
-  display: grid;
-  gap: 0.55rem;
+.written-design-canvas {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--paper) 88%, #fff);
+  padding: 0.75rem;
+  min-height: 12rem;
+}
+
+.written-design-sheet {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.2rem;
+  line-height: 1.7;
 }
 
 .written-design-empty {
-  margin: 0;
+  margin: 0.35rem 0;
   color: var(--muted);
   font-size: 0.86rem;
+  width: 100%;
 }
 
-.written-design-row {
-  display: grid;
-  gap: 0.45rem;
+.written-design-drop {
+  appearance: none;
+  width: 0.55rem;
+  height: 1.6rem;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  cursor: pointer;
+  flex: 0 0 auto;
+  transition: width 0.12s ease, background 0.12s ease;
+}
+
+.written-design-drop.is-active,
+.written-design-drop.is-hot {
+  width: 0.7rem;
+  background: var(--accent);
+}
+
+.written-design-drop.is-hot {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 28%, transparent);
+}
+
+.written-design-token {
+  appearance: none;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.1rem;
+  max-width: 100%;
   border: 1px solid var(--line);
   border-radius: 10px;
   background: var(--card);
-  padding: 0.65rem 0.7rem;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  padding: 0.35rem 0.55rem;
+  cursor: grab;
 }
 
-.written-design-row-meta {
+.written-design-token.is-dragging {
+  opacity: 0.45;
+}
+
+.written-design-token.is-selected {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent-soft) 70%, #fff);
+}
+
+.written-design-token.is-text {
+  background: transparent;
+}
+
+.written-design-token.is-blank,
+.written-design-token.is-select,
+.written-design-token.is-signature {
+  background: var(--accent-soft);
+}
+
+.written-design-token-kind {
+  font-size: 0.68rem;
+  color: var(--muted);
+}
+
+.written-design-token-preview {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 0.9rem;
+}
+
+.written-design-inspector {
+  display: grid;
+  gap: 0.45rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+  padding: 0.7rem 0.75rem;
+}
+
+.written-design-inspector-head {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
   align-items: center;
   justify-content: space-between;
-}
-
-.written-design-type {
-  width: auto;
-  min-width: 6.5rem;
+  gap: 0.5rem;
 }
 
 .written-design-row-body {
@@ -872,6 +945,64 @@ html, body {
   gap: 0.35rem;
   font-size: 0.82rem;
   color: var(--ink);
+}
+
+.written-design-palette {
+  display: grid;
+  gap: 0.45rem;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--paper) 70%, var(--accent-soft));
+  padding: 0.7rem 0.75rem 0.8rem;
+  position: sticky;
+  bottom: 0.35rem;
+}
+
+.written-design-palette-title {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.written-design-palette-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.written-design-chip {
+  appearance: none;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+  min-width: 3.6rem;
+  min-height: 3.6rem;
+  padding: 0.35rem 0.45rem;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.75rem;
+  cursor: grab;
+  user-select: none;
+}
+
+.written-design-chip:active {
+  cursor: grabbing;
+}
+
+.written-design-chip.is-dragging {
+  opacity: 0.45;
+}
+
+.written-design-chip-glyph {
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--accent);
 }
 
 .form-template-select {
