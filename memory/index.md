@@ -10,6 +10,7 @@
 
 ## 場次
 
+- 2026-07-21 — 減少 UI 來回：溝通方式共識 — 標籤：協作、溝通、Agent — [sessions/2026-07-21-collab-feedback-tips.md](sessions/2026-07-21-collab-feedback-tips.md)
 - 2026-07-21 — 書面文件改成分類＋合約書模板設計 — 標籤：SEED、書面文件、合約書、模板設計 — [sessions/2026-07-21-written-category-designer.md](sessions/2026-07-21-written-category-designer.md)
 - 2026-07-21 — 書面文件 Seed（定型化契約／填空）— 標籤：SEED、書面文件、定型化契約 — [sessions/2026-07-21-written-form-seed.md](sessions/2026-07-21-written-form-seed.md)
 - 2026-07-21 — 手機版 Seed 介面簡化 — 標籤：SEED、手機、Seed — [sessions/2026-07-21-mobile-seed-ui.md](sessions/2026-07-21-mobile-seed-ui.md)
@@ -34,6 +35,7 @@
 
 ## 主題
 
+- **怎麼跟 Agent 講 UI，少重複改**— [topics/agent-ui-briefing.md](topics/agent-ui-briefing.md)
 - **如何從 Markdown 讀懂 SEED 系統**— [topics/system-guide.md](topics/system-guide.md)
 - **簽核模板工作流（角色、權限、流程、通知）**— [topics/approval-workflow.md](topics/approval-workflow.md)
 - **最終版進度總表**— [topics/progress-final.md](topics/progress-final.md)
