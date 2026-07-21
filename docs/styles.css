@@ -66,6 +66,7 @@ html, body {
 .brand-block {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 0.45rem;
   min-width: 0;
   flex: 1 1 auto;
@@ -93,27 +94,12 @@ html, body {
   color: var(--accent);
 }
 
-.nav-current {
-  flex: 1 1 auto;
-  min-width: 0;
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: var(--ink);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.nav-current.hidden {
-  display: none;
-}
-
 .nav-menu-btn {
   appearance: none;
   border: 1px solid var(--line);
   border-radius: 999px;
   background: var(--card);
-  margin: 0;
+  margin: 0 0 0 auto;
   padding: 0.2rem 0.45rem;
   line-height: 1;
   cursor: pointer;

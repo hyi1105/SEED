@@ -34,7 +34,8 @@ const state = {
     view: localStorage.getItem(MAP_VIEW_KEY) || "fit",
   },
   catalog: null,
-  config: { apiBase: "" },
+  config: { apiBase: "", releaseAt: "" },
+  appReleaseAt: null,
   current: null,
   versions: [],
   panel: "list",
@@ -2725,7 +2726,6 @@ async function saveCurrentVersion(actor = null) {
   state.current.lastActor = "人";
   if (state.current.localOnly) saveSeedTrayState();
   await loadVersions();
-  updateNavChrome();
   if (state.panel === "read" && (state.current?.seedType || "document") === "document" && !isPersonCardDocument(state.current)) {
     renderFrameBoard();
   } else if (state.panel === "read" && isPersonCardDocument(state.current)) {
@@ -2844,7 +2844,6 @@ function saveSeedMetadata(seed) {
   all[seed.id] = { title: seed.title, subtitle: seed.subtitle || "" };
   localStorage.setItem(SEED_META_KEY, JSON.stringify(all));
   if (seed.localOnly) saveSeedTrayState();
-  updateNavChrome();
 }
 
 function saveSeedTrayState() {
@@ -4295,11 +4294,24 @@ async function askAiToRespond(systemPrompt, userResponse) {
 async function loadAppConfig() {
   try {
     const data = await fetchJson(`./config.json?ts=${Date.now()}`);
-    state.config = { apiBase: data.apiBase || "" };
+    state.config = { apiBase: data.apiBase || "", releaseAt: data.releaseAt || "" };
+    if (data.releaseAt) state.appReleaseAt = data.releaseAt;
   } catch {
-    state.config = { apiBase: "" };
+    state.config = { apiBase: "", releaseAt: "" };
   }
   updateAiUiMode();
+}
+
+async function loadAppRelease() {
+  if (state.appReleaseAt) return;
+  try {
+    const path = encodeURIComponent("docs/app.js");
+    const commits = await fetchJson(`${API}/commits?sha=${BRANCH}&path=${path}&per_page=1`);
+    const latest = commits[0]?.commit;
+    state.appReleaseAt = latest?.author?.date || latest?.committer?.date || null;
+  } catch {
+    state.appReleaseAt = null;
+  }
 }
 
 function updateAiUiMode() {
@@ -4796,7 +4808,6 @@ async function loadVersions() {
     list.innerHTML = "<li class='meta'>還沒有版本紀錄</li>";
     fillDiffSelects();
     setStatus("還沒有版本紀錄；按 Save 建立第一版");
-    updateNavChrome();
     return;
   }
 
@@ -4840,7 +4851,6 @@ async function loadVersions() {
 
   fillDiffSelects();
   setStatus(`已載入 ${state.versions.length} 個版本`);
-  updateNavChrome();
 }
 
 function fillDiffSelects() {
@@ -5355,15 +5365,11 @@ function closeAllPopovers() {
   setNavMenuOpen(false);
 }
 
-function getVersionOrdinal(index, total) {
-  return `v${Math.max(1, total - index)}`;
-}
-
 function getNavLocationLabel() {
   if (state.panel === "list") return "首頁";
   if (state.panel === "system-seed") return "Seed";
-  if (state.panel === "history") return state.current ? `${state.current.title} · 版本` : "版本";
-  if (state.panel === "diff") return state.current ? `${state.current.title} · 歷程` : "歷程";
+  if (state.panel === "history") return "版本";
+  if (state.panel === "diff") return "歷程";
   if (state.current) return state.current.title || "未命名 SEED";
   return "首頁";
 }
@@ -5382,28 +5388,20 @@ function getNavChoiceItems() {
   }
 
   if (state.current && state.panel !== "list") {
-    const seed = {
-      key: "seed",
-      label: state.current.title || "未命名 SEED",
-      isCurrent: state.panel === "read",
-      go: async () => {
-        state.docMode = "edit";
-        showPanel("read");
-        if (!state.originalText) await loadSeedText();
-        setEditMode(state.workingText ?? state.originalText);
-      },
+    const seedGo = async () => {
+      state.docMode = "edit";
+      showPanel("read");
+      if (!state.originalText) await loadSeedText();
+      setEditMode(state.workingText ?? state.originalText);
     };
     if (state.panel === "history" || state.panel === "diff") {
       items.push({
         key: "back",
-        label: `上一頁 · ${seed.label}`,
+        label: "上一頁",
         isCurrent: false,
-        go: seed.go,
+        go: seedGo,
       });
-    } else if (state.panel === "read") {
-      seed.isCurrent = true;
     }
-    if (!seed.isCurrent) items.push(seed);
   }
 
   return items;
@@ -5412,22 +5410,13 @@ function getNavChoiceItems() {
 function renderNavVersionRow() {
   const wrap = $("nav-version");
   if (!wrap) return;
-  if (!state.current || state.panel === "list") {
-    wrap.hidden = true;
-    wrap.innerHTML = "";
-    return;
-  }
-  const total = state.versions.length;
-  const latest = state.versions[0];
-  if (!total || !latest?.when) {
+  if (!state.appReleaseAt) {
     wrap.hidden = true;
     wrap.innerHTML = "";
     return;
   }
   wrap.hidden = false;
-  const left = `${getVersionOrdinal(0, total)} · 目前版`;
-  const right = formatWhen(latest.when);
-  wrap.innerHTML = `<span class="nav-version-left">${escapeHtml(left)}</span><span class="nav-version-right">${escapeHtml(right)}</span>`;
+  wrap.innerHTML = `<span class="nav-version-left">程式發布</span><span class="nav-version-right">${escapeHtml(formatWhen(state.appReleaseAt))}</span>`;
 }
 
 function renderNavChoices() {
@@ -5472,15 +5461,9 @@ function setNavMenuOpen(open) {
 
 function updateNavChrome() {
   const brand = $("brand-home");
-  const current = $("nav-current");
   if (brand) {
     brand.title = "回首頁";
     brand.classList.toggle("has-path", state.panel !== "list");
-  }
-  if (current) {
-    const inSeed = state.current && state.panel !== "list" && state.panel !== "system-seed";
-    current.textContent = inSeed ? state.current.title || "未命名 SEED" : "";
-    current.classList.toggle("hidden", !inSeed);
   }
   if (state.navMenuOpen) {
     renderNavVersionRow();
@@ -5640,6 +5623,7 @@ document.addEventListener("click", (e) => {
 });
 
 loadAppConfig()
+  .then(() => loadAppRelease())
   .then(() => loadCatalog())
   .then(() => {
     updateNavChrome();

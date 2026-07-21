@@ -1,4 +1,5 @@
 {
   "apiBase": "",
-  "note": "付費代辦上線後填入 API 網址，例如 https://seed-api.example.com。空白＝仍用瀏覽器自備 AI 鑰匙。前端目前主要用於 System→User→AI 回答。"
+  "releaseAt": "2026-07-21T14:19:00Z",
+  "note": "付費代辦上線後填入 API 網址，例如 https://seed-api.example.com。空白＝仍用瀏覽器自備 AI 鑰匙。前端目前主要用於 System→User→AI 回答。releaseAt＝程式發布時間（▼ 選單顯示）。"
 }

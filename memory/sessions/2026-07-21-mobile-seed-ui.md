@@ -30,6 +30,9 @@ status: active
 - **v8（頂部 ▼ 選單）**：
   - **SEED** 左、**▼** 右；在 Seed 內中間顯示 Seed 名稱
   - 點 **SEED** → 首頁；點 **▼** → 下拉：第一列版本＋GitHub 最新發布時間；可選 **首頁**／**上一頁**；底部 **目前位置**
+- **v9**：
+  - 頂部只留 **SEED**＋**▼**（不再顯示 Seed 名稱）
+  - ▼ 第一列改 **程式發布時間**（`config.json` releaseAt 或 GitHub docs/app.js 最新 commit）
 
 ## 決定／偏好
 
