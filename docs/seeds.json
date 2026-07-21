@@ -2,16 +2,16 @@
   "repo": "hyi1105/SEED",
   "branch": "main",
   "map": {
-    "title": "知識拼圖",
+    "title": "SEED 棋盤",
     "kind": "personal",
     "visibility": "public",
     "template": "demo-taiwan-roads",
     "cols": 10,
     "rows": 10,
-    "note": "知識拼圖：拖曳擺放；點進去看完整標題",
-    "savedAt": "2026-07-21T00:22:13.317Z",
+    "note": "知識棋盤：拖曳擺放；點進去看完整標題",
+    "savedAt": "2026-07-21T00:42:37.779Z",
     "layoutName": "7/21 上午7:30",
-    "layoutRev": 8
+    "layoutRev": 9
   },
   "seeds": [
     {
@@ -97,7 +97,7 @@
       "alias": "入門指南",
       "path": "memory/topics/github-for-seed.md",
       "blurb": "工作室",
-      "col": 3,
+      "col": 4,
       "row": 0,
       "cover": null,
       "archived": false
@@ -111,7 +111,7 @@
       "col": 0,
       "row": 0,
       "cover": null,
-      "archived": false
+      "archived": true
     },
     {
       "id": "index",
@@ -122,7 +122,7 @@
       "col": 1,
       "row": 0,
       "cover": null,
-      "archived": false
+      "archived": true
     },
     {
       "id": "core",
