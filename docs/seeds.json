@@ -9,10 +9,10 @@
     "cols": 10,
     "rows": 10,
     "note": "知識棋盤：拖曳擺放；點進去看完整標題",
-    "savedAt": "2026-07-21T01:26:47.739Z",
+    "savedAt": "2026-07-21T01:36:40.181Z",
     "layoutName": "7/21 上午7:30",
-    "layoutRev": 16,
-    "view": "width"
+    "layoutRev": 17,
+    "view": "fit"
   },
   "seeds": [
     {
@@ -109,8 +109,8 @@
       "alias": "知識起點",
       "path": "memory/sessions/2026-07-20-kb-setup.md",
       "blurb": "工作室",
-      "col": 1,
-      "row": 9,
+      "col": 2,
+      "row": 7,
       "cover": null,
       "archived": false
     },
@@ -153,10 +153,10 @@
       "alias": "打包帶走",
       "path": "memory/topics/seed-pack.md",
       "blurb": "工作室",
-      "col": 2,
+      "col": 6,
       "row": 9,
       "cover": null,
-      "archived": false
+      "archived": true
     },
     {
       "id": "monetize",
@@ -175,7 +175,7 @@
       "alias": "進度總表",
       "path": "memory/topics/progress-final.md",
       "blurb": "工作室",
-      "col": 3,
+      "col": 5,
       "row": 5,
       "cover": null,
       "archived": false
@@ -186,8 +186,8 @@
       "alias": "繁體中文",
       "path": "memory/topics/language-zh-hant.md",
       "blurb": "工作室",
-      "col": 0,
-      "row": 9,
+      "col": 8,
+      "row": 7,
       "cover": null,
       "archived": false
     },
