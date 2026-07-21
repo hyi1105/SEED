@@ -139,7 +139,6 @@
       </section>
 
       <section id="panel-diff" class="panel hidden">
-        <h1 class="diff-title">歷程記錄</h1>
         <div class="diff-picks">
           <label>
             歷程記錄
@@ -329,26 +328,16 @@
     </dialog>
 
     <dialog id="seed-create-dialog" class="token-dialog">
-      <form method="dialog" id="seed-create-form">
+      <div class="seed-type-picker">
         <h2>新增 SEED</h2>
-        <p>先選用途；之後的編輯方式會跟著模板改變。</p>
-        <label class="token-label">
-          SEED 名稱
-          <input type="text" id="seed-create-title" maxlength="60" placeholder="例如：採購申請" />
-        </label>
-        <label class="token-label">
-          類型
-          <select id="seed-create-type">
-            <option value="document">文件模板（新增文字）</option>
-            <option value="approval">簽核模板（欄位＋簽核人）</option>
-            <option value="discussion">主題討論模板（對話＋A4整理）</option>
-          </select>
-        </label>
-        <div class="token-actions">
-          <button type="submit" class="btn btn-primary" value="save">建立</button>
-          <button type="submit" class="btn" value="cancel">取消</button>
+        <p>選擇類型後，直接開始編輯。</p>
+        <div class="seed-type-options">
+          <button type="button" class="seed-type-choice" data-seed-type="document"><strong>文件</strong><span>逐段建立文件</span></button>
+          <button type="button" class="seed-type-choice" data-seed-type="approval"><strong>簽核</strong><span>欄位與簽核人</span></button>
+          <button type="button" class="seed-type-choice" data-seed-type="discussion"><strong>討論</strong><span>直播畫面與評論截圖</span></button>
         </div>
-      </form>
+        <button type="button" class="btn seed-type-cancel" data-seed-create-close>取消</button>
+      </div>
     </dialog>
   </div>
 

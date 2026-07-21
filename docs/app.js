@@ -223,9 +223,17 @@ function approvalToText(seed) {
 }
 
 function discussionToText(seed) {
-  const lines = [`# ${seed.title}`, "", "## AI 整理初版", seed.aiDraft || "尚未整理", "", "## 對話紀錄"];
+  const lines = [
+    `# ${seed.title}`,
+    seed.subtitle || "",
+    "",
+    "## 畫面文字",
+    seed.liveContent || "",
+    "",
+    "## 評論",
+  ];
   (seed.messages || []).forEach((message) => {
-    lines.push(`- ${message.name || "匿名"}｜${formatWhen(message.when)}：${message.text}`);
+    lines.push(`- ${message.name || "匿名"}：${message.text}`);
   });
   return lines.join("\n");
 }
@@ -319,10 +327,16 @@ function renderSeedHeading(board, editing) {
     seed.title = title.value || "未命名 SEED";
     $("read-title").textContent = seed.title;
     saveSeedMetadata(seed);
+    if (seed.seedType === "discussion") {
+      board.querySelector(".live-preview")?.replaceWith(renderLivePreview(seed));
+    }
   });
   subtitle.addEventListener("input", () => {
     seed.subtitle = subtitle.value;
     saveSeedMetadata(seed);
+    if (seed.seedType === "discussion") {
+      board.querySelector(".live-preview")?.replaceWith(renderLivePreview(seed));
+    }
   });
   header.append(title, subtitle);
   board.appendChild(header);
@@ -448,10 +462,9 @@ function renderFrameBoard() {
     number.className = "frame-number";
     number.textContent = String(index + 1);
     tools.append(number, note);
-    block.appendChild(remove);
+    block.append(remove, renderInsertGap(index + 1));
     group.append(tools, block);
     board.appendChild(group);
-    board.appendChild(renderInsertGap(index + 1));
   });
 }
 
@@ -559,54 +572,71 @@ function renderApprovalEditor(board) {
   board.appendChild(add);
 }
 
+function renderLivePreview(seed) {
+  const preview = document.createElement("section");
+  preview.className = "live-preview";
+  const heading = document.createElement("div");
+  heading.className = "live-heading";
+  const live = document.createElement("span");
+  live.className = "live-badge";
+  live.textContent = "LIVE";
+  const title = document.createElement("h2");
+  title.textContent = seed.title || "未命名討論";
+  const subtitle = document.createElement("p");
+  subtitle.textContent = seed.subtitle || "即時討論";
+  heading.append(live, title, subtitle);
+  const content = document.createElement("div");
+  content.className = "live-main-content";
+  content.textContent = seed.liveContent || "在編輯區輸入要呈現在截圖中的主要文字";
+  const comments = document.createElement("div");
+  comments.className = "live-comments";
+  seed.messages.slice(-4).forEach((message) => {
+    const item = document.createElement("article");
+    const name = document.createElement("strong");
+    name.textContent = message.name || "匿名";
+    const text = document.createElement("span");
+    text.textContent = message.text;
+    item.append(name, text);
+    comments.appendChild(item);
+  });
+  preview.append(heading, content, comments);
+  return preview;
+}
+
 function renderDiscussionEditor(board) {
   const seed = state.current;
   seed.messages = Array.isArray(seed.messages) ? seed.messages : [];
+  seed.liveContent = seed.liveContent || "";
   board.className = "prose discussion-editor";
   board.classList.toggle("a4-view", state.docMode === "a4");
   board.innerHTML = "";
   if (state.docMode === "a4") {
-    renderSeedHeading(board, false);
-    const draftTitle = document.createElement("h2");
-    draftTitle.textContent = "AI 整理初版";
-    const draft = document.createElement("div");
-    draft.className = "discussion-draft";
-    draft.textContent = seed.aiDraft || "尚未由 AI 整理";
-    const historyTitle = document.createElement("h2");
-    historyTitle.textContent = "對話紀錄";
-    board.append(draftTitle, draft, historyTitle);
-    seed.messages.forEach((message) => {
-      const item = document.createElement("p");
-      item.className = "discussion-export-message";
-      item.textContent = `${message.name || "匿名"}｜${formatWhen(message.when)}\n${message.text}`;
-      board.appendChild(item);
-    });
+    board.appendChild(renderLivePreview(seed));
     return;
   }
 
   renderSeedHeading(board, true);
-  const intro = document.createElement("header");
-  intro.className = "editor-intro";
-  intro.innerHTML = "<h2>主題討論模板</h2><p>像群組對話一樣累積意見；AI 初版與完整對話會一起匯出。</p>";
-  board.appendChild(intro);
-  const messages = document.createElement("div");
-  messages.className = "chat-thread";
-  seed.messages.forEach((message) => {
-    const bubble = document.createElement("article");
-    bubble.className = "chat-message";
-    const meta = document.createElement("small");
-    meta.textContent = `${message.name || "匿名"} · ${formatWhen(message.when)}`;
-    const text = document.createElement("p");
-    text.textContent = message.text;
-    bubble.append(meta, text);
-    messages.appendChild(bubble);
+  const property = document.createElement("p");
+  property.className = "template-property";
+  property.textContent = "版型：討論直播截圖";
+  const contentLabel = document.createElement("label");
+  contentLabel.className = "live-content-editor";
+  contentLabel.innerHTML = "<span>畫面主要文字</span>";
+  const contentInput = document.createElement("textarea");
+  contentInput.placeholder = "輸入希望顯示在截圖中的文字…";
+  contentInput.value = seed.liveContent;
+  contentInput.addEventListener("input", () => {
+    seed.liveContent = contentInput.value;
+    persistStructuredSeed();
+    const currentPreview = board.querySelector(".live-preview");
+    currentPreview?.replaceWith(renderLivePreview(seed));
   });
-  if (!seed.messages.length) messages.innerHTML = "<p class='meta'>還沒有對話，先留下第一則意見。</p>";
-  board.appendChild(messages);
+  contentLabel.appendChild(contentInput);
+  board.append(property, contentLabel, renderLivePreview(seed));
 
   const compose = document.createElement("form");
   compose.className = "chat-compose";
-  compose.innerHTML = "<input name='name' placeholder='你的名字' maxlength='30'><textarea name='message' placeholder='輸入想法…' required></textarea><button class='btn btn-primary' type='submit'>送出</button>";
+  compose.innerHTML = "<input name='name' placeholder='評論者' maxlength='30'><textarea name='message' placeholder='新增一則畫面評論…' required></textarea><button class='btn btn-primary' type='submit'>加入評論</button>";
   compose.addEventListener("submit", (e) => {
     e.preventDefault();
     const data = new FormData(compose);
@@ -620,34 +650,7 @@ function renderDiscussionEditor(board) {
     persistStructuredSeed();
     renderFrameBoard();
   });
-  const ai = document.createElement("button");
-  ai.type = "button";
-  ai.className = "btn discussion-ai";
-  ai.textContent = "AI 整理 A4 初版";
-  ai.disabled = !seed.messages.length;
-  ai.addEventListener("click", async () => {
-    if (!getAiKey() && !usePaidProxy()) {
-      $("ai-key-dialog").showModal();
-      setStatus("請先設定 AI 鑰匙，再整理討論初版");
-      return;
-    }
-    ai.disabled = true;
-    ai.textContent = "AI 整理中…";
-    try {
-      const transcript = seed.messages.map((m) => `${m.name}：${m.text}`).join("\n");
-      seed.aiDraft = await askAiToRespond(
-        "請把群組討論整理成可放入 A4 文件的繁體中文初稿，保留共識、分歧與待辦，不要捏造內容。",
-        transcript
-      );
-      persistStructuredSeed("AI");
-      showToast("AI 初版已完成", "ok");
-    } catch (err) {
-      setStatus(err.message || String(err));
-    } finally {
-      renderFrameBoard();
-    }
-  });
-  board.append(compose, ai);
+  board.appendChild(compose);
 }
 
 function safeFileName(name) {
@@ -771,6 +774,78 @@ function exportWord() {
 function exportImage() {
   const title = state.current?.title || "SEED";
   const canvas = document.createElement("canvas");
+  if (state.current?.seedType === "discussion") {
+    canvas.width = 1280;
+    canvas.height = 720;
+    const ctx = canvas.getContext("2d");
+    const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+    gradient.addColorStop(0, "#173c31");
+    gradient.addColorStop(1, "#071713");
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "#f04f45";
+    ctx.fillRect(72, 54, 82, 34);
+    ctx.fillStyle = "#fff";
+    ctx.font = "700 19px system-ui, sans-serif";
+    ctx.fillText("LIVE", 90, 78);
+    ctx.font = "700 46px system-ui, sans-serif";
+    ctx.fillText(title, 72, 145);
+    ctx.fillStyle = "rgba(255,255,255,.7)";
+    ctx.font = "24px system-ui, sans-serif";
+    ctx.fillText(state.current.subtitle || "即時討論", 72, 182);
+
+    const wrap = (text, maxWidth) => {
+      const lines = [];
+      String(text || "").split("\n").forEach((raw) => {
+        let line = "";
+        Array.from(raw).forEach((char) => {
+          if (ctx.measureText(line + char).width > maxWidth && line) {
+            lines.push(line);
+            line = char;
+          } else {
+            line += char;
+          }
+        });
+        lines.push(line);
+      });
+      return lines;
+    };
+    ctx.fillStyle = "#fff";
+    let contentSize = 32;
+    let contentLines = [];
+    do {
+      ctx.font = `${contentSize}px system-ui, sans-serif`;
+      contentLines = wrap(state.current.liveContent || "", 1080);
+      contentSize -= 1;
+    } while (contentLines.length * (contentSize + 8) > 280 && contentSize > 15);
+    ctx.font = `${contentSize}px system-ui, sans-serif`;
+    contentLines.forEach((line, index) => ctx.fillText(line, 72, 245 + index * (contentSize + 8)));
+
+    const comments = (state.current.messages || []).slice(-4);
+    const commentTop = 690 - comments.length * 50;
+    comments.forEach((message, index) => {
+      const y = commentTop + index * 50;
+      ctx.fillStyle = "rgba(0,0,0,.42)";
+      ctx.fillRect(72, y - 29, 1136, 40);
+      const commentText = `${message.name || "匿名"}：${message.text || ""}`;
+      let commentSize = 19;
+      ctx.font = `700 ${commentSize}px system-ui, sans-serif`;
+      while (ctx.measureText(commentText).width > 1100 && commentSize > 12) {
+        commentSize -= 1;
+        ctx.font = `700 ${commentSize}px system-ui, sans-serif`;
+      }
+      ctx.fillStyle = "#9fe1c6";
+      ctx.fillText(`${message.name || "匿名"}：`, 88, y - 2);
+      const nameWidth = ctx.measureText(`${message.name || "匿名"}：`).width;
+      ctx.fillStyle = "#fff";
+      ctx.font = `${commentSize}px system-ui, sans-serif`;
+      ctx.fillText(String(message.text || ""), 88 + nameWidth, y - 2);
+    });
+    canvas.toBlob((blob) => {
+      if (blob) downloadBlob(blob, `${safeFileName(title)}.png`);
+    }, "image/png");
+    return;
+  }
   const width = 1240;
   const padding = 110;
   const lineHeight = 38;
@@ -1188,10 +1263,8 @@ function deleteSeed(id) {
 }
 
 function addSeed() {
-  $("seed-create-title").value = "";
-  $("seed-create-type").value = "document";
   $("seed-create-dialog").showModal();
-  $("seed-create-title").focus();
+  $("seed-create-dialog").querySelector(".seed-type-choice")?.focus();
 }
 
 function createSeed(title, seedType) {
@@ -1211,12 +1284,14 @@ function createSeed(title, seedType) {
     formFields: seedType === "approval" ? [{ label: "申請說明", type: "textarea", options: "" }] : [],
     approver: "",
     messages: [],
+    liveContent: "",
   };
   state.seeds.push(seed);
   localStorage.setItem(`seed-draft:${id}`, "");
   saveSeedTrayState();
   renderMap();
   showToast(`已新增「${seed.title}」`, "ok");
+  return seed;
 }
 
 function renderSeedTray() {
@@ -2645,7 +2720,7 @@ async function loadVersions() {
     li.innerHTML = `
       <div>
         <strong>${escapeHtml(formatWhen(v.when))}</strong>
-        <div class="meta">${escapeHtml(v.author || "未知")} · ${escapeHtml(v.actor || "人")}編輯 · ${escapeHtml(v.message)}</div>
+        <div class="meta">${escapeHtml(v.author || "未知")}－${v.actor === "AI" ? "AI 編輯" : "編輯"}－${escapeHtml(v.message)}</div>
       </div>
       <div class="row-actions">
         <button type="button" class="btn" data-side="open">打開這版</button>
@@ -2693,7 +2768,7 @@ function fillDiffSelects() {
       const opt = document.createElement("option");
       opt.value = v.sha;
       const actor = v.actor || (/^AI[｜:]/.test(v.message || "") ? "AI" : "人");
-      opt.textContent = `${formatWhen(v.when)} · ${actor} · ${v.author || "未知"}`;
+      opt.textContent = `${v.author || "未知"}－${actor === "AI" ? "AI 編輯" : "編輯"}－${formatWhen(v.when)}`;
       opt.disabled = index === state.versions.length - 1;
       single.appendChild(opt);
     });
@@ -2797,7 +2872,7 @@ async function runDiff() {
   const actor = newer.actor || (/^AI[｜:]/.test(newer.message || "") ? "AI" : "人");
   $("diff-meta").innerHTML = `
     <strong>${escapeHtml(newer.author || "未知")}</strong>
-    <span>${escapeHtml(actor)}編輯</span>
+    <span>－ ${actor === "AI" ? "AI 編輯" : "編輯"} －</span>
     <time>${escapeHtml(formatWhen(newer.when))}</time>
     <span>${isCurrent ? "目前畫面自動比對上次 Save" : "自動比對上一次"}：${escapeHtml(formatWhen(older.when))}</span>
   `;
@@ -3144,19 +3219,22 @@ $("pack-file").addEventListener("change", async () => {
 
 $("seed-add")?.addEventListener("click", addSeed);
 
-$("seed-create-form")?.addEventListener("submit", (e) => {
-  e.preventDefault();
-  if (e.submitter?.value === "cancel") {
+$("seed-create-dialog")?.addEventListener("click", (e) => {
+  if (e.target.closest("[data-seed-create-close]")) {
     $("seed-create-dialog").close();
     return;
   }
-  const title = $("seed-create-title").value.trim();
-  if (!title) {
-    setStatus("請輸入 SEED 名稱");
-    return;
-  }
-  createSeed(title, $("seed-create-type").value);
+  const choice = e.target.closest("[data-seed-type]");
+  if (!choice) return;
+  const seedType = choice.dataset.seedType;
+  const defaultTitle = {
+    document: "未命名文件",
+    approval: "未命名簽核",
+    discussion: "未命名討論",
+  }[seedType];
+  const seed = createSeed(defaultTitle, seedType);
   $("seed-create-dialog").close();
+  selectSeed(seed).catch((err) => setStatus(err.message || String(err)));
 });
 
 $("seed-tray-list")?.addEventListener("dragover", (e) => {
