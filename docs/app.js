@@ -18,6 +18,7 @@ const MEMBER_KEY = "seed-member-code-v1";
 const SEED_TRAY_KEY = "seed-tray-v1";
 const SEED_META_KEY = "seed-meta-v1";
 const SYSTEM_SEED_KEY = "system-seed-catalog-v1";
+const WRITTEN_DESIGN_KEY = "written-form-design-v1";
 const MAP_VIEW_KEY = "seed-map-view-v1";
 const DEFAULT_AI_BASE = "https://api.openai.com/v1";
 
@@ -386,7 +387,7 @@ function makeFormBlankId() {
 
 function defaultFormTemplate() {
   return {
-    name: "書面文件",
+    name: "合約書",
     segments: [
       { type: "text", content: "本契約由甲方" },
       { type: "blank", id: makeFormBlankId(), label: "甲方", value: "", placeholder: "甲方名稱" },
@@ -400,7 +401,7 @@ function defaultFormTemplate() {
       { type: "blank", id: makeFormBlankId(), label: "金額", value: "", placeholder: "金額" },
       { type: "text", content: "元整。\n\n三、其他約定\n" },
       { type: "blank", id: makeFormBlankId(), label: "其他", value: "", placeholder: "其他約定（選填）", multiline: true },
-      { type: "text", content: "\n\n以下為定型化條款本文，不可修改。凡依本範本建立之書面文件，固定文字皆相同，僅填空處可填寫。\n\n甲方簽名\n" },
+      { type: "text", content: "\n\n以下為定型化條款本文，不可修改。凡依本範本建立之合約書，固定文字皆相同，僅填空處可填寫。\n\n甲方簽名\n" },
       { type: "signature", id: makeFormBlankId(), label: "甲方簽名", value: "" },
       { type: "text", content: "\n乙方簽名\n" },
       { type: "signature", id: makeFormBlankId(), label: "乙方簽名", value: "" },
@@ -408,48 +409,103 @@ function defaultFormTemplate() {
   };
 }
 
+function canEditWrittenCategory() {
+  // 個人 MVP：本機即分類擁有者；之後可改成真正的分類 owner 權限
+  return true;
+}
+
+function loadWrittenDesign() {
+  try {
+    const raw = localStorage.getItem(WRITTEN_DESIGN_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || !Array.isArray(parsed.segments) || !parsed.segments.length) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function saveWrittenDesign(design) {
+  localStorage.setItem(
+    WRITTEN_DESIGN_KEY,
+    JSON.stringify({
+      name: design.name || "合約書",
+      segments: design.segments || [],
+      updatedAt: new Date().toISOString(),
+    })
+  );
+}
+
+function getActiveWrittenFormTemplate() {
+  const saved = loadWrittenDesign();
+  if (saved?.segments?.length) {
+    return {
+      name: saved.name || "合約書",
+      segments: JSON.parse(JSON.stringify(saved.segments)).map((seg) => {
+        if (seg.type === "blank" || seg.type === "select" || seg.type === "signature") {
+          return { ...seg, value: "" };
+        }
+        return { ...seg };
+      }),
+    };
+  }
+  return defaultFormTemplate();
+}
+
+function parseSelectOptions(raw) {
+  return String(raw || "")
+    .split(/[,，]/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function normalizeFormSegment(seg, index, segments) {
+  if (seg.type === "blank") {
+    seg.id ||= makeFormBlankId();
+    seg.label ||= "填空";
+    seg.value = seg.value ?? "";
+    seg.placeholder ||= "請填寫";
+    seg.multiline = Boolean(seg.multiline);
+    return;
+  }
+  if (seg.type === "select") {
+    seg.id ||= makeFormBlankId();
+    seg.label ||= "下拉";
+    seg.value = seg.value ?? "";
+    seg.options = String(seg.options || "選項一,選項二");
+    seg.placeholder ||= "請選擇";
+    return;
+  }
+  if (seg.type === "signature") {
+    seg.id ||= makeFormBlankId();
+    seg.label ||= "簽名";
+    seg.value = seg.value ?? "";
+    return;
+  }
+  seg.type = "text";
+  let content = String(seg.content ?? "");
+  // 舊範本若用「」包住填空，載入時拿掉
+  if (segments[index + 1]?.type === "blank" && content.endsWith("「")) content = content.slice(0, -1);
+  if (segments[index - 1]?.type === "blank" && content.startsWith("」")) content = content.slice(1);
+  seg.content = content;
+}
+
 function ensureFormTemplateModel(seed) {
   seed.seedType = "document";
   seed.documentLayout = "form-template";
-  const tmpl = (seed.formTemplate ||= defaultFormTemplate());
-  tmpl.name ||= "書面文件";
+  const tmpl = (seed.formTemplate ||= getActiveWrittenFormTemplate());
+  tmpl.name ||= "合約書";
   tmpl.segments = Array.isArray(tmpl.segments) && tmpl.segments.length
     ? tmpl.segments
-    : defaultFormTemplate().segments;
-  tmpl.segments.forEach((seg, index) => {
-    if (seg.type === "blank") {
-      seg.id ||= makeFormBlankId();
-      seg.label ||= "填空";
-      seg.value = seg.value ?? "";
-      seg.placeholder ||= "請填寫";
-      seg.multiline = Boolean(seg.multiline);
-    } else if (seg.type === "signature") {
-      seg.id ||= makeFormBlankId();
-      seg.label ||= "簽名";
-      seg.value = seg.value ?? "";
-    } else {
-      seg.type = "text";
-      let content = String(seg.content ?? "");
-      // 舊範本若用「」包住填空，載入時拿掉
-      if (tmpl.segments[index + 1]?.type === "blank" && content.endsWith("「")) content = content.slice(0, -1);
-      if (tmpl.segments[index - 1]?.type === "blank" && content.startsWith("」")) content = content.slice(1);
-      seg.content = content;
-    }
-  });
-  if (!tmpl.segments.some((seg) => seg.type === "signature")) {
-    tmpl.segments.push(
-      { type: "text", content: "\n\n甲方簽名\n" },
-      { type: "signature", id: makeFormBlankId(), label: "甲方簽名", value: "" },
-      { type: "text", content: "\n乙方簽名\n" },
-      { type: "signature", id: makeFormBlankId(), label: "乙方簽名", value: "" }
-    );
-  }
+    : getActiveWrittenFormTemplate().segments;
+  tmpl.segments.forEach((seg, index) => normalizeFormSegment(seg, index, tmpl.segments));
   delete seed.personCard;
   return tmpl;
 }
 
 function formTemplateSegmentPlain(seg) {
-  if (seg.type === "blank") return seg.value || "";
+  if (seg.type === "blank" || seg.type === "select") return seg.value || "";
   if (seg.type === "signature") return seg.value ? "（已簽名）" : "";
   return seg.content || "";
 }
@@ -457,7 +513,7 @@ function formTemplateSegmentPlain(seg) {
 function formTemplateToText(seed) {
   const tmpl = ensureFormTemplateModel(seed);
   const body = tmpl.segments.map(formTemplateSegmentPlain).join("");
-  return [`# ${seed.title || "未命名書面文件"}`, seed.subtitle || "", "", body].join("\n");
+  return [`# ${seed.title || "未命名合約書"}`, seed.subtitle || "", "", body].join("\n");
 }
 
 function formTemplateFilledText(seed) {
@@ -1158,7 +1214,7 @@ function renderFormTemplatePrintView(board, seed) {
   sheet.className = "form-template-sheet is-print";
   const title = document.createElement("h1");
   title.className = "form-template-title";
-  title.textContent = seed.title || "未命名書面文件";
+  title.textContent = seed.title || "未命名合約書";
   const body = document.createElement("div");
   body.className = "form-template-body";
   tmpl.segments.forEach((seg) => {
@@ -1295,20 +1351,50 @@ function autosizeFormBlank(el, multiline = false) {
   el.style.width = `${chars + 1}ch`;
 }
 
+function renderFormSelectField(seg, seed) {
+  const select = document.createElement("select");
+  select.className = "form-template-blank form-template-select";
+  select.setAttribute("aria-label", seg.label || "下拉");
+  select.title = seg.placeholder || seg.label || "請選擇";
+  const placeholder = document.createElement("option");
+  placeholder.value = "";
+  placeholder.textContent = seg.placeholder || "請選擇";
+  select.appendChild(placeholder);
+  parseSelectOptions(seg.options).forEach((opt) => {
+    const option = document.createElement("option");
+    option.value = opt;
+    option.textContent = opt;
+    if (String(seg.value || "") === opt) option.selected = true;
+    select.appendChild(option);
+  });
+  if (seg.value && !parseSelectOptions(seg.options).includes(String(seg.value))) {
+    const orphan = document.createElement("option");
+    orphan.value = seg.value;
+    orphan.textContent = seg.value;
+    orphan.selected = true;
+    select.appendChild(orphan);
+  }
+  select.addEventListener("change", () => {
+    seg.value = select.value;
+    persistFormTemplate(seed);
+  });
+  return select;
+}
+
 function renderFormTemplateEditor(board, seed) {
   const tmpl = ensureFormTemplateModel(seed);
   const sheet = document.createElement("div");
   sheet.className = "form-template-sheet";
   const hint = document.createElement("p");
   hint.className = "form-template-hint";
-  hint.textContent = "定型化書面文件：固定文字不可改；底線處可填；簽名區可手寫。";
+  hint.textContent = "合約書填寫：固定文字不可改；填空／下拉可填；簽名區可手寫。";
   const title = document.createElement("input");
   title.type = "text";
   title.className = "form-template-title-input";
   title.value = seed.title || "";
-  title.placeholder = "書面文件標題";
+  title.placeholder = "合約書標題";
   title.addEventListener("input", () => {
-    seed.title = title.value || "未命名書面文件";
+    seed.title = title.value || "未命名合約書";
     $("read-title").textContent = seed.title;
     saveSeedMetadata(seed);
     persistFormTemplate(seed);
@@ -1325,6 +1411,10 @@ function renderFormTemplateEditor(board, seed) {
     }
     if (seg.type === "signature") {
       body.appendChild(renderFormSignatureField(seg, seed));
+      return;
+    }
+    if (seg.type === "select") {
+      body.appendChild(renderFormSelectField(seg, seed));
       return;
     }
     const blank = seg.multiline
@@ -3285,10 +3375,34 @@ function deleteSeed(id) {
 
 const SYSTEM_SEED_TYPES = [
   { id: "document", label: "文件 Seed", desc: "欄位方塊，可設可見與可編輯" },
-  { id: "written", label: "書面文件 Seed", desc: "定型化契約：固定文字＋填空" },
+  { id: "written", label: "書面文件 Seed", desc: "分類：合約書等書面範本" },
   { id: "approval", label: "簽核 Seed", desc: "欄位、流程、權限與通知範本" },
   { id: "discussion", label: "討論 Seed", desc: "直播風格畫面與評論截圖" },
 ];
+
+const WRITTEN_SEGMENT_TYPES = [
+  { id: "text", label: "文字" },
+  { id: "blank", label: "填空" },
+  { id: "select", label: "下拉" },
+  { id: "signature", label: "簽名" },
+];
+
+function writtenSegmentTypeLabel(type) {
+  return WRITTEN_SEGMENT_TYPES.find((item) => item.id === type)?.label || "文字";
+}
+
+function createWrittenDesignSegment(type = "text") {
+  if (type === "blank") {
+    return { type: "blank", id: makeFormBlankId(), label: "填空", value: "", placeholder: "請填寫", multiline: false };
+  }
+  if (type === "select") {
+    return { type: "select", id: makeFormBlankId(), label: "下拉", value: "", options: "選項一,選項二", placeholder: "請選擇" };
+  }
+  if (type === "signature") {
+    return { type: "signature", id: makeFormBlankId(), label: "簽名", value: "" };
+  }
+  return { type: "text", content: "" };
+}
 
 function seedTypeDisplayLabel(seedType) {
   return {
@@ -3333,9 +3447,9 @@ function buildBlankSystemSnapshot(seedType) {
     const seed = {
       seedType: "document",
       documentLayout: "form-template",
-      title: "未命名書面文件",
+      title: "未命名合約書",
       subtitle: "",
-      blurb: "定型化契約：固定文字不可改，僅填空可填",
+      blurb: "定型化契約：固定文字不可改，僅填空／下拉／簽名可填",
       formTemplate: defaultFormTemplate(),
     };
     ensureFormTemplateModel(seed);
@@ -3373,9 +3487,9 @@ function getBuiltinSystemSeedCatalog() {
     }],
     written: [{
       id: "sys-doc-form",
-      name: "書面文件",
+      name: "合約書",
       builtin: true,
-      desc: "定型化契約：固定文字＋填空",
+      desc: "定型化契約：固定文字＋填空／下拉／簽名",
       versions: [{ rev: 1, label: "初版", savedAt: now, snapshot: buildBlankSystemSnapshot("written") }],
     }],
     approval: [{
@@ -3528,14 +3642,12 @@ function openSystemSeedTemplate(template, seedType) {
   } else if (seedType === "written" || version.snapshot?.documentLayout === "form-template") {
     seed.seedType = "document";
     seed.documentLayout = "form-template";
-    if (version.snapshot?.formTemplate) {
-      seed.formTemplate = JSON.parse(JSON.stringify(version.snapshot.formTemplate));
-    }
+    seed.formTemplate = JSON.parse(JSON.stringify(getActiveWrittenFormTemplate()));
     ensureFormTemplateModel(seed);
-    seed.title = "未命名書面文件";
+    seed.title = "未命名合約書";
     seed.alias = seed.title;
     seed.short = Array.from(seed.title).slice(0, 4).join("");
-    seed.blurb = version.snapshot?.blurb || seed.blurb || "";
+    seed.blurb = version.snapshot?.blurb || seed.blurb || "定型化契約：固定文字不可改，僅填空／下拉／簽名可填";
     saveSeedTrayState();
   } else if (seedType === "document") {
     seed.documentLayout = "person-card";
@@ -3605,6 +3717,18 @@ function renderSystemSeedPanel() {
   const board = $("system-seed-board");
   if (!board) return;
   board.innerHTML = "";
+  const browse = state.systemBrowse || { step: "types", seedType: "", templateId: "" };
+
+  if (browse.step === "written-design") {
+    renderWrittenDesignPanel(board);
+    return;
+  }
+
+  if (browse.step === "written-list" || browse.seedType === "written") {
+    renderWrittenCategoryPanel(board);
+    return;
+  }
+
   const grid = document.createElement("div");
   grid.className = "system-seed-type-grid";
   SYSTEM_SEED_TYPES.forEach((type) => {
@@ -3613,6 +3737,10 @@ function renderSystemSeedPanel() {
     card.className = "system-seed-type-card";
     card.textContent = type.label;
     card.addEventListener("click", () => {
+      if (type.id === "written") {
+        openSystemSeedBrowse("written-list", "written");
+        return;
+      }
       const catalog = loadSystemSeedCatalog();
       const blank = (catalog[type.id] || []).find((item) => item.builtin) || catalog[type.id]?.[0];
       if (blank) openSystemSeedTemplate(blank, type.id);
@@ -3621,6 +3749,294 @@ function renderSystemSeedPanel() {
     grid.appendChild(card);
   });
   board.appendChild(grid);
+}
+
+function renderWrittenCategoryPanel(board) {
+  const wrap = document.createElement("div");
+  wrap.className = "written-category";
+
+  const head = document.createElement("div");
+  head.className = "written-category-head";
+  const back = document.createElement("button");
+  back.type = "button";
+  back.className = "btn";
+  back.textContent = "← 類型";
+  back.addEventListener("click", () => openSystemSeedBrowse("types"));
+  const title = document.createElement("h1");
+  title.textContent = "書面文件 Seed";
+  const lead = document.createElement("p");
+  lead.className = "lead";
+  lead.textContent = "這是分類。選下方項目開始填寫；擁有者可編輯合約書公版模板。";
+  head.append(back, title, lead);
+
+  const list = document.createElement("div");
+  list.className = "system-seed-type-grid";
+  const catalog = loadSystemSeedCatalog();
+  (catalog.written || []).forEach((item) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "system-seed-type-card written-category-item";
+    const name = document.createElement("strong");
+    name.textContent = item.name || "合約書";
+    const desc = document.createElement("span");
+    desc.textContent = item.desc || "開啟後依公版填寫";
+    btn.append(name, desc);
+    btn.addEventListener("click", () => openSystemSeedTemplate(item, "written"));
+    list.appendChild(btn);
+  });
+
+  wrap.append(head, list);
+
+  if (canEditWrittenCategory()) {
+    const owner = document.createElement("div");
+    owner.className = "written-category-owner";
+    const ownerLabel = document.createElement("p");
+    ownerLabel.className = "written-category-owner-label";
+    ownerLabel.textContent = "分類擁有者";
+    const designBtn = document.createElement("button");
+    designBtn.type = "button";
+    designBtn.className = "btn btn-primary";
+    designBtn.textContent = "編輯合約書模板";
+    designBtn.addEventListener("click", () => openSystemSeedBrowse("written-design", "written", "sys-doc-form"));
+    const hint = document.createElement("p");
+    hint.className = "form-template-hint";
+    hint.textContent = "可決定公版裡放文字、填空、下拉、簽名。儲存後，新開的合約書會用這份模板。";
+    owner.append(ownerLabel, designBtn, hint);
+    wrap.appendChild(owner);
+  }
+
+  board.appendChild(wrap);
+}
+
+function renderWrittenDesignPanel(board) {
+  const draft = {
+    name: "合約書",
+    segments: JSON.parse(JSON.stringify(getActiveWrittenFormTemplate().segments)),
+  };
+  draft.segments.forEach((seg, index) => normalizeFormSegment(seg, index, draft.segments));
+
+  const wrap = document.createElement("div");
+  wrap.className = "written-design";
+
+  const head = document.createElement("div");
+  head.className = "written-category-head";
+  const back = document.createElement("button");
+  back.type = "button";
+  back.className = "btn";
+  back.textContent = "← 書面文件";
+  back.addEventListener("click", () => openSystemSeedBrowse("written-list", "written"));
+  const title = document.createElement("h1");
+  title.textContent = "編輯合約書模板";
+  const lead = document.createElement("p");
+  lead.className = "lead";
+  lead.textContent = "擁有者可編輯公版：固定文字、填空、下拉、簽名。填寫者之後只能填可編元件。";
+  head.append(back, title, lead);
+
+  const nameLabel = document.createElement("label");
+  nameLabel.className = "written-design-name";
+  nameLabel.innerHTML = "<span>模板名稱</span>";
+  const nameInput = document.createElement("input");
+  nameInput.type = "text";
+  nameInput.value = draft.name;
+  nameInput.placeholder = "合約書";
+  nameInput.addEventListener("input", () => {
+    draft.name = nameInput.value.trim() || "合約書";
+  });
+  nameLabel.appendChild(nameInput);
+
+  const toolbar = document.createElement("div");
+  toolbar.className = "written-design-toolbar";
+  WRITTEN_SEGMENT_TYPES.forEach((type) => {
+    const add = document.createElement("button");
+    add.type = "button";
+    add.className = "btn";
+    add.textContent = `＋${type.label}`;
+    add.addEventListener("click", () => {
+      draft.segments.push(createWrittenDesignSegment(type.id));
+      paint();
+    });
+    toolbar.appendChild(add);
+  });
+
+  const list = document.createElement("div");
+  list.className = "written-design-list";
+
+  const actions = document.createElement("div");
+  actions.className = "written-design-actions";
+  const reset = document.createElement("button");
+  reset.type = "button";
+  reset.className = "btn";
+  reset.textContent = "還原預設";
+  reset.addEventListener("click", () => {
+    const fresh = defaultFormTemplate();
+    draft.name = fresh.name;
+    draft.segments = JSON.parse(JSON.stringify(fresh.segments));
+    nameInput.value = draft.name;
+    paint();
+  });
+  const save = document.createElement("button");
+  save.type = "button";
+  save.className = "btn btn-primary";
+  save.textContent = "儲存公版";
+  save.addEventListener("click", () => {
+    if (!draft.segments.length) {
+      showToast("至少放一個元件", "warn");
+      return;
+    }
+    draft.segments.forEach((seg, index) => normalizeFormSegment(seg, index, draft.segments));
+    saveWrittenDesign({
+      name: draft.name || "合約書",
+      segments: draft.segments.map((seg) => {
+        const copy = { ...seg };
+        if (copy.type === "blank" || copy.type === "select" || copy.type === "signature") copy.value = "";
+        return copy;
+      }),
+    });
+    showToast("已儲存合約書公版", "ok");
+    openSystemSeedBrowse("written-list", "written");
+  });
+  actions.append(reset, save);
+
+  const paint = () => {
+    list.innerHTML = "";
+    if (!draft.segments.length) {
+      list.innerHTML = '<p class="written-design-empty">還沒有元件。用上方按鈕加入文字、填空、下拉或簽名。</p>';
+      return;
+    }
+    draft.segments.forEach((seg, index) => {
+      const row = document.createElement("div");
+      row.className = "written-design-row";
+
+      const meta = document.createElement("div");
+      meta.className = "written-design-row-meta";
+      const typeSelect = document.createElement("select");
+      typeSelect.className = "written-design-type";
+      WRITTEN_SEGMENT_TYPES.forEach((type) => {
+        const opt = document.createElement("option");
+        opt.value = type.id;
+        opt.textContent = type.label;
+        if (seg.type === type.id) opt.selected = true;
+        typeSelect.appendChild(opt);
+      });
+      typeSelect.addEventListener("change", () => {
+        const next = createWrittenDesignSegment(typeSelect.value);
+        if (typeSelect.value === "text" && seg.content) next.content = seg.content;
+        if (typeSelect.value === "blank" && seg.label) next.label = seg.label;
+        if (typeSelect.value === "select") {
+          if (seg.label) next.label = seg.label;
+          if (seg.options) next.options = seg.options;
+        }
+        if (typeSelect.value === "signature" && seg.label) next.label = seg.label;
+        draft.segments[index] = next;
+        paint();
+      });
+      const order = document.createElement("div");
+      order.className = "written-design-order";
+      const up = document.createElement("button");
+      up.type = "button";
+      up.className = "btn";
+      up.textContent = "↑";
+      up.disabled = index === 0;
+      up.addEventListener("click", () => {
+        const [item] = draft.segments.splice(index, 1);
+        draft.segments.splice(index - 1, 0, item);
+        paint();
+      });
+      const down = document.createElement("button");
+      down.type = "button";
+      down.className = "btn";
+      down.textContent = "↓";
+      down.disabled = index === draft.segments.length - 1;
+      down.addEventListener("click", () => {
+        const [item] = draft.segments.splice(index, 1);
+        draft.segments.splice(index + 1, 0, item);
+        paint();
+      });
+      const remove = document.createElement("button");
+      remove.type = "button";
+      remove.className = "btn";
+      remove.textContent = "刪";
+      remove.addEventListener("click", () => {
+        draft.segments.splice(index, 1);
+        paint();
+      });
+      order.append(up, down, remove);
+      meta.append(typeSelect, order);
+
+      const body = document.createElement("div");
+      body.className = "written-design-row-body";
+      if (seg.type === "text") {
+        const area = document.createElement("textarea");
+        area.rows = 3;
+        area.placeholder = "固定文字（填寫者不能改）";
+        area.value = seg.content || "";
+        area.addEventListener("input", () => {
+          seg.content = area.value;
+        });
+        body.appendChild(area);
+      } else if (seg.type === "blank") {
+        const label = document.createElement("input");
+        label.type = "text";
+        label.placeholder = "填空標籤";
+        label.value = seg.label || "";
+        label.addEventListener("input", () => {
+          seg.label = label.value;
+        });
+        const placeholder = document.createElement("input");
+        placeholder.type = "text";
+        placeholder.placeholder = "提示文字";
+        placeholder.value = seg.placeholder || "";
+        placeholder.addEventListener("input", () => {
+          seg.placeholder = placeholder.value;
+        });
+        const multi = document.createElement("label");
+        multi.className = "written-design-check";
+        const box = document.createElement("input");
+        box.type = "checkbox";
+        box.checked = Boolean(seg.multiline);
+        box.addEventListener("change", () => {
+          seg.multiline = box.checked;
+        });
+        multi.append(box, document.createTextNode("多行"));
+        body.append(label, placeholder, multi);
+      } else if (seg.type === "select") {
+        const label = document.createElement("input");
+        label.type = "text";
+        label.placeholder = "下拉標籤";
+        label.value = seg.label || "";
+        label.addEventListener("input", () => {
+          seg.label = label.value;
+        });
+        const options = document.createElement("input");
+        options.type = "text";
+        options.placeholder = "選項（用逗號分隔）";
+        options.value = seg.options || "";
+        options.addEventListener("input", () => {
+          seg.options = options.value;
+        });
+        body.append(label, options);
+      } else {
+        const label = document.createElement("input");
+        label.type = "text";
+        label.placeholder = "簽名標籤";
+        label.value = seg.label || "";
+        label.addEventListener("input", () => {
+          seg.label = label.value;
+        });
+        const note = document.createElement("p");
+        note.className = "form-template-hint";
+        note.textContent = "填寫時會出現手寫簽名板。";
+        body.append(label, note);
+      }
+
+      row.append(meta, body);
+      list.appendChild(row);
+    });
+  };
+
+  paint();
+  wrap.append(head, nameLabel, toolbar, list, actions);
+  board.appendChild(wrap);
 }
 
 function addSeed() {

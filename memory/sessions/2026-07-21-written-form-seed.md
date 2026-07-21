@@ -29,5 +29,5 @@ status: active
 
 ## 待續
 
-- 公版設計模式（誰能改固定文字）
+- ~~公版設計模式（誰能改固定文字）~~ → 見 [2026-07-21-written-category-designer.md](2026-07-21-written-category-designer.md)
 - 資料夾層級真正共享同一公版

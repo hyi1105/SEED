@@ -748,6 +748,140 @@ html, body {
   gap: 0.35rem;
 }
 
+.written-category,
+.written-design {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.written-category-head {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.written-category-head h1 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.written-category-head .lead {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.written-category-item {
+  display: grid;
+  gap: 0.25rem;
+  text-align: left;
+}
+
+.written-category-item strong {
+  font-size: 1rem;
+}
+
+.written-category-item span {
+  font-size: 0.78rem;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.written-category-owner {
+  display: grid;
+  gap: 0.45rem;
+  padding-top: 0.35rem;
+  border-top: 1px solid var(--line);
+}
+
+.written-category-owner-label {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.written-design-name {
+  display: grid;
+  gap: 0.3rem;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.written-design-name input,
+.written-design-row-body input,
+.written-design-row-body textarea,
+.written-design-type {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+  padding: 0.45rem 0.55rem;
+  box-sizing: border-box;
+}
+
+.written-design-toolbar,
+.written-design-actions,
+.written-design-order {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.written-design-list {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.written-design-empty {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.written-design-row {
+  display: grid;
+  gap: 0.45rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--card);
+  padding: 0.65rem 0.7rem;
+}
+
+.written-design-row-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.written-design-type {
+  width: auto;
+  min-width: 6.5rem;
+}
+
+.written-design-row-body {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.written-design-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.82rem;
+  color: var(--ink);
+}
+
+.form-template-select {
+  width: auto;
+  min-width: 6.5rem;
+  max-width: 100%;
+  height: 1.8em;
+  cursor: pointer;
+}
+
 .seed-tray {
   display: flex;
   flex-direction: column;
