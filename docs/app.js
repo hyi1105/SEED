@@ -144,7 +144,12 @@ function renderNotifyList() {
     .join("");
 }
 
+function dismissNavMenu() {
+  setNavMenuOpen(false);
+}
+
 function showPanel(name) {
+  dismissNavMenu();
   state.panel = name;
   for (const id of ["list", "read", "history", "diff", "system-seed"]) {
     $(`panel-${id}`).classList.toggle("hidden", id !== name);
@@ -643,6 +648,7 @@ function renderSeedHeading(board, editing, options = {}) {
 }
 
 function renderFrameBoard() {
+  dismissNavMenu();
   const board = $("read-body");
   if (!board) return;
   const seedType = state.current?.seedType || "document";
@@ -2606,6 +2612,7 @@ function deleteFrame(index, silent = false) {
 }
 
 function setViewMode(text) {
+  dismissNavMenu();
   state.editing = false;
   state.frames = textToFrames(text);
   $("read-body").classList.remove("hidden");
@@ -2614,6 +2621,7 @@ function setViewMode(text) {
 }
 
 function setEditMode(text) {
+  dismissNavMenu();
   state.editing = true;
   state.docMode = "edit";
   if (isPersonCardDocument(state.current)) {
@@ -2674,6 +2682,7 @@ function updateModeChips() {
 }
 
 async function setDocMode(mode) {
+  dismissNavMenu();
   if (!state.current) {
     showPanel("list");
     return;
@@ -3199,6 +3208,7 @@ function saveCurrentAsSystemSeedTemplate() {
 }
 
 function renderSystemSeedPanel() {
+  dismissNavMenu();
   const board = $("system-seed-board");
   if (!board) return;
   board.innerHTML = "";
@@ -3920,6 +3930,7 @@ function setMapView(view) {
 }
 
 function renderMap() {
+  dismissNavMenu();
   const root = $("knowledge-map");
   applyMapView();
   const { cols, rows } = state.map;
@@ -4600,6 +4611,7 @@ async function restoreSeedPack(pack) {
 }
 
 async function selectSeed(seed) {
+  dismissNavMenu();
   state.current = seed;
   if (isApprovalInstance(seed)) {
     const config = ensureApprovalModel(seed);
@@ -5663,6 +5675,10 @@ document.addEventListener("click", (e) => {
     if (!nav.contains(e.target) && !brandBlock.contains(e.target)) setNavMenuOpen(false);
   }
 });
+
+window.addEventListener("resize", dismissNavMenu, { passive: true });
+window.addEventListener("orientationchange", dismissNavMenu);
+document.querySelector(".stage")?.addEventListener("scroll", dismissNavMenu, { passive: true });
 
 loadAppConfig()
   .then(() => loadAppRelease())
