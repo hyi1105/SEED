@@ -9,9 +9,9 @@
     "cols": 10,
     "rows": 10,
     "note": "知識棋盤：拖曳擺放；點進去看完整標題",
-    "savedAt": "2026-07-21T01:48:16.717Z",
+    "savedAt": "2026-07-21T02:03:34.360Z",
     "layoutName": "7/21 上午7:30",
-    "layoutRev": 18,
+    "layoutRev": 19,
     "view": "fit"
   },
   "seeds": [
@@ -76,8 +76,8 @@
       "alias": "地圖構想",
       "path": "memory/topics/knowledge-map-home.md",
       "blurb": "工作室",
-      "col": 7,
-      "row": 4,
+      "col": 4,
+      "row": 5,
       "cover": null,
       "archived": false
     },
