@@ -28,8 +28,9 @@ https://raw.githack.com/hyi1105/SEED/main/docs/index.html
 ## 現在怎麼看內容
 
 1. 網頁操作：https://hyi1105.github.io/SEED/ （選一份 → 讀現在的 → 看看改了什麼）  
-2. 原始筆記索引：[`memory/index.md`](memory/index.md)  
-3. 個人 MVP 規格：[`memory/topics/personal-mvp-spec.md`](memory/topics/personal-mvp-spec.md)
+2. **系統功能導覽**：[`memory/topics/system-guide.md`](memory/topics/system-guide.md)  
+3. 原始筆記索引：[`memory/index.md`](memory/index.md)  
+4. 個人 MVP 規格：[`memory/topics/personal-mvp-spec.md`](memory/topics/personal-mvp-spec.md)
 
 ## 路線（最終版進度已同步）
 
@@ -46,5 +47,5 @@ https://raw.githack.com/hyi1105/SEED/main/docs/index.html
 
 ## 維護方式
 
-在 Cursor 與 Agent 共同改筆記 → 看 diff 確認 → push。  
+在 Cursor 與 Agent 共同改筆記 → 看 diff；完成並驗證後由 Agent 自動發布。  
 新公開筆記請同步加進 [`docs/seeds.json`](docs/seeds.json) 才會出現在 Pages 列表。

@@ -125,6 +125,17 @@
       "archived": false
     },
     {
+      "id": "system-guide",
+      "title": "SEED 系統功能導覽",
+      "alias": "系統導覽",
+      "path": "memory/topics/system-guide.md",
+      "blurb": "從這裡開始",
+      "col": 1,
+      "row": 1,
+      "cover": null,
+      "archived": true
+    },
+    {
       "id": "core",
       "title": "核心功能清單",
       "alias": "核心清單",

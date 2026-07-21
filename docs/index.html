@@ -34,7 +34,6 @@
             <button type="button" class="header-chip map-view-chip is-active" data-map-view="fit" aria-pressed="true">全部棋盤</button>
           </div>
           <div class="mode-chips hidden" id="mode-chips" role="toolbar" aria-label="檢視模式">
-            <button type="button" class="header-chip mode-chip mode-save" data-mode="save">Save</button>
             <button type="button" class="header-chip mode-chip" data-mode="edit" aria-pressed="true">編輯</button>
             <button type="button" class="header-chip mode-chip" data-mode="a4" aria-pressed="false">文件檢視</button>
             <button type="button" class="header-chip mode-chip" data-mode="diff" aria-pressed="false">歷程記錄</button>
@@ -116,6 +115,9 @@
       </section>
 
       <section id="panel-read" class="panel hidden">
+        <div class="document-actions hidden" id="edit-actions" aria-label="編輯操作">
+          <button type="button" class="btn" id="edit-save">Save</button>
+        </div>
         <div class="export-bar hidden" id="export-bar" aria-label="文件匯入與匯出">
           <button type="button" class="btn" id="document-import">匯入檔案</button>
           <button type="button" class="btn" data-export="pdf">PDF 匯出</button>
@@ -137,7 +139,7 @@
       </section>
 
       <section id="panel-diff" class="panel hidden">
-        <h1 class="sr-only">歷程記錄</h1>
+        <h1 class="diff-title">歷程記錄</h1>
         <div class="diff-picks">
           <label>
             歷程記錄

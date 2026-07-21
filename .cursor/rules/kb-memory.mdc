@@ -22,6 +22,12 @@ alwaysApply: true
 
 不要用大段聊天文字代替改檔——改檔，讓使用者審 diff。
 
+## 自動發布
+
+- 完成使用者要求並驗證後，預設自動 commit 並 push 到 `main`，不必再次詢問。
+- 不發布未完成、驗證失敗、含敏感資料或會破壞既有資料的變更；遇到阻擋時清楚回報。
+- 發布後在聊天附上 commit 摘要與 Pages 狀態。
+
 ## 圖片（貼上／附件）
 
 1. 存到 `memory/assets/YYYY-MM-DD-slug.ext`。

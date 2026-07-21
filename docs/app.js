@@ -275,7 +275,7 @@ function renderInsertGap(index) {
   const gap = document.createElement("button");
   gap.type = "button";
   gap.className = "frame-insert-gap";
-  gap.textContent = "＋ 新增";
+  gap.textContent = "+";
   gap.title = "在這裡插入一格";
   gap.setAttribute("aria-label", "在這裡插入一格");
   gap.addEventListener("click", () => {
@@ -356,20 +356,12 @@ function renderFrameBoard() {
 
   state.frames = state.frames.map(normalizeFrame);
   renderSeedHeading(board, true);
-  const intro = document.createElement("header");
-  intro.className = "editor-intro";
-  intro.innerHTML = "<h2>新增文字模板</h2><p>像填問卷一樣，一段一段建立最後的 A4 文件。</p>";
-  board.appendChild(intro);
+  const property = document.createElement("p");
+  property.className = "template-property";
+  property.textContent = "版型：文字模板";
+  board.appendChild(property);
   if (!state.frames.length) {
-    const empty = document.createElement("div");
-    empty.className = "frame-group frame-empty";
-    const tools = document.createElement("aside");
-    tools.className = "frame-tools";
-    tools.appendChild(renderInsertGap(0));
-    const hint = document.createElement("p");
-    hint.textContent = "從左側加入第一段內容";
-    empty.append(tools, hint);
-    board.appendChild(empty);
+    board.appendChild(renderInsertGap(0));
   }
 
   state.frames.forEach((frame, index) => {
@@ -377,11 +369,6 @@ function renderFrameBoard() {
     block.className = "frame-block";
     block.draggable = true;
     block.dataset.index = String(index);
-
-    const handle = document.createElement("span");
-    handle.className = "frame-handle";
-    handle.textContent = "⋮⋮";
-    handle.title = "拖拉換順序";
 
     const body = document.createElement("textarea");
     body.className = "frame-body";
@@ -460,9 +447,11 @@ function renderFrameBoard() {
     const number = document.createElement("strong");
     number.className = "frame-number";
     number.textContent = String(index + 1);
-    tools.append(number, handle, note, renderInsertGap(index + 1), remove);
+    tools.append(number, note);
+    block.appendChild(remove);
     group.append(tools, block);
     board.appendChild(group);
+    board.appendChild(renderInsertGap(index + 1));
   });
 }
 
@@ -950,11 +939,11 @@ function updateModeChips() {
       : state.docMode === "a4"
         ? "a4"
         : "edit";
+  $("edit-actions")?.classList.toggle(
+    "hidden",
+    !show || mode !== "edit" || state.panel !== "read"
+  );
   wrap.querySelectorAll(".mode-chip").forEach((btn) => {
-    if (btn.dataset.mode === "save") {
-      btn.classList.toggle("hidden", !show || mode !== "edit" || state.panel !== "read");
-      return;
-    }
     const on = btn.dataset.mode === mode;
     btn.setAttribute("aria-pressed", on ? "true" : "false");
     btn.classList.toggle("is-active", on);
@@ -2907,6 +2896,10 @@ $("mode-chips")?.addEventListener("click", (e) => {
   const btn = e.target.closest(".mode-chip");
   if (!btn) return;
   setDocMode(btn.dataset.mode).catch((err) => setStatus(err.message || String(err)));
+});
+
+$("edit-save")?.addEventListener("click", () => {
+  saveCurrentVersion().catch((err) => setStatus(err.message || String(err)));
 });
 
 $("map-view-chips")?.addEventListener("click", (e) => {
