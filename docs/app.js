@@ -19,7 +19,16 @@ const RECENT_PATH_KEY = "seed-recent-paths-v1";
 const SEED_TRAY_KEY = "seed-tray-v1";
 const SEED_META_KEY = "seed-meta-v1";
 const MAP_VIEW_KEY = "seed-map-view-v1";
+const MAP_VIEWS = ["width", "height", "fit"];
+const DEFAULT_MAP_VIEW = "fit";
 const DEFAULT_AI_BASE = "https://api.openai.com/v1";
+
+function resolveMapView(...candidates) {
+  for (const value of candidates) {
+    if (MAP_VIEWS.includes(value)) return value;
+  }
+  return DEFAULT_MAP_VIEW;
+}
 
 const state = {
   seeds: [],
@@ -31,7 +40,7 @@ const state = {
     kind: "personal",
     visibility: "public",
     template: "grid-10",
-    view: localStorage.getItem(MAP_VIEW_KEY) || "fit",
+    view: resolveMapView(localStorage.getItem(MAP_VIEW_KEY)),
   },
   catalog: null,
   config: { apiBase: "" },
@@ -2380,7 +2389,8 @@ function iconHtml(seed) {
 }
 
 function applyMapView() {
-  const view = state.map.view || "fit";
+  const view = resolveMapView(state.map.view);
+  state.map.view = view;
   const shell = document.querySelector(".map-shell");
   if (shell) shell.dataset.mapView = view;
   $("map-view-chips")?.querySelectorAll("[data-map-view]").forEach((button) => {
@@ -2391,12 +2401,13 @@ function applyMapView() {
 }
 
 function setMapView(view) {
-  if (!["width", "height", "fit"].includes(view)) return;
-  state.map.view = view;
-  localStorage.setItem(MAP_VIEW_KEY, view);
+  const next = resolveMapView(view);
+  if (!MAP_VIEWS.includes(view)) return;
+  state.map.view = next;
+  localStorage.setItem(MAP_VIEW_KEY, next);
   applyMapView();
   setStatus(
-    view === "width" ? "棋盤以左右寬度為主" : view === "height" ? "棋盤以上下高度為主" : "顯示全部棋盤"
+    next === "width" ? "棋盤以左右寬度為主" : next === "height" ? "棋盤以上下高度為主" : "顯示全部棋盤"
   );
 }
 
@@ -2581,6 +2592,9 @@ async function loadCatalog() {
   // Bust CDN cache after writes
   const data = await fetchJson(`./seeds.json?ts=${Date.now()}`);
   state.catalog = data;
+  // 首頁初始視圖：本機偏好 > 倉庫 map.view > 預設全部棋盤
+  const catalogView = resolveMapView(data.map?.view);
+  const personalView = localStorage.getItem(MAP_VIEW_KEY);
   state.map = {
     cols: data.map?.cols || 10,
     rows: data.map?.rows || 10,
@@ -2589,11 +2603,12 @@ async function loadCatalog() {
     kind: data.map?.kind || "personal",
     visibility: data.map?.visibility || "public",
     template: data.map?.template || "grid-10",
-    view: localStorage.getItem(MAP_VIEW_KEY) || "fit",
+    view: resolveMapView(personalView, catalogView),
     savedAt: data.map?.savedAt || null,
     layoutName: data.map?.layoutName || "",
     layoutRev: Number.isInteger(data.map?.layoutRev) ? data.map.layoutRev : 0,
   };
+  if (!personalView) localStorage.setItem(MAP_VIEW_KEY, state.map.view);
   const hasTrayState = localStorage.getItem(SEED_TRAY_KEY) !== null;
   const tray = loadSeedTrayState();
   const metadata = loadSeedMetadata();
@@ -4092,8 +4107,10 @@ document.addEventListener("click", (e) => {
 loadAppConfig()
   .then(() => loadCatalog())
   .then(() => {
+    showPanel("list");
+    applyMapView();
     updatePathBrand();
     updateSyncUi();
-    showToast("拖拉棋盤會自動存；點 SEED 直接編輯", "info");
+    showToast("已開啟首頁棋盤；拖拉會自動存，點 SEED 直接編輯", "info");
   })
   .catch((err) => setStatus(err.message || String(err)));
