@@ -33,6 +33,9 @@ status: active
 - **v9**：
   - 頂部只留 **SEED**＋**▼**（不再顯示 Seed 名稱）
   - ▼ 第一列改 **程式發布時間**（`config.json` releaseAt 或 GitHub docs/app.js 最新 commit）
+- **v10**：
+  - ▼ 選單保留路徑（首頁 → Seed 名 → 版本／歷程）
+  - 移除「目前位置」；底部改 **登入資訊**（GitHub 鑰匙、會員碼／AI 鑰匙）
 
 ## 決定／偏好
 

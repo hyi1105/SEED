@@ -5365,15 +5365,6 @@ function closeAllPopovers() {
   setNavMenuOpen(false);
 }
 
-function getNavLocationLabel() {
-  if (state.panel === "list") return "首頁";
-  if (state.panel === "system-seed") return "Seed";
-  if (state.panel === "history") return "版本";
-  if (state.panel === "diff") return "歷程";
-  if (state.current) return state.current.title || "未命名 SEED";
-  return "首頁";
-}
-
 function getNavChoiceItems() {
   const home = {
     key: "home",
@@ -5384,6 +5375,7 @@ function getNavChoiceItems() {
   const items = [home];
 
   if (state.panel === "system-seed") {
+    items.push({ key: "system-seed", label: "Seed", isCurrent: true, go: () => openSystemSeedBrowse("types") });
     return items;
   }
 
@@ -5394,13 +5386,16 @@ function getNavChoiceItems() {
       if (!state.originalText) await loadSeedText();
       setEditMode(state.workingText ?? state.originalText);
     };
-    if (state.panel === "history" || state.panel === "diff") {
-      items.push({
-        key: "back",
-        label: "上一頁",
-        isCurrent: false,
-        go: seedGo,
-      });
+    items.push({
+      key: "seed",
+      label: state.current.title || "未命名 SEED",
+      isCurrent: state.panel === "read",
+      go: seedGo,
+    });
+    if (state.panel === "history") {
+      items.push({ key: "history", label: "版本", isCurrent: true, go: () => showPanel("history") });
+    } else if (state.panel === "diff") {
+      items.push({ key: "diff", label: "歷程", isCurrent: true, go: () => showPanel("diff") });
     }
   }
 
@@ -5423,10 +5418,12 @@ function renderNavChoices() {
   const wrap = $("nav-choices");
   if (!wrap) return;
   wrap.innerHTML = "";
-  for (const item of getNavChoiceItems()) {
+  const items = getNavChoiceItems();
+  items.forEach((item, index) => {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "nav-choice" + (item.isCurrent ? " is-current" : "");
+    btn.dataset.depth = String(index);
     btn.textContent = item.label;
     btn.disabled = item.isCurrent;
     btn.addEventListener("click", () => {
@@ -5434,13 +5431,60 @@ function renderNavChoices() {
       item.go();
     });
     wrap.appendChild(btn);
-  }
+  });
 }
 
-function renderNavLocation() {
-  const el = $("nav-location");
-  if (!el) return;
-  el.textContent = `目前位置：${getNavLocationLabel()}`;
+function renderNavLogin() {
+  const wrap = $("nav-login");
+  if (!wrap) return;
+  const rows = [
+    {
+      label: "GitHub 鑰匙",
+      value: getToken() ? "已設定" : "未設定",
+      ok: !!getToken(),
+      action: () => {
+        $("token-input").value = getToken() ? "••••••••（已儲存，要換就貼新的）" : "";
+        $("token-dialog").showModal();
+      },
+    },
+  ];
+  if (usePaidProxy()) {
+    rows.push({
+      label: "會員碼",
+      value: getMemberCode() ? "已設定" : "未設定",
+      ok: !!getMemberCode(),
+      action: () => {
+        $("member-input").value = getMemberCode() ? "••••••••（已儲存，要換就貼新的）" : "";
+        $("member-dialog").showModal();
+      },
+    });
+  } else {
+    rows.push({
+      label: "AI 鑰匙",
+      value: getAiKey() ? "已設定" : "未設定",
+      ok: !!getAiKey(),
+      action: () => {
+        $("ai-key-input").value = getAiKey() ? "••••••••（已儲存，要換就貼新的）" : "";
+        $("ai-base-input").value = getAiBase();
+        $("ai-key-dialog").showModal();
+      },
+    });
+  }
+  wrap.innerHTML = `<p class="nav-login-heading">登入資訊</p><div class="nav-login-rows">${rows
+    .map(
+      (row) =>
+        `<button type="button" class="nav-login-row${row.ok ? " is-ok" : ""}">
+          <span class="nav-login-label">${escapeHtml(row.label)}</span>
+          <span class="nav-login-value">${escapeHtml(row.value)}</span>
+        </button>`
+    )
+    .join("")}</div>`;
+  wrap.querySelectorAll(".nav-login-row").forEach((btn, i) => {
+    btn.addEventListener("click", () => {
+      setNavMenuOpen(false);
+      rows[i].action();
+    });
+  });
 }
 
 function setNavMenuOpen(open) {
@@ -5451,7 +5495,7 @@ function setNavMenuOpen(open) {
   if (open) {
     renderNavVersionRow();
     renderNavChoices();
-    renderNavLocation();
+    renderNavLogin();
     positionPopover(pop, $("brand-block") || btn);
     setPopoverOpen(null);
   }
@@ -5468,7 +5512,7 @@ function updateNavChrome() {
   if (state.navMenuOpen) {
     renderNavVersionRow();
     renderNavChoices();
-    renderNavLocation();
+    renderNavLogin();
   }
 }
 
