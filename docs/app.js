@@ -364,6 +364,8 @@ function syncWorkingFromFrames() {
     state.workingText = discussionToText(state.current);
   } else if (isPersonCardDocument(state.current)) {
     state.workingText = personCardToText(state.current);
+  } else if (isFormTemplateDocument(state.current)) {
+    state.workingText = formTemplateToText(state.current);
   } else {
     state.workingText = framesToText(state.frames);
   }
@@ -372,6 +374,81 @@ function syncWorkingFromFrames() {
 
 function isPersonCardDocument(seed) {
   return seed?.seedType === "document" && seed.documentLayout === "person-card";
+}
+
+function isFormTemplateDocument(seed) {
+  return seed?.seedType === "document" && seed.documentLayout === "form-template";
+}
+
+function makeFormBlankId() {
+  return `ftb-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+}
+
+function defaultFormTemplate() {
+  return {
+    name: "書面文件",
+    segments: [
+      { type: "text", content: "本契約由甲方「" },
+      { type: "blank", id: makeFormBlankId(), label: "甲方", value: "", placeholder: "甲方名稱" },
+      { type: "text", content: "」與乙方「" },
+      { type: "blank", id: makeFormBlankId(), label: "乙方", value: "", placeholder: "乙方名稱" },
+      { type: "text", content: "」於「" },
+      { type: "blank", id: makeFormBlankId(), label: "簽約日", value: "", placeholder: "年／月／日" },
+      { type: "text", content: "」簽訂。\n\n一、標的\n乙方應提供「" },
+      { type: "blank", id: makeFormBlankId(), label: "標的", value: "", placeholder: "服務或標的" },
+      { type: "text", content: "」。\n\n二、金額\n契約總價為新台幣「" },
+      { type: "blank", id: makeFormBlankId(), label: "金額", value: "", placeholder: "金額" },
+      { type: "text", content: "」元整。\n\n三、其他約定\n" },
+      { type: "blank", id: makeFormBlankId(), label: "其他", value: "", placeholder: "其他約定（選填）", multiline: true },
+      { type: "text", content: "\n\n（以下為定型化條款本文，不可修改。凡依本範本建立之書面文件，固定文字皆相同，僅填空處可填寫。）" },
+    ],
+  };
+}
+
+function ensureFormTemplateModel(seed) {
+  seed.seedType = "document";
+  seed.documentLayout = "form-template";
+  const tmpl = (seed.formTemplate ||= defaultFormTemplate());
+  tmpl.name ||= "書面文件";
+  tmpl.segments = Array.isArray(tmpl.segments) && tmpl.segments.length
+    ? tmpl.segments
+    : defaultFormTemplate().segments;
+  tmpl.segments.forEach((seg) => {
+    if (seg.type === "blank") {
+      seg.id ||= makeFormBlankId();
+      seg.label ||= "填空";
+      seg.value = seg.value ?? "";
+      seg.placeholder ||= "請填寫";
+      seg.multiline = Boolean(seg.multiline);
+    } else {
+      seg.type = "text";
+      seg.content = String(seg.content ?? "");
+    }
+  });
+  delete seed.personCard;
+  return tmpl;
+}
+
+function formTemplateToText(seed) {
+  const tmpl = ensureFormTemplateModel(seed);
+  const body = tmpl.segments
+    .map((seg) => (seg.type === "blank" ? seg.value || `【${seg.label || "填空"}】` : seg.content || ""))
+    .join("");
+  return [`# ${seed.title || "未命名書面文件"}`, seed.subtitle || "", "", body].join("\n");
+}
+
+function formTemplateFilledText(seed) {
+  const tmpl = ensureFormTemplateModel(seed);
+  return tmpl.segments
+    .map((seg) => (seg.type === "blank" ? seg.value || "" : seg.content || ""))
+    .join("");
+}
+
+function persistFormTemplate(seed) {
+  ensureFormTemplateModel(seed);
+  syncWorkingFromFrames();
+  saveSeedTrayState();
+  scheduleContentAutosave();
 }
 
 function makePersonFieldId() {
@@ -676,6 +753,17 @@ function renderFrameBoard() {
       return;
     }
     renderPersonCardEditor(board, state.current);
+    return;
+  }
+  if (isFormTemplateDocument(state.current)) {
+    board.className = "prose frame-board form-template-board";
+    board.classList.toggle("a4-view", state.docMode === "a4");
+    board.innerHTML = "";
+    if (state.docMode === "a4") {
+      renderFormTemplatePrintView(board, state.current);
+      return;
+    }
+    renderFormTemplateEditor(board, state.current);
     return;
   }
   board.className = "prose frame-board";
@@ -1041,6 +1129,76 @@ function persistPersonCard(seed) {
   syncWorkingFromFrames();
   saveSeedTrayState();
   scheduleContentAutosave();
+}
+
+function renderFormTemplatePrintView(board, seed) {
+  ensureFormTemplateModel(seed);
+  const sheet = document.createElement("div");
+  sheet.className = "form-template-sheet is-print";
+  const title = document.createElement("h1");
+  title.className = "form-template-title";
+  title.textContent = seed.title || "未命名書面文件";
+  const body = document.createElement("div");
+  body.className = "form-template-body";
+  body.textContent = formTemplateFilledText(seed) || "（尚未填寫）";
+  sheet.append(title, body);
+  board.appendChild(sheet);
+}
+
+function renderFormTemplateEditor(board, seed) {
+  const tmpl = ensureFormTemplateModel(seed);
+  const sheet = document.createElement("div");
+  sheet.className = "form-template-sheet";
+  const hint = document.createElement("p");
+  hint.className = "form-template-hint";
+  hint.textContent = "定型化書面文件：灰底文字固定不可改，僅底線填空可填。";
+  const title = document.createElement("input");
+  title.type = "text";
+  title.className = "form-template-title-input";
+  title.value = seed.title || "";
+  title.placeholder = "書面文件標題";
+  title.addEventListener("input", () => {
+    seed.title = title.value || "未命名書面文件";
+    $("read-title").textContent = seed.title;
+    saveSeedMetadata(seed);
+    persistFormTemplate(seed);
+  });
+  const body = document.createElement("div");
+  body.className = "form-template-body is-edit";
+  tmpl.segments.forEach((seg) => {
+    if (seg.type === "text") {
+      const text = document.createElement("span");
+      text.className = "form-template-fixed";
+      text.textContent = seg.content || "";
+      body.appendChild(text);
+      return;
+    }
+    const blank = seg.multiline
+      ? document.createElement("textarea")
+      : document.createElement("input");
+    if (!seg.multiline) blank.type = "text";
+    blank.className = "form-template-blank" + (seg.multiline ? " is-multiline" : "");
+    blank.value = seg.value || "";
+    blank.placeholder = seg.placeholder || seg.label || "請填寫";
+    blank.setAttribute("aria-label", seg.label || "填空");
+    blank.addEventListener("input", () => {
+      seg.value = blank.value;
+      if (seg.multiline) {
+        blank.style.height = "auto";
+        blank.style.height = `${Math.max(blank.scrollHeight, 28)}px`;
+      }
+      persistFormTemplate(seed);
+    });
+    body.appendChild(blank);
+    if (seg.multiline) {
+      requestAnimationFrame(() => {
+        blank.style.height = "auto";
+        blank.style.height = `${Math.max(blank.scrollHeight, 28)}px`;
+      });
+    }
+  });
+  sheet.append(hint, title, body);
+  board.appendChild(sheet);
 }
 
 function renderDocumentMetaPanel(board, seed) {
@@ -2662,13 +2820,20 @@ function setEditMode(text) {
     ensurePersonCardModel(state.current);
     state.frames = [];
     state.workingText = personCardToText(state.current);
+  } else if (isFormTemplateDocument(state.current)) {
+    ensureFormTemplateModel(state.current);
+    state.frames = [];
+    state.workingText = formTemplateToText(state.current);
   } else {
     state.frames = textToFrames(text);
     state.workingText = text;
   }
   $("read-body").classList.remove("hidden");
   $("edit-body").classList.add("hidden");
-  $("edit-body").value = isPersonCardDocument(state.current) ? state.workingText : text;
+  $("edit-body").value =
+    isPersonCardDocument(state.current) || isFormTemplateDocument(state.current)
+      ? state.workingText
+      : text;
   $("export-bar")?.classList.add("hidden");
   renderFrameBoard();
   updateModeChips();
@@ -2767,13 +2932,11 @@ async function saveCurrentVersion(actor = null) {
   state.current.lastActor = "人";
   if (state.current.localOnly) saveSeedTrayState();
   await loadVersions();
-  if (state.panel === "read" && (state.current?.seedType || "document") === "document" && !isPersonCardDocument(state.current)) {
-    renderFrameBoard();
-  } else if (state.panel === "read" && isPersonCardDocument(state.current)) {
+  if (state.panel === "read" && (state.current?.seedType || "document") === "document") {
     renderFrameBoard();
   }
   showToast("已建立新版本", "ok");
-  if (isPersonCardDocument(state.current)) {
+  if (isPersonCardDocument(state.current) || isFormTemplateDocument(state.current)) {
     showPanel("list");
   }
 }
@@ -2974,7 +3137,8 @@ function deleteSeed(id) {
 }
 
 const SYSTEM_SEED_TYPES = [
-  { id: "document", label: "文件 Seed", desc: "欄位方塊：單行／多行／下拉，可設可見與可編輯" },
+  { id: "document", label: "文件 Seed", desc: "欄位方塊，可設可見與可編輯" },
+  { id: "written", label: "書面文件 Seed", desc: "定型化契約：固定文字＋填空" },
   { id: "approval", label: "簽核 Seed", desc: "欄位、流程、權限與通知範本" },
   { id: "discussion", label: "討論 Seed", desc: "直播風格畫面與評論截圖" },
 ];
@@ -2982,6 +3146,7 @@ const SYSTEM_SEED_TYPES = [
 function seedTypeDisplayLabel(seedType) {
   return {
     document: "文件",
+    written: "書面文件",
     approval: "簽核",
     discussion: "討論",
   }[seedType || "document"] || "文件";
@@ -3017,6 +3182,27 @@ function buildBlankSystemSnapshot(seedType) {
       }),
     };
   }
+  if (seedType === "written") {
+    const seed = {
+      seedType: "document",
+      documentLayout: "form-template",
+      title: "未命名書面文件",
+      subtitle: "",
+      blurb: "定型化契約：固定文字不可改，僅填空可填",
+      formTemplate: defaultFormTemplate(),
+    };
+    ensureFormTemplateModel(seed);
+    return {
+      seedType: "document",
+      documentLayout: "form-template",
+      title: seed.title,
+      subtitle: "",
+      blurb: seed.blurb,
+      personCard: null,
+      formTemplate: JSON.parse(JSON.stringify(seed.formTemplate)),
+      text: formTemplateToText(seed),
+    };
+  }
   return {
     seedType: "document",
     documentLayout: "person-card",
@@ -3037,6 +3223,13 @@ function getBuiltinSystemSeedCatalog() {
       builtin: true,
       desc: "人員卡片格式",
       versions: [{ rev: 1, label: "初版", savedAt: now, snapshot: buildBlankSystemSnapshot("document") }],
+    }],
+    written: [{
+      id: "sys-doc-form",
+      name: "書面文件",
+      builtin: true,
+      desc: "定型化契約：固定文字＋填空",
+      versions: [{ rev: 1, label: "初版", savedAt: now, snapshot: buildBlankSystemSnapshot("written") }],
     }],
     approval: [{
       id: "sys-approval-blank",
@@ -3091,6 +3284,7 @@ function captureSeedSnapshot(seed) {
     subtitle: seed.subtitle || "",
     blurb: seed.blurb || "",
     personCard: seed.personCard ? JSON.parse(JSON.stringify(seed.personCard)) : null,
+    formTemplate: seed.formTemplate ? JSON.parse(JSON.stringify(seed.formTemplate)) : null,
     approvalIsTemplate: seed.approvalIsTemplate !== false && !seed.approvalTemplateId,
     approvalTemplateId: seed.approvalTemplateId || "",
     formFields: JSON.parse(JSON.stringify(seed.formFields || [])),
@@ -3102,6 +3296,7 @@ function captureSeedSnapshot(seed) {
   if (seed.seedType === "approval") snapshot.text = approvalToText(seed);
   else if (seed.seedType === "discussion") snapshot.text = discussionToText(seed);
   else if (isPersonCardDocument(seed)) snapshot.text = personCardToText(seed);
+  else if (isFormTemplateDocument(seed)) snapshot.text = formTemplateToText(seed);
   else snapshot.text = state.current?.id === seed.id ? state.workingText : (localStorage.getItem(`seed-draft:${seed.id}`) || "");
   return snapshot;
 }
@@ -3115,6 +3310,11 @@ function applySnapshotToSeed(seed, snapshot) {
   if (snapshot.documentLayout === "person-card") {
     seed.personCard = JSON.parse(JSON.stringify(snapshot.personCard || defaultPersonCard()));
     ensurePersonCardModel(seed);
+    delete seed.formTemplate;
+  } else if (snapshot.documentLayout === "form-template") {
+    seed.formTemplate = JSON.parse(JSON.stringify(snapshot.formTemplate || defaultFormTemplate()));
+    ensureFormTemplateModel(seed);
+    delete seed.personCard;
   }
   seed.approvalTemplateId = snapshot.approvalTemplateId || "";
   seed.approvalIsTemplate = snapshot.seedType === "approval"
@@ -3152,7 +3352,7 @@ function findSystemTemplate(catalog, seedType, templateId) {
 }
 
 function forkSystemSeedVersion(template, version) {
-  const seedType = version.snapshot?.seedType || template.seedType || "document";
+  const seedType = version.snapshot?.seedType || (template.id === "sys-doc-form" ? "document" : template.seedType) || "document";
   const title = `${template.name}（v${version.rev}）`;
   const seed = createSeed(title, seedType);
   applySnapshotToSeed(seed, version.snapshot);
@@ -3177,6 +3377,18 @@ function openSystemSeedTemplate(template, seedType) {
     seed.title = "未命名簽核";
     seed.alias = seed.title;
     seed.short = Array.from(seed.title).slice(0, 4).join("");
+    saveSeedTrayState();
+  } else if (seedType === "written" || version.snapshot?.documentLayout === "form-template") {
+    seed.seedType = "document";
+    seed.documentLayout = "form-template";
+    if (version.snapshot?.formTemplate) {
+      seed.formTemplate = JSON.parse(JSON.stringify(version.snapshot.formTemplate));
+    }
+    ensureFormTemplateModel(seed);
+    seed.title = "未命名書面文件";
+    seed.alias = seed.title;
+    seed.short = Array.from(seed.title).slice(0, 4).join("");
+    seed.blurb = version.snapshot?.blurb || seed.blurb || "";
     saveSeedTrayState();
   } else if (seedType === "document") {
     seed.documentLayout = "person-card";
@@ -3325,7 +3537,11 @@ function renderSeedTray() {
     const open = document.createElement("button");
     open.type = "button";
     open.className = "seed-tray-open";
-    const typeLabel = { document: "文件 Seed", approval: seed.approvalTemplateId ? "申請" : "簽核 Seed", discussion: "討論 Seed" };
+    const typeLabel = {
+      document: isFormTemplateDocument(seed) ? "書面文件 Seed" : "文件 Seed",
+      approval: seed.approvalTemplateId ? "申請" : "簽核 Seed",
+      discussion: "討論 Seed",
+    };
     const title = document.createElement("span");
     title.className = "seed-tray-title";
     title.textContent = seed.title;
