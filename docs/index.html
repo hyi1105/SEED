@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=control17" />
+  <link rel="stylesheet" href="styles.css?v=control18" />
   <!-- 預覽請用 raw.githack（會正確當成網頁）。不要用 raw.githubusercontent 或 jsDelivr 開 html，會變純文字。 -->
 </head>
 <body>
@@ -28,11 +28,6 @@
           <nav class="path-crumb" id="path-crumb" aria-label="目前階層">首頁</nav>
         </div>
         <div class="top-end">
-          <div class="map-view-chips hidden" id="map-view-chips" role="toolbar" aria-label="棋盤顯示模式">
-            <button type="button" class="header-chip map-view-chip" data-map-view="width" aria-pressed="false">左右為主</button>
-            <button type="button" class="header-chip map-view-chip" data-map-view="height" aria-pressed="false">上下為主</button>
-            <button type="button" class="header-chip map-view-chip is-active" data-map-view="fit" aria-pressed="true">全部棋盤</button>
-          </div>
           <div class="mode-chips hidden" id="mode-chips" role="toolbar" aria-label="檢視模式">
             <button type="button" class="header-chip mode-chip" data-mode="edit" aria-pressed="true">編輯</button>
             <button type="button" class="header-chip mode-chip" data-mode="a4" aria-pressed="false">文件檢視</button>
@@ -100,16 +95,16 @@
 
     <main class="stage">
       <section id="panel-list" class="panel panel-map">
-        <h1 id="map-title" class="sr-only">SEED 棋盤</h1>
+        <h1 id="map-title" class="sr-only">SEED</h1>
         <p id="map-note" class="sr-only"></p>
-        <div class="map-shell">
+        <div class="map-shell hidden" id="map-shell" aria-hidden="true">
           <div id="knowledge-map" class="knowledge-map" role="grid" aria-label="SEED 棋盤"></div>
         </div>
         <section class="system-seed-entry" aria-labelledby="system-seed-title">
           <div class="system-seed-head">
             <h2 id="system-seed-title">Seed</h2>
           </div>
-          <button type="button" class="btn btn-primary" id="system-seed-open">建立 Seed</button>
+          <button type="button" class="btn btn-primary" id="system-seed-open">建立 Seed 版本</button>
         </section>
         <section class="seed-tray" aria-labelledby="seed-tray-title">
           <div class="seed-tray-head">
@@ -357,6 +352,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/mammoth@latest/mammoth.browser.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@latest/dist/xlsx.full.min.js"></script>
-  <script src="app.js?v=control17"></script>
+  <script src="app.js?v=control18"></script>
 </body>
 </html>

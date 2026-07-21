@@ -2679,7 +2679,6 @@ function updateModeChips() {
   if (!wrap) return;
   const show = state.panel !== "list" && !!state.current;
   wrap.classList.toggle("hidden", !show);
-  $("map-view-chips")?.classList.toggle("hidden", state.panel !== "list" && state.panel !== "system-seed");
   const mode =
     state.panel === "diff" || state.panel === "history"
       ? "diff"
@@ -3237,8 +3236,22 @@ function renderSystemSeedPanel() {
   board.appendChild(grid);
 }
 
+function openBlankDocumentSeed() {
+  const catalog = loadSystemSeedCatalog();
+  const blank = (catalog.document || []).find((item) => item.builtin) || catalog.document?.[0];
+  if (blank) {
+    openSystemSeedTemplate(blank, "document");
+    return;
+  }
+  const seed = createSeed("未命名文件", "document");
+  seed.documentLayout = "person-card";
+  ensurePersonCardModel(seed);
+  saveSeedTrayState();
+  selectSeed(seed).catch((err) => setStatus(err.message || String(err)));
+}
+
 function addSeed() {
-  openSystemSeedBrowse("types");
+  openBlankDocumentSeed();
 }
 
 function createSeed(title, seedType) {
@@ -3276,7 +3289,7 @@ function renderSeedTray() {
   root.innerHTML = "";
   const archived = state.seeds.filter((s) => s.archived);
   if (!archived.length) {
-    root.innerHTML = '<p class="seed-tray-empty">把 SEED 拖到這裡收回；也可拖到上方棋盤出戰。</p>';
+    root.innerHTML = '<p class="seed-tray-empty">還沒有 SEED。按「＋ 新增 SEED」直接開始編輯。</p>';
     return;
   }
   for (const seed of archived) {
@@ -3841,6 +3854,8 @@ function setMapView(view) {
 
 function renderMap() {
   const root = $("knowledge-map");
+  const shell = $("map-shell");
+  if (!root || shell?.classList.contains("hidden")) return;
   applyMapView();
   const { cols, rows } = state.map;
   root.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
