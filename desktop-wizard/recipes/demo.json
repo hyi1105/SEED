@@ -1,0 +1,11 @@
+{
+  "url": "https://httpbin.org/forms/post",
+  "text": "你好，這是網頁精靈測試文字",
+  "textTarget": "textarea[name='comments']",
+  "headed": false,
+  "fullPage": false,
+  "keepOpenMs": 0,
+  "steps": [
+    { "type": "screenshot", "name": "mid" }
+  ]
+}

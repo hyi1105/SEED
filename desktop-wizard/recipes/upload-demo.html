@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <title>上傳練習頁（網頁精靈）</title>
+  <style>
+    :root {
+      --ink: #1c1917;
+      --paper: #f5f0e8;
+      --line: #d6cfc3;
+      --accent: #0f766e;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+      background:
+        radial-gradient(1200px 600px at 10% -10%, #dceeea 0%, transparent 55%),
+        linear-gradient(165deg, #f7f3ec, #ebe4d8);
+      color: var(--ink);
+      padding: 48px 24px;
+    }
+    main {
+      max-width: 560px;
+      margin: 0 auto;
+    }
+    h1 {
+      font-size: clamp(1.8rem, 4vw, 2.4rem);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin: 0 0 0.35em;
+    }
+    p { margin: 0 0 1.5rem; opacity: 0.75; line-height: 1.5; }
+    label {
+      display: block;
+      font-size: 0.85rem;
+      margin-bottom: 0.35rem;
+      letter-spacing: 0.04em;
+    }
+    textarea, input[type="file"] {
+      width: 100%;
+      margin-bottom: 1.1rem;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.55);
+      padding: 0.75rem 0.9rem;
+      font: inherit;
+      border-radius: 2px;
+    }
+    textarea { min-height: 120px; resize: vertical; }
+    #drop {
+      border: 1.5px dashed #9ca3af;
+      padding: 2rem 1rem;
+      text-align: center;
+      margin-bottom: 1.1rem;
+      background: rgba(255,255,255,0.35);
+      transition: border-color 0.2s, background 0.2s;
+    }
+    #drop.over {
+      border-color: var(--accent);
+      background: rgba(15, 118, 110, 0.08);
+    }
+    #status {
+      min-height: 1.5em;
+      font-size: 0.95rem;
+      color: var(--accent);
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>上傳練習頁</h1>
+    <p>給網頁精靈本機測試：丟檔、輸入文字、截圖。</p>
+    <label for="note">留言</label>
+    <textarea id="note" name="note" placeholder="在這裡輸入文字…"></textarea>
+    <label for="file">檔案</label>
+    <input id="file" type="file" />
+    <div id="drop">或把檔案拖到這裡</div>
+    <div id="status"></div>
+  </main>
+  <script>
+    const status = document.getElementById("status");
+    const file = document.getElementById("file");
+    const drop = document.getElementById("drop");
+    const note = document.getElementById("note");
+    function show(msg) { status.textContent = msg; }
+    file.addEventListener("change", () => {
+      const f = file.files?.[0];
+      show(f ? `已選檔：${f.name}` : "");
+    });
+    note.addEventListener("input", () => {
+      if (note.value) show(`文字長度：${note.value.length}`);
+    });
+    for (const ev of ["dragenter", "dragover"]) {
+      drop.addEventListener(ev, (e) => {
+        e.preventDefault();
+        drop.classList.add("over");
+      });
+    }
+    drop.addEventListener("dragleave", () => drop.classList.remove("over"));
+    drop.addEventListener("drop", (e) => {
+      e.preventDefault();
+      drop.classList.remove("over");
+      const f = e.dataTransfer?.files?.[0];
+      if (f) {
+        const dt = new DataTransfer();
+        dt.items.add(f);
+        file.files = dt.files;
+        show(`已拖放：${f.name}`);
+      }
+    });
+  </script>
+</body>
+</html>

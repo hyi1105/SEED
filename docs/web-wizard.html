@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>下載網頁精靈</title>
+  <style>
+    :root {
+      --ink: #1a1714;
+      --muted: #5c554c;
+      --accent: #0f766e;
+      --font: "Iowan Old Style", "Palatino Linotype", Palatino, "Songti TC", Georgia, serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Source Sans 3", "Segoe UI", "PingFang TC", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(900px 420px at 80% -10%, rgba(15, 118, 110, 0.16), transparent 55%),
+        linear-gradient(160deg, #f7f3ec, #e7efe9);
+      padding: 3rem 1.25rem 4rem;
+    }
+    main { width: min(560px, 100%); margin: 0 auto; }
+    .mark {
+      font-family: var(--font);
+      font-size: clamp(2.2rem, 7vw, 3.2rem);
+      font-weight: 600;
+      letter-spacing: -0.03em;
+      margin: 0 0 0.5rem;
+    }
+    h1 {
+      font-family: var(--font);
+      font-size: 1.25rem;
+      font-weight: 500;
+      margin: 0 0 0.75rem;
+    }
+    p { color: var(--muted); line-height: 1.55; margin: 0 0 1rem; }
+    a.btn {
+      display: inline-block;
+      margin: 0.5rem 0.5rem 0.5rem 0;
+      padding: 0.85rem 1.2rem;
+      background: var(--accent);
+      color: #ecfdf8;
+      text-decoration: none;
+      border-radius: 2px;
+    }
+    a.btn.ghost {
+      background: transparent;
+      color: var(--ink);
+      border: 1px solid #d4cbbd;
+    }
+    ol { color: var(--muted); line-height: 1.7; padding-left: 1.2rem; }
+  </style>
+</head>
+<body>
+  <main>
+    <p class="mark">網頁精靈</p>
+    <h1>Windows 執行檔下載</h1>
+    <p>雙擊即可：開指定網頁、丟檔、輸入文字、截圖。你的電腦不必先裝 Node。</p>
+    <p>
+      <a class="btn" href="https://github.com/hyi1105/SEED/raw/cursor/desktop-web-wizard-adc7/desktop-wizard/release/WebWizard.exe">下載 WebWizard.exe</a>
+      <a class="btn ghost" href="https://github.com/hyi1105/SEED/blob/cursor/desktop-web-wizard-adc7/desktop-wizard/release/README.md">使用說明</a>
+    </p>
+    <ol>
+      <li>下載後若被擋：右鍵 → 內容 → 解除封鎖</li>
+      <li>SmartScreen：其他資訊 → 仍要執行</li>
+      <li>開啟後按「載入本機練習頁」試跑</li>
+    </ol>
+  </main>
+</body>
+</html>

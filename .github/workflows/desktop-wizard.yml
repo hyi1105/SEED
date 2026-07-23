@@ -1,0 +1,43 @@
+name: 網頁精靈 Windows exe
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "desktop-wizard/**"
+      - ".github/workflows/desktop-wizard.yml"
+    branches:
+      - main
+      - "cursor/desktop-web-wizard-*"
+
+jobs:
+  build-win:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: desktop-wizard
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: desktop-wizard/package-lock.json
+      - name: 安裝依賴
+        run: npm ci
+      - name: 安裝 Chromium（打進 exe）
+        run: npm run install:browser
+      - name: 打包 portable exe（內建瀏覽器）
+        run: npm run dist:win:bundle
+      - name: 複製到 release
+        shell: bash
+        run: |
+          mkdir -p release
+          cp dist/WebWizard.exe release/WebWizard.exe
+          ls -lh release/WebWizard.exe dist/WebWizard.exe
+      - uses: actions/upload-artifact@v4
+        with:
+          name: WebWizard-exe
+          path: desktop-wizard/release/WebWizard.exe
+          if-no-files-found: error
+          retention-days: 30
