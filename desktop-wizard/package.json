@@ -3,11 +3,18 @@
   "version": "0.1.0",
   "private": true,
   "description": "桌面網頁精靈：開指定網頁、丟檔、輸入文字、截圖驗證",
+  "author": "SEED",
   "type": "module",
+  "main": "electron-main.js",
   "scripts": {
     "start": "node server.js",
+    "app": "electron .",
     "install:browser": "npx playwright install chromium",
-    "demo": "node runner.js --recipe recipes/demo.json"
+    "demo": "node runner.js --recipe recipes/demo.json",
+    "prepare:browsers": "node scripts/prepare-browsers.js",
+    "dist:win": "electron-builder --win portable --x64",
+    "dist:win:bundle": "npm run prepare:browsers && electron-builder --win portable --x64",
+    "dist:dir": "electron-builder --dir"
   },
   "engines": {
     "node": ">=18"
@@ -16,5 +23,51 @@
     "express": "^4.21.2",
     "multer": "^2.2.0",
     "playwright": "^1.52.0"
+  },
+  "devDependencies": {
+    "electron": "^35.2.1",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "com.seed.webwizard",
+    "productName": "網頁精靈",
+    "copyright": "SEED",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "electron-main.js",
+      "ensure-browser.js",
+      "server.js",
+      "runner.js",
+      "public/**/*",
+      "recipes/**/*",
+      "package.json",
+      "node_modules/**/*"
+    ],
+    "asar": true,
+    "asarUnpack": [
+      "**/node_modules/playwright/**",
+      "**/node_modules/playwright-core/**",
+      "public/**",
+      "recipes/**"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ],
+      "artifactName": "WebWizard-${version}-portable.${ext}"
+    },
+    "portable": {
+      "artifactName": "WebWizard.exe"
+    },
+    "linux": {
+      "target": ["AppImage"],
+      "artifactName": "WebWizard-${version}.${ext}"
+    }
   }
 }

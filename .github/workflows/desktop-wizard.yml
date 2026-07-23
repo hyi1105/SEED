@@ -1,0 +1,32 @@
+name: 網頁精靈 Windows exe
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "desktop-wizard/**"
+      - ".github/workflows/desktop-wizard.yml"
+    branches:
+      - main
+      - "cursor/desktop-web-wizard-*"
+
+jobs:
+  build-win:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: desktop-wizard
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: desktop-wizard/package-lock.json
+      - run: npm ci
+      - run: npm run dist:win
+      - uses: actions/upload-artifact@v4
+        with:
+          name: WebWizard-exe
+          path: desktop-wizard/dist/WebWizard.exe
+          if-no-files-found: error

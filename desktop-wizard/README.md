@@ -1,37 +1,51 @@
-# 網頁精靈（桌面板）
+# 網頁精靈（桌面板／可打成 .exe）
 
 本機小面板：打開指定網頁 → 丟檔 → 輸入文字 → **截圖**，用畫面確認有沒有做對。
 
-> 探索版：先證明「能丟檔／能輸入／能截圖」。影像比對自動點擊之後再加。
+可雙擊 **`WebWizard.exe`** 執行（Windows portable）。
 
-## 需要
+> 探索版：先證明「能丟檔／能輸入／能截圖／能當執行檔」。影像比對自動點擊之後再加。
 
-- Node.js 18+
-- 第一次要裝 Chromium（Playwright）
+## 使用者：雙擊執行檔
 
-## 啟動
+1. 取得 `desktop-wizard/dist/WebWizard.exe`
+2. 雙擊開啟「網頁精靈」視窗  
+   - **第一次**會自動下載 Chromium（需網路，之後就不用）
+3. 按「載入本機練習頁」→ 選檔 →「開始執行」
+4. 下方看紀錄與截圖
+
+截圖寫在使用者資料夾（AppData），不會弄髒 exe 旁邊。
+
+### 自己打包 .exe
+
+在有 Node 的電腦：
+
+```bash
+cd desktop-wizard
+npm install
+npm run dist:win
+```
+
+完成後：`desktop-wizard/dist/WebWizard.exe`  
+（約百餘 MB；瀏覽器第一次開啟時再下載，避免打錯平台）
+
+> 若在 **Windows** 上想把瀏覽器一併打進 exe：可自行加 `extraResources` 並用 `npm run dist:win:bundle`（進階）。
+
+## 開發：不定打包時
 
 ```bash
 cd desktop-wizard
 npm install
 npm run install:browser
-npm start
+npm run app          # Electron 視窗
+# 或
+npm start            # 只用瀏覽器開 http://127.0.0.1:3847
 ```
 
-瀏覽器開：http://127.0.0.1:3847
-
-1. 按「載入本機練習頁」
-2. 選一個檔案
-3. 按「開始執行」
-4. 下方看執行紀錄與截圖
-
-截圖會寫進 `desktop-wizard/output/`。
-
-## 指令列（不開面板）
+## 指令列
 
 ```bash
 npm run demo
-# 或
 node runner.js --recipe recipes/demo.json --headless
 ```
 
@@ -53,11 +67,12 @@ node runner.js --recipe recipes/demo.json --headless
 ## 限制（探索版刻意不做）
 
 - 還沒做「用參考截圖找按鈕再點」（影像辨識）
-- 還不能操控「已經開著的 Chrome 分頁」，會另開 Playwright 瀏覽器
-- 雲端 Agent 環境通常沒有你的桌面視窗；請在自己電腦跑面板
+- 還不能操控「已經開著的 Chrome 分頁」，會另開自動化瀏覽器
+- 防毒軟體可能對未簽名的 portable exe 多問一句（尚未代碼簽名）
 
 ## 之後可加
 
 - 截圖模板比對點擊
-- 錄製宏（點哪、打什麼）存成配方
+- 錄製宏存成配方
+- 代碼簽名、安裝程式（NSIS）
 - 接到 SEED 控制台一鍵匯出／上傳

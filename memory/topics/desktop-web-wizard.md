@@ -12,12 +12,13 @@ status: active
 
 手動反覆「開同一個上傳頁 → 選檔 → 打字 → 看有沒有成功」很煩。希望有桌面板一鍵跑完，並留下畫面證據。
 
-## 現況（探索版 0.1）
+## 現況（探索版 0.2）
 
 | 能力 | 狀態 |
 |---|---|
 | 桌面板設定網址／文字／檔案 | 有（`desktop-wizard/public`） |
-| 開指定網頁 | 有（Playwright Chromium） |
+| **Windows 執行檔 `WebWizard.exe`** | 有（Electron portable，`npm run dist:win`；首次啟動下載 Chromium） |
+| 開指定網頁 | 有（Playwright Chromium，可內建進 exe） |
 | 丟檔到 file input 或拖放區 | 有 |
 | 輸入文字到指定欄位 | 有 |
 | 執行前／後截圖 | 有 |
@@ -26,14 +27,21 @@ status: active
 
 ## 怎麼用
 
+### 雙擊執行檔（目標用法）
+
+1. 取得 `WebWizard.exe`（自己 `npm run dist:win`，或從 GitHub Actions 工件「WebWizard-exe」下載）
+2. 雙擊開啟面板視窗（**第一次**會自動下載 Chromium，需網路）
+3.「載入本機練習頁」→ 選檔 → 開始執行
+
+### 開發／自己打包
+
 ```bash
 cd desktop-wizard
 npm install
 npm run install:browser
-npm start
+npm run app          # 開發視窗
+npm run dist:win     # 打出 WebWizard.exe
 ```
-
-開 http://127.0.0.1:3847 →「載入本機練習頁」→ 選檔 → 開始執行。
 
 細節見 [`desktop-wizard/README.md`](../../desktop-wizard/README.md)。
 

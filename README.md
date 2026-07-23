@@ -47,7 +47,8 @@ https://raw.githack.com/hyi1105/SEED/main/docs/index.html
 
 ## 桌面網頁精靈（探索中）
 
-本機面板：開指定網頁 → 丟檔 → 輸入文字 → 截圖確認。  
+本機面板／**Windows 執行檔**：開指定網頁 → 丟檔 → 輸入文字 → 截圖確認。  
+打出 `WebWizard.exe`：`cd desktop-wizard && npm run dist:win`  
 見 [`desktop-wizard/README.md`](desktop-wizard/README.md)、[`memory/topics/desktop-web-wizard.md`](memory/topics/desktop-web-wizard.md)。
 
 ## 維護方式

@@ -23,6 +23,7 @@ status: active
 
 - 探索優先：先可跑、可看截圖，不先打磨影像辨識
 - 與 SEED 主站分離；之後若要接控制台再連
+- **要像 exe**：雙擊 `WebWizard.exe` 開面板（Electron portable）
 
 ## 圖片
 
@@ -31,4 +32,5 @@ status: active
 ## 待續
 
 - 補齊「透過截圖可以 ____」的完整目標（驗證？自動找按鈕點？）
-- 若方向對：加截圖模板比對點擊、錄製宏
+- **已回應：要像 exe 執行檔** → 0.2 改 Electron portable（`WebWizard.exe`）
+- 若方向對：加截圖模板比對點擊、錄製宏、代碼簽名
