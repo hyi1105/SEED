@@ -1,15 +1,15 @@
 # 網頁精靈 — 直接下載
 
-## 下載
+## 下載（不用自己裝開發工具）
 
-- **執行檔**：同資料夾的 [`WebWizard.exe`](./WebWizard.exe)（約 75MB+）
-- GitHub 頁面：打開此檔後按 **Download**（下載）
+點這裡下載（約 75MB）：
 
-合併進 `main` 後也可從：  
-https://github.com/hyi1105/SEED/raw/main/desktop-wizard/release/WebWizard.exe
+**https://github.com/hyi1105/SEED/raw/cursor/desktop-web-wizard-adc7/desktop-wizard/release/WebWizard.exe**
 
-此分支目前：  
-https://github.com/hyi1105/SEED/raw/cursor/desktop-web-wizard-adc7/desktop-wizard/release/WebWizard.exe
+同資料夾也有檔案：[`WebWizard.exe`](./WebWizard.exe)
+
+> 內建瀏覽器的完整包較大（約 250MB），超過 GitHub 單檔上限，改放在 Actions 工件 `WebWizard-exe`。  
+> 一般下載上面這個即可；第一次開啟若提示下載瀏覽器，請保持網路連線。
 
 ## 第一次怎麼開（Windows）
 
@@ -19,13 +19,10 @@ https://github.com/hyi1105/SEED/raw/cursor/desktop-web-wizard-adc7/desktop-wizar
 4. 雙擊開啟「網頁精靈」視窗  
 5. 按「載入本機練習頁」→ 選一個檔案 →「開始執行」
 
-> 此版若未內建瀏覽器，第一次開啟會自動下載 Chromium（需網路）。  
-> CI 打的「內建版」第一次就不必下載。
-
 ## 你的電腦不需要先裝什麼
 
-不必先裝 Node、不必先裝 Playwright。  
-雙擊 exe 即可；需要的引擎會自動處理。
+不必先裝 Node、不必先裝 Playwright、不必先開命令列。  
+雙擊 exe 即可。
 
 ## 還是打不開？
 
