@@ -23,10 +23,21 @@ jobs:
           node-version: "20"
           cache: npm
           cache-dependency-path: desktop-wizard/package-lock.json
-      - run: npm ci
-      - run: npm run dist:win
+      - name: 安裝依賴
+        run: npm ci
+      - name: 安裝 Chromium（打進 exe）
+        run: npm run install:browser
+      - name: 打包 portable exe（內建瀏覽器）
+        run: npm run dist:win:bundle
+      - name: 複製到 release
+        shell: bash
+        run: |
+          mkdir -p release
+          cp dist/WebWizard.exe release/WebWizard.exe
+          ls -lh release/WebWizard.exe dist/WebWizard.exe
       - uses: actions/upload-artifact@v4
         with:
           name: WebWizard-exe
-          path: desktop-wizard/dist/WebWizard.exe
+          path: desktop-wizard/release/WebWizard.exe
           if-no-files-found: error
+          retention-days: 30

@@ -17,33 +17,30 @@ status: active
 | 能力 | 狀態 |
 |---|---|
 | 桌面板設定網址／文字／檔案 | 有（`desktop-wizard/public`） |
-| **Windows 執行檔 `WebWizard.exe`** | 有（Electron portable，`npm run dist:win`；首次啟動下載 Chromium） |
-| 開指定網頁 | 有（Playwright Chromium，可內建進 exe） |
+| **Windows 執行檔 `WebWizard.exe`** | 有（已放 `desktop-wizard/release/`，CI 用 Windows 自動打包） |
+| 開指定網頁 | 有（Playwright Chromium） |
 | 丟檔到 file input 或拖放區 | 有 |
 | 輸入文字到指定欄位 | 有 |
 | 執行前／後截圖 | 有 |
-| 用參考截圖找按鈕再點 | **尚未**（待確認需求） |
+| 用參考截圖找按鈕再點 | **尚未** |
 | 操控已開著的瀏覽器分頁 | **尚未** |
 
-## 怎麼用
+## 怎麼用（一般使用者）
 
-### 雙擊執行檔（目標用法）
-
-1. 取得 `WebWizard.exe`（自己 `npm run dist:win`，或從 GitHub Actions 工件「WebWizard-exe」下載）
-2. 雙擊開啟面板視窗（**第一次**會自動下載 Chromium，需網路）
-3.「載入本機練習頁」→ 選檔 → 開始執行
+1. 下載 [`desktop-wizard/release/WebWizard.exe`](../../desktop-wizard/release/WebWizard.exe)
+2. 若打不開：右鍵 → 內容 → **解除封鎖**；SmartScreen 選「仍要執行」
+3. 雙擊 →「載入本機練習頁」→ 選檔 → 開始執行  
+   （你的電腦**不必**先裝 Node）
 
 ### 開發／自己打包
 
 ```bash
 cd desktop-wizard
 npm install
-npm run install:browser
-npm run app          # 開發視窗
-npm run dist:win     # 打出 WebWizard.exe
+npm run dist:win
 ```
 
-細節見 [`desktop-wizard/README.md`](../../desktop-wizard/README.md)。
+細節見 [`desktop-wizard/README.md`](../../desktop-wizard/README.md)、[`desktop-wizard/release/README.md`](../../desktop-wizard/release/README.md)。
 
 ## 配方概念
 

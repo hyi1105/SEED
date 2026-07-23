@@ -32,5 +32,6 @@ status: active
 ## 待續
 
 - 補齊「透過截圖可以 ____」的完整目標（驗證？自動找按鈕點？）
-- **已回應：要像 exe 執行檔** → 0.2 改 Electron portable（`WebWizard.exe`）
+- **已回應：要像 exe** → Electron portable `WebWizard.exe`
+- **已回應：電腦不能執行／要代為安裝建立** → 用 Windows CI 打包，並把 exe 放進 `desktop-wizard/release/` 供直接下載；說明解除封鎖／SmartScreen
 - 若方向對：加截圖模板比對點擊、錄製宏、代碼簽名

@@ -6,7 +6,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import fs from "node:fs";
 import { startServer } from "./server.js";
-import { ensureChromium, applyBrowsersPath } from "./ensure-browser.js";
+import { ensureChromium } from "./ensure-browser.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -53,13 +53,15 @@ async function main() {
   const userData = app.getPath("userData");
 
   if (app.isPackaged) {
-    applyBrowsersPath(userData);
     try {
-      ensureChromium(userData);
+      ensureChromium({
+        userDataPath: userData,
+        resourcesPath: process.resourcesPath,
+      });
     } catch (err) {
       dialog.showErrorBox(
         "網頁精靈",
-        `無法準備瀏覽器引擎：\n${err.message || err}\n\n請確認有網路後再重開。`
+        `無法準備瀏覽器引擎：\n${err.message || err}\n\n請確認有網路後再重開。\n若 Windows 擋下來，請對 exe 右鍵→內容→解除封鎖。`
       );
       app.quit();
       return;

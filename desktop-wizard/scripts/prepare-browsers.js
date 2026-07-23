@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 /**
- * （可選）在「Windows 本機」打包前，把 Chromium 打進資源目錄，
- * 讓 exe 免第一次下載。在 Linux 上請勿用於 win 包（平台不符）。
+ * 在 Windows 打包前，把本機 Playwright Chromium 複製到 build-resources/，
+ * 讓 exe 內建瀏覽器、第一次不必下載。
  *
- * 一般推薦：npm run dist:win（不內建，首次啟動自動下載）。
+ * CI（windows-latest）或 Windows 本機：npm run dist:win:bundle
+ * Linux 交叉編譯請勿 bundle（平台不符）。
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -14,8 +15,8 @@ const dest = path.join(__dirname, "..", "build-resources", "ms-playwright");
 
 if (process.platform !== "win32") {
   console.warn(
-    "警告：目前不是 Windows。打進 win exe 的瀏覽器會是錯誤平台。\n" +
-      "建議改跑：npm run dist:win（首次啟動再下載）。"
+    "略過：非 Windows，不複製瀏覽器（避免打進錯誤平台）。\n" +
+      "一般請用：npm run dist:win（首次啟動再下載）。"
   );
   process.exit(0);
 }
@@ -24,6 +25,8 @@ function playwrightCache() {
   if (process.env.PLAYWRIGHT_BROWSERS_PATH) {
     return process.env.PLAYWRIGHT_BROWSERS_PATH;
   }
+  const local = process.env.LOCALAPPDATA || "";
+  if (local) return path.join(local, "ms-playwright");
   const home = process.env.USERPROFILE || process.env.HOME || "";
   return path.join(home, "AppData", "Local", "ms-playwright");
 }
@@ -62,4 +65,4 @@ for (const name of names) {
   console.log(`複製 ${name}…`);
   copyDir(path.join(src, name), path.join(dest, name));
 }
-console.log("完成。請在 package.json build.extraResources 加上 ms-playwright 後再打包。");
+console.log("完成。");
