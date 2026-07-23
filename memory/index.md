@@ -10,6 +10,7 @@
 
 ## 場次
 
+- 2026-07-23 — 桌面網頁精靈（丟檔／輸入／截圖）— 標籤：桌面、按鍵精靈、截圖、探索 — [sessions/2026-07-23-desktop-web-wizard.md](sessions/2026-07-23-desktop-web-wizard.md)
 - 2026-07-21 — 目標會變時怎麼快速大改 — 標籤：協作、溝通、Agent、大改 — [sessions/2026-07-21-pivot-rewrite-playbook.md](sessions/2026-07-21-pivot-rewrite-playbook.md)
 - 2026-07-21 — 減少 UI 來回：溝通方式共識 — 標籤：協作、溝通、Agent — [sessions/2026-07-21-collab-feedback-tips.md](sessions/2026-07-21-collab-feedback-tips.md)
 - 2026-07-21 — 書面文件改成分類＋合約書模板設計 — 標籤：SEED、書面文件、合約書、模板設計 — [sessions/2026-07-21-written-category-designer.md](sessions/2026-07-21-written-category-designer.md)
@@ -36,6 +37,7 @@
 
 ## 主題
 
+- **桌面網頁精靈（按鍵精靈）**— [topics/desktop-web-wizard.md](topics/desktop-web-wizard.md)
 - **怎麼跟 Agent 講 UI，少重複改**— [topics/agent-ui-briefing.md](topics/agent-ui-briefing.md)
 - **如何從 Markdown 讀懂 SEED 系統**— [topics/system-guide.md](topics/system-guide.md)
 - **簽核模板工作流（角色、權限、流程、通知）**— [topics/approval-workflow.md](topics/approval-workflow.md)

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>網頁精靈</title>
+  <link rel="stylesheet" href="/panel.css" />
+</head>
+<body>
+  <div class="stage">
+    <header class="brand">
+      <p class="mark">網頁精靈</p>
+      <h1>把檔案丟上指定網頁，再輸入文字</h1>
+      <p class="lead">跑完自動截圖，方便你對畫面確認。</p>
+    </header>
+
+    <form id="form" class="panel">
+      <label>
+        <span>目標網址</span>
+        <input id="url" name="url" type="url" required
+          placeholder="https://…"
+          value="" />
+      </label>
+
+      <label>
+        <span>要輸入的文字</span>
+        <textarea id="text" name="text" rows="3" placeholder="寫在網頁欄位裡的內容"></textarea>
+      </label>
+
+      <label>
+        <span>文字欄位（CSS 選取器，可留空）</span>
+        <input id="textTarget" name="textTarget" type="text"
+          placeholder="例如 textarea#note" />
+      </label>
+
+      <label>
+        <span>要丟的檔案</span>
+        <input id="file" name="file" type="file" />
+      </label>
+
+      <label>
+        <span>檔案欄位（CSS 選取器，可留空）</span>
+        <input id="fileInput" name="fileInput" type="text"
+          placeholder="例如 input#file 或 input[type=file]" />
+      </label>
+
+      <div class="row">
+        <label class="check">
+          <input id="headed" name="headed" type="checkbox" checked />
+          <span>顯示瀏覽器視窗</span>
+        </label>
+        <label class="check">
+          <input id="fullPage" name="fullPage" type="checkbox" />
+          <span>整頁截圖</span>
+        </label>
+      </div>
+
+      <div class="actions">
+        <button type="submit" id="run">開始執行</button>
+        <button type="button" id="loadDemo" class="ghost">載入本機練習頁</button>
+      </div>
+    </form>
+
+    <section class="result" aria-live="polite">
+      <h2>執行紀錄</h2>
+      <pre id="log">尚未執行。</pre>
+      <div id="shots" class="shots"></div>
+    </section>
+  </div>
+  <script src="/panel.js"></script>
+</body>
+</html>

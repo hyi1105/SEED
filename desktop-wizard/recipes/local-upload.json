@@ -1,0 +1,10 @@
+{
+  "url": "http://127.0.0.1:3847/demo/upload-demo.html",
+  "file": "recipes/sample.txt",
+  "fileInput": "#file",
+  "text": "網頁精靈練習：自動填入的文字",
+  "textTarget": "#note",
+  "headed": false,
+  "fullPage": false,
+  "keepOpenMs": 0
+}

@@ -45,6 +45,11 @@ https://raw.githack.com/hyi1105/SEED/main/docs/index.html
 詳見 [`memory/topics/progress-final.md`](memory/topics/progress-final.md)、[`memory/topics/core-features.md`](memory/topics/core-features.md)、[`server/README.md`](server/README.md)。  
 關機改手機前：[`memory/topics/pc-before-mobile.md`](memory/topics/pc-before-mobile.md)。
 
+## 桌面網頁精靈（探索中）
+
+本機面板：開指定網頁 → 丟檔 → 輸入文字 → 截圖確認。  
+見 [`desktop-wizard/README.md`](desktop-wizard/README.md)、[`memory/topics/desktop-web-wizard.md`](memory/topics/desktop-web-wizard.md)。
+
 ## 維護方式
 
 在 Cursor 與 Agent 共同改筆記 → 看 diff；完成並驗證後由 Agent 自動發布。  

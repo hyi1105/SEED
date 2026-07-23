@@ -1,0 +1,20 @@
+{
+  "name": "seed-desktop-web-wizard",
+  "version": "0.1.0",
+  "private": true,
+  "description": "桌面網頁精靈：開指定網頁、丟檔、輸入文字、截圖驗證",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "install:browser": "npx playwright install chromium",
+    "demo": "node runner.js --recipe recipes/demo.json"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "multer": "^2.2.0",
+    "playwright": "^1.52.0"
+  }
+}
