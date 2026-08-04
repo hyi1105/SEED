@@ -1,36 +1,26 @@
 # ALR5 標準互通規格（可貼給 AI）
 
-> **機器可讀原文：** `docs/approval/alr5-standard.json`（**0.2.9**）  
+> **機器可讀原文：** `docs/approval/alr5-standard.json`（**0.3.0**）  
 > **人讀總規：** `approval/ALR5簽核系統.md`
 
 ## 給 AI 的開場
 
-依 **ALR5/0.2.9** 實作。`decisions` 不得違反。可轉移 JSON **不得含私鑰**；加密用 envelope；公證用 `notary_records`。缺欄依 `json_completeness` 補齊。
+依 **ALR5/0.3.0** 實作。含 form 版本、環境試跑、發布 SOP／退回、schema_migration。`decisions` 不得違反。
 
-## 平台願景（含期許）
+## 版本／環境／發布（0.3.0）
 
-- 所有系統交付進 ALR5 → 處理 → 可轉移 JSON  
-- **跨公司公證**（類律師／法院）：對 content_hash＋時間背書  
-- **加密**：手上鑰匙或第三方備份鑰匙才能解密  
+| 概念 | 說明 |
+|------|------|
+| `form_version` | 每個 form 要跑哪一版 |
+| 正式名義測試環境 | 新建 formal 環境但用途＝測試，試新版 |
+| 漸進發布 | 試跑 → 幾個正式 → 複雜環境；可自動 SOP |
+| 退回 | 改環境 binding 回舊 `form_version` |
+| `schema_migration` | JSON 結構改版可升到最新（≠ form_version） |
 
-## JSON 適合加密／公證嗎？
+## 平台願景（摘要）
 
-| 適合用 JSON | 不要放進可轉移 JSON |
-|-------------|---------------------|
-| 結構、流程、關聯、設定 | 私鑰、對稱金鑰明文 |
-| 公證紀錄、加密**信封**中繼 | 未加密機密附件本體 |
-| 密文引用（blob id） | 復原種子 |
-
-模式：**JSON envelope + 密文 blob + 外部金鑰保管**。
-
-## 能力地圖（已融入）
-
-簽核狀態／level｜AB｜export／import｜跨單 links｜開單模式｜Archive｜Copy｜自動補齊｜**notary**｜**crypto envelope**｜全系統平台
-
-## 仍待決（高優先與期許相關）
-
-公證節點誰當｜備份鑰匙解鎖條件｜哪些欄位強制加密｜明細分片｜跨單 UI…
+全系統進 ALR5→JSON｜AB／匯入匯出｜跨單｜開單模式｜公證｜加密信封｜上表發布模型
 
 ## 版本
 
-**0.2.9**｜2026-08-04
+**0.3.0**｜2026-08-04

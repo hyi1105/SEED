@@ -96,6 +96,18 @@ note: 口頭對談整理進本檔；以 diff 確認。尚未口頭確認的區�
 
 機器原文：`trust_notary`／`crypto_envelope`／`json_and_crypto_guidance`（standard **0.2.9**）。
 
+### 1g. 表單版本／環境試跑／發布 SOP／JSON 升級（定案方向）
+
+| 項目 | 定案 |
+|------|------|
+| **Form 版本** | 每個 form 可指定要跑的 **`form_version`**；環境可綁定覆蓋 |
+| **測試怎麼做** | 無獨立測試機時：可**新建「正式」環境**（`purpose=production_like_test`）試新版本 |
+| **漸進發布** | 測試環境 → 抓幾個正式環境試 → 再發到複雜環境；可成**自動 SOP** |
+| **退回** | 不刪新版；把環境 binding **改回舊 form_version** |
+| **JSON 改版** | **`schema_version` 可 migration 升到最新結構**（補缺＋保留未知欄）；與 `form_version` 分開 |
+
+機器原文：`form_versioning`／`environments`／`publish_sop`／`schema_migration`（standard **0.3.0**）。
+
 ---
 
 ## 2. 角色與名單欄位
@@ -888,6 +900,10 @@ creator 開單／填單（可代填；requester 可為另一人）
 | 跨公司公證 | 期許類律師／法院：content_hash＋時間背書；notary_records |
 | 加密鑰匙 | 手上鑰匙或第三方備份才能解密；JSON 只放 envelope |
 | JSON×加密 | 信封／證據鏈用 JSON；私鑰與明文機密不進可轉移 JSON |
+| Form 執行版 | 每個 form 可指定 `form_version`；環境可綁定 |
+| 環境試跑 | 可建正式名義、測試用途環境；再 canary 幾個正式環境 |
+| 發布／退回 | 漸進 SOP 可自動化；rollback＝改回舊 form_version |
+| JSON 升級 | `schema_migration` 升到最新結構（≠ form_version） |
 
 ## 10b. 仍待決
 
@@ -901,6 +917,9 @@ creator 開單／填單（可代填；requester 可為另一人）
 - [ ] 公證節點：自建、外部 TSA／律師機構、或聯盟多簽？
 - [ ] 第三方備份鑰匙解鎖條件（本人／法院令／n-of-m）？
 - [ ] 哪些附件／欄位預設強制加密？
+- [ ] 測試用 formal 環境資料是否與正式隔離？
+- [ ] 進行中 item 遇新 form 版：鎖定開單版，還是允許中途升？
+- [ ] 自動 SOP 通過門檻？
 
 ---
 
@@ -919,11 +938,5 @@ creator 開單／填單（可代填；requester 可為另一人）
 | 2026-08-04 | 標準化：alr5-standard.json＋ALR5標準互通.md＋網頁「ALR5功能」與互通檢查清單 |
 | 2026-08-04 | 定案：Denied=-2；一人Reject整單Denied；Return作廢後續；SAVE→0；Cancel同單號升版；代理人本人／主管／admin；平行禁Delegate；sys收件可開單；owner≠admin；欄位型別／條件必填／ACL |
 | 2026-08-04 | 新增 `it_admin`：一次管理所有 Form；無主／離職／無人維護可整份 archive／export |
-| 2026-08-04 | v0.2.2：ACL item 優先；required_from_level 檢核時機；Denied Copy；每關 comment／proxy_original_note |
-| 2026-08-04 | v0.2.3：補定 `required_from_level=0`＝申請人階段起必填（Submit 擋，後續亦必填） |
-| 2026-08-04 | v0.2.4：拍板 Archive≠Cancel、已簽格權限、多 owner、it_admin 補 owner、完整 export、form archive→Cancel、Copy 授權、紅點 |
-| 2026-08-04 | v0.2.5：Archive＝`system.archived` 與 status 無關；admin unarchive 復原；互通 MVC（M＝JSON／C＝功能／V＝自訂畫面） |
-| 2026-08-04 | v0.2.6：AB 表單、可設定 export_profiles、json_completeness 自動補齊；設定優先＋JSON 完全轉移 |
-| 2026-08-04 | v0.2.7：跨單 prerequisites／links／effects_on；開單 on_demand／preallocated；校正主檔＋事件建議 |
-| 2026-08-04 | v0.2.8：全系統交付 ALR5→JSON；大量匯入 header＋detail（import_profiles） |
-| 2026-08-04 | v0.2.9：跨公司公證期許；加密信封＋手上／第三方備份鑰匙；JSON 適合信封不適合私鑰 |
+| 2026-08-04 | v0.2.2～0.2.9：ACL／Copy／Archive／MVC／AB／匯入匯出／跨單／開單／平台／公證加密等（見歷次） |
+| 2026-08-04 | v0.3.0：form_version、正式名義測試環境、漸進發布 SOP＋退回、schema_migration |

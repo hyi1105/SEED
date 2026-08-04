@@ -1,10 +1,10 @@
 {
   "standard_id": "ALR5",
-  "standard_version": "0.2.9",
+  "standard_version": "0.3.0",
   "lang": "zh-Hant",
   "title": "ALR5 簽核標準（功能／情境／JSON 互通）",
-  "purpose": "ALR5 作為跨公司可承載平台：各系統交付於此，以可轉移 JSON 處理與互通；期許具備類似律師／法院的跨組織公證效力，以及檔案加密（手上鑰匙或第三方備份鑰匙才能解密）；支援簽核、AB、匯出匯入、跨單關聯、開單模式等；本檔可整份貼給新 AI 實作。",
-  "ai_prompt_prefix": "你是實作 ALR5 簽核互通的工程 Agent。請嚴格依 standard_version ALR5/0.2.9 與 json_contract／interop_checklist／decisions／platform_scope／trust_notary／crypto_envelope／form_composition／cross_links／bulk_import 等實作。狀態、current_level、動作 id 不得自創別名。decisions 已定案不得違反。JSON 承載可讀結構與信封中繼資料；密文本體以 envelope 引用，不得把金鑰明文寫進可轉移 JSON。",
+  "purpose": "ALR5 作為跨公司可承載平台：各系統交付於此，以可轉移 JSON 處理與互通；期許具備類似律師／法院的跨組織公證效力，以及檔案加密（手上鑰匙或第三方備份鑰匙才能解密）；支援簽核、AB、匯出匯入、跨單關聯、開單模式等；本檔可整份貼給新 AI 實作；每個 form 可指定要跑的版本；可用「正式環境」名義做測試試跑，再漸進發布／退回；JSON 改版須能升級成最新結構。",
+  "ai_prompt_prefix": "你是實作 ALR5 簽核互通的工程 Agent。請嚴格依 standard_version ALR5/0.3.0 與 json_contract／decisions／form_versioning／environments／publish_sop／schema_migration 等實作。狀態、current_level、動作 id 不得自創別名。decisions 已定案不得違反。缺欄／缺功能依 json_completeness 補齊；JSON 改版須可 schema_migration 升級到最新結構。",
   "status_model": {
     "field": "system.status",
     "values": [
@@ -762,6 +762,62 @@
         "attachments[].envelope",
         "crypto_envelopes[]"
       ]
+    },
+    {
+      "id": "form_versioning",
+      "title": "Form 執行版本",
+      "scenario": "每個 form 可指定要跑哪個 form_version；環境可覆蓋綁定。",
+      "rules": [
+        "form_id 穩定",
+        "環境綁定 form_version",
+        "開單可鎖定版本"
+      ],
+      "json": [
+        "form_version",
+        "form_bindings",
+        "runs_on_form_version"
+      ]
+    },
+    {
+      "id": "env_formal_test",
+      "title": "正式名義測試環境",
+      "scenario": "無獨立測試機：新建 formal 環境當測試用途試新版本。",
+      "rules": [
+        "kind/purpose 區分",
+        "不影響既有流量",
+        "可轉移 JSON"
+      ],
+      "json": [
+        "environments[]",
+        "purpose"
+      ]
+    },
+    {
+      "id": "publish_sop",
+      "title": "漸進發布與退回 SOP",
+      "scenario": "先測、再少量正式、再全面；可自動化；可 rollback。",
+      "rules": [
+        "canary→rollout",
+        "rollback 改 binding",
+        "publish_jobs 留痕"
+      ],
+      "json": [
+        "publish_jobs[]"
+      ]
+    },
+    {
+      "id": "schema_migration",
+      "title": "JSON 結構升級",
+      "scenario": "ALR5 改版後舊單可升到最新結構。",
+      "rules": [
+        "migrations 鏈",
+        "補缺保留未知欄",
+        "寫 migration log"
+      ],
+      "json": [
+        "schema_version",
+        "migrations[]"
+      ]
     }
   ],
   "json_contract": {
@@ -798,7 +854,11 @@
       "import_profiles",
       "import_jobs",
       "notary_records",
-      "crypto_envelopes"
+      "crypto_envelopes",
+      "form_version",
+      "environments",
+      "publish_jobs",
+      "schema_version"
     ],
     "system_required_keys": [
       "status",
@@ -847,12 +907,13 @@
       ]
     },
     "minimal_document_example": {
-      "schema_version": "ALR5/0.1.0",
+      "schema_version": "ALR5/0.3.0",
       "status_model_ref": "ALR5/0.1.0",
       "meta": {
         "system_name": "LEAVE",
         "form_id": "leave_request_v1",
-        "title": "請假申請書"
+        "title": "請假申請書",
+        "form_version": "1.0.0"
       },
       "creator": {
         "id": "u_assistant",
@@ -1161,6 +1222,21 @@
       "id": "chk_crypto_envelope_optional",
       "required": false,
       "label": "若支援加密附件：envelope 含 alg、ciphertext_ref、recipients（holder／backup）"
+    },
+    {
+      "id": "chk_form_version",
+      "required": false,
+      "label": "若多版本：form 具 form_version；環境可 form_bindings 指定執行版"
+    },
+    {
+      "id": "chk_env_publish",
+      "required": false,
+      "label": "若多環境：支援測試用 formal 環境、漸進發布與 rollback 紀錄"
+    },
+    {
+      "id": "chk_schema_migration",
+      "required": true,
+      "label": "文件帶 schema_version；舊版可 migration／autofill 升到平台支援的最新結構"
     }
   ],
   "open_questions": [
@@ -1218,6 +1294,21 @@
       "id": "q_encrypt_which_fields",
       "priority": "low",
       "question": "預設哪些附件／欄位強制加密？"
+    },
+    {
+      "id": "q_env_isolation_data",
+      "priority": "medium",
+      "question": "測試用 formal 環境的資料是否與正式資料隔離（獨立租戶／前綴）？"
+    },
+    {
+      "id": "q_item_midflight_upgrade",
+      "priority": "medium",
+      "question": "進行中的 item 遇 form 新版本：鎖定開單版，還是允許中途升 form_version？"
+    },
+    {
+      "id": "q_auto_sop_gates",
+      "priority": "low",
+      "question": "自動 SOP 的通過門檻（錯誤率、簽核樣本數、人工核准）？"
     }
   ],
   "logic_risk_warnings": [
@@ -1390,6 +1481,22 @@
     {
       "id": "d_json_for_envelope_not_secrets",
       "decision": "JSON 適合結構／證據鏈／信封中繼；密文本體可引用；機密明文與私鑰不進可轉移 JSON"
+    },
+    {
+      "id": "d_form_run_version",
+      "decision": "每個 form 可指定要跑的 form_version；環境可綁定覆蓋"
+    },
+    {
+      "id": "d_formal_env_for_test",
+      "decision": "無獨立測試機時，可建立名義正式、用途測試的環境試新版本，再抓幾個正式環境試，再漸進發布"
+    },
+    {
+      "id": "d_publish_sop_rollback",
+      "decision": "發布可成自動 SOP（試跑→canary→rollout）；異常以改 binding 退回舊 form_version"
+    },
+    {
+      "id": "d_schema_migration",
+      "decision": "JSON 改版須能升級成最新結構（migration＋json_completeness）；form_version≠schema_version"
     }
   ],
   "resolved_questions": [
@@ -1524,6 +1631,14 @@
     {
       "id": "q_json_suitable_crypto",
       "answer": "適合做信封與證據鏈；不適合放私鑰／明文機密"
+    },
+    {
+      "id": "q_form_env_version",
+      "answer": "每個 form 可指定執行版本；用正式名義環境試跑→少量正式→漸進發布／退回"
+    },
+    {
+      "id": "q_json_upgrade",
+      "answer": "要：schema_migration 升級到最新結構"
     }
   ],
   "field_schema": {
@@ -1628,7 +1743,8 @@
     },
     "cross_system": "跨系統＝不同 form_id／系統代號之間用同一套 links／prerequisites／effects；仍是可轉移 JSON，不是另外的登入認證協定。",
     "platform": "ALR5＝各系統統一承載層；一切可處理能力最終落到可轉移 JSON（M），功能符合 checklist（C），畫面可分系統自訂（V）。",
-    "trust_and_crypto": "跨公司公信＝notary 證據鏈（JSON）；保密＝crypto envelope（JSON 中繼＋密文 blob＋外部金鑰保管）。兩者可並用且責任分離。"
+    "trust_and_crypto": "跨公司公信＝notary 證據鏈（JSON）；保密＝crypto envelope（JSON 中繼＋密文 blob＋外部金鑰保管）。兩者可並用且責任分離。",
+    "release": "form_version（業務表單版）× environments（含正式名義測試）× publish_sop（漸進／退回）× schema_version migration（結構升級）。皆為可轉移 JSON。"
   },
   "form_composition": {
     "id": "AB_form",
@@ -2143,5 +2259,102 @@
       "crypto_envelopes[]",
       "key_registry_refs"
     ]
+  },
+  "form_versioning": {
+    "id": "form_run_version",
+    "label": "每個 form 指定執行版本",
+    "description": "每個 form 可設計／設定要跑哪一個版本（form_version）。新版本可先掛到選定環境試跑，再逐步發布。",
+    "form_schema_keys": {
+      "form_id": "穩定 id（跨版本不變）",
+      "form_version": "語意化或遞增版本字串／數字（例 1.2.0）",
+      "schema_version": "ALR5 文件結構版本（例 ALR5/0.3.0）",
+      "compatible_schema_range": "可選：相容的 schema_version 範圍"
+    },
+    "item_runtime": {
+      "runs_on_form_version": "開單當下鎖定的 form_version（避免中途被改版扯動，除非升級）",
+      "schema_version": "該 item 的 JSON 結構版本"
+    },
+    "rules": [
+      "form_id 穩定；form_version 可變",
+      "每個環境可綁定：某 form_id → 使用哪個 form_version（可覆蓋預設）",
+      "新版本預設不自動取代所有環境，須經發布流程"
+    ]
+  },
+  "environments": {
+    "id": "formal_env_as_test",
+    "label": "環境（含以正式名義做測試）",
+    "vision": "沒有獨立測試機時：每次有新版本，可「建立一個正式環境」（實際上是測試用途）來試試看；再抓幾個正式環境試；確認後再慢慢發布到更複雜的環境。",
+    "env_shape": {
+      "id": "string",
+      "label": "顯示名稱",
+      "kind": "formal | sandbox | canary",
+      "purpose": "production_like_test | production | rehearsal",
+      "note": "formal + purpose=production_like_test＝名義正式、用途測試",
+      "form_bindings": [
+        {
+          "form_id": "leave_request",
+          "form_version": "1.2.0",
+          "pinned": true
+        }
+      ],
+      "created_at": "ISO-8601",
+      "created_by": "user_id"
+    },
+    "rules": [
+      "環境本身是可轉移 JSON 設定",
+      "可新開 formal 環境專供試跑新 form_version，不影響既有正式流量",
+      "試跑滿意後，用發布 SOP 把 binding 推到其他環境",
+      "可退回：把 binding 改回舊 form_version（rollback）"
+    ]
+  },
+  "publish_sop": {
+    "id": "gradual_publish_sop",
+    "label": "漸進發布 SOP（可自動化）＋退回",
+    "stages_example": [
+      "1. 建新 form_version",
+      "2. 建立／選一個正式名義測試環境，綁新版本",
+      "3. 再綁 1～N 個選定正式環境試跑（canary）",
+      "4. 檢查通過 → 批次發布到其餘／複雜環境",
+      "5. 異常 → rollback 到上一 form_version"
+    ],
+    "job_shape": {
+      "id": "string",
+      "form_id": "string",
+      "from_version": "string",
+      "to_version": "string",
+      "target_env_ids": [
+        "…"
+      ],
+      "mode": "bind_test_env | canary | rollout | rollback",
+      "status": "pending | running | succeeded | failed | rolled_back",
+      "automation": "manual | sop_auto",
+      "logs": []
+    },
+    "rules": [
+      "發布與退回皆留 publish_jobs[]／logs，可審計",
+      "可演進成自動 SOP：門檻通過才進下一階段",
+      "退回不刪新版本，只改環境 binding"
+    ]
+  },
+  "schema_migration": {
+    "id": "json_schema_upgrade",
+    "label": "JSON 改版升級到最新結構",
+    "description": "ALR5 schema_version 升級時，舊 item／form JSON 須能升級成最新結構（沿用 json_completeness 補缺欄，並跑明確 migration 步驟）。",
+    "rules": [
+      "每筆文件帶 schema_version",
+      "啟動或匯入時：若 schema_version < 平台最新，執行 migrations[] 鏈",
+      "migration 只加欄／改名／補預設，盡量不丟資料；未知欄保留",
+      "升級後寫 logs：schema_migrated from→to",
+      "form_version 與 schema_version 分開：前者是業務表單版，後者是 ALR5 結構版"
+    ],
+    "migration_step_shape": {
+      "from": "ALR5/0.2.9",
+      "to": "ALR5/0.3.0",
+      "ops": [
+        "add_defaults",
+        "rename_field",
+        "wrap_envelope"
+      ]
+    }
   }
 }

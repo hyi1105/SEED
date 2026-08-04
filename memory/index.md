@@ -10,6 +10,7 @@
 
 ## 場次
 
+- 2026-08-04 — Form 版本／環境試跑／發布 SOP／JSON 升級 — 標籤：SEED、Approval、ALR5、版本、環境、發布、遷移、偏好 — [sessions/2026-08-04-alr5-env-versioning.md](sessions/2026-08-04-alr5-env-versioning.md)
 - 2026-08-04 — ALR5 runtime PoC：印章按鈕＋角色／level 測試切換 — 標籤：SEED、Approval、ALR5、runtime、印章、測試 — [sessions/2026-08-04-alr5-runtime-ui.md](sessions/2026-08-04-alr5-runtime-ui.md)
 - 2026-08-04 — 跨公司公證＋加密鑰匙＋JSON 適用性 — 標籤：SEED、Approval、ALR5、公證、加密、跨公司、JSON、期許 — [sessions/2026-08-04-alr5-notary-crypto.md](sessions/2026-08-04-alr5-notary-crypto.md)
 - 2026-08-04 — 全系統進 ALR5＋大量匯入 header／detail — 標籤：SEED、Approval、ALR5、平台願景、大量匯入、JSON、偏好 — [sessions/2026-08-04-alr5-platform-bulk-import.md](sessions/2026-08-04-alr5-platform-bulk-import.md)
@@ -62,6 +63,7 @@
 
 ## 主題
 
+- **ALR5：Form 版本、環境與發布**— [topics/alr5-env-versioning-publish.md](topics/alr5-env-versioning-publish.md)
 - **ALR5：跨公司公證與加密**— [topics/alr5-notary-crypto.md](topics/alr5-notary-crypto.md)
 - **ALR5：跨單關聯與開單模式**— [topics/alr5-cross-links-create-modes.md](topics/alr5-cross-links-create-modes.md)
 - **ALR5：AB 表單、可設定匯出、JSON 完全轉移**— [topics/alr5-ab-export-json-transfer.md](topics/alr5-ab-export-json-transfer.md)
