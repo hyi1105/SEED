@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Approval｜請假申請書</title>
-  <link rel="stylesheet" href="./styles.css?v=sys1" />
+  <link rel="stylesheet" href="./styles.css?v=docno1" />
 </head>
 <body>
   <div class="stage">
@@ -69,6 +69,10 @@
 
         <dl class="sys-fields" id="sys-fields" aria-label="系統欄位（報表用）">
           <div class="sys-row">
+            <dt>doc_no</dt>
+            <dd id="sf-docno">—</dd>
+          </div>
+          <div class="sys-row">
             <dt>current_level</dt>
             <dd id="sf-level">1</dd>
           </div>
@@ -85,11 +89,11 @@
             <dd id="sf-status">In Process</dd>
           </div>
         </dl>
-        <p class="sys-hint">current_level：0＝申請人；1＝等第1關；2＝等第2關…　submitted_at＝最後送出　completed_at＝Approved／Denied 完成時間</p>
+        <p class="sys-hint">doc_no＝系統名＋申請人＋年月日時分秒＋3隨機碼　current_level：0＝申請人；1＋＝等待各關　completed_at 僅 Completed／Denied</p>
       </section>
 
     </article>
   </div>
-  <script src="./app.js?v=sys1"></script>
+  <script src="./app.js?v=docno1"></script>
 </body>
 </html>
