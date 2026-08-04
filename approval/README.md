@@ -7,21 +7,18 @@
 > 本目錄在 **SEED 倉庫** `approval/` 維護（使用者帳號對 `hyi1105/Approval` 無法開 Pages；SEED 可推送）。  
 > 上游參考：https://github.com/hyi1105/Approval
 
-## 本機開啟（不依賴 GitHub Pages）
+## 怎麼開（手機優先）
 
-```bash
-# 在 SEED 倉庫根目錄
-bash approval/scripts/serve.sh
-# 瀏覽器開 http://127.0.0.1:8765/
-```
+「本機 serve」是給 **雲端 Agent／你的電腦** 用的；**手機開不了 `127.0.0.1`**（那是對方機器自己）。
 
-或：
+| 你在哪 | 怎麼開 |
+|--------|--------|
+| **手機／任何瀏覽器** | 合併進 `main` 後：https://hyi1105.github.io/SEED/approval/ （走 **SEED 的 Pages**，不是 Approval 的） |
+| **還沒合併時** | https://raw.githack.com/hyi1105/SEED/cursor/approval-local-real-237c/docs/approval/index.html |
+| **電腦本機開發** | `bash approval/scripts/serve.sh` → http://127.0.0.1:8765/ |
 
-```bash
-cd approval/docs && python3 -m http.server 8765
-```
-
-⚠️ 請用本機 HTTP 開啟（`schema.json` 需 fetch）。不要用 `file://`。
+可執行檔同步放在 `docs/approval/`（SEED Pages 只發佈 `docs/`）。  
+⚠️ 不要用 `file://` 或 GitHub Raw 直接開（會變純文字／fetch 失敗）。
 
 ## 已做成的關卡能力
 

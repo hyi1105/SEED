@@ -11,10 +11,8 @@
 
 上游 https://github.com/hyi1105/Approval 因 **GitHub Pages 無權限**，改由本倉庫維護可執行版：
 
-```bash
-bash approval/scripts/serve.sh
-# → http://127.0.0.1:8765/
-```
+- **手機／公開：** https://hyi1105.github.io/SEED/approval/（合併 `main` 後；畫面在 `docs/approval/`）
+- **電腦開發：** `bash approval/scripts/serve.sh` → http://127.0.0.1:8765/（這是跑指令那台電腦，不是你的手機）
 
 詳見 [`approval/README.md`](approval/README.md)、[`approval/學習約定.md`](approval/學習約定.md)。
 
