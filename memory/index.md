@@ -10,6 +10,7 @@
 
 ## 場次
 
+- 2026-08-04 — ALR5 兩層導覽＋申請畫面三處修正 — 標籤：SEED、Approval、ALR5、兩層導覽、設計表單、UI — [sessions/2026-08-04-alr5-two-layer-nav.md](sessions/2026-08-04-alr5-two-layer-nav.md)
 - 2026-08-04 — Form 版本／環境試跑／發布 SOP／JSON 升級 — 標籤：SEED、Approval、ALR5、版本、環境、發布、遷移、偏好 — [sessions/2026-08-04-alr5-env-versioning.md](sessions/2026-08-04-alr5-env-versioning.md)
 - 2026-08-04 — ALR5 runtime PoC：印章按鈕＋角色／level 測試切換 — 標籤：SEED、Approval、ALR5、runtime、印章、測試 — [sessions/2026-08-04-alr5-runtime-ui.md](sessions/2026-08-04-alr5-runtime-ui.md)
 - 2026-08-04 — 跨公司公證＋加密鑰匙＋JSON 適用性 — 標籤：SEED、Approval、ALR5、公證、加密、跨公司、JSON、期許 — [sessions/2026-08-04-alr5-notary-crypto.md](sessions/2026-08-04-alr5-notary-crypto.md)
