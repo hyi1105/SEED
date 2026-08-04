@@ -1,10 +1,10 @@
 {
   "standard_id": "ALR5",
-  "standard_version": "0.2.3",
+  "standard_version": "0.2.4",
   "lang": "zh-Hant",
   "title": "ALR5 簽核標準（功能／情境／JSON 互通）",
   "purpose": "讓不同系統用同一套欄位與檢查清單交換申請單 JSON；畫面「ALR5功能」供人一眼看懂；本檔可整份貼給新 AI 實作同等互傳。",
-  "ai_prompt_prefix": "你是實作 ALR5 簽核互通的工程 Agent。請嚴格依 standard_version ALR5/0.2.3 與 json_contract／interop_checklist／decisions 實作。狀態、current_level、動作 id 不得自創別名。decisions 已定案不得違反。產出必須通過全部 required=true 檢查。",
+  "ai_prompt_prefix": "你是實作 ALR5 簽核互通的工程 Agent。請嚴格依 standard_version ALR5/0.2.4 與 json_contract／interop_checklist／decisions 實作。狀態、current_level、動作 id 不得自創別名。decisions 已定案不得違反。產出必須通過全部 required=true 檢查。",
   "status_model": {
     "field": "system.status",
     "values": [
@@ -43,6 +43,12 @@
         "label": "Cancelled",
         "meaning": "已取消",
         "typical_current_level": -1
+      },
+      {
+        "id": "archived",
+        "label": "Archived",
+        "meaning": "軟隱藏；一般列表看不到；從 archive filter 進入後可編輯→Draft／Submit",
+        "typical_current_level": 0
       }
     ]
   },
@@ -128,7 +134,14 @@
       "form 預設 ACL 與 admin 對單一 item 覆寫衝突時，以 admin／item 為準",
       "admin 不可改變表單結構，只能編輯資料與權限相關設定",
       "required_from_level：自該 level 起（含之後）必填；＝0 → 申請人填寫階段（空／0）Submit 就擋，後續各關也必填；≥1 → 進到該 level 後 Approve／往下送前擋，不擋申請人 Submit；SAVE 草稿一律不擋",
-      "每關／每位 approver 固定有 comment（簽核意見）；階段補資料用業務欄＋required_from_level／ACL，不是用 comment 取代"
+      "每關／每位 approver 固定有 comment（簽核意見）；階段補資料用業務欄＋required_from_level／ACL，不是用 comment 取代",
+      "Archive≠Cancel：Archive＝預設列表隱藏，須從 archive filter 進入；可再編輯→Draft／Submit",
+      "form archive → 進行中 items 一律 Cancel",
+      "已簽核格：admin 不可改；owner／it_admin 可改且必留紀錄",
+      "Copy 權限：admin 決定誰可 copy、可 copy 哪幾張（可到單一 item）",
+      "簽核後異動：post_approval_amended＝true 時畫面顯示小紅點",
+      "form 可多 owner／owner 群組；it_admin 可為無主 form 補派 owner",
+      "export＝完整包（form 定義＋歷史 items＋附件）供遷到新平台"
     ]
   },
   "roles": {
@@ -444,7 +457,9 @@
         "admin：對 item full control（改資料、決定該 item 權限）；不可改表單設計／結構",
         "form ACL vs item 覆寫：以 admin／item 為準",
         "admin 編輯必留版本",
-        "it_admin：一次管理所有 Form；無主／離職／無人維護可整份 archive 或 export"
+        "it_admin：一次管理所有 Form；無主／離職／無人維護可整份 archive 或 export",
+        "一個 form 可有多個 owner，或以 owner 群組表示",
+        "已簽核格的人／結果：admin 不可改；owner 與 it_admin 可改，必留紀錄可追溯"
       ],
       "json": [
         "meta.owner",
@@ -492,15 +507,15 @@
     {
       "id": "it_admin_forms",
       "title": "IT Administrator 全域表單治理",
-      "scenario": "公司沒有 owner、owner 離職、或表單沒人維護時，IT 可一次管所有 Form，整份 archive 或 export。",
+      "scenario": "IT 對全平台 Form 有最高治理權：可 archive／export，也可為無主表單補派 owner。",
       "rules": [
-        "角色 id：it_admin",
+        "角色 id：it_admin＝平台最高治理權限之一",
         "可一次性管理／瀏覽所有 Form（跨 owner）",
-        "適用：無 owner、owner 已離職、無人維護的 form",
-        "可對整個 form 執行 archive（表單級軟下架／封存）",
-        "可對整個 form 執行 export（匯出表單定義＋相關資料範圍待補）",
-        "與 owner 差別：owner 管自己的 form 設計；it_admin 是平台治理／救火",
-        "與 admin 差別：admin 管 item；it_admin 管 form 資產存續（archive／export）"
+        "無 owner／離職／無人維護：可 archive、export，並可補派／改派 owner",
+        "可對整個 form 執行 archive（表單級封存）→ 進行中 items 一律 Cancel",
+        "export 範圍＝完整遷移包：form 定義＋歷史 items＋附件（可交給新平台）",
+        "與 owner：owner 管自己的 form 設計；it_admin 可跨 Form 並可補 owner",
+        "與 admin：admin 管 item；it_admin 管 form 資產與 owner 指派"
       ],
       "json": [
         "meta.owner",
@@ -515,10 +530,9 @@
       "scenario": "拒件單要保留紀錄，不能同單號升版再送；需要重送時用 Copy 開一張全新申請。",
       "rules": [
         "Denied（current_level=-2）原單保留，不可同 doc_no 升 .N 再送（與 Cancel 不同）",
-        "動作 copy：由有權者（通常 creator／requester；admin 可代）從 Denied 單複製",
-        "owner 決定哪些欄位可 copy（form 設計：copyable_fields 或 fields[].copyable）",
-        "Copy 結果＝全新單：新 doc_no、status=new／draft、current_level 空或 0；簽核狀態清空",
-        "建議寫入 copied_from：{doc_no, item_id} 追溯來源 Denied 單",
+        "動作 copy：開全新單；簽核清空；建議 copied_from 追溯",
+        "owner 決定哪些欄位可 copy（form：copyable_fields／fields[].copyable）",
+        "誰可 Copy、能 Copy 哪幾張：由 admin 決定（可到單一 item 粒度）",
         "源單 logs／印章／Denied 狀態不動"
       ],
       "json": [
@@ -543,6 +557,68 @@
         "stages[].approvers[].proxy_original_note",
         "form_schema.fields[].required_from_level",
         "form_schema.fields[].acl"
+      ]
+    },
+    {
+      "id": "archive_vs_cancel",
+      "title": "Archive 與 Cancel 區分",
+      "scenario": "Cancel＝流程取消；Archive＝使用者平常列表看不到，要從 Archive 篩選清單進去。",
+      "rules": [
+        "Cancel：status=cancelled、current_level=-1；流程終止；列表／報表以 cancelled 篩選",
+        "Archive：軟隱藏；一般列表預設看不到；須用 status／filter＝archive 的清單進入",
+        "從 Archive 清單可開啟編輯 → SAVE 成 Draft（level 0）或 Submit",
+        "列表／報表：cancelled 與 archived 分欄或分篩選，不可混成同一狀態",
+        "建議欄位：system.archived（bool）或 status 另含 archived；勿與 cancelled 共用同一值"
+      ],
+      "json": [
+        "system.archived",
+        "status.cancelled",
+        "actions.archive",
+        "actions.unarchive_edit"
+      ]
+    },
+    {
+      "id": "signed_stamp_edit",
+      "title": "已簽核格可否改人／結果",
+      "scenario": "誤簽或人事異動時，誰能改已蓋印那格。",
+      "rules": [
+        "admin 不可改已簽核那格的人／結果",
+        "owner 與 it_admin 可以改",
+        "每次改動必留版本／logs，畫面可追溯"
+      ],
+      "json": [
+        "stages[].approvers",
+        "logs",
+        "versions"
+      ]
+    },
+    {
+      "id": "post_approval_red_dot",
+      "title": "簽核後異動紅點",
+      "scenario": "結案後有人改過資料，要一眼看出。",
+      "rules": [
+        "判斷欄位：post_approval_amended（bool）為主",
+        "畫面：明顯小小紅點（印章縫／結案列等位置）",
+        "點開可看版本／紅綠 diff"
+      ],
+      "json": [
+        "post_approval_amended",
+        "logs",
+        "versions"
+      ]
+    },
+    {
+      "id": "form_archive_cancels_items",
+      "title": "Form archive 連帶 Cancel 進行中單",
+      "scenario": "整份表單下架時，進行中的申請單怎麼辦。",
+      "rules": [
+        "form 被 archive 時，進行中的 items 一律 Cancel（current_level=-1）",
+        "已 completed／denied／cancelled 的 items 不另強制改寫（保留原狀態）"
+      ],
+      "json": [
+        "form.archived",
+        "system.status",
+        "system.current_level"
       ]
     }
   ],
@@ -569,7 +645,8 @@
       "proxy_assignment",
       "post_approval_amended",
       "actor",
-      "copied_from"
+      "copied_from",
+      "archived"
     ],
     "system_required_keys": [
       "status",
@@ -583,7 +660,8 @@
       "in_process",
       "completed",
       "denied",
-      "cancelled"
+      "cancelled",
+      "archived"
     ],
     "action_enum": [
       "save",
@@ -599,7 +677,8 @@
       "archive",
       "admin_amend",
       "super_user_fill",
-      "copy"
+      "copy",
+      "unarchive"
     ],
     "pass_rule_enum": [
       "all",
@@ -697,7 +776,7 @@
     {
       "id": "chk_status_enum",
       "required": true,
-      "label": "system.status 僅使用 new／draft／in_process／completed／denied／cancelled"
+      "label": "system.status 僅使用 new／draft／in_process／completed／denied／cancelled／archived"
     },
     {
       "id": "chk_level_semantics",
@@ -762,7 +841,7 @@
     {
       "id": "chk_post_approval_flag",
       "required": true,
-      "label": "簽核完成後異動抬 post_approval_amended，且 UI 可辨識"
+      "label": "簽核完成後異動抬 post_approval_amended，且 UI 顯示明顯小紅點"
     },
     {
       "id": "chk_party_list_shape",
@@ -807,7 +886,7 @@
     {
       "id": "chk_it_admin",
       "required": true,
-      "label": "具 it_admin：可跨 Form 治理；無主／無人維護 form 可 archive／export"
+      "label": "具 it_admin：跨 Form 治理；可 archive／export；可補派 owner；form archive→進行中 Cancel"
     },
     {
       "id": "chk_acl_item_wins",
@@ -822,54 +901,59 @@
     {
       "id": "chk_denied_copy",
       "required": true,
-      "label": "Denied 保留原單；以 copy 開全新單（owner 定可 copy 欄）；不可同單號升版再送"
+      "label": "Denied 保留原單；copy 開全新單；owner 定可 copy 欄；admin 定誰／哪幾張可 copy"
     },
     {
       "id": "chk_stage_comment",
       "required": true,
       "label": "每關／每位 approver 有固定 comment；階段補資料用業務欄＋required_from_level"
+    },
+    {
+      "id": "chk_archive_vs_cancel",
+      "required": true,
+      "label": "Archive≠Cancel：Archive 預設列表隱藏、從 archive filter 進入可編→Draft／Submit；cancelled 分開篩選"
+    },
+    {
+      "id": "chk_signed_edit_roles",
+      "required": true,
+      "label": "已簽核格：admin 不可改；owner／it_admin 可改且必留紀錄"
+    },
+    {
+      "id": "chk_multi_owner",
+      "required": true,
+      "label": "form 支援多 owner／owner 群組"
+    },
+    {
+      "id": "chk_it_admin_assign_owner",
+      "required": true,
+      "label": "it_admin 可為無主 form 補派／改派 owner（最高治理權）"
+    },
+    {
+      "id": "chk_export_full",
+      "required": true,
+      "label": "export 含 form 定義＋歷史 items＋附件（完整遷移包）"
+    },
+    {
+      "id": "chk_form_archive_cancel_items",
+      "required": true,
+      "label": "form archive 時進行中 items 一律 Cancel"
+    },
+    {
+      "id": "chk_copy_admin_grants",
+      "required": true,
+      "label": "Denied Copy：admin 決定誰可 copy、可 copy 哪幾張（可到 item）"
+    },
+    {
+      "id": "chk_post_approval_red_dot",
+      "required": true,
+      "label": "post_approval_amended 為判斷欄；畫面有明顯小紅點"
     }
   ],
   "open_questions": [
     {
-      "id": "q_archive_vs_cancel",
-      "severity": "low",
-      "question": "Archive 軟刪後能否還原？與 Cancel 在列表／報表如何區分？"
-    },
-    {
-      "id": "q_change_signed",
-      "severity": "low",
-      "question": "admin 能否修改已簽核那格的人／結果？（建議僅走版本異動）"
-    },
-    {
-      "id": "q_owner_multiple",
-      "severity": "low",
-      "question": "一個 form 可否多個 owner／owner 群組？"
-    },
-    {
-      "id": "q_it_admin_can_design",
-      "severity": "medium",
-      "question": "it_admin 對無主 form 能否改派新 owner、或暫時編輯表單設計？還是只能 archive／export？"
-    },
-    {
-      "id": "q_it_admin_export_scope",
-      "severity": "medium",
-      "question": "export 範圍：僅 form 定義、還是含歷史 items／附件？"
-    },
-    {
-      "id": "q_it_admin_archive_items",
-      "severity": "low",
-      "question": "form archive 後，進行中的 items 要一併凍結、仍可簽完、還是強制 Cancel？"
-    },
-    {
-      "id": "q_copy_who",
-      "severity": "low",
-      "question": "Denied Copy 除 creator／requester／admin 外，是否還開放其他人？"
-    },
-    {
-      "id": "q_stamp_amend_grain",
-      "severity": "low",
-      "question": "印章縫「簽核後異動」標記的粒度（每版／每關之間／僅結案後）？"
+      "id": "q_archive_status_shape",
+      "priority": "low",
+      "question": "Archive 要用獨立 status=archived，還是保留原 status＋system.archived=true？（實作二選一需對齊）"
     }
   ],
   "logic_risk_warnings": [
@@ -941,7 +1025,7 @@
     },
     {
       "id": "d_it_admin",
-      "decision": "it_admin 可一次管理所有 Form；無 owner／離職／無人維護之 form 可整份 archive 或 export"
+      "decision": "it_admin 可一次管理所有 Form；可 archive／完整 export；無主／離職／無人維護可補派 owner；form archive→進行中 items Cancel"
     },
     {
       "id": "d_acl_item_wins",
@@ -958,6 +1042,38 @@
     {
       "id": "d_stage_comment",
       "decision": "每關／每位 approver 固定有 comment；階段補資料用業務欄＋required_from_level／ACL；代簽備註用 proxy_original_note（舊例 comment1_sys）"
+    },
+    {
+      "id": "d_archive_vs_cancel",
+      "decision": "Archive≠Cancel：Archive＝預設列表隱藏，從 archive filter 進入可編輯→Draft／Submit；列表／報表分開篩選"
+    },
+    {
+      "id": "d_signed_stamp_edit",
+      "decision": "已簽核格人／結果：admin 不可改；owner 與 it_admin 可改，必留紀錄"
+    },
+    {
+      "id": "d_multi_owner",
+      "decision": "一個 form 可有多個 owner 或 owner 群組"
+    },
+    {
+      "id": "d_it_admin_assign_owner",
+      "decision": "it_admin 為最高治理權之一：無主 form 可補派／改派 owner，不只 archive／export"
+    },
+    {
+      "id": "d_export_full",
+      "decision": "export＝完整遷移包：form 定義＋歷史 items＋附件"
+    },
+    {
+      "id": "d_form_archive_cancel_items",
+      "decision": "form archive 時進行中 items 一律 Cancel"
+    },
+    {
+      "id": "d_copy_admin_grants",
+      "decision": "Denied Copy：admin 決定誰可以 copy、甚至只允許複製哪幾張"
+    },
+    {
+      "id": "d_post_approval_red_dot",
+      "decision": "簽核後異動以 post_approval_amended 判斷；畫面顯示明顯小紅點"
     }
   ],
   "resolved_questions": [
@@ -1012,6 +1128,38 @@
     {
       "id": "q_comment1_sys_name",
       "answer": "每關 approver.comment 固定；代簽備註正式 id＝proxy_original_note（comment1_sys 僅舊範例名）"
+    },
+    {
+      "id": "q_archive_vs_cancel",
+      "answer": "Archive＝列表預設看不到，從 archive filter 進入可編→Draft／Submit；與 cancelled 分開篩選／報表"
+    },
+    {
+      "id": "q_change_signed",
+      "answer": "admin 不行；owner 與 it_admin 可以，必留紀錄"
+    },
+    {
+      "id": "q_owner_multiple",
+      "answer": "可以：多 owner／owner 群組"
+    },
+    {
+      "id": "q_it_admin_can_design",
+      "answer": "it_admin 最高治理：可補派 owner（不只 archive／export）"
+    },
+    {
+      "id": "q_it_admin_export_scope",
+      "answer": "全部：form 定義＋歷史 items＋附件，完整給新平台"
+    },
+    {
+      "id": "q_it_admin_archive_items",
+      "answer": "form archive → 進行中 items 直接 Cancel"
+    },
+    {
+      "id": "q_copy_who",
+      "answer": "admin 決定誰可 copy、可 copy 哪幾張（可到單一 item）"
+    },
+    {
+      "id": "q_stamp_amend_grain",
+      "answer": "用 post_approval_amended 判斷；畫面明顯小紅點"
     }
   ],
   "field_schema": {

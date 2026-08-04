@@ -10,6 +10,7 @@
 
 ## 場次
 
+- 2026-08-04 — ALR5 v0.2.4：八題待決拍板 — 標籤：SEED、Approval、ALR5、定案 — [sessions/2026-08-04-alr5-v024-eight-answers.md](sessions/2026-08-04-alr5-v024-eight-answers.md)
 - 2026-08-04 — ALR5 v0.2.3：required_from_level=0 申請人階段 — 標籤：SEED、Approval、ALR5、定案 — [sessions/2026-08-04-alr5-v023-level0.md](sessions/2026-08-04-alr5-v023-level0.md)
 - 2026-08-04 — ALR5 v0.2.2：ACL／Copy／comment／required_from_level — 標籤：SEED、Approval、ALR5、定案、Copy、comment — [sessions/2026-08-04-alr5-v022-copy-comment.md](sessions/2026-08-04-alr5-v022-copy-comment.md)
 - 2026-08-04 — ALR5 v0.2.0 定案與欄位模型 — 標籤：SEED、Approval、ALR5、定案 — [sessions/2026-08-04-alr5-v02-decisions.md](sessions/2026-08-04-alr5-v02-decisions.md)

@@ -198,12 +198,25 @@ note: 口頭對談整理進本檔；以 diff 確認。尚未口頭確認的區�
 
 | 角色 | 範圍 | 規則 |
 |------|------|------|
-| `owner` | **form** | 設計表單的人；對自己的表單 **full control** |
-| `admin` | **item** | **不能改表單設計**；對申請單 **full control**（改資料、決定該 item 權限） |
-| `it_admin` | **全平台 Form** | 可**一次管理所有 Form**；當 **沒有 owner、owner 離職、無人維護** 時，可對該 form **整份 archive** 或 **export** |
-| 版本 | item 編輯 | admin／owner 若改單據資料，**每一次編輯都留版本** |
+| `owner` | **form** | 設計表單的人；對自己的表單 **full control**；**可多個 owner／owner 群組** |
+| `admin` | **item** | **不能改表單設計**；對申請單 **full control**（改資料、決定該 item 權限）；**不可**改已簽核格人／結果 |
+| `it_admin` | **全平台 Form** | **最高治理權之一**：跨 Form 管理；可 **archive／完整 export**；無主／離職／無人維護可 **補派／改派 owner**；form archive → 進行中 items **一律 Cancel** |
+| 已簽核格 | 人／結果 | **admin 不行**；**owner** 與 **it_admin** 可以，**必留紀錄**可追溯 |
+| 版本 | item 編輯 | admin／owner／it_admin 若改單據資料，**每一次編輯都留版本** |
 
-> `it_admin` ≠ 日常改單的 `admin`：前者是表單資產治理／救火；後者是單據資料與 item 權限。
+> `it_admin` ≠ 日常改單的 `admin`：前者是表單資產治理／救火（含補 owner）；後者是單據資料與 item 權限。
+
+### 3.3a Archive ≠ Cancel（定案）
+
+| | **Archive** | **Cancel** |
+|--|-------------|------------|
+| 意義 | 使用者**平常列表看不到**（軟隱藏） | 流程**已取消** |
+| 怎麼找到 | 用 **Archive filter／狀態清單**進入 | 用 cancelled 篩選／報表 |
+| 進去之後 | 可**編輯** → **SAVE＝Draft** 或 **Submit** | 可用 Resubmit 同單號升 `.N`（同一張紙） |
+| `current_level` | 通常仍在申請人階段（如 `0`） | **`-1`** |
+| 列表／報表 | **與 cancelled 分開**，不可混成同一狀態 | 獨立 cancelled |
+
+> 實作形狀待對齊：獨立 `status=archived`，或保留原 status＋`system.archived=true`（見仍待決）。
 
 ### 3.3b 欄位型別／必填／欄位權限（定案）
 
@@ -278,21 +291,20 @@ note: 口頭對談整理進本檔；以 diff 確認。尚未口頭確認的區�
 > 口頭需求：有人編輯過的版本不能只靠純文字 log；要能一眼判斷是否合理。  
 > 呈現位置：出現在**各個印章中間**，以及 **Completed（結案）後面**；並有**專門欄位**記錄整張簽核完成後是否發生過資料異動。
 
-| 項目 | 建議 |
+| 項目 | 定案 |
 |------|------|
-| 旗標欄位 | `post_approval_amended`（bool）：簽核完成後是否曾改過資料 |
+| 判斷欄位 | **`post_approval_amended`（bool）**：簽核完成後是否曾改過資料 |
+| 畫面 | **`post_approval_amended=true` 時顯示明顯小小紅點**（印章縫／結案列） |
 | 摘要欄位 | `post_approval_amendment_summary`（可選）：最後異動時間／人／欄位數 |
-| 版本列表 | `versions[]` 或沿用強化後的 `logs[]`（含 opened／saved／changes） |
-| 畫面——印章列 | 關與關之間若該時段後有異動，顯示**異動標記**（可點開看紅綠 diff），不要只靠文末文字 |
-| 畫面——Completed 後 | 結案狀態／印鑑列後方固定顯示「簽核後有異動」或「簽核後無異動」 |
-| 誰會觸發旗標 | `admin` 改已完成單；`super_user` 填發票等；其他若允許的結案後編輯 |
-| 判斷「合理」 | 標記＋點開 GitHub 紅綠 diff（舊紅前、新綠後）；純文字流水不夠 |
+| 版本列表 | `versions[]` 或強化後的 `logs[]`（含 opened／saved／changes） |
+| 點開紅點 | 看該段／該版 **紅綠 diff**（舊紅前、新綠後） |
+| 誰會觸發旗標 | `admin` 改已完成單；`super_user` 填發票等；`owner`／`it_admin` 改已簽格等 |
 
 示意（印鑑列）：
 
 ```
-[協理印] —(異動•)— [課長印] — [申請印] …  Completed  [簽核後有異動]
-                         ↑ 點開看該段／該版 diff
+[協理印] —(•紅)— [課長印] — [申請印] …  Completed  [• 簽核後有異動]
+                         ↑ 小紅點；點開看 diff
 ```
 
 ### 3.8 欄位可見／可編（業務欄，其餘待補）
@@ -318,6 +330,7 @@ note: 口頭對談整理進本檔；以 diff 確認。尚未口頭確認的區�
 | `completed` | Completed | 全部簽核過（含自動完成） | `9999` |
 | `denied` | Denied | 有人拒絕了 | **`-2`** |
 | `cancelled` | Cancelled | 已取消 | `-1` |
+| `archived` | Archived | 軟隱藏；一般列表看不到（見 §3.3a） | 通常 `0` |
 
 | 常見轉換 | 說明 |
 |----------|------|
@@ -329,8 +342,10 @@ note: 口頭對談整理進本檔；以 diff 確認。尚未口頭確認的區�
 | `in_process` → `draft`（level `0`） | Return 退回 creator／requester |
 | Return 到中間關 | **之後已簽關作廢並重簽**（定案） |
 | 進行中 → `cancelled` | Cancel；`current_level`→`-1` |
+| level `0` → `archived` | **Archive**：預設列表隱藏；從 archive filter 進入可編→Draft／Submit |
 | `cancelled` → 再送 | 同 **doc_no** 升 **.N**（同一張紙）；creator／requester／admin 可重送 |
-| `denied` → 再送 | **不可**同單號升版；用 **Copy** 開**全新單**（新 doc_no）；Denied 原單**保留紀錄**；**owner** 決定哪些欄可 copy |
+| `denied` → 再送 | **不可**同單號升版；用 **Copy** 開**全新單**；Denied 原單保留；**owner** 定可 copy 欄；**admin** 定誰／哪幾張可 copy |
+| **整份 form archive** | 進行中的 items **一律 Cancel** |
 
 ### 4.1b 角色 × `current_level`（口頭定案）
 
@@ -347,7 +362,7 @@ note: 口頭對談整理進本檔；以 diff 確認。尚未口頭確認的區�
 
 **Cancel 誰可按（簽核關 `1…`）：** Current approver；另 **`creator`／`requester`／`admin` 也可 Cancel**（不限當階）。
 
-**Archive（軟刪除）：** 在 `current_level = 0` 時由 creator／requester 使用（是否 admin 也可：待補）。
+**Archive：** 在 `current_level = 0` 時由 creator／requester（及有權者）使用；**≠ Cancel**（見 §3.3a）。
 
 ### 4.1c 委派 Delegate
 
@@ -603,6 +618,7 @@ creator 開單／填單（可代填；requester 可為另一人）
 | 何時 | `status=denied`／`current_level=-2` |
 | 與 Cancel 差別 | Cancel＝**同一張紙**升 `.N`；Denied＝**保留拒件紀錄**，Copy＝**另一張新紙** |
 | 誰定可 copy 欄 | **owner**（form 設計：`copyable_fields` 或 `fields[].copyable`） |
+| 誰可 Copy／哪幾張 | **admin 決定**（可到單一 item：誰可以 copy 哪張、甚至只允許某幾張） |
 | 結果 | 新 `doc_no`；簽核清空；通常 `new`／`draft`；源單不動 |
 | 追溯 | 建議 `system.copied_from = { doc_no, item_id }` |
 
@@ -782,6 +798,7 @@ creator 開單／填單（可代填；requester 可為另一人）
 | 第一次 SAVE | **level → 0**（SAVE 前可為空） |
 | Cancel 後重送 | **同 doc_no，升 .N**（同一張紙） |
 | Denied 後重送 | **不可**同單號升版；用 **Copy** 開全新單；原單保留；**owner** 定可 copy 欄 |
+| Copy 誰／哪張 | **admin 決定**誰可 copy、可 copy 哪幾張（可到單一 item） |
 | 誰可設代理人 | **本人／主管／admin**；結束**自動改回**原簽核人；仍可用 Change |
 | 平行關＋Delegate | **平行關禁止 Delegate** |
 | cc_system／fyi_system 能否開單 | **能** |
@@ -789,16 +806,17 @@ creator 開單／填單（可代填；requester 可為另一人）
 | `required_from_level` | 自該 level 起必填；**＝0** 申請人 Submit 擋；**≥1** Approve 前擋、不擋 Submit |
 | 每關 comment | **固定**每位 approver 有 `comment`；階段補資料用業務欄 |
 | 代簽備註 | 正式 id **`proxy_original_note`**（舊例 `comment1_sys`） |
+| Archive ≠ Cancel | Archive＝列表預設隱藏，從 archive filter 進入可編→Draft／Submit；報表分開篩選 |
+| 已簽核格改人／結果 | **admin 不行**；**owner／it_admin** 可以，必留紀錄 |
+| 多 owner | **可以**（多 owner／owner 群組） |
+| it_admin 無主 form | **最高治理**：可 **補派 owner**（不只 archive／export） |
+| export 範圍 | **全部**：form 定義＋歷史 items＋附件（完整給新平台） |
+| form archive → items | 進行中 **一律 Cancel** |
+| 簽核後異動標記 | **`post_approval_amended`** 判斷；畫面**明顯小紅點** |
 
 ## 10b. 仍待決
 
-- [ ] Archive 還原規則；與 Cancel 列表區分
-- [ ] admin 能否改已簽那格？
-- [ ] form 可否多個 owner？
-- [ ] it_admin 對無主 form 能否改派 owner／暫改設計？
-- [ ] form export 範圍；archive 後進行中 items 如何處理？
-- [ ] 印章縫異動標記粒度
-- [ ] Copy 誰可按（除 creator／requester／admin 外是否開放）？
+- [ ] Archive 資料形狀：獨立 `status=archived`，還是原 status＋`system.archived=true`？
 
 ---
 
@@ -819,3 +837,4 @@ creator 開單／填單（可代填；requester 可為另一人）
 | 2026-08-04 | 新增 `it_admin`：一次管理所有 Form；無主／離職／無人維護可整份 archive／export |
 | 2026-08-04 | v0.2.2：ACL item 優先；required_from_level 檢核時機；Denied Copy；每關 comment／proxy_original_note |
 | 2026-08-04 | v0.2.3：補定 `required_from_level=0`＝申請人階段起必填（Submit 擋，後續亦必填） |
+| 2026-08-04 | v0.2.4：拍板 Archive≠Cancel、已簽格權限、多 owner、it_admin 補 owner、完整 export、form archive→Cancel、Copy 授權、紅點 |
