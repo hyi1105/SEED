@@ -11,7 +11,7 @@
     <header class="bar">
       <div>
         <h1>簽核｜A4 填空文件</h1>
-        <p>段末小對話框＝給未來自己 · 文末小框＝公開討論</p>
+        <p>段末小框＝未來自己 · 簽核關＝印章框 · 文末＝公開討論</p>
       </div>
       <label class="who">
         我是
@@ -47,35 +47,62 @@
 
         <section class="block" data-block="flow">
           <p class="para narrate">
-            系統已排程郵件通知簽核人林主管。此關可簽核、可退回、可換代理人；申請欄位送出後改為唯讀。<button type="button" class="note-ico" data-kind="self" data-block="flow-a" aria-label="給未來自己的備註"><span class="count">0</span></button>
+            系統已排程郵件通知簽核人。此關可簽核、可退回、可換代理人；申請欄位送出後改為唯讀。<button type="button" class="note-ico" data-kind="self" data-block="flow-a" aria-label="給未來自己的備註"><span class="count">0</span></button>
           </p>
           <p class="para narrate">
             變更紀錄：假別由「特休」改為「事假」；日期由空白改為「明天」；天數為「1」。<button type="button" class="note-ico" data-kind="self" data-block="flow-b" aria-label="給未來自己的備註"><span class="count">0</span></button>
           </p>
         </section>
 
-        <section class="block" data-block="sign1">
-          <p class="para">
-            第一關簽核人
-            <input class="blank" data-bind="approver1" value="林主管" />
-            ，狀態為
-            <input class="blank wide" data-bind="status1" value="等待申請人送出" />
-            。簽核意見：
-            <input class="blank wider" data-bind="opinion1" value="" placeholder="（填空）" />
-            。<button type="button" class="note-ico" data-kind="self" data-block="sign1" aria-label="給未來自己的備註"><span class="count">0</span></button>
+        <!-- 階層簽核：日式印章框（姓名 · APPROVE 印 · 時間戳） -->
+        <section class="block hanko-block" data-block="stamps">
+          <p class="para narrate hanko-lead">
+            簽核階層（各關一印）：
+            <button type="button" class="note-ico" data-kind="self" data-block="stamps" aria-label="給未來自己的備註"><span class="count">0</span></button>
           </p>
-        </section>
+          <div class="hanko-row" role="list">
+            <figure class="hanko done" role="listitem" data-stage="1">
+              <figcaption class="hanko-stage">第 1 關</figcaption>
+              <div class="hanko-seal" aria-hidden="true">
+                <span class="seal-ring">
+                  <span class="seal-name">林　主管</span>
+                  <span class="seal-mark">APPROVE</span>
+                </span>
+              </div>
+              <div class="hanko-meta">
+                <span class="hanko-person">林主管</span>
+                <time datetime="2026-08-04T10:18:00">2026-08-04 10:18</time>
+              </div>
+            </figure>
 
-        <section class="block" data-block="sign2">
-          <p class="para">
-            第二關簽核人
-            <input class="blank" data-bind="approver2" value="嚴協理" />
-            ，狀態為
-            <input class="blank wide" data-bind="status2" value="等待前關完成" />
-            。簽核意見：
-            <input class="blank wider" data-bind="opinion2" value="" placeholder="（填空）" />
-            。<button type="button" class="note-ico" data-kind="self" data-block="sign2" aria-label="給未來自己的備註"><span class="count">0</span></button>
-          </p>
+            <figure class="hanko pending" role="listitem" data-stage="2">
+              <figcaption class="hanko-stage">第 2 關</figcaption>
+              <div class="hanko-seal" aria-hidden="true">
+                <span class="seal-ring empty">
+                  <span class="seal-name">嚴　協理</span>
+                  <span class="seal-mark">待　印</span>
+                </span>
+              </div>
+              <div class="hanko-meta">
+                <span class="hanko-person">嚴協理</span>
+                <time class="wait">尚未蓋印</time>
+              </div>
+            </figure>
+
+            <figure class="hanko pending" role="listitem" data-stage="3">
+              <figcaption class="hanko-stage">第 3 關</figcaption>
+              <div class="hanko-seal" aria-hidden="true">
+                <span class="seal-ring empty">
+                  <span class="seal-name">（空　缺）</span>
+                  <span class="seal-mark">—</span>
+                </span>
+              </div>
+              <div class="hanko-meta">
+                <span class="hanko-person">未指定</span>
+                <time class="wait">—</time>
+              </div>
+            </figure>
+          </div>
         </section>
 
         <section class="doc-end">
