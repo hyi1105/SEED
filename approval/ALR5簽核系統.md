@@ -746,6 +746,8 @@ creator 開單／填單（可代填；requester 可為另一人）
 - [ ] form acl 與 item 覆寫衝突以誰為準？
 - [ ] form 可否多個 owner？
 - [ ] Denied（-2）之後能否改送／升版再送？
+- [ ] it_admin 對無主 form 能否改派 owner／暫改設計？
+- [ ] form export 範圍；archive 後進行中 items 如何處理？
 - [ ] 印章縫異動標記粒度
 
 ---
@@ -764,3 +766,4 @@ creator 開單／填單（可代填；requester 可為另一人）
 | 2026-08-04 | 流程外指派代理人：起迄時段、未簽改代簽、`comment1_sys` 備註原簽核者、系統欄非 admin 不可編 |
 | 2026-08-04 | 標準化：alr5-standard.json＋ALR5標準互通.md＋網頁「ALR5功能」與互通檢查清單 |
 | 2026-08-04 | 定案：Denied=-2；一人Reject整單Denied；Return作廢後續；SAVE→0；Cancel同單號升版；代理人本人／主管／admin；平行禁Delegate；sys收件可開單；owner≠admin；欄位型別／條件必填／ACL |
+| 2026-08-04 | 新增 `it_admin`：一次管理所有 Form；無主／離職／無人維護可整份 archive／export |

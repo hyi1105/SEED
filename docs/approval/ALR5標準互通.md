@@ -42,7 +42,7 @@
 | Return | 退回後**後續已簽作廢重簽** |
 | Delegate | 臨時確認；**平行關不可用** |
 | 指派代理人 | 請假代簽；本人／主管／admin；結束改回 |
-| Owner／Admin | 設計表單 vs 管單據 |
+| Owner／Admin／IT | 設計表單 vs 管單據 vs 全 Form 治理（無主 archive／export） |
 | 欄位型別／必填／ACL | text／number／dropdown／multiline／date…；條件必填；誰能看能編 |
 
 完整見 `alr5-standard.json` 的 `features[]`、`field_schema`、`decisions`。
@@ -100,5 +100,5 @@
 
 ## 版本
 
-- standard_version: **0.2.0**  
+- standard_version: **0.2.1**  
 - 更新日期: 2026-08-04  
