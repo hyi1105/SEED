@@ -1,12 +1,54 @@
 (() => {
-  const KEY = "approval.a4.v5";
+  const KEY = "approval.a4.v6";
   const MIN_CH = 2;
+  /**
+   * 報表統一欄位：
+   * current_level: 0＝申請人階段；1＝等第1關；2＝等第2關…
+   * submitted_at: 最後送出時間
+   * completed_at: Approved／Denied 完成時間，其餘為 null
+   * status: New | Draft | In Process | Completed | Denied
+   */
   const STATUSES = [
-    { id: "new", label: "New", tip: "新申請" },
-    { id: "draft", label: "Draft", tip: "被暫存過了" },
-    { id: "in_process", label: "In Process", tip: "已經送出等待簽核" },
-    { id: "completed", label: "Completed", tip: "全部簽核過" },
-    { id: "denied", label: "Denied", tip: "有人拒絕了" },
+    {
+      id: "new",
+      label: "New",
+      tip: "新申請",
+      level: 0,
+      submitted: null,
+      completed: null,
+    },
+    {
+      id: "draft",
+      label: "Draft",
+      tip: "被暫存過了",
+      level: 0,
+      submitted: null,
+      completed: null,
+    },
+    {
+      id: "in_process",
+      label: "In Process",
+      tip: "已經送出等待簽核",
+      level: 3,
+      submitted: "2026-08-04 09:40:00",
+      completed: null,
+    },
+    {
+      id: "completed",
+      label: "Completed",
+      tip: "全部簽核過",
+      level: 3,
+      submitted: "2026-08-04 09:40:00",
+      completed: "2026-08-04 11:05:00",
+    },
+    {
+      id: "denied",
+      label: "Denied",
+      tip: "有人拒絕了",
+      level: 2,
+      submitted: "2026-08-04 09:40:00",
+      completed: "2026-08-04 10:22:00",
+    },
   ];
 
   function load() {
@@ -23,6 +65,7 @@
   const state = load();
   if (!state.binds) state.binds = {};
   if (!state.status) state.status = "in_process";
+  if (state.current_level == null) state.current_level = 3;
 
   const mirror = document.createElement("span");
   mirror.setAttribute("aria-hidden", "true");
@@ -43,8 +86,7 @@
     const text = el.value || "";
     const sample = text.length >= MIN_CH ? text : "字".repeat(MIN_CH);
     mirror.textContent = sample;
-    const w = Math.ceil(mirror.getBoundingClientRect().width) + 4;
-    el.style.width = `${w}px`;
+    el.style.width = `${Math.ceil(mirror.getBoundingClientRect().width) + 4}px`;
   }
 
   document.querySelectorAll(".blank").forEach((el) => {
@@ -63,18 +105,45 @@
   });
 
   const pill = document.getElementById("status-pill");
+  const sfLevel = document.getElementById("sf-level");
+  const sfSubmitted = document.getElementById("sf-submitted");
+  const sfCompleted = document.getElementById("sf-completed");
+  const sfStatus = document.getElementById("sf-status");
+
+  function applyStatusDefaults(s) {
+    // 切狀態時帶入示範用 level／時間；之後接真資料再覆寫
+    state.current_level = s.level;
+    state.submitted_at = s.submitted;
+    state.completed_at = s.completed;
+  }
+
   function renderStatus() {
     const s = STATUSES.find((x) => x.id === state.status) || STATUSES[2];
     pill.dataset.status = s.id;
     pill.textContent = s.label;
     pill.title = s.tip;
+
+    sfStatus.textContent = s.label;
+    sfLevel.textContent = String(
+      state.current_level != null ? state.current_level : s.level
+    );
+    sfSubmitted.textContent = state.submitted_at || "—";
+    sfCompleted.textContent = state.completed_at || "—";
   }
-  // 點一下可切換狀態（畫面草稿用）
+
   pill.addEventListener("click", () => {
     const i = STATUSES.findIndex((x) => x.id === state.status);
-    state.status = STATUSES[(i + 1) % STATUSES.length].id;
+    const next = STATUSES[(i + 1) % STATUSES.length];
+    state.status = next.id;
+    applyStatusDefaults(next);
     save(state);
     renderStatus();
   });
+
+  // 初次：若尚無時間欄，依狀態補齊
+  const cur = STATUSES.find((x) => x.id === state.status) || STATUSES[2];
+  if (state.submitted_at === undefined) state.submitted_at = cur.submitted;
+  if (state.completed_at === undefined) state.completed_at = cur.completed;
+  save(state);
   renderStatus();
 })();
