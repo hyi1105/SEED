@@ -3,7 +3,9 @@
    * API 時代：document JSON 是唯一真相。
    * 畫面只渲染；按鈕會寫入 logs（時間／操作者／開啟時 vs 儲存後／GitHub 紅綠 diff）。
    */
-  const STORAGE_KEY = "approval.document.v3";
+  const STORAGE_KEY = "approval.document.v4";
+  const FORMS_KEY = "approval.forms.catalog.v1";
+  const NAV_KEY = "approval.nav.v1";
   const MIN_CH = 2;
 
   const EMBEDDED_DOC = {
@@ -11,9 +13,10 @@
     "meta": {
       "system_name": "LEAVE",
       "form_id": "leave_request_v1",
+      "form_version": "1.0.0",
       "title": "請假申請書",
       "lang": "zh-Hant",
-      "note": "ALR5 runtime PoC：印章下按鈕；時間 YYYY-MM-DD HH:mm:ss；comment 灰色；手動切角色／level（切到 2 自動 approve 1）。"
+      "note": "ALR5：兩層導覽（選表單→申請／設計表單表格編輯）；印章下按鈕；操作者在 sys；狀態只顯示；測試下拉變窄。"
     },
     "actor": {
       "id": "u_wang",
@@ -70,8 +73,12 @@
     "ui": {
       "views": [
         {
-          "id": "form",
-          "label": "申請單畫面"
+          "id": "apply",
+          "label": "申請"
+        },
+        {
+          "id": "design",
+          "label": "設計表單"
         },
         {
           "id": "json",
@@ -83,7 +90,7 @@
         }
       ],
       "sys_fields_aria": "系統欄位（報表用）",
-      "sys_hint": "測試：上方可手動切角色與 current_level；切到 level 2 會自動核准 level 1。印章下方為動作按鈕；時間為年月日時分秒；comment 為灰色。",
+      "sys_hint": "測試：上方可手動切角色與 current_level；切到 level 2 會自動核准 level 1。印章下方為動作按鈕；目前操作者在下方系統欄位；狀態只顯示不可點。",
       "empty_mark": "—",
       "pending_stamp_label": "尚未蓋印",
       "actions_title": "操作",
@@ -349,6 +356,13 @@
   let openLogId = null;
   let alr5Standard = null;
   let alr5Markdown = "";
+  let formsCatalog = [];
+  let appNav = {
+    tab: "apply",
+    applyLayer: "list",
+    designLayer: "list",
+    editingFormId: null,
+  };
   const CHECK_KEY = "alr5.interop.checks.v1";
 
   const els = {
@@ -382,6 +396,8 @@
   function persist() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(doc));
+      const fid = doc?.meta?.form_id;
+      if (fid) localStorage.setItem(docStorageKey(fid), JSON.stringify(doc));
     } catch {
       /* ignore */
     }
@@ -1075,7 +1091,10 @@
     wrap.setAttribute("aria-label", doc.ui?.sys_fields_aria || "");
     const empty = doc.ui?.empty_mark || "—";
     const st = statusOf(doc.system?.status);
+    const actorName = doc.actor?.name || "";
+    const actorRole = doc.actor?.role || "";
     const rows = [
+      ["目前操作者", actorRole ? `${actorName}（${actorRole}）` : actorName],
       ["doc_no", doc.system?.doc_no],
       ["current_level", doc.system?.current_level],
       ["submitted_at", doc.system?.submitted_at],
@@ -1305,41 +1324,6 @@
     return sec;
   }
 
-  function renderActions() {
-    const wrap = document.createElement("div");
-    wrap.className = "action-bar";
-
-    const actorLine = document.createElement("div");
-    actorLine.className = "actor-line";
-    const actorLabel = document.createElement("span");
-    actorLabel.textContent = (doc.ui?.actor_label || "目前操作者") + "：";
-    const actorName = document.createElement("strong");
-    actorName.textContent = doc.actor?.name || "";
-    actorLine.appendChild(actorLabel);
-    actorLine.appendChild(actorName);
-    wrap.appendChild(actorLine);
-
-    const btns = document.createElement("div");
-    btns.className = "action-buttons";
-    const title = document.createElement("span");
-    title.className = "action-title";
-    title.textContent = doc.ui?.actions_title || "操作";
-    btns.appendChild(title);
-
-    (doc.actions || [])
-      .filter((a) => a.bound_to !== "status_pill")
-      .forEach((a) => {
-        const b = document.createElement("button");
-        b.type = "button";
-        b.className = "action-btn";
-        b.textContent = a.label || a.id;
-        b.addEventListener("click", () => performAction(a));
-        btns.appendChild(b);
-      });
-    wrap.appendChild(btns);
-    return wrap;
-  }
-
   function findAction(predicate) {
     return (doc.actions || []).find(predicate);
   }
@@ -1351,6 +1335,14 @@
 
     const article = document.createElement("article");
     article.className = "a4";
+
+    article.appendChild(
+      renderBackBar("選擇表單", () => {
+        appNav.applyLayer = "list";
+        persistNav();
+        renderApp();
+      })
+    );
 
     const title = document.createElement("h2");
     title.className = "doc-title";
@@ -1365,7 +1357,6 @@
     article.appendChild(bodySec);
 
     article.appendChild(renderDebugBar());
-    article.appendChild(renderActions());
 
     const signSec = document.createElement("section");
     signSec.className = "block hanko-block";
@@ -1375,23 +1366,12 @@
     const h3 = document.createElement("h3");
     h3.className = "sign-title";
     h3.textContent = doc.approval?.title || "";
-    const pill = document.createElement("button");
-    pill.type = "button";
-    pill.className = "status-pill";
+    const pill = document.createElement("span");
+    pill.className = "status-pill status-pill-static";
     const st = statusOf(doc.system?.status);
     pill.dataset.status = st?.id || "";
     pill.textContent = st?.label || "";
     pill.title = st?.tip || "";
-    pill.addEventListener("click", () => {
-      const a =
-        findAction((x) => x.bound_to === "status_pill") ||
-        findAction((x) => x.kind === "cycle_status") || {
-          id: "cycle_status",
-          label: "切換狀態",
-          kind: "cycle_status",
-        };
-      performAction(a);
-    });
     head.appendChild(h3);
     head.appendChild(pill);
     signSec.appendChild(head);
@@ -1613,12 +1593,12 @@
   }
 
   function renderTabs() {
-    const views = ensureViews(doc.ui?.views);
+    const views = ensureViews();
     els.tabs.replaceChildren();
     views.forEach((v) => {
       const btn = document.createElement("button");
       btn.type = "button";
-      btn.className = "view-tab" + (view === v.id ? " active" : "");
+      btn.className = "view-tab" + (appNav.tab === v.id ? " active" : "");
       btn.textContent = v.label;
       btn.dataset.view = v.id;
       btn.addEventListener("click", () => switchView(v.id));
@@ -1627,36 +1607,519 @@
   }
 
   function ensureViews(views) {
-    const base = [
-      { id: "form", label: "申請單畫面" },
+    return [
+      { id: "apply", label: "申請" },
+      { id: "design", label: "設計表單" },
       { id: "json", label: "JSON" },
       { id: "alr5", label: "ALR5功能" },
     ];
-    const list = Array.isArray(views) ? views.slice() : [];
-    base.forEach((b) => {
-      if (!list.some((x) => x.id === b.id)) list.push(b);
-    });
-    return list;
   }
 
-  function switchView(next) {
-    if (view === "json" && next !== "json" && jsonDirty) {
-      if (!applyJsonFromEditor()) return;
+  function defaultCatalogFromDoc(d) {
+    const id = d?.meta?.form_id || "leave_request_v1";
+    return [
+      {
+        form_id: id,
+        title: d?.meta?.title || "請假申請書",
+        form_version: d?.meta?.form_version || "1.0.0",
+        system_name: d?.meta?.system_name || "LEAVE",
+        updated_at: nowStamp(),
+      },
+      {
+        form_id: "expense_claim_v1",
+        title: "費用報銷單",
+        form_version: "0.1.0",
+        system_name: "EXPENSE",
+        updated_at: nowStamp(),
+      },
+    ];
+  }
+
+  function loadFormsCatalog() {
+    try {
+      const raw = localStorage.getItem(FORMS_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length) return parsed;
+      }
+    } catch {}
+    return null;
+  }
+
+  function persistFormsCatalog() {
+    try {
+      localStorage.setItem(FORMS_KEY, JSON.stringify(formsCatalog));
+    } catch {}
+  }
+
+  function persistNav() {
+    try {
+      localStorage.setItem(NAV_KEY, JSON.stringify(appNav));
+    } catch {}
+  }
+
+  function loadNav() {
+    try {
+      const raw = localStorage.getItem(NAV_KEY);
+      if (raw) {
+        const n = JSON.parse(raw);
+        if (n && typeof n === "object") appNav = { ...appNav, ...n };
+      }
+    } catch {}
+  }
+
+  function upsertCatalogEntry(d) {
+    const id = d?.meta?.form_id;
+    if (!id) return;
+    const row = {
+      form_id: id,
+      title: d?.meta?.title || id,
+      form_version: d?.meta?.form_version || "1.0.0",
+      system_name: d?.meta?.system_name || "",
+      updated_at: nowStamp(),
+    };
+    const i = formsCatalog.findIndex((x) => x.form_id === id);
+    if (i >= 0) formsCatalog[i] = { ...formsCatalog[i], ...row };
+    else formsCatalog.push(row);
+    persistFormsCatalog();
+  }
+
+  function docStorageKey(formId) {
+    return STORAGE_KEY + ":" + (formId || "default");
+  }
+
+  function loadDocForForm(formId) {
+    try {
+      const raw = localStorage.getItem(docStorageKey(formId));
+      if (raw) return JSON.parse(raw);
+    } catch {}
+    return null;
+  }
+
+  function persistDocForForm(formId, d) {
+    try {
+      localStorage.setItem(docStorageKey(formId), JSON.stringify(d));
+      // also keep legacy key for JSON tab convenience
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(d));
+    } catch {}
+  }
+
+  function makeBlankForm(formId, title) {
+    const d = clone(EMBEDDED_DOC);
+    d.meta = {
+      ...d.meta,
+      form_id: formId,
+      title: title || formId,
+      form_version: "0.1.0",
+      system_name: (formId.split("_")[0] || "FORM").toUpperCase(),
+      note: "新建表單（設計中）",
+    };
+    d.system = {
+      doc_no: null,
+      doc_version: 1,
+      current_level: 0,
+      submitted_at: null,
+      completed_at: null,
+      status: "draft",
+      archived: false,
+    };
+    d.logs = [];
+    (d.approval?.columns || []).forEach((c) => {
+      if (!c.stamp) c.stamp = {};
+      c.stamp.pending = true;
+      c.stamp.mark = null;
+      c.stamp.time = null;
+      c.stamp.comment = "";
+    });
+    return ensureDocShape(d);
+  }
+
+  function openApplyForm(formId) {
+    let d = loadDocForForm(formId);
+    if (!d) {
+      if (formId === (EMBEDDED_DOC.meta?.form_id || "leave_request_v1")) {
+        d = clone(EMBEDDED_DOC);
+      } else {
+        const meta = formsCatalog.find((x) => x.form_id === formId);
+        d = makeBlankForm(formId, meta?.title);
+      }
     }
-    view = next;
-    els.form.hidden = view !== "form";
-    els.json.hidden = view !== "json";
-    if (els.alr5) els.alr5.hidden = view !== "alr5";
+    doc = ensureDocShape(d);
+    if (!doc.meta.form_version) doc.meta.form_version = "1.0.0";
+    upsertCatalogEntry(doc);
+    persistDocForForm(formId, doc);
+    resetOpenedSnapshot();
+    appNav.tab = "apply";
+    appNav.applyLayer = "doc";
+    persistNav();
+    renderApp();
+  }
+
+  function openDesignForm(formId) {
+    let d = loadDocForForm(formId);
+    if (!d) {
+      const meta = formsCatalog.find((x) => x.form_id === formId);
+      d = makeBlankForm(formId, meta?.title);
+    }
+    doc = ensureDocShape(d);
+    upsertCatalogEntry(doc);
+    appNav.tab = "design";
+    appNav.designLayer = "edit";
+    appNav.editingFormId = formId;
+    persistNav();
+    renderApp();
+  }
+
+  function renderBackBar(label, onBack) {
+    const bar = document.createElement("div");
+    bar.className = "layer-back";
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "layer-back-btn";
+    b.textContent = "← " + (label || "返回");
+    b.addEventListener("click", onBack);
+    bar.appendChild(b);
+    return bar;
+  }
+
+  function renderApplyList() {
+    const stage = els.form;
+    stage.replaceChildren();
+    const wrap = document.createElement("div");
+    wrap.className = "list-stage";
+    const h = document.createElement("h2");
+    h.className = "list-title";
+    h.textContent = "選擇要申請的表單";
+    wrap.appendChild(h);
+    const table = document.createElement("table");
+    table.className = "mgmt-table";
+    table.innerHTML =
+      "<thead><tr><th>form_id</th><th>名稱</th><th>版本</th><th>系統</th><th></th></tr></thead>";
+    const tb = document.createElement("tbody");
+    formsCatalog.forEach((f) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>${f.form_id}</td><td>${f.title || ""}</td><td>${
+        f.form_version || ""
+      }</td><td>${f.system_name || ""}</td>`;
+      const td = document.createElement("td");
+      const go = document.createElement("button");
+      go.type = "button";
+      go.className = "table-btn primary";
+      go.textContent = "申請";
+      go.addEventListener("click", () => openApplyForm(f.form_id));
+      td.appendChild(go);
+      tr.appendChild(td);
+      tb.appendChild(tr);
+    });
+    table.appendChild(tb);
+    wrap.appendChild(table);
+    stage.appendChild(wrap);
+  }
+
+  function renderDesignList() {
+    const stage = els.form;
+    stage.replaceChildren();
+    const wrap = document.createElement("div");
+    wrap.className = "list-stage";
+    const head = document.createElement("div");
+    head.className = "list-head";
+    const h = document.createElement("h2");
+    h.className = "list-title";
+    h.textContent = "表單管理（Owner）";
+    head.appendChild(h);
+    const add = document.createElement("button");
+    add.type = "button";
+    add.className = "table-btn primary";
+    add.textContent = "＋ 新增表單";
+    add.addEventListener("click", () => {
+      const id = prompt("新 form_id（英文／底線）", "new_form_v1");
+      if (!id) return;
+      if (formsCatalog.some((x) => x.form_id === id)) {
+        alert("form_id 已存在");
+        return;
+      }
+      const title = prompt("表單名稱", id) || id;
+      const d = makeBlankForm(id, title);
+      persistDocForForm(id, d);
+      formsCatalog.push({
+        form_id: id,
+        title,
+        form_version: "0.1.0",
+        system_name: d.meta.system_name,
+        updated_at: nowStamp(),
+      });
+      persistFormsCatalog();
+      openDesignForm(id);
+    });
+    head.appendChild(add);
+    wrap.appendChild(head);
+
+    const table = document.createElement("table");
+    table.className = "mgmt-table";
+    table.innerHTML =
+      "<thead><tr><th>form_id</th><th>名稱</th><th>form_version</th><th>系統</th><th>更新</th><th></th></tr></thead>";
+    const tb = document.createElement("tbody");
+    formsCatalog.forEach((f) => {
+      const tr = document.createElement("tr");
+      ["form_id", "title", "form_version", "system_name", "updated_at"].forEach(
+        (k) => {
+          const td = document.createElement("td");
+          td.textContent = f[k] || "";
+          tr.appendChild(td);
+        }
+      );
+      const td = document.createElement("td");
+      const edit = document.createElement("button");
+      edit.type = "button";
+      edit.className = "table-btn";
+      edit.textContent = "編輯設定";
+      edit.addEventListener("click", () => openDesignForm(f.form_id));
+      td.appendChild(edit);
+      tr.appendChild(td);
+      tb.appendChild(tr);
+    });
+    table.appendChild(tb);
+    wrap.appendChild(table);
+    const tip = document.createElement("p");
+    tip.className = "list-tip";
+    tip.textContent =
+      "第一層管理現有表單；點進去第二層用表格大量調整欄位／簽核關設定。";
+    wrap.appendChild(tip);
+    stage.appendChild(wrap);
+  }
+
+  function renderDesignEdit() {
+    const stage = els.form;
+    stage.replaceChildren();
+    const wrap = document.createElement("div");
+    wrap.className = "list-stage design-edit";
+    wrap.appendChild(
+      renderBackBar("表單列表", () => {
+        appNav.designLayer = "list";
+        persistNav();
+        renderApp();
+      })
+    );
+    const h = document.createElement("h2");
+    h.className = "list-title";
+    h.textContent = "編輯設定：" + (doc.meta?.title || doc.meta?.form_id || "");
+    wrap.appendChild(h);
+
+    // meta table
+    const metaTable = document.createElement("table");
+    metaTable.className = "mgmt-table edit-table";
+    metaTable.innerHTML =
+      "<thead><tr><th>設定</th><th>值</th></tr></thead>";
+    const mtb = document.createElement("tbody");
+    const metaFields = [
+      ["form_id", "form_id", true],
+      ["title", "名稱", false],
+      ["form_version", "form_version", false],
+      ["system_name", "系統代號", false],
+    ];
+    metaFields.forEach(([key, label, ro]) => {
+      const tr = document.createElement("tr");
+      const th = document.createElement("th");
+      th.textContent = label;
+      const td = document.createElement("td");
+      const inp = document.createElement("input");
+      inp.className = "cell-input";
+      inp.value = doc.meta?.[key] ?? "";
+      inp.disabled = !!ro;
+      inp.addEventListener("change", () => {
+        if (!doc.meta) doc.meta = {};
+        doc.meta[key] = inp.value;
+        upsertCatalogEntry(doc);
+        persistDocForForm(doc.meta.form_id, doc);
+      });
+      td.appendChild(inp);
+      tr.appendChild(th);
+      tr.appendChild(td);
+      mtb.appendChild(tr);
+    });
+    metaTable.appendChild(mtb);
+    wrap.appendChild(sectionBlock("基本", metaTable));
+
+    // fields table
+    const fTable = document.createElement("table");
+    fTable.className = "mgmt-table edit-table";
+    fTable.innerHTML =
+      "<thead><tr><th>欄位 id</th><th>顯示名稱</th><th>型別</th><th>預設值</th></tr></thead>";
+    const ftb = document.createElement("tbody");
+    Object.keys(doc.fields || {}).forEach((fid) => {
+      const f = doc.fields[fid];
+      const tr = document.createElement("tr");
+      const cells = [
+        [fid, true],
+        [f.label || "", false, "label"],
+        [f.type || "text", false, "type"],
+        [f.value ?? "", false, "value"],
+      ];
+      cells.forEach(([val, ro, prop], idx) => {
+        const td = document.createElement("td");
+        if (idx === 0 || ro) {
+          td.textContent = String(val);
+        } else {
+          const inp = document.createElement("input");
+          inp.className = "cell-input";
+          inp.value = String(val);
+          inp.addEventListener("change", () => {
+            f[prop] = inp.value;
+            persistDocForForm(doc.meta.form_id, doc);
+            upsertCatalogEntry(doc);
+          });
+          td.appendChild(inp);
+        }
+        tr.appendChild(td);
+      });
+      ftb.appendChild(tr);
+    });
+    fTable.appendChild(ftb);
+    const fSec = sectionBlock("欄位（可大量改）", fTable);
+    const addField = document.createElement("button");
+    addField.type = "button";
+    addField.className = "table-btn";
+    addField.textContent = "＋ 新增欄位";
+    addField.addEventListener("click", () => {
+      const id = prompt("新欄位 id", "field_" + (Object.keys(doc.fields || {}).length + 1));
+      if (!id || (doc.fields && doc.fields[id])) {
+        if (id) alert("欄位 id 已存在或無效");
+        return;
+      }
+      if (!doc.fields) doc.fields = {};
+      doc.fields[id] = { type: "text", label: id, value: "" };
+      persistDocForForm(doc.meta.form_id, doc);
+      renderDesignEdit();
+    });
+    fSec.appendChild(addField);
+    wrap.appendChild(fSec);
+
+    // approval columns table
+    const aTable = document.createElement("table");
+    aTable.className = "mgmt-table edit-table";
+    aTable.innerHTML =
+      "<thead><tr><th>關 id</th><th>顯示</th><th>level</th><th>角色</th><th>印名</th></tr></thead>";
+    const atb = document.createElement("tbody");
+    (doc.approval?.columns || []).forEach((col) => {
+      const tr = document.createElement("tr");
+      const specs = [
+        [col.id, true, null],
+        [col.label || "", false, "label"],
+        [col.level ?? "", false, "level"],
+        [col.role || "", false, "role"],
+        [col.stamp?.name || "", false, "stamp.name"],
+      ];
+      specs.forEach(([val, ro, prop]) => {
+        const td = document.createElement("td");
+        if (ro) td.textContent = String(val);
+        else {
+          const inp = document.createElement("input");
+          inp.className = "cell-input";
+          inp.value = String(val);
+          inp.addEventListener("change", () => {
+            if (prop === "stamp.name") {
+              if (!col.stamp) col.stamp = {};
+              col.stamp.name = inp.value;
+            } else if (prop === "level") {
+              col.level = Number(inp.value);
+            } else {
+              col[prop] = inp.value;
+            }
+            persistDocForForm(doc.meta.form_id, doc);
+          });
+          td.appendChild(inp);
+        }
+        tr.appendChild(td);
+      });
+      atb.appendChild(tr);
+    });
+    aTable.appendChild(atb);
+    const aSec = sectionBlock("簽核關（表格調整）", aTable);
+    const addCol = document.createElement("button");
+    addCol.type = "button";
+    addCol.className = "table-btn";
+    addCol.textContent = "＋ 新增簽核關";
+    addCol.addEventListener("click", () => {
+      const id = prompt("關 id", "step_" + ((doc.approval?.columns || []).length + 1));
+      if (!id) return;
+      if ((doc.approval?.columns || []).some((c) => c.id === id)) {
+        alert("關 id 已存在");
+        return;
+      }
+      if (!doc.approval) doc.approval = { title: "簽核", columns: [] };
+      if (!doc.approval.columns) doc.approval.columns = [];
+      const lv = doc.approval.columns.length;
+      doc.approval.columns.unshift({
+        id,
+        label: id,
+        level: lv,
+        role: "",
+        person: { id: "", name: "" },
+        stamp: { name: "印", mark: null, time: null, comment: "", pending: true },
+      });
+      persistDocForForm(doc.meta.form_id, doc);
+      renderDesignEdit();
+    });
+    aSec.appendChild(addCol);
+    wrap.appendChild(aSec);
+
+    const saveNote = document.createElement("p");
+    saveNote.className = "list-tip";
+    saveNote.textContent = "變更即寫入本機（設計 PoC）；申請畫面從列表點進後使用該 form。";
+    wrap.appendChild(saveNote);
+    stage.appendChild(wrap);
+  }
+
+  function sectionBlock(title, node) {
+    const sec = document.createElement("section");
+    sec.className = "design-section";
+    const h = document.createElement("h3");
+    h.textContent = title;
+    sec.appendChild(h);
+    sec.appendChild(node);
+    return sec;
+  }
+
+  function renderApp() {
+    const tab = appNav.tab || "apply";
+    view = tab === "apply" || tab === "design" ? "form" : tab;
+    els.form.hidden = !(tab === "apply" || tab === "design");
+    els.json.hidden = tab !== "json";
+    if (els.alr5) els.alr5.hidden = tab !== "alr5";
     renderTabs();
-    if (view === "json") {
+    if (tab === "apply") {
+      if (appNav.applyLayer === "doc") renderForm();
+      else renderApplyList();
+    } else if (tab === "design") {
+      if (appNav.designLayer === "edit") renderDesignEdit();
+      else renderDesignList();
+    } else if (tab === "json") {
       jsonDirty = false;
       els.editor.value = prettyJson();
       showJsonMsg("");
-    } else if (view === "form") {
-      renderForm();
-    } else if (view === "alr5") {
+    } else if (tab === "alr5") {
       renderAlr5Guide();
     }
+  }
+
+  function switchView(next) {
+    if ((view === "json" || appNav.tab === "json") && next !== "json" && jsonDirty) {
+      if (!applyJsonFromEditor()) return;
+    }
+    if (next === "apply") {
+      appNav.tab = "apply";
+      appNav.applyLayer = "list";
+    } else if (next === "design") {
+      appNav.tab = "design";
+      appNav.designLayer = "list";
+    } else if (next === "form") {
+      appNav.tab = "apply";
+      appNav.applyLayer = "list";
+    } else {
+      appNav.tab = next;
+    }
+    persistNav();
+    renderApp();
   }
 
   if (els.btnCopyAi) {
@@ -1692,7 +2155,7 @@
     if (!d.meta) d.meta = base.meta;
     if (!d.ui) d.ui = base.ui;
     else d.ui = { ...base.ui, ...d.ui };
-    d.ui.views = ensureViews(d.ui.views);
+    d.ui.views = ensureViews();
     if (!d.actor) d.actor = base.actor;
     if (!d.actions) d.actions = base.actions;
     if (!d.statuses) d.statuses = base.statuses;
@@ -1732,7 +2195,7 @@
     let base = loadStored();
     if (!base) {
       try {
-        const res = await fetch("./document.json?v=runtime1", {
+        const res = await fetch("./document.json?v=nav2", {
           cache: "no-store",
         });
         if (res.ok) base = await res.json();
@@ -1741,7 +2204,7 @@
       }
     }
     try {
-      const sr = await fetch("./alr5-standard.json?v=runtime1", {
+      const sr = await fetch("./alr5-standard.json?v=nav2", {
         cache: "no-store",
       });
       if (sr.ok) alr5Standard = await sr.json();
@@ -1749,7 +2212,7 @@
       /* offline */
     }
     try {
-      const mr = await fetch("./ALR5標準互通.md?v=runtime1", {
+      const mr = await fetch("./ALR5標準互通.md?v=nav2", {
         cache: "no-store",
       });
       if (mr.ok) alr5Markdown = await mr.text();
@@ -1757,13 +2220,38 @@
       alr5Markdown = "";
     }
 
+    loadNav();
+    formsCatalog = loadFormsCatalog() || defaultCatalogFromDoc(base || EMBEDDED_DOC);
+    persistFormsCatalog();
+
     doc = ensureDocShape(base ? clone(base) : clone(EMBEDDED_DOC));
+    if (!doc.meta.form_version) doc.meta.form_version = "1.0.0";
+    upsertCatalogEntry(doc);
     persist();
     resetOpenedSnapshot();
     document.documentElement.lang = doc.meta?.lang || "zh-Hant";
     document.title = `Approval｜${doc.meta?.title || ""}`;
-    renderTabs();
-    switchView("form");
+    if (!appNav.tab || appNav.tab === "form") appNav.tab = "apply";
+    if (appNav.tab === "apply") appNav.applyLayer = appNav.applyLayer || "list";
+    if (appNav.tab === "design" && appNav.designLayer === "edit" && appNav.editingFormId) {
+      const d = loadDocForForm(appNav.editingFormId);
+      if (d) {
+        doc = ensureDocShape(d);
+        resetOpenedSnapshot();
+      } else {
+        appNav.designLayer = "list";
+      }
+    }
+    if (appNav.tab === "apply" && appNav.applyLayer === "doc") {
+      const fid = doc?.meta?.form_id;
+      const d = fid ? loadDocForForm(fid) : null;
+      if (d) {
+        doc = ensureDocShape(d);
+        resetOpenedSnapshot();
+      }
+    }
+    persistNav();
+    renderApp();
   }
 
   boot();

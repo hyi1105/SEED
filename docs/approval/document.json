@@ -3,9 +3,10 @@
   "meta": {
     "system_name": "LEAVE",
     "form_id": "leave_request_v1",
+    "form_version": "1.0.0",
     "title": "請假申請書",
     "lang": "zh-Hant",
-    "note": "ALR5 runtime PoC：印章下按鈕；時間 YYYY-MM-DD HH:mm:ss；comment 灰色；手動切角色／level（切到 2 自動 approve 1）。"
+    "note": "ALR5：兩層導覽（選表單→申請／設計表單表格編輯）；印章下按鈕；操作者在 sys；狀態只顯示；測試下拉變窄。"
   },
   "actor": {
     "id": "u_wang",
@@ -21,12 +22,13 @@
   ],
   "ui": {
     "views": [
-      { "id": "form", "label": "申請單畫面" },
+      { "id": "apply", "label": "申請" },
+      { "id": "design", "label": "設計表單" },
       { "id": "json", "label": "JSON" },
       { "id": "alr5", "label": "ALR5功能" }
     ],
     "sys_fields_aria": "系統欄位（報表用）",
-    "sys_hint": "測試：上方可手動切角色與 current_level；切到 level 2 會自動核准 level 1。印章下方為動作按鈕；時間為年月日時分秒；comment 為灰色。",
+    "sys_hint": "測試：上方可手動切角色與 current_level；切到 level 2 會自動核准 level 1。印章下方為動作按鈕；目前操作者在下方系統欄位；狀態只顯示不可點。",
     "empty_mark": "—",
     "pending_stamp_label": "尚未蓋印",
     "actions_title": "操作",
