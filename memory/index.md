@@ -10,6 +10,7 @@
 
 ## 場次
 
+- 2026-08-04 — 全系統進 ALR5＋大量匯入 header／detail — 標籤：SEED、Approval、ALR5、平台願景、大量匯入、JSON、偏好 — [sessions/2026-08-04-alr5-platform-bulk-import.md](sessions/2026-08-04-alr5-platform-bulk-import.md)
 - 2026-08-04 — 跨單關聯鏈＋兩種開單模式 — 標籤：SEED、Approval、ALR5、跨單關聯、前置條件、開單模式、校正、偏好 — [sessions/2026-08-04-alr5-cross-links-create-modes.md](sessions/2026-08-04-alr5-cross-links-create-modes.md)
 - 2026-08-04 — 需求記憶：AB 表單＋可設定匯出＋JSON 完全轉移 — 標籤：SEED、Approval、ALR5、AB表單、匯出、JSON、偏好 — [sessions/2026-08-04-alr5-ab-export-json.md](sessions/2026-08-04-alr5-ab-export-json.md)
 - 2026-08-04 — ALR5 v0.2.5：Archive 旗標＋MVC — 標籤：SEED、Approval、ALR5、定案、MVC、Archive — [sessions/2026-08-04-alr5-v025-archive-mvc.md](sessions/2026-08-04-alr5-v025-archive-mvc.md)

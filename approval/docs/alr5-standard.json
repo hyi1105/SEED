@@ -1,10 +1,10 @@
 {
   "standard_id": "ALR5",
-  "standard_version": "0.2.7",
+  "standard_version": "0.2.8",
   "lang": "zh-Hant",
   "title": "ALR5 簽核標準（功能／情境／JSON 互通）",
-  "purpose": "讓不同系統用同一套欄位與檢查清單交換申請單 JSON；支援 AB 表單、可設定匯出、跨單／跨系統關聯與前置條件、兩種開單模式（需要時建立／預先建立搶位）、以及依 JSON 規範自動補齊缺少功能／欄位；畫面「ALR5功能」供人一眼看懂；本檔可整份貼給新 AI 實作同等互傳。",
-  "ai_prompt_prefix": "你是實作 ALR5 簽核互通的工程 Agent。請嚴格依 standard_version ALR5/0.2.7 與 json_contract／interop_checklist／decisions／form_composition／export_profiles／json_completeness／cross_links／create_modes 實作。狀態、current_level、動作 id 不得自創別名。decisions 已定案不得違反。產出必須通過全部 required=true 檢查；缺欄／缺功能依 json_completeness 用標準預設自動補齊。",
+  "purpose": "ALR5 作為統一承載平台：未來各業務系統皆交付於此，以可完全轉移的 JSON 處理與互通；支援簽核、AB 表單、可設定匯出、跨單關聯、兩種開單、大量匯入表頭＋明細等；畫面「ALR5功能」供人一眼看懂；本檔可整份貼給新 AI 實作同等互傳。",
+  "ai_prompt_prefix": "你是實作 ALR5 簽核互通的工程 Agent。請嚴格依 standard_version ALR5/0.2.8 與 json_contract／interop_checklist／decisions／form_composition／export_profiles／json_completeness／cross_links／create_modes／bulk_import／platform_scope 實作。狀態、current_level、動作 id 不得自創別名。decisions 已定案不得違反。產出必須通過全部 required=true 檢查；缺欄／缺功能依 json_completeness 用標準預設自動補齊。",
   "status_model": {
     "field": "system.status",
     "values": [
@@ -701,6 +701,38 @@
         "allocation",
         "system.allocation_state"
       ]
+    },
+    {
+      "id": "platform_all_systems",
+      "title": "全系統交付 ALR5→JSON",
+      "scenario": "各業務系統都進 ALR5 處理，資料與設定皆轉成可轉移 JSON。",
+      "rules": [
+        "ALR5 為統一承載與互通層",
+        "進出皆 JSON；缺欄依規範補齊",
+        "設定優先於改核心"
+      ],
+      "json": [
+        "platform_scope",
+        "schema_version",
+        "form_schema"
+      ]
+    },
+    {
+      "id": "bulk_import",
+      "title": "大量匯入 header＋detail",
+      "scenario": "退貨發票等明細超多：批次匯入表頭與明細列。",
+      "rules": [
+        "import_profiles 設定對應（可轉移 JSON）",
+        "對應到 AB：header＋lines[]",
+        "可一單多明細或檔內多單",
+        "先 draft 再檢核／送出；寫 import_logs"
+      ],
+      "json": [
+        "import_profiles[]",
+        "import_jobs[]",
+        "header",
+        "lines"
+      ]
     }
   ],
   "json_contract": {
@@ -733,7 +765,9 @@
       "form_schema",
       "export_profiles",
       "links",
-      "allocation"
+      "allocation",
+      "import_profiles",
+      "import_jobs"
     ],
     "system_required_keys": [
       "status",
@@ -1071,6 +1105,16 @@
       "id": "chk_create_modes",
       "required": false,
       "label": "若支援預建：create_mode＋allocation 狀態＋容量／行事曆搶位語意"
+    },
+    {
+      "id": "chk_platform_json",
+      "required": true,
+      "label": "平台範圍：業務進出皆可序列化為 ALR5 JSON；缺欄可依 json_completeness 補齊"
+    },
+    {
+      "id": "chk_bulk_import",
+      "required": false,
+      "label": "若支援大量匯入：import_profiles 對應到 header／lines；結果可 draft＋logs"
     }
   ],
   "open_questions": [
@@ -1103,6 +1147,16 @@
       "id": "q_hold_timeout",
       "priority": "low",
       "question": "搶位 held 逾時多久自動 released？"
+    },
+    {
+      "id": "q_lines_storage",
+      "priority": "medium",
+      "question": "明細超級多時：lines 全內嵌，還是分片／外掛 lines_ref？單單上限？"
+    },
+    {
+      "id": "q_import_async",
+      "priority": "low",
+      "question": "大量匯入檢核是否一律非同步？失敗列 UI 如何修？"
     }
   ],
   "logic_risk_warnings": [
@@ -1255,6 +1309,14 @@
     {
       "id": "d_create_modes",
       "decision": "開單兩模式：on_demand（需要時建立）與 preallocated（預先建立名額／庫位，行事曆搶 open item）；設定驅動"
+    },
+    {
+      "id": "d_platform_all_systems",
+      "decision": "未來所有系統交付進 ALR5，在內處理並轉成／維持可轉移 JSON"
+    },
+    {
+      "id": "d_bulk_import",
+      "decision": "支援大量匯入 header＋detail（如退貨發票超多明細）；對應設定化；先入 draft 再檢核"
     }
   ],
   "resolved_questions": [
@@ -1369,6 +1431,14 @@
     {
       "id": "q_two_create_modes",
       "answer": "on_demand 與 preallocated（名額／庫位／行事曆搶位）兩種；設定完成"
+    },
+    {
+      "id": "q_all_systems_alr5",
+      "answer": "是：全系統交付 ALR5，以 JSON 處理與轉移"
+    },
+    {
+      "id": "q_bulk_header_detail",
+      "answer": "要：大量匯入 header＋lines；設定 mapping；退貨發票等場景"
     }
   ],
   "field_schema": {
@@ -1471,7 +1541,8 @@
       "auto_fill": "接收端依 ALR5 JSON 規範／本 standard，對缺少的功能或欄位用預設自動補齊，再與本地擴充合併",
       "user_config": "AB 表單、匯出格式等優先用設定完成，不靠改程式"
     },
-    "cross_system": "跨系統＝不同 form_id／系統代號之間用同一套 links／prerequisites／effects；仍是可轉移 JSON，不是另外的登入認證協定。"
+    "cross_system": "跨系統＝不同 form_id／系統代號之間用同一套 links／prerequisites／effects；仍是可轉移 JSON，不是另外的登入認證協定。",
+    "platform": "ALR5＝各系統統一承載層；一切可處理能力最終落到可轉移 JSON（M），功能符合 checklist（C），畫面可分系統自訂（V）。"
   },
   "form_composition": {
     "id": "AB_form",
@@ -1636,7 +1707,9 @@
       "stages[].approvers[].comment": "",
       "links": [],
       "prerequisites": [],
-      "effects_on": []
+      "effects_on": [],
+      "import_profiles": [],
+      "import_jobs": []
     }
   },
   "cross_links": {
@@ -1794,6 +1867,91 @@
       "兩種模式可並存於不同 form；同一 form 通常擇一為主",
       "設定驅動，JSON 可轉移",
       "預建池可由排程／admin／owner 批次產生（例如每月產生校正空單、每日產生展示名額）"
+    ]
+  },
+  "platform_scope": {
+    "id": "all_systems_into_alr5",
+    "label": "全系統交付 ALR5",
+    "vision": "未來所有系統都交付進 ALR5：在 ALR5 內都能處理，並轉成／維持為可轉移 JSON。新系統不以各別私有資料孤島為終點，而以 ALR5 JSON 規範為交換與存續格式。",
+    "rules": [
+      "業務能力用 form_schema／流程／匯出／關聯等設定承載，優先設定而非改核心程式",
+      "進出 ALR5 的資料皆可序列化為 JSON（含 form、item、links、export_profiles、logs）",
+      "外部舊系統遷入：匯入→對應→補齊缺欄（json_completeness）→納入同一套 status／level／動作語意",
+      "V 可各系統自訂畫面；M＋C 共用 ALR5 規範"
+    ],
+    "json": [
+      "schema_version",
+      "form_schema",
+      "json_contract",
+      "platform_scope"
+    ]
+  },
+  "bulk_import": {
+    "id": "bulk_header_detail_import",
+    "label": "大量匯入表頭＋明細",
+    "description": "例如退貨發票：一張表頭對大量明細列。支援批次匯入 header＋lines，對應到 AB 表單形狀，再進入草稿／檢核／送出。",
+    "scenarios": [
+      "退貨發票明細超多",
+      "採購／對帳大量品項",
+      "從他系統 CSV／Excel／JSON 一次灌入"
+    ],
+    "import_job_shape": {
+      "id": "string",
+      "form_id": "string",
+      "source_format": "csv | excel | json | xml",
+      "encoding": "UTF-8 | Big5 | other",
+      "mode": "one_doc | many_docs",
+      "mapping": {
+        "header_map": [
+          {
+            "source": "欄位／欄位名",
+            "target": "header.*"
+          }
+        ],
+        "line_map": [
+          {
+            "source": "欄位／欄位名",
+            "target": "lines[].*"
+          }
+        ],
+        "doc_key": "用來拆多張單的鍵（many_docs 時）",
+        "line_belongs_to": "明細列歸屬表頭的鍵"
+      },
+      "options": {
+        "max_lines_per_doc": null,
+        "on_row_error": "skip_row | fail_job | quarantine",
+        "create_as": "draft | new",
+        "run_prerequisites": false,
+        "dedupe_by": "optional doc_no or business key"
+      },
+      "result": {
+        "created_item_ids": [],
+        "errors": [],
+        "stats": {
+          "headers": 0,
+          "lines": 0,
+          "failed_rows": 0
+        }
+      }
+    },
+    "rules": [
+      "匯入對應設定（mapping）為 JSON，可隨 form 轉移（類似 export_profiles 反向）",
+      "匯入結果先進 draft／new，再依 required／required_from_level／prerequisites 檢核後 Submit",
+      "大量 lines 必須能分頁／虛擬捲動於 V；M 仍是完整 lines[] 或可選外掛 lines_ref（待補）",
+      "單次匯入可 one_doc（一表頭多明細）或 many_docs（檔案內多張退貨單）",
+      "錯誤列策略可設定；匯入本身寫 import_logs／logs",
+      "與對外匯出對稱：import_profiles[] 可由使用者設定"
+    ],
+    "performance_notes": [
+      "明細超級多時：儲存可用 lines 內嵌或分片（lines_chunks／附件 JSON）—實作策略待補",
+      "檢核可非同步：匯入完成→背景 validate→標 incomplete"
+    ],
+    "json": [
+      "form_schema.import_profiles[]",
+      "import_jobs[]",
+      "import_logs[]",
+      "header",
+      "lines"
     ]
   }
 }

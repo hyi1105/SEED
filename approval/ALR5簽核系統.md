@@ -72,6 +72,18 @@ note: 口頭對談整理進本檔；以 diff 確認。尚未口頭確認的區�
 
 機器原文：`cross_links`／`create_modes`（standard **0.2.7**）。
 
+### 1e. 全系統進 ALR5＋大量匯入（定案方向）
+
+| 項目 | 定案 |
+|------|------|
+| **平台願景** | 未來**所有系統都交付進 ALR5**：在內都能處理，並**轉成／維持可轉移 JSON** |
+| **大量匯入** | 支援 **header＋detail（lines）** 批次匯入（如退貨發票明細超多） |
+| **怎麼做** | `import_profiles[]` 設定欄位對應（匯出的反向）；可一單多明細或檔內多單 |
+| **進單後** | 先入 **draft／new** → 再跑必填／前置條件 → Submit |
+| **設定優先** | 對應與規則用 JSON 設定，可完全轉移 |
+
+機器原文：`platform_scope`／`bulk_import`（standard **0.2.8**）。
+
 ---
 
 ## 2. 角色與名單欄位
@@ -859,6 +871,8 @@ creator 開單／填單（可代填；requester 可為另一人）
 | 設定優先 | AB／匯出等讓使用者自己設定完成，不靠改程式 |
 | 跨單關聯 | prerequisites＋links＋effects_on；建議主檔＋事件（校正回寫） |
 | 開單模式 | **on_demand**／**preallocated**（名額搶位＋行事曆） |
+| 全系統進 ALR5 | 各系統交付於此，處理並轉成可轉移 JSON |
+| 大量匯入 | header＋lines 批次匯入（退貨發票等）；import_profiles 設定 |
 
 ## 10b. 仍待決
 
@@ -867,6 +881,8 @@ creator 開單／填單（可代填；requester 可為另一人）
 - [ ] 跨單：畫面如何選他單／顯示認證鏈？
 - [ ] 多張事件單回寫同一主檔欄位時，衝突以誰為準？
 - [ ] 預建池誰批次產生？held 逾時多久自動釋放？
+- [ ] 明細超級多：lines 全內嵌，還是分片／外掛？單單上限？
+- [ ] 大量匯入檢核是否非同步？失敗列如何修？
 
 ---
 
@@ -891,3 +907,4 @@ creator 開單／填單（可代填；requester 可為另一人）
 | 2026-08-04 | v0.2.5：Archive＝`system.archived` 與 status 無關；admin unarchive 復原；互通 MVC（M＝JSON／C＝功能／V＝自訂畫面） |
 | 2026-08-04 | v0.2.6：AB 表單、可設定 export_profiles、json_completeness 自動補齊；設定優先＋JSON 完全轉移 |
 | 2026-08-04 | v0.2.7：跨單 prerequisites／links／effects_on；開單 on_demand／preallocated；校正主檔＋事件建議 |
+| 2026-08-04 | v0.2.8：全系統交付 ALR5→JSON；大量匯入 header＋detail（import_profiles） |
