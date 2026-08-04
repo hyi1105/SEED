@@ -3,69 +3,94 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Approval｜對話畫面草稿</title>
+  <title>Approval｜對話畫面</title>
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
   <div class="phone">
     <header class="top">
       <h1>簽核｜請假申請</h1>
-      <p>畫面草稿 · 功能稍後再接</p>
+      <p>預設欄位可改 · 下方只打字</p>
     </header>
 
-    <main class="chat" aria-label="對話草稿">
-      <!-- 申請人訊息：框內嵌欄位標籤 -->
+    <main class="chat" id="chat" aria-label="對話">
+      <!-- 申請人：預設欄位＋預設值，讀起來像便條不是按鈕 -->
       <article class="bubble me">
-        <div class="meta"><strong>王小明</strong><time>17:02</time></div>
+        <div class="meta">
+          <strong>王小明</strong>
+          <time>17:02</time>
+        </div>
         <p>請幫我簽一下，明天上午請假。</p>
-        <div class="tags">
-          <div class="tag"><span>假別：</span><em>事假</em></div>
-          <div class="tag"><span>日期：</span><em>明天（1 天）</em></div>
+        <div class="fields">
+          <label class="field">
+            <span class="k">假別</span>
+            <input class="v" value="事假" />
+          </label>
+          <label class="field">
+            <span class="k">日期</span>
+            <input class="v" value="明天（1 天）" />
+          </label>
         </div>
+        <div class="vis public">公開</div>
       </article>
 
-      <!-- 簽核槽 1 -->
-      <article class="bubble">
-        <div class="meta"><strong>簽核</strong><time>17:10</time></div>
-        <div class="tags">
-          <div class="tag approver">
-            <span>Approver1：</span><em>林主管</em>
-          </div>
-          <div class="tag wait">
-            <span>（等待申請人送出）</span>
-          </div>
+      <!-- 簽核槽：淡文字，不要厚標籤 -->
+      <article class="bubble soft">
+        <div class="meta">
+          <strong>Approver1</strong>
+          <time>17:10</time>
         </div>
+        <p class="line">
+          <span class="name">林主管</span>
+          <span class="sep">·</span>
+          <span class="hint">等待申請人送出</span>
+        </p>
       </article>
 
-      <!-- 簽核槽 2＋申請人回覆並列感：分開兩泡 -->
-      <article class="bubble">
-        <div class="meta"><strong>簽核</strong><time>17:10</time></div>
-        <div class="tags">
-          <div class="tag approver">
-            <span>Approver2：</span><em>嚴協理</em>
-          </div>
-          <div class="tag wait">
-            <span>（等待申請人送出）</span>
-          </div>
+      <article class="bubble soft">
+        <div class="meta">
+          <strong>Approver2</strong>
+          <time>17:10</time>
         </div>
+        <p class="line">
+          <span class="name">嚴協理</span>
+          <span class="sep">·</span>
+          <span class="hint">等待申請人送出</span>
+        </p>
       </article>
 
       <article class="bubble me">
-        <div class="meta"><strong>王小明</strong><time>17:12</time></div>
+        <div class="meta">
+          <strong>王小明</strong>
+          <time>17:12</time>
+        </div>
         <p>有，陳美玲已同意代理。</p>
+        <div class="vis public">公開</div>
+      </article>
+
+      <!-- 示範：僅自己可見 -->
+      <article class="bubble me private">
+        <div class="meta">
+          <strong>王小明</strong>
+          <time>17:13</time>
+        </div>
+        <p>醫生回診，先跟自己留個底。</p>
+        <div class="vis private">僅自己看</div>
       </article>
     </main>
 
     <footer class="dock">
-      <form class="composer" id="composer" action="#">
-        <input type="text" placeholder="輸入一段訊息" readonly />
-        <button type="button">傳送</button>
+      <!-- 下方：不要欄位按鈕；只打字＋可見範圍 -->
+      <div class="visibility" role="group" aria-label="可見範圍">
+        <button type="button" class="vis-opt" data-vis="private">自己看</button>
+        <button type="button" class="vis-opt on" data-vis="public">公開</button>
+      </div>
+      <form class="composer" id="composer">
+        <input type="text" id="msg" placeholder="輸入一段訊息" autocomplete="off" />
+        <button type="submit" class="send">傳送</button>
       </form>
     </footer>
   </div>
-  <script>
-    // 畫面草稿：刻意不做功能
-    document.getElementById("composer").addEventListener("submit", (e) => e.preventDefault());
-  </script>
+  <script src="./app.js"></script>
 </body>
 </html>
