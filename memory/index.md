@@ -10,6 +10,7 @@
 
 ## 場次
 
+- 2026-08-04 — ALR5 v0.2.2：ACL／Copy／comment／required_from_level — 標籤：SEED、Approval、ALR5、定案、Copy、comment — [sessions/2026-08-04-alr5-v022-copy-comment.md](sessions/2026-08-04-alr5-v022-copy-comment.md)
 - 2026-08-04 — ALR5 v0.2.0 定案與欄位模型 — 標籤：SEED、Approval、ALR5、定案 — [sessions/2026-08-04-alr5-v02-decisions.md](sessions/2026-08-04-alr5-v02-decisions.md)
 - 2026-08-04 — ALR5功能分頁與標準互通檢查 — 標籤：SEED、Approval、ALR5、標準 — [sessions/2026-08-04-alr5-standard-guide.md](sessions/2026-08-04-alr5-standard-guide.md)
 - 2026-08-04 — 建立 ALR5 簽核系統規格檔 — 標籤：SEED、Approval、ALR5、規格 — [sessions/2026-08-04-alr5-spec.md](sessions/2026-08-04-alr5-spec.md)

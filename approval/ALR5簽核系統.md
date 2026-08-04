@@ -205,15 +205,41 @@ note: 口頭對談整理進本檔；以 diff 確認。尚未口頭確認的區�
 
 > `it_admin` ≠ 日常改單的 `admin`：前者是表單資產治理／救火；後者是單據資料與 item 權限。
 
-### 3.3b 欄位型別／必填／欄位權限（定案骨架）
+### 3.3b 欄位型別／必填／欄位權限（定案）
 
 | 項目 | 規則 |
 |------|------|
 | 型別 | `text`／`number`／`dropdown`／`multiline`／`date`／… |
 | 必填 | `required`；或 `required_when`（依其他欄位值） |
-| 階段必填 | `required_from_level`：例如設 level1 必填 → **2、3、4… 都必填** |
+| 階段必填 | `required_from_level`：見下方說明 |
 | 欄位 ACL | `visible_to`／`editable_by`／`hidden_from`：可指定人員、群組、角色、或「某欄位裡的人」 |
-| item 覆寫 | admin 可針對**單一申請單**調整權限（細節待補衝突規則） |
+| item 覆寫 | admin 可針對**單一申請單**調整權限；**與 form 預設衝突時以 admin／item 為準** |
+| admin 邊界 | **不可改變表單結構**（欄位／流程設計）；只能編輯**資料**與**權限相關設定** |
+
+#### `required_from_level` 是什麼？
+
+欄位「**從某個 `current_level` 起才變成必填**」，且**之後各關都必填**。  
+例：設 `required_from_level = 1` → 在 level **1、2、3…** 都必須有值（不是只在 level1 那一關）。
+
+用途：某關的人要**階段性補資料**（不是按同意／不同意那種純簽核），就給他一個業務欄位，並設從此關起必填。
+
+| 檢核時機（定案） | 說明 |
+|------------------|------|
+| **進到該 level 之後** | 當 `current_level ≥ required_from_level` 才強制 |
+| **該關 Approve／往下送前擋** | 缺值則不能過關 |
+| **SAVE 草稿不擋** | 暫存可空 |
+| **Submit 不因門檻 ≥ 1 擋申請人** | 申請人送出時不必先填「關卡才要填」的欄；那些欄等該關的人填 |
+
+> 對照：一般 `required: true`（申請人欄）仍在 **Submit** 時檢核。
+
+#### 每關 comment vs 階段補資料（定案）
+
+| 概念 | 規則 |
+|------|------|
+| **comment** | **每一關／每位 approver 固定有一個**（簽核意見）；預設可自行填寫；可表單設是否必填 |
+| **階段補資料** | 用**一般業務欄**＋`required_from_level`＋ACL（該關可編），**不要**用 comment 充當資料欄 |
+| **代簽備註** | 與 comment 分開；正式 id **`proxy_original_note`**（舊範例名 `comment1_sys`） |
+| 畫面建議 | 印章下：時間＋灰色 comment；補資料欄出現在表單本體 |
 
 ### 3.4 `super_user` — 事後補登
 
@@ -301,6 +327,7 @@ note: 口頭對談整理進本檔；以 diff 確認。尚未口頭確認的區�
 | Return 到中間關 | **之後已簽關作廢並重簽**（定案） |
 | 進行中 → `cancelled` | Cancel；`current_level`→`-1` |
 | `cancelled` → 再送 | 同 **doc_no** 升 **.N**（同一張紙）；creator／requester／admin 可重送 |
+| `denied` → 再送 | **不可**同單號升版；用 **Copy** 開**全新單**（新 doc_no）；Denied 原單**保留紀錄**；**owner** 決定哪些欄可 copy |
 
 ### 4.1b 角色 × `current_level`（口頭定案）
 
@@ -312,8 +339,8 @@ note: 口頭對談整理進本檔；以 diff 確認。尚未口頭確認的區�
 | **`0`** | SAVE 後，或送出後退回人手上 | `creator`／`requester` | **SAVE**、**Submit**、**Archive**（軟刪除） |
 | **`1, 2, 3…`** | 簽核關 | Current approver | Approve／Reject／Return／Cancel／Change；**Delegate 僅非平行關**且該階允許 |
 | **`9999`** | 完成 | — | `super_user`／`admin` 事後欄 |
-| **`-1`** | 已 Cancel | — | 同單號升版重送 |
-| **`-2`** | 已 Denied | — | （後續是否可改送：待補） |
+| **`-1`** | 已 Cancel | — | 同單號升版重送（Resubmit） |
+| **`-2`** | 已 Denied | — | **Copy** 開全新單（原 Denied **保留**；不可同單號升版） |
 
 **Cancel 誰可按（簽核關 `1…`）：** Current approver；另 **`creator`／`requester`／`admin` 也可 Cancel**（不限當階）。
 
@@ -470,7 +497,7 @@ creator 開單／填單（可代填；requester 可為另一人）
 | 代理期間 | 可設定 **代理開始**、**代理結束** |
 | 代理結束 | **自動改回原本簽核人**；之後仍可用 **Change** 換人 |
 | 系統欄位 | `*_system` 等 **除 admin 外不可編輯** |
-| 原簽核者備註 | 例：`comment1_sys` **備註原簽核者** |
+| 原簽核者備註 | 正式欄 **`proxy_original_note`**（舊例名 `comment1_sys`）備註原簽核者 |
 | 與 Change／Delegate | Change＝單張換人；Delegate＝單內臨時確認；本功能＝請假跨單代簽 |
 
 建議資料（示意）：
@@ -493,7 +520,7 @@ creator 開單／填單（可代填；requester 可為另一人）
 | 欄位 | 行為 |
 |------|------|
 | 未簽的 `approvers[]` | 值改為代理人 |
-| `comment1_sys`（例） | 寫入／附加「原簽核者：○○○」（系統欄，非 admin 不可改） |
+| `proxy_original_note` | 寫入／附加「原簽核者：○○○」（系統欄，非 admin 不可改） |
 | 其他 `*_system` | 維持鎖定，僅 admin 可編 |
 
 ### 4.10 其他例外（待補）
@@ -516,10 +543,14 @@ creator 開單／填單（可代填；requester 可為另一人）
 - 送出後發送 `cc` + `cc_system` 通知
 - 送出時依 §4.3 **跳過空關**；若無任何簽核人 → **直接 `completed`**
 
-### 5.2 欄位檢核（待補）
+### 5.2 欄位檢核（定案）
 
 | 規則 | 時機 | 說明 |
 |------|------|------|
+| `required` | Submit／Resubmit | 申請人必填欄；SAVE 草稿不強制 |
+| `required_when` | 條件成立時 | Submit 或該關 Approve／往下送前 |
+| `required_from_level` | `current_level ≥ 門檻` 後 | **該關 Approve／往下送前**擋；**不因門檻≥1 擋 Submit** |
+| form ACL vs item | 讀寫權限計算 | **以 admin 對該 item 的覆寫為準** |
 | 換簽核人 | Change | 當階 approver／admin／creator／requester；鎖定欄僅 admin |
 | 通知客製 | 寄信前 | 每人範本可客製；Admin 決定給不給改 |
 
@@ -554,12 +585,23 @@ creator 開單／填單（可代填；requester 可為另一人）
 | **Return** | `1,2,3…` | Current approver（等） | 退回上一階／上上階／creator／requester；退到人手上常→`0` |
 | **Change** | `1,2,3…` | 當階簽核者、admin、creator、requester | 換簽核人 |
 | **Delegate** | `1,2,3…` | Current approver（**Admin 決定該階開不開**） | 臨時加確認人；確認後層層回到原當階簽核者 |
-| **指派代理人**（流程外） | — | 本人／admin（待補） | 設定代理起迄；未簽關改代理人；`comment1_sys` 等備註原簽核者 |
+| **指派代理人**（流程外） | — | 本人／主管／admin | 設定代理起迄；未簽關改代理人；`proxy_original_note` 備註原簽核者 |
 | **Cancel** | `1,2,3…`（進行中） | Current approver；**另 creator／requester／admin** | →`cancelled`，`current_level=-1`；通知策略見 Admin |
 | **Notify** | （多階段） | 有權限者／admin | 手動通知＋`notification_logs` |
-| **Resubmit** | `-1` | `creator`／`requester`／`admin` | Cancel 後重送（可與 Submit 同一動作） |
+| **Resubmit** | `-1` | `creator`／`requester`／`admin` | Cancel 後重送（同 doc_no 升 .N） |
+| **Copy** | `-2`（Denied） | 通常 `creator`／`requester`；admin 可代 | 開**全新單**；owner 定可 copy 欄；Denied 原單保留；建議寫 `copied_from` |
 
 另保留：`admin_amend`、`super_user_fill`（`9999` 等結案後）。
+
+### 6.1b Copy（Denied → 全新單）
+
+| 項目 | 規則 |
+|------|------|
+| 何時 | `status=denied`／`current_level=-2` |
+| 與 Cancel 差別 | Cancel＝**同一張紙**升 `.N`；Denied＝**保留拒件紀錄**，Copy＝**另一張新紙** |
+| 誰定可 copy 欄 | **owner**（form 設計：`copyable_fields` 或 `fields[].copyable`） |
+| 結果 | 新 `doc_no`；簽核清空；通常 `new`／`draft`；源單不動 |
+| 追溯 | 建議 `system.copied_from = { doc_no, item_id }` |
 
 ### 6.2 SAVE
 
@@ -606,7 +648,7 @@ creator 開單／填單（可代填；requester 可為另一人）
 ### 6.7c 指派代理人（流程外）
 
 - 見 §4.9
-- 代理開始／結束可設；期間內未簽關改代理人；系統欄（如 `comment1_sys`）備註原簽核者；非 admin 不可編系統欄
+- 代理開始／結束可設；期間內未簽關改代理人；`proxy_original_note` 備註原簽核者；非 admin 不可編系統欄
 
 ### 6.8 Cancel
 
@@ -714,7 +756,10 @@ creator 開單／填單（可代填；requester 可為另一人）
 | 目前關卡 | `system.current_level` | 空＝新申請；`0`＝creator／requester；`1…`＝簽核關；`9999`＝完成；`-1`＝取消 |
 | 委派鏈 | `delegation_stack[]`（建議） | 層層委派／確認回來 |
 | 指派代理人 | `proxy_assignment`（人員層） | start_at／end_at／principal／agent |
-| 代簽備註原簽核者 | 例：`comment1_sys` | 系統欄；非 admin 不可編 |
+| 代簽備註原簽核者 | `stages[].approvers[].proxy_original_note` | 系統欄；非 admin 不可編（舊例名 `comment1_sys`） |
+| 每關簽核意見 | `stages[].approvers[].comment` | 每位 approver 固定 |
+| Denied Copy 來源 | `system.copied_from` | 追溯源 Denied 單 |
+| 欄位可複製 | `fields[].copyable` | owner 決定 Copy 帶哪些欄 |
 | 軟刪除 | `archived` 或同等旗標 | Archive 於 level `0` |
 | 動作 | `actions[]` | save／submit／approve／reject／return／change／cancel／notify… |
 | 操作 log | `logs[]` | |
@@ -733,22 +778,24 @@ creator 開單／填單（可代填；requester 可為另一人）
 | Return 到中間關 | **後面已簽關作廢並重簽** |
 | 第一次 SAVE | **level → 0**（SAVE 前可為空） |
 | Cancel 後重送 | **同 doc_no，升 .N**（同一張紙） |
+| Denied 後重送 | **不可**同單號升版；用 **Copy** 開全新單；原單保留；**owner** 定可 copy 欄 |
 | 誰可設代理人 | **本人／主管／admin**；結束**自動改回**原簽核人；仍可用 Change |
 | 平行關＋Delegate | **平行關禁止 Delegate** |
 | cc_system／fyi_system 能否開單 | **能** |
+| form ACL vs item 覆寫 | **以 admin／item 為準**；admin 不可改表單結構 |
+| `required_from_level` | 自該 level 起必填；**Approve／往下送前**檢核；**不因≥1 擋 Submit** |
+| 每關 comment | **固定**每位 approver 有 `comment`；階段補資料用業務欄 |
+| 代簽備註 | 正式 id **`proxy_original_note`**（舊例 `comment1_sys`） |
 
 ## 10b. 仍待決
 
-- [ ] `comment1_sys` 欄名固定或可配置？
 - [ ] Archive 還原規則；與 Cancel 列表區分
 - [ ] admin 能否改已簽那格？
-- [ ] `required_from_level`：草稿／Submit 時何時擋？
-- [ ] form acl 與 item 覆寫衝突以誰為準？
 - [ ] form 可否多個 owner？
-- [ ] Denied（-2）之後能否改送／升版再送？
 - [ ] it_admin 對無主 form 能否改派 owner／暫改設計？
 - [ ] form export 範圍；archive 後進行中 items 如何處理？
 - [ ] 印章縫異動標記粒度
+- [ ] Copy 誰可按（除 creator／requester／admin 外是否開放）？
 
 ---
 
@@ -767,3 +814,4 @@ creator 開單／填單（可代填；requester 可為另一人）
 | 2026-08-04 | 標準化：alr5-standard.json＋ALR5標準互通.md＋網頁「ALR5功能」與互通檢查清單 |
 | 2026-08-04 | 定案：Denied=-2；一人Reject整單Denied；Return作廢後續；SAVE→0；Cancel同單號升版；代理人本人／主管／admin；平行禁Delegate；sys收件可開單；owner≠admin；欄位型別／條件必填／ACL |
 | 2026-08-04 | 新增 `it_admin`：一次管理所有 Form；無主／離職／無人維護可整份 archive／export |
+| 2026-08-04 | v0.2.2：ACL item 優先；required_from_level 檢核時機；Denied Copy；每關 comment／proxy_original_note |

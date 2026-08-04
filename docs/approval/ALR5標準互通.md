@@ -1,7 +1,7 @@
 # ALR5 標準互通規格（可貼給 AI）
 
 > **用途：** 整份複製貼給新的 AI／Agent，要求依此實作簽核 JSON 互傳。  
-> **機器可讀原文：** `docs/approval/alr5-standard.json`（standard_version **0.2.0**）  
+> **機器可讀原文：** `docs/approval/alr5-standard.json`（standard_version **0.2.2**）  
 > **人讀總規：** `approval/ALR5簽核系統.md`  
 > **檢查原則：** `interop_checklist` 裡所有 `required: true` 通過 → 視為可與 ALR5 互通。
 
@@ -9,7 +9,7 @@
 
 ## 給 AI 的開場（請一併貼上）
 
-你是實作 ALR5 簽核互通的工程 Agent。請嚴格依 standard_version **ALR5/0.2.0** 與 `json_contract`／`interop_checklist`／`decisions` 實作。狀態、`current_level`、動作 id 不得自創別名。`decisions` 已定案不得違反。產出必須通過全部 `required: true` 檢查。
+你是實作 ALR5 簽核互通的工程 Agent。請嚴格依 standard_version **ALR5/0.2.2** 與 `json_contract`／`interop_checklist`／`decisions` 實作。狀態、`current_level`、動作 id 不得自創別名。`decisions` 已定案不得違反。產出必須通過全部 `required: true` 檢查。
 
 ---
 
@@ -22,11 +22,16 @@
 | Return 到中間關 | **後面已簽關作廢並重簽** |
 | 第一次 SAVE | **level → 0**（之前可為空） |
 | Cancel 後重送 | **同 doc_no，升 .N**（同一張紙） |
+| Denied 後重送 | **不可**同單號升版；用 **Copy** 開**全新單**；Denied 原單**保留紀錄**；**owner** 決定哪些欄可 copy |
 | 誰可設代理人 | **本人／主管／admin**；結束**自動改回**原簽核人；仍可用 Change |
 | 平行關＋Delegate | **平行關禁止 Delegate** |
 | cc_system／fyi_system | **收件人可以打開該單** |
 | Owner vs Admin | **owner＝form full control**；**admin＝item full control，不能改表單設計** |
+| form ACL vs item 覆寫 | **以 admin／item 為準**；admin 只可編**資料與權限**，不可改表單結構 |
 | IT Administrator | **`it_admin`**：一次管所有 Form；無 owner／離職／無人維護 → 整份 **archive** 或 **export** |
+| `required_from_level` | 自該 level 起（含之後）必填；**進到該 level 後、Approve／往下送前**檢核；**不因門檻≥1 擋 Submit** |
+| 每關 comment | **每位 approver 固定有 `comment`**；階段補資料用業務欄＋`required_from_level`／ACL |
+| 代簽備註欄 | 正式 id **`proxy_original_note`**（舊例 `comment1_sys` 僅範例名） |
 
 ---
 
@@ -42,8 +47,10 @@
 | Return | 退回後**後續已簽作廢重簽** |
 | Delegate | 臨時確認；**平行關不可用** |
 | 指派代理人 | 請假代簽；本人／主管／admin；結束改回 |
+| Denied Copy | 拒件保留；Copy 成全新單（owner 定可 copy 欄） |
 | Owner／Admin／IT | 設計表單 vs 管單據 vs 全 Form 治理（無主 archive／export） |
-| 欄位型別／必填／ACL | text／number／dropdown／multiline／date…；條件必填；誰能看能編 |
+| 欄位型別／必填／ACL | text／number／…；條件必填；階段必填；誰能看能編；**item 覆寫優先** |
+| 每關 comment／補資料 | 印章下寫意見；關內補欄位用業務欄 |
 
 完整見 `alr5-standard.json` 的 `features[]`、`field_schema`、`decisions`。
 
@@ -67,38 +74,38 @@
 | 1..n | current approver | approve, reject, return, cancel, change；（非平行才）delegate |
 | 9999 | — | super_user_fill／admin_amend |
 | -1 | — | resubmit（同單號升版） |
-| -2 | — | Denied |
+| -2 | — | **copy**（全新單；原 Denied 保留） |
 
 ---
 
 ## 欄位模型（摘要）
 
 - **型別：** text, number, dropdown, multiline, date, …
-- **必填：** `required`／`required_when`／`required_from_level`（設 level1 → 之後各關都必填）
-- **ACL：** visible_to／editable_by／hidden_from（users／groups／roles／field_holders）
-- **item 覆寫：** admin 可調單一申請單權限
+- **必填：** `required`／`required_when`／`required_from_level`
+- **`required_from_level` 是什麼：** 欄位「從某個 `current_level` 起才變成必填」，且之後各關都必填。例：設 `1` → level 1、2、3… 都要有值。專門給**階段補資料**（該關的人填），不是申請人送出前就要填完。
+- **檢核時機：** `current_level ≥ 門檻` 之後，在該關 **Approve／往下送前**擋；**SAVE 草稿不擋**；**Submit 不因門檻≥1 擋申請人**。
+- **ACL：** visible_to／editable_by／hidden_from；**admin 對單一 item 覆寫優先於 form 預設**
+- **Copy：** owner 設 `copyable`／`copyable_fields`；Denied 用 `copy` 開新單
 
 ---
 
 ## 互通檢查
 
-見 `alr5-standard.json` → `interop_checklist`（含 -2、Return 作廢、SAVE→0、平行禁 Delegate、owner／admin 分工、欄位 schema 等）。
+見 `alr5-standard.json` → `interop_checklist`（含 -2、Copy、Return 作廢、SAVE→0、平行禁 Delegate、ACL item 優先、required_from_level 時機、每關 comment、owner／admin 分工等）。
 
 ---
 
 ## 仍待決
 
-1. comment1_sys 欄名固定或可配置？  
-2. Archive 還原？  
-3. admin 改已簽那格？  
-4. required_from_level 何時擋 Submit？  
-5. form acl vs item 覆寫以誰為準？  
-6. 多個 owner？  
-7. Denied（-2）之後能否升版再送？  
+1. Archive 還原？與 Cancel 列表區分  
+2. admin 改已簽那格？  
+3. 多個 owner？  
+4. it_admin 對無主 form 能否改派 owner／暫改設計？  
+5. form export 範圍；archive 後進行中 items 如何處理？  
 
 ---
 
 ## 版本
 
-- standard_version: **0.2.1**  
+- standard_version: **0.2.2**  
 - 更新日期: 2026-08-04  

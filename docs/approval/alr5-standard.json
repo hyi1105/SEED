@@ -1,10 +1,10 @@
 {
   "standard_id": "ALR5",
-  "standard_version": "0.2.1",
+  "standard_version": "0.2.2",
   "lang": "zh-Hant",
   "title": "ALR5 簽核標準（功能／情境／JSON 互通）",
   "purpose": "讓不同系統用同一套欄位與檢查清單交換申請單 JSON；畫面「ALR5功能」供人一眼看懂；本檔可整份貼給新 AI 實作同等互傳。",
-  "ai_prompt_prefix": "你是實作 ALR5 簽核互通的工程 Agent。請嚴格依 standard_version ALR5/0.2.0 與 json_contract／interop_checklist／decisions 實作。狀態、current_level、動作 id 不得自創別名。decisions 已定案不得違反。產出必須通過全部 required=true 檢查。",
+  "ai_prompt_prefix": "你是實作 ALR5 簽核互通的工程 Agent。請嚴格依 standard_version ALR5/0.2.2 與 json_contract／interop_checklist／decisions 實作。狀態、current_level、動作 id 不得自創別名。decisions 已定案不得違反。產出必須通過全部 required=true 檢查。",
   "status_model": {
     "field": "system.status",
     "values": [
@@ -108,9 +108,11 @@
       },
       {
         "level": -2,
-        "meaning": "已 Denied（拒件）",
+        "meaning": "已 Denied（拒件）；可 Copy 成全新單，原單保留",
         "holders": [],
-        "actions": []
+        "actions": [
+          "copy"
+        ]
       }
     ],
     "notes": [
@@ -121,7 +123,12 @@
       "pass_rule=any 時一人 Reject → 整單 Denied（level=-2）",
       "Return 到中間關：該關之後已簽關作廢並須重簽",
       "平行簽核關（同關多人）禁止 Delegate",
-      "cc_system／fyi_system 收件人可以打開該單"
+      "cc_system／fyi_system 收件人可以打開該單",
+      "Denied（-2）不可同單號升版再送；用 Copy 開全新單，Denied 原單保留紀錄",
+      "form 預設 ACL 與 admin 對單一 item 覆寫衝突時，以 admin／item 為準",
+      "admin 不可改變表單結構，只能編輯資料與權限相關設定",
+      "required_from_level：自該 level 起（含之後）必填；檢核在 current_level≥門檻後、該關 Approve／往下送前，不因≥1 的門檻在 Submit／草稿擋申請人",
+      "每關／每位 approver 固定有 comment（簽核意見）；階段補資料用業務欄＋required_from_level／ACL，不是用 comment 取代"
     ]
   },
   "roles": {
@@ -337,12 +344,12 @@
         "僅尚未簽到的關改派；已簽不動",
         "可設 start_at／end_at",
         "代理結束 → 自動改回原本簽核人（仍可用 Change 換人）",
-        "例：comment1_sys 備註原簽核者",
+        "代簽備註：固定系統語意欄 stages[].approvers[].proxy_of／proxy_original_note（舊稱 comment1_sys 僅範例）",
         "系統欄除 admin／owner 規則外不可編"
       ],
       "json": [
         "proxy_assignment",
-        "comment1_sys"
+        "proxy_original_note"
       ]
     },
     {
@@ -433,8 +440,9 @@
       "title": "Owner／Admin／IT Administrator",
       "scenario": "設計表單的人是 owner；admin 不能動表單設計，但對每一張申請單有 full control。",
       "rules": [
-        "owner：對 form full control（欄位、流程、預設、權限範本）",
-        "admin：對 item full control（改資料、決定該 item 權限）；不可改表單設計",
+        "owner：對 form full control（欄位、流程、預設、權限範本、Copy 可複製欄位清單）",
+        "admin：對 item full control（改資料、決定該 item 權限）；不可改表單設計／結構",
+        "form ACL vs item 覆寫：以 admin／item 為準",
         "admin 編輯必留版本",
         "it_admin：一次管理所有 Form；無主／離職／無人維護可整份 archive 或 export"
       ],
@@ -450,12 +458,13 @@
     {
       "id": "field_types_and_required",
       "title": "欄位型別與必填／條件必填",
-      "scenario": "欄位可以是文字、數字、選單、多行、日期…；可永遠必填，或依其他欄位值／到達某 level 後才必填。",
+      "scenario": "欄位可永遠必填，或依其他欄位值／到達某 level 後才必填。required_from_level 專門給「進到某關才要填」的階段補資料（不是簽核按鈕本身）。",
       "rules": [
         "type：text｜number｜dropdown｜multiline｜date｜…",
-        "required：true／false",
-        "required_when：依其他欄位值條件必填",
-        "required_from_level：例如設 level1 必填 → 之後 2、3、4… 都必填"
+        "required：true／false（申請人欄；Submit／送出時檢核）",
+        "required_when：依其他欄位值條件必填（送出或該關動作時依條件檢核）",
+        "required_from_level：自某 current_level 起必填，之後各關都必填（例：設 1 → 1、2、3…）",
+        "檢核時機（定案）：當 current_level ≥ required_from_level 時才強制；於該關 Approve／往下送前擋；SAVE 草稿不擋；Submit 不因 required_from_level≥1 擋申請人（該欄通常是階段補資料）"
       ],
       "json": [
         "form_schema.fields[].type",
@@ -467,11 +476,12 @@
     {
       "id": "field_acl",
       "title": "欄位可見／可編權限",
-      "scenario": "每個欄位可決定誰能看、誰能編、誰不能看：人員、群組、角色、或「某個欄位裡的人」。",
+      "scenario": "每個欄位可決定誰能看、誰能編。表單有預設 ACL；admin 可對單一申請單覆寫，覆寫優先。",
       "rules": [
         "visible_to／editable_by／hidden_from",
         "對象可為：users、groups、roles、field_holders（某欄位的人）",
-        "item 層可由 admin 覆寫單一申請單權限"
+        "form 預設 ACL 與 admin 對單一 item 覆寫衝突時：以 admin／item 為準",
+        "admin 不可改變表單結構（欄位／流程設計）；只能編輯資料與權限相關設定"
       ],
       "json": [
         "form_schema.fields[].acl",
@@ -497,6 +507,42 @@
         "form.archived",
         "form_export"
       ]
+    },
+    {
+      "id": "denied_copy",
+      "title": "Denied 後 Copy 成全新單",
+      "scenario": "拒件單要保留紀錄，不能同單號升版再送；需要重送時用 Copy 開一張全新申請。",
+      "rules": [
+        "Denied（current_level=-2）原單保留，不可同 doc_no 升 .N 再送（與 Cancel 不同）",
+        "動作 copy：由有權者（通常 creator／requester；admin 可代）從 Denied 單複製",
+        "owner 決定哪些欄位可 copy（form 設計：copyable_fields 或 fields[].copyable）",
+        "Copy 結果＝全新單：新 doc_no、status=new／draft、current_level 空或 0；簽核狀態清空",
+        "建議寫入 copied_from：{doc_no, item_id} 追溯來源 Denied 單",
+        "源單 logs／印章／Denied 狀態不動"
+      ],
+      "json": [
+        "actions.copy",
+        "form_schema.copyable_fields",
+        "fields[].copyable",
+        "system.copied_from"
+      ]
+    },
+    {
+      "id": "stage_comment_and_fill",
+      "title": "每關 comment 與階段補資料",
+      "scenario": "簽核人預設可寫意見；有些關不是只按同意，還要補欄位資料。",
+      "rules": [
+        "comment：每一關／每位 approver 固定有一個，屬簽核意見（可空或表單設必填）",
+        "階段補資料：用一般業務欄位＋required_from_level＋ACL（editable_by 該關 approver），不是再發明另一套 comment 系統",
+        "代簽備註（原簽核者是誰）與 approver comment 分開；正式固定語意欄 proxy_original_note（舊例 comment1_sys）",
+        "畫面建議：印章下顯示時間＋灰色 comment；階段補資料欄出現在表單本體"
+      ],
+      "json": [
+        "stages[].approvers[].comment",
+        "stages[].approvers[].proxy_original_note",
+        "form_schema.fields[].required_from_level",
+        "form_schema.fields[].acl"
+      ]
     }
   ],
   "json_contract": {
@@ -521,7 +567,8 @@
       "notification_logs",
       "proxy_assignment",
       "post_approval_amended",
-      "actor"
+      "actor",
+      "copied_from"
     ],
     "system_required_keys": [
       "status",
@@ -550,7 +597,8 @@
       "notify",
       "archive",
       "admin_amend",
-      "super_user_fill"
+      "super_user_fill",
+      "copy"
     ],
     "pass_rule_enum": [
       "all",
@@ -614,7 +662,9 @@
                 "name": "林課長"
               },
               "editable": true,
-              "signed": false
+              "signed": false,
+              "comment": "",
+              "proxy_original_note": null
             }
           ],
           "stage_notify": {
@@ -651,7 +701,7 @@
     {
       "id": "chk_level_semantics",
       "required": true,
-      "label": "current_level：空=未 SAVE；0=已 SAVE／退回人手；1..=簽核；9999=完成；-1=取消；-2=Denied"
+      "label": "current_level：空=未 SAVE；0=已 SAVE／退回人手；1..=簽核；9999=完成；-1=取消；-2=Denied（可 copy）"
     },
     {
       "id": "chk_creator_requester",
@@ -696,7 +746,7 @@
     {
       "id": "chk_system_fields_lock",
       "required": true,
-      "label": "*_system／comment*_sys 等系統欄非 admin 不可編"
+      "label": "*_system／proxy_original_note 等系統欄非 admin 不可編（舊稱 comment*_sys）"
     },
     {
       "id": "chk_proxy_optional",
@@ -757,14 +807,29 @@
       "id": "chk_it_admin",
       "required": true,
       "label": "具 it_admin：可跨 Form 治理；無主／無人維護 form 可 archive／export"
+    },
+    {
+      "id": "chk_acl_item_wins",
+      "required": true,
+      "label": "form 預設 ACL 與 item 覆寫衝突時以 admin／item 為準；admin 不可改表單結構"
+    },
+    {
+      "id": "chk_required_from_level_timing",
+      "required": true,
+      "label": "required_from_level 於 current_level≥門檻後、Approve／往下送前檢核；不因≥1 門檻擋 Submit"
+    },
+    {
+      "id": "chk_denied_copy",
+      "required": true,
+      "label": "Denied 保留原單；以 copy 開全新單（owner 定可 copy 欄）；不可同單號升版再送"
+    },
+    {
+      "id": "chk_stage_comment",
+      "required": true,
+      "label": "每關／每位 approver 有固定 comment；階段補資料用業務欄＋required_from_level"
     }
   ],
   "open_questions": [
-    {
-      "id": "q_comment1_sys_name",
-      "severity": "low",
-      "question": "代簽備註欄正式 id 是否固定 comment1_sys，還是表單可配置？"
-    },
     {
       "id": "q_archive_vs_cancel",
       "severity": "low",
@@ -774,16 +839,6 @@
       "id": "q_change_signed",
       "severity": "low",
       "question": "admin 能否修改已簽核那格的人／結果？（建議僅走版本異動）"
-    },
-    {
-      "id": "q_required_from_level_ui",
-      "severity": "medium",
-      "question": "required_from_level=1 時，草稿 level0／未送出是否也要擋 Submit，還是送出後進入 level1 才檢核？"
-    },
-    {
-      "id": "q_field_acl_conflict",
-      "severity": "medium",
-      "question": "form 預設 acl 與 admin 在單一 item 覆寫衝突時，以 item 為準？"
     },
     {
       "id": "q_owner_multiple",
@@ -829,7 +884,7 @@
     },
     {
       "id": "risk_required_from_level",
-      "warning": "required_from_level 若在 Submit 前就強制，可能擋住草稿；需明確「送出時檢核」或「進入該 level 檢核」。"
+      "warning": "已定案：required_from_level≥1 不在 Submit 擋申請人；若實作成 Submit 就擋，會讓階段補資料無法進流程。"
     },
     {
       "id": "risk_return_resign_chain",
@@ -876,6 +931,22 @@
     {
       "id": "d_it_admin",
       "decision": "it_admin 可一次管理所有 Form；無 owner／離職／無人維護之 form 可整份 archive 或 export"
+    },
+    {
+      "id": "d_acl_item_wins",
+      "decision": "form 預設 ACL 與 admin item 覆寫衝突時，以 admin／item 為準；admin 不可改表單結構，只能編資料與權限設定"
+    },
+    {
+      "id": "d_required_from_level_timing",
+      "decision": "required_from_level 自該 level 起（含之後）必填；檢核在 current_level≥門檻後、該關 Approve／往下送前；Submit／草稿不因門檻≥1 擋申請人"
+    },
+    {
+      "id": "d_denied_copy",
+      "decision": "Denied 不可同單號升版再送；用 Copy 開全新單（owner 定可 copy 欄），Denied 原單保留紀錄"
+    },
+    {
+      "id": "d_stage_comment",
+      "decision": "每關／每位 approver 固定有 comment；階段補資料用業務欄＋required_from_level／ACL；代簽備註用 proxy_original_note（舊例 comment1_sys）"
     }
   ],
   "resolved_questions": [
@@ -914,6 +985,22 @@
     {
       "id": "q_parallel_delegate",
       "answer": "平行關禁止 Delegate"
+    },
+    {
+      "id": "q_field_acl_conflict",
+      "answer": "以 admin／item 覆寫為準；admin 不可改表單結構"
+    },
+    {
+      "id": "q_required_from_level_ui",
+      "answer": "進入該 level 後、Approve／往下送前檢核；不因≥1 擋 Submit"
+    },
+    {
+      "id": "q_denied_after",
+      "answer": "不可同單號升版；用 Copy 開全新單，原 Denied 保留"
+    },
+    {
+      "id": "q_comment1_sys_name",
+      "answer": "每關 approver.comment 固定；代簽備註正式 id＝proxy_original_note（comment1_sys 僅舊範例名）"
     }
   ],
   "field_schema": {
@@ -933,7 +1020,7 @@
       "label": "顯示名稱",
       "required": "是否必填",
       "required_when": "條件必填（其他欄位值）",
-      "required_from_level": "自某 current_level 起必填（含之後各關）",
+      "required_from_level": "自某 current_level 起必填（含之後各關）。檢核：current_level≥門檻後、Approve／往下送前；SAVE 不擋；Submit 不因門檻≥1 擋申請人",
       "acl": {
         "visible_to": [
           "users",
@@ -953,7 +1040,8 @@
           "roles",
           "field_holders"
         ]
-      }
+      },
+      "copyable": "Denied Copy 時是否複製此欄（owner 在 form 設計決定；預設建議 true 給業務欄、false 給簽核結果）"
     },
     "example": {
       "name": "invoice_no",
@@ -979,6 +1067,16 @@
         },
         "hidden_from": {}
       }
+    },
+    "validation_timing": {
+      "required": "Submit（及 Resubmit）時檢核；SAVE 草稿不強制",
+      "required_when": "條件成立時，於 Submit 或該關 Approve／往下送前檢核",
+      "required_from_level": "僅當 current_level ≥ 門檻時強制；於該關 Approve／往下送前擋；草稿／Submit 不因門檻≥1 擋"
+    },
+    "stage_runtime": {
+      "approver_comment": "stages[].approvers[].comment — 每關每位簽核人固定意見欄",
+      "proxy_original_note": "stages[].approvers[].proxy_original_note — 代簽時備註原簽核者（系統欄）",
+      "stage_fill_fields": "一般 fields[] + required_from_level + acl.editable_by 該關角色"
     }
   }
 }
