@@ -1,18 +1,18 @@
 :root {
-  --bg: #0f0f0f;
+  --bg: #101010;
   --feed: #141414;
-  --bubble: #2b2b2b;
-  --me: #2f3152;
-  --me-private: #3a3428;
   --text: #ececec;
-  --muted: #8f8f8f;
-  --line: rgba(255, 255, 255, 0.12);
-  --sys: #1b1b1b;
+  --muted: #8e8e8e;
+  --me: #2e3050;
+  --me-private: #3a3428;
+  --sys-text: #c5c5c5;
+  --form: #f3efe6;
+  --form-ink: #1c1914;
+  --form-line: #d5cdb8;
   --accent: #a78bfa;
-  --accent-dim: rgba(167, 139, 250, 0.16);
   --private: #c9a35a;
   --font: "Segoe UI", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
-  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --doc: "Georgia", "Noto Serif TC", "PMingLiU", serif;
 }
 
 * { box-sizing: border-box; }
@@ -38,16 +38,8 @@ html, body {
   padding: 14px 16px 10px;
   border-bottom: 1px solid #242424;
 }
-.top h1 {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 650;
-}
-.top p {
-  margin: 4px 0 0;
-  font-size: 12px;
-  color: var(--muted);
-}
+.top h1 { margin: 0; font-size: 16px; font-weight: 650; }
+.top p { margin: 4px 0 0; font-size: 12px; color: var(--muted); }
 
 .feed {
   overflow: auto;
@@ -55,124 +47,110 @@ html, body {
   background: var(--feed);
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
 }
 
-/* —— 人的對話框 —— */
-.bubble {
-  max-width: 88%;
+/* —— 純對話（人／系統都沒有厚卡片框） —— */
+.say {
+  max-width: 92%;
   align-self: flex-start;
-  background: var(--bubble);
-  border-radius: 16px 16px 16px 6px;
-  padding: 9px 12px 10px;
 }
-.bubble.me {
+.say.me {
   align-self: flex-end;
   background: var(--me);
   border-radius: 16px 16px 6px 16px;
+  padding: 9px 12px 10px;
+  max-width: 86%;
 }
-.bubble.me.private {
+.say.me.private {
   background: var(--me-private);
-  box-shadow: inset 0 0 0 1px rgba(201, 163, 90, 0.28);
+  box-shadow: inset 0 0 0 1px rgba(201, 163, 90, 0.25);
 }
-.meta {
+.say.sys {
+  /* 系統＝文件式純文字，不套對話泡框 */
+  padding: 2px 2px;
+  max-width: 100%;
+}
+.who {
   display: flex;
-  justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
+  align-items: baseline;
   font-size: 11px;
   color: var(--muted);
-  margin-bottom: 4px;
+  margin-bottom: 3px;
 }
-.meta strong { color: #d4d4d4; font-weight: 600; }
-.bubble p {
+.who strong { font-weight: 600; color: #cfcfcf; }
+.say.sys .who strong { color: #9a9a9a; font-weight: 500; }
+.say p {
   margin: 0;
   font-size: 15px;
-  line-height: 1.5;
+  line-height: 1.55;
+}
+.say.sys p {
+  font-family: var(--doc);
+  font-size: 14.5px;
+  line-height: 1.65;
+  color: var(--sys-text);
+  font-weight: 400;
+}
+.mark {
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--private);
 }
 
-.fields {
-  margin-top: 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+/* —— 主角：申請單欄位（唯一框） —— */
+.form-card {
+  align-self: stretch;
+  background: var(--form);
+  color: var(--form-ink);
+  border-radius: 4px;
+  padding: 14px 14px 12px;
+  box-shadow:
+    0 0 0 1px #cfc6b3,
+    0 10px 28px rgba(0, 0, 0, 0.35);
+  font-family: var(--doc);
+}
+.form-head {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding-bottom: 10px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--form-line);
 }
 .field {
   display: grid;
-  grid-template-columns: 2.6em 1fr;
+  grid-template-columns: 4.2em 1fr;
   gap: 8px;
   align-items: baseline;
-  padding: 5px 0 4px;
-  border-bottom: 1px solid var(--line);
+  padding: 9px 0 7px;
+  border-bottom: 1px solid var(--form-line);
 }
 .field .k {
+  font-family: var(--font);
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.5);
+  color: #6a6356;
 }
 .field .v {
   border: 0;
   background: transparent;
-  color: #fff;
-  font: 400 14px/1.4 var(--font);
+  color: var(--form-ink);
+  font: 400 15px/1.4 var(--doc);
   padding: 0;
   width: 100%;
   outline: none;
 }
-.vis {
-  margin-top: 7px;
+.field .v:focus {
+  box-shadow: 0 1px 0 0 #1c1914;
+}
+.form-note {
+  margin: 10px 0 0;
+  font-family: var(--font);
   font-size: 11px;
-  color: var(--muted);
-}
-.vis.private { color: var(--private); }
-
-/* —— Cursor 感：對話框之間的系統區塊（不是對話泡） —— */
-.sys {
-  align-self: stretch;
-  width: 100%;
-  background: var(--sys);
-  border: 1px solid #2a2a2a;
-  border-radius: 10px;
-  padding: 10px 12px 11px;
-}
-.sys.soft { background: transparent; }
-.sys.dim { opacity: 0.78; }
-.sys-kicker {
-  font-size: 11px;
-  letter-spacing: 0.04em;
-  color: var(--accent);
-  margin-bottom: 4px;
-  font-weight: 600;
-}
-.sys-title {
-  margin: 0;
-  font-size: 14px;
-  font-weight: 600;
-  color: #f0f0f0;
-}
-.sys-body {
-  margin: 4px 0 0;
-  font-size: 13px;
-  line-height: 1.45;
-  color: #bdbdbd;
-  font-family: var(--mono);
-}
-.sys-meta {
-  margin-top: 8px;
-  font-size: 12px;
-  line-height: 1.4;
-  color: var(--muted);
-}
-.sys-chip {
-  display: inline-block;
-  margin-top: 8px;
-  padding: 5px 9px;
-  border-radius: 8px;
-  background: var(--accent-dim);
-  color: #ddd6fe;
-  font-size: 12px;
-  font-weight: 600;
+  color: #8a8273;
 }
 
-/* —— 底欄：只打字＋可見範圍 —— */
 .dock {
   border-top: 1px solid #242424;
   background: #121212;

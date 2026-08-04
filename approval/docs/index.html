@@ -3,89 +3,83 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Approval｜對話＋系統時間軸</title>
+  <title>Approval｜申請單為主角</title>
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
   <div class="phone">
     <header class="top">
       <h1>簽核｜請假申請</h1>
-      <p>對話框＋中間系統互動（Cursor 感）</p>
+      <p>只有申請單欄位有框 · 其餘純對話</p>
     </header>
 
-    <main class="feed" id="feed" aria-label="對話與系統時間軸">
+    <main class="feed" id="feed">
 
-      <!-- 人：對話框 -->
-      <article class="bubble me">
-        <div class="meta"><strong>王小明</strong><time>17:02</time></div>
+      <!-- 人：純對話 -->
+      <article class="say me">
+        <div class="who"><strong>王小明</strong><time>17:02</time></div>
         <p>請幫我簽一下，明天上午請假。</p>
-        <div class="fields">
-          <label class="field">
-            <span class="k">假別</span>
-            <input class="v" value="事假" />
-          </label>
-          <label class="field">
-            <span class="k">日期</span>
-            <input class="v" value="明天（1 天）" />
-          </label>
-        </div>
-        <div class="vis public">公開</div>
       </article>
 
-      <!-- 系統：穿插在對話框之間 -->
-      <section class="sys" aria-label="系統互動">
-        <div class="sys-kicker">系統</div>
-        <p class="sys-title">已排程郵件通知</p>
-        <p class="sys-body">寄給 Approver1 林主管 · 主旨「請假待簽」</p>
-        <div class="sys-meta">該關權限：可簽核、可退回、可換代理人 · 申請人欄位送出後唯讀</div>
+      <!-- 主角：申請單欄位（唯一有框） -->
+      <section class="form-card" aria-label="申請單欄位">
+        <header class="form-head">請假申請單</header>
+        <label class="field">
+          <span class="k">假別</span>
+          <input class="v" value="事假" />
+        </label>
+        <label class="field">
+          <span class="k">日期</span>
+          <input class="v" value="明天（1 天）" />
+        </label>
+        <label class="field">
+          <span class="k">代理人</span>
+          <input class="v" value="陳美玲" />
+        </label>
+        <p class="form-note">預設欄位／預設值，可直接改</p>
       </section>
 
-      <section class="sys" aria-label="版本敘述">
-        <div class="sys-kicker">版本</div>
-        <p class="sys-title">Edited 2 fields</p>
-        <p class="sys-body">假別：特休 → 事假 · 日期：未填 → 明天（1 天）</p>
-        <div class="sys-chip">查看變更說明</div>
-      </section>
+      <!-- 系統：也是純對話文字，像文件敘述 -->
+      <article class="say sys">
+        <div class="who"><strong>系統</strong><time>17:02</time></div>
+        <p>已排程郵件通知林主管。此關可簽核、可退回、可換代理人；申請人欄位送出後改為唯讀。</p>
+      </article>
 
-      <section class="sys soft" aria-label="簽核關卡">
-        <div class="sys-kicker">關卡</div>
-        <p class="sys-title">Approver1 · 林主管</p>
-        <p class="sys-body">狀態：等待申請人送出</p>
-        <div class="sys-meta">可見範圍：公開欄位 · 看不到「僅自己看」內容</div>
-      </section>
+      <article class="say sys">
+        <div class="who"><strong>系統</strong><time>17:02</time></div>
+        <p>變更說明：假別由「特休」改為「事假」；日期由空白改為「明天（1 天）」。</p>
+      </article>
 
-      <section class="sys soft" aria-label="簽核關卡">
-        <div class="sys-kicker">關卡</div>
-        <p class="sys-title">Approver2 · 嚴協理</p>
-        <p class="sys-body">狀態：等待前關完成</p>
-        <div class="sys-meta">該關權限：可簽核、可駁回 · 不可改假別</div>
-      </section>
+      <article class="say sys">
+        <div class="who"><strong>Approver1</strong><time>17:10</time></div>
+        <p>林主管 · 等待申請人送出。可見公開欄位，看不到「僅自己看」內容。</p>
+      </article>
 
-      <!-- 人：對話框 -->
-      <article class="bubble me">
-        <div class="meta"><strong>王小明</strong><time>17:12</time></div>
+      <article class="say sys">
+        <div class="who"><strong>Approver2</strong><time>17:10</time></div>
+        <p>嚴協理 · 等待前關完成。此關可簽核、可駁回，不可改假別。</p>
+      </article>
+
+      <article class="say me">
+        <div class="who"><strong>王小明</strong><time>17:12</time></div>
         <p>有，陳美玲已同意代理。</p>
-        <div class="vis public">公開</div>
       </article>
 
-      <section class="sys" aria-label="系統互動">
-        <div class="sys-kicker">系統</div>
-        <p class="sys-title">代理人確認已寫入共用區</p>
-        <p class="sys-body">agent = 陳美玲 · 通知已抄送代理人信箱</p>
-      </section>
+      <article class="say sys">
+        <div class="who"><strong>系統</strong><time>17:12</time></div>
+        <p>代理人已寫入共用區，並抄送陳美玲信箱。</p>
+      </article>
 
-      <!-- 人：僅自己看 -->
-      <article class="bubble me private">
-        <div class="meta"><strong>王小明</strong><time>17:13</time></div>
+      <article class="say me private">
+        <div class="who"><strong>王小明</strong><time>17:13</time></div>
         <p>醫生回診，先跟自己留個底。</p>
-        <div class="vis private">僅自己看</div>
+        <div class="mark">僅自己看</div>
       </article>
 
-      <section class="sys dim" aria-label="系統互動">
-        <div class="sys-kicker">隱私</div>
-        <p class="sys-title">此則未進共用庫</p>
-        <p class="sys-body">僅申請人個人空間可見 · 簽核畫面不渲染此格</p>
-      </section>
+      <article class="say sys">
+        <div class="who"><strong>系統</strong><time>17:13</time></div>
+        <p>上一則未進共用庫，只存在申請人個人空間。</p>
+      </article>
 
     </main>
 
