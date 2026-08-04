@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Approval｜請假申請書</title>
-  <link rel="stylesheet" href="./styles.css?v=clean1" />
+  <link rel="stylesheet" href="./styles.css?v=read1" />
 </head>
 <body>
   <div class="stage">
@@ -15,25 +15,16 @@
       <section class="block">
         <p class="para">
           申請人
-          <input class="blank" data-bind="applicant" value="王小明" />
+          <input class="blank" data-bind="applicant" value="王小明" size="2" />
           因
-          <input class="blank" data-bind="leave_type" value="事假" />
+          <input class="blank" data-bind="leave_type" value="事假" size="2" />
           ，自
-          <input class="blank wide" data-bind="leave_date" value="明天" />
+          <input class="blank" data-bind="leave_date" value="明天" size="2" />
           起請假
-          <input class="blank narrow" data-bind="days" value="1" />
+          <input class="blank" data-bind="days" value="1" size="2" />
           天，代理人為
-          <input class="blank" data-bind="agent" value="陳美玲" />
+          <input class="blank" data-bind="agent" value="陳美玲" size="2" />
           。
-        </p>
-      </section>
-
-      <section class="block">
-        <p class="para narrate">
-          系統已排程郵件通知簽核人。此關可簽核、可退回、可換代理人；申請欄位送出後改為唯讀。
-        </p>
-        <p class="para narrate">
-          變更紀錄：假別由「特休」改為「事假」；日期由空白改為「明天」；天數為「1」。
         </p>
       </section>
 
@@ -76,6 +67,6 @@
 
     </article>
   </div>
-  <script src="./app.js?v=clean1"></script>
+  <script src="./app.js?v=read1"></script>
 </body>
 </html>

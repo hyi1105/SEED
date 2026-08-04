@@ -154,31 +154,29 @@ table.inkan-table td {
 
 .blank {
   display: inline-block;
-  min-width: 4.5em;
+  width: 2.2em; /* 預設約兩字寬，JS 會依內容拉長 */
+  min-width: 2.2em;
   max-width: 100%;
   border: 0;
   border-bottom: 1px solid var(--line);
   background: transparent;
   color: var(--blank);
   font: inherit;
-  font-size: 16px;
+  font-size: 1em;
   line-height: 1.4;
-  padding: 0 4px 1px;
-  margin: 0 2px;
+  padding: 0 2px 1px;
+  margin: 0 1px;
   text-align: center;
   outline: none;
   vertical-align: baseline;
+  box-sizing: content-box;
 }
-.blank.narrow { min-width: 2.2em; }
-.blank.wide { min-width: 7em; }
-.blank.wider { min-width: 10em; text-align: left; }
 .blank:focus {
   border-bottom-color: var(--accent);
   background: rgba(61, 74, 143, 0.06);
 }
 .blank::placeholder {
   color: #a09888;
-  font-size: 14px;
 }
 
 @media (max-width: 640px) {
