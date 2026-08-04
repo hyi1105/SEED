@@ -4,10 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Approval</title>
-  <link rel="stylesheet" href="./styles.css?v=log1" />
+  <link rel="stylesheet" href="./styles.css?v=alr5guide1" />
 </head>
 <body>
-  <!-- 畫面殼：不含申請單文案；全部由 document JSON 渲染 -->
+  <!-- 畫面殼：不含申請單文案；全部由 document JSON／ALR5 標準渲染 -->
   <div class="app-shell">
     <nav class="view-tabs" id="view-tabs" aria-label="view"></nav>
     <div class="stage" id="view-form" hidden></div>
@@ -15,7 +15,15 @@
       <textarea class="json-editor" id="json-editor" spellcheck="false" aria-label="JSON"></textarea>
       <p class="json-msg" id="json-msg" hidden></p>
     </div>
+    <div class="guide-stage" id="view-alr5" hidden>
+      <div class="guide-toolbar">
+        <button type="button" class="guide-btn" id="btn-copy-ai">複製給 AI（標準互通全文）</button>
+        <button type="button" class="guide-btn" id="btn-copy-json">複製 alr5-standard.json</button>
+        <span class="guide-badge" id="interop-badge">互通檢查未完成</span>
+      </div>
+      <div class="guide-body" id="guide-body"></div>
+    </div>
   </div>
-  <script src="./app.js?v=log1"></script>
+  <script src="./app.js?v=alr5guide1"></script>
 </body>
 </html>

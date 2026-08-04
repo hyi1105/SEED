@@ -8,7 +8,9 @@ note: 口頭對談整理進本檔；以 diff 確認。尚未口頭確認的區�
 # ALR5 簽核系統
 
 > 本檔是 ALR5 的**規格單一來源**：流程、規則、角色、權限、通知信、動作。  
-> 畫面／API／JSON 實作以此為準；有衝突時先改本檔再改程式。
+> 畫面／API／JSON 實作以此為準；有衝突時先改本檔再改程式。  
+> **標準化互通（可貼給 AI）：** `docs/approval/alr5-standard.json` ＋ `docs/approval/ALR5標準互通.md`；網頁按鈕「ALR5功能」。  
+> **互通原則：** `interop_checklist` 全部必填通過 → JSON 可互通。
 
 ---
 
@@ -722,3 +724,4 @@ creator 開單／填單（可代填；requester 可為另一人）
 | 2026-08-04 | 狀態五態＋動作 SAVE／Submit／Approve／Reject／Return／Change／Cancel／Notify；通知客製與 notification_logs |
 | 2026-08-04 | `current_level`：空／0／1…／9999／-1；Archive；Delegate 層層回來；Cancel 後可重送；cancelled 正式列入 |
 | 2026-08-04 | 流程外指派代理人：起迄時段、未簽改代簽、`comment1_sys` 備註原簽核者、系統欄非 admin 不可編 |
+| 2026-08-04 | 標準化：alr5-standard.json＋ALR5標準互通.md＋網頁「ALR5功能」與互通檢查清單 |

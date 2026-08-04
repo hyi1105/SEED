@@ -103,6 +103,183 @@ html, body {
   color: #d08080;
 }
 
+/* ALR5 功能導覽 */
+.guide-stage {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 12px 12px 40px;
+  background: #141414;
+}
+.guide-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 14px;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  padding: 8px 0;
+  background: #141414;
+}
+.guide-btn {
+  appearance: none;
+  border: 1px solid #3a3a3a;
+  background: #222;
+  color: #e8e4d8;
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.guide-badge {
+  font-size: 12px;
+  color: #c9a227;
+  margin-left: auto;
+}
+.guide-badge.ok {
+  color: #6bcf8e;
+}
+.guide-hero h1 {
+  margin: 0 0 6px;
+  font-size: 22px;
+  color: #f3efe6;
+}
+.guide-ver {
+  margin: 0 0 8px;
+  font-size: 12px;
+  color: #8a8a8a;
+}
+.guide-lead {
+  margin: 0 0 18px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: #cfcfcf;
+  max-width: 52rem;
+}
+.guide-sec {
+  margin-bottom: 28px;
+}
+.guide-sec h2 {
+  margin: 0 0 12px;
+  font-size: 16px;
+  color: #f0eadc;
+  letter-spacing: 0.04em;
+}
+.guide-note {
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: #9a9a9a;
+}
+.feat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 10px;
+}
+.feat-card {
+  border: 1px solid #2e2e2e;
+  border-radius: 10px;
+  padding: 12px 14px;
+  background: #1a1a1a;
+}
+.feat-card h3 {
+  margin: 0 0 8px;
+  font-size: 14px;
+  color: #f7f3ea;
+}
+.feat-scenario {
+  margin: 0 0 8px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #d2cbb8;
+}
+.feat-card ul {
+  margin: 0 0 8px;
+  padding-left: 1.1em;
+  font-size: 12px;
+  color: #a8a8a8;
+  line-height: 1.45;
+}
+.feat-json {
+  margin: 0;
+  font-size: 11px;
+  color: #7a8aaa;
+  word-break: break-all;
+}
+.guide-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  color: #ddd;
+}
+.guide-table th,
+.guide-table td {
+  border: 1px solid #333;
+  padding: 8px 10px;
+  text-align: left;
+  vertical-align: top;
+}
+.guide-table th {
+  background: #1e1e1e;
+  color: #cfcfcf;
+}
+.guide-table code {
+  color: #9ec5ff;
+}
+.check-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.check-list label {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  font-size: 13px;
+  color: #d8d8d8;
+  line-height: 1.45;
+  cursor: pointer;
+}
+.check-list input {
+  margin-top: 3px;
+}
+.q-list {
+  margin: 0;
+  padding-left: 1.2em;
+  color: #d8d8d8;
+  font-size: 13px;
+  line-height: 1.55;
+}
+.q-list li {
+  margin-bottom: 8px;
+}
+.sev {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 1px 6px;
+  border-radius: 4px;
+  margin-right: 6px;
+}
+.sev-high {
+  background: #5a2020;
+  color: #ffb4b4;
+}
+.sev-medium {
+  background: #5a4a20;
+  color: #ffe0a0;
+}
+.sev-low {
+  background: #2a3a4a;
+  color: #a8c4e0;
+}
+
 /* —— A4 紙 —— */
 .a4 {
   width: min(210mm, 100%);

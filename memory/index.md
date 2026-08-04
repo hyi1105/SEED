@@ -10,6 +10,7 @@
 
 ## 場次
 
+- 2026-08-04 — ALR5功能分頁與標準互通檢查 — 標籤：SEED、Approval、ALR5、標準 — [sessions/2026-08-04-alr5-standard-guide.md](sessions/2026-08-04-alr5-standard-guide.md)
 - 2026-08-04 — 建立 ALR5 簽核系統規格檔 — 標籤：SEED、Approval、ALR5、規格 — [sessions/2026-08-04-alr5-spec.md](sessions/2026-08-04-alr5-spec.md)
 - 2026-08-04 — 下拉修復＋操作 log（GitHub diff）— 標籤：SEED、Approval、JSON、log — [sessions/2026-08-04-approval-action-log.md](sessions/2026-08-04-approval-action-log.md)
 - 2026-08-04 — 申請單全面 JSON 化（畫面純渲染）— 標籤：SEED、Approval、JSON、API — [sessions/2026-08-04-approval-json-view.md](sessions/2026-08-04-approval-json-view.md)

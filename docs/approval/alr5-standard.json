@@ -1,0 +1,355 @@
+{
+  "standard_id": "ALR5",
+  "standard_version": "0.1.0",
+  "lang": "zh-Hant",
+  "title": "ALR5 簽核標準（功能／情境／JSON 互通）",
+  "purpose": "讓不同系統用同一套欄位與檢查清單交換申請單 JSON；畫面「ALR5功能」供人一眼看懂；本檔可整份貼給新 AI 實作同等互傳。",
+  "ai_prompt_prefix": "你是實作 ALR5 簽核互通的工程 Agent。請嚴格依下列 standard_version 與 json_contract／interop_checklist 實作。狀態、current_level、動作 id 不得自創別名（顯示字眼除外）。有 open_questions 未決項不得臆造，應標 TODO。產出必須能通過 interop_checklist 全部 required=true 的檢查。",
+  "status_model": {
+    "field": "system.status",
+    "values": [
+      { "id": "new", "label": "New", "meaning": "新申請（尚未暫存）", "typical_current_level": null },
+      { "id": "draft", "label": "Draft", "meaning": "已暫存，或送出後退回在建立者／需求人手上", "typical_current_level": 0 },
+      { "id": "in_process", "label": "In Process", "meaning": "已送出等待簽核", "typical_current_level": "1..n" },
+      { "id": "completed", "label": "Completed", "meaning": "全部簽核過或無簽核人自動完成", "typical_current_level": 9999 },
+      { "id": "denied", "label": "Denied", "meaning": "有人拒絕", "typical_current_level": "TBD" },
+      { "id": "cancelled", "label": "Cancelled", "meaning": "已取消", "typical_current_level": -1 }
+    ]
+  },
+  "current_level_model": {
+    "field": "system.current_level",
+    "values": [
+      { "level": null, "meaning": "申請狀態（新單）", "holders": ["creator", "requester"], "actions": ["save", "submit"] },
+      { "level": 0, "meaning": "在 creator／requester 手上（已存或被退回）", "holders": ["creator", "requester"], "actions": ["save", "archive"] },
+      { "level": "1..n", "meaning": "簽核關", "holders": ["current_approver"], "actions": ["approve", "reject", "return", "cancel", "change", "delegate"] },
+      { "level": 9999, "meaning": "完成", "holders": [], "actions": ["super_user_fill", "admin_amend"] },
+      { "level": -1, "meaning": "已取消", "holders": [], "actions": ["resubmit"] }
+    ],
+    "notes": [
+      "Cancel 時另允許 creator／requester／admin 按 cancel（不限當階）",
+      "Cancel 後 creator／requester／admin 可重送（resubmit／submit）"
+    ]
+  },
+  "roles": {
+    "document_fields": [
+      { "id": "creator", "label": "建立者", "scenario": "助理代填；可與 requester 不同" },
+      { "id": "requester", "label": "需求人", "scenario": "真正有需求的業務" },
+      { "id": "cc", "label": "副本", "scenario": "送出後通知；可空／預設；人／群／mail", "editable": true },
+      { "id": "cc_system", "label": "系統副本", "scenario": "送出後通知；Admin 鎖定", "editable": false },
+      { "id": "stages[].approvers", "label": "簽核人", "scenario": "每關一人或多人；空關跳過" },
+      { "id": "stages[].stage_notify", "label": "關卡通過通知", "scenario": "該關同意往下時通知備料等" },
+      { "id": "fyi", "label": "結案知會", "scenario": "整張完成后通知；可空／預設", "editable": true },
+      { "id": "fyi_system", "label": "系統結案知會", "scenario": "整張完成后；Admin 鎖定", "editable": false }
+    ],
+    "system_roles": [
+      { "id": "admin", "label": "表單管理員", "scenario": "建表、全控含已完成單；編輯必留版本" },
+      { "id": "super_user", "label": "進階經辦", "scenario": "結案後填專門欄（如發票號碼）" },
+      { "id": "audit", "label": "稽核", "scenario": "只能看，不能改不能簽" },
+      { "id": "current_approver", "label": "當階簽核者", "scenario": "current_level 對應關卡上輪到的人" }
+    ]
+  },
+  "features": [
+    {
+      "id": "skip_empty_stage",
+      "title": "空關跳過",
+      "scenario": "Approver1 沒人 → 直接找 Approver2；一路跳到有人的關。",
+      "rules": ["關卡所有簽核人皆空 → 整關跳過", "不把空關當成待簽"],
+      "json": ["stages[].approvers", "system.current_level"]
+    },
+    {
+      "id": "auto_complete_no_approver",
+      "title": "無簽核人自動完成",
+      "scenario": "整張單所有簽核關都沒人 → Submit 後直接 Completed（current_level=9999）。",
+      "rules": ["送出後掃描無任何有值關 → status=completed, current_level=9999", "仍發 fyi／fyi_system（若有）"],
+      "json": ["system.status", "system.current_level", "fyi", "fyi_system"]
+    },
+    {
+      "id": "parallel_pass_rule",
+      "title": "關內平行簽核 all／any",
+      "scenario": "一關多人：要全部同意才過，或其中一人同意就過。",
+      "rules": ["pass_rule=all：全員 approve", "pass_rule=any：一人 approve 即過關", "過關時本關所有人收通知"],
+      "json": ["stages[].pass_rule", "stages[].approvers"]
+    },
+    {
+      "id": "stage_notify",
+      "title": "關卡通過通知（備料）",
+      "scenario": "課長一同意，倉管就先備料，不必等整張完成。",
+      "rules": ["Approve 成功且本關通過 → 通知該關 stage_notify", "與 cc／fyi 時機不同"],
+      "json": ["stages[].stage_notify"]
+    },
+    {
+      "id": "actions_core",
+      "title": "核心動作 SAVE／Submit／Approve／Reject／Return／Change／Cancel／Notify",
+      "scenario": "暫存、送出、同意、拒絕、退回、換人、取消、手動通知——依 current_level 決定誰能按。",
+      "rules": [
+        "SAVE：有編輯權；常使 new→draft、level→0",
+        "Submit：通常 creator／requester；admin 可代送",
+        "Approve／Reject／Return／Change／Delegate：level 1..n 當階",
+        "Cancel：當階＋creator／requester／admin → level=-1",
+        "Notify：手動寄信並寫 notification_logs"
+      ],
+      "json": ["actions[]", "logs[]", "notification_logs[]", "system.current_level"]
+    },
+    {
+      "id": "reject_notify_policy",
+      "title": "Reject 通知策略",
+      "scenario": "拒件一定要讓建立者與需求人知道；CopyTo／已通知過的人要不要收，看 Admin。",
+      "rules": ["必通知 creator＋requester", "cc／已收過的 notify：Admin 設定", "Admin 可允許部分階層當下改通知範圍，或禁止改"],
+      "json": ["mail_templates", "notification_logs[]"]
+    },
+    {
+      "id": "return_flow",
+      "title": "Return 退回",
+      "scenario": "資料有問題，退回上一階／上上階／建立者／需求人；改完從那一階往下簽。",
+      "rules": ["退到 creator／requester → current_level=0", "從退回點往下繼續"],
+      "json": ["system.current_level", "logs[]"]
+    },
+    {
+      "id": "delegate",
+      "title": "單內委派 Delegate",
+      "scenario": "缺一份資料，臨時請同事確認；確認完回到原當階簽核者。可再委派，層層回來。",
+      "rules": ["Admin 決定該階能不能委派", "與 Change／指派代理人不同"],
+      "json": ["delegation_stack[]"]
+    },
+    {
+      "id": "proxy_assignment",
+      "title": "流程外指派代理人",
+      "scenario": "請假／長假：設定代理起迄；期間所有未簽關改成代理人；系統欄備註原簽核者。",
+      "rules": [
+        "僅尚未簽到的關改派",
+        "已簽不動",
+        "例：comment1_sys 備註原簽核者",
+        "系統欄除 admin 不可編",
+        "可設 start_at／end_at"
+      ],
+      "json": ["proxy_assignment", "comment1_sys"]
+    },
+    {
+      "id": "archive_soft_delete",
+      "title": "Archive 軟刪除",
+      "scenario": "草稿不想用了，軟刪掉，不是 Cancel。",
+      "rules": ["current_level=0 時 creator／requester 可 Archive"],
+      "json": ["archived"]
+    },
+    {
+      "id": "visibility",
+      "title": "誰看得到單",
+      "scenario": "正常只有單上的人看得到；admin／super_user／audit 另有範圍。",
+      "rules": ["參與者：creator、requester、cc、fyi、approvers", "admin／super_user／audit 例外"],
+      "json": ["creator", "requester", "cc", "fyi", "stages"]
+    },
+    {
+      "id": "admin_versioning",
+      "title": "Admin 全控＋版本／簽核後異動",
+      "scenario": "Admin 改已完成單必須留版；印章中間與 Completed 後要明顯看出有異動。",
+      "rules": ["每次編輯留 versions／logs", "post_approval_amended 旗標", "畫面紅前綠後 diff"],
+      "json": ["logs[]", "versions[]", "post_approval_amended"]
+    },
+    {
+      "id": "super_user_fill",
+      "title": "Super user 結案後補欄",
+      "scenario": "退貨單簽完才有發票，super_user 回填發票號碼。",
+      "rules": ["僅 editable_by 含 super_user 的欄", "結案後仍可編"],
+      "json": ["fields.*.editable_by"]
+    },
+    {
+      "id": "mail_custom",
+      "title": "通知信客製與可追溯",
+      "scenario": "每人收到的信可客製（Admin 決定能不能改）；流程上能看見信的內容；每次寄出都有 log。",
+      "rules": ["mail_templates", "notification_logs 含時間、內容、類型 process／overdue／manual"],
+      "json": ["mail_templates[]", "notification_logs[]"]
+    },
+    {
+      "id": "doc_no_version",
+      "title": "單號與版本後綴",
+      "scenario": "doc_no 末尾 .1／.2 代表申請單版本。",
+      "rules": ["格式含系統名＋人＋時間＋隨機＋.N"],
+      "json": ["system.doc_no", "system.doc_version"]
+    }
+  ],
+  "json_contract": {
+    "encoding": "UTF-8",
+    "root_type": "object",
+    "required_keys": [
+      "schema_version",
+      "meta",
+      "creator",
+      "requester",
+      "system",
+      "stages",
+      "status_model_ref"
+    ],
+    "recommended_keys": [
+      "cc",
+      "cc_system",
+      "fyi",
+      "fyi_system",
+      "actions",
+      "logs",
+      "notification_logs",
+      "proxy_assignment",
+      "post_approval_amended",
+      "actor"
+    ],
+    "system_required_keys": [
+      "status",
+      "current_level",
+      "doc_no",
+      "doc_version"
+    ],
+    "status_enum": ["new", "draft", "in_process", "completed", "denied", "cancelled"],
+    "action_enum": [
+      "save",
+      "submit",
+      "resubmit",
+      "approve",
+      "reject",
+      "return",
+      "change",
+      "delegate",
+      "cancel",
+      "notify",
+      "archive",
+      "admin_amend",
+      "super_user_fill"
+    ],
+    "pass_rule_enum": ["all", "any"],
+    "party_list_shape": {
+      "people": ["string"],
+      "groups": ["string"],
+      "emails": ["string"]
+    },
+    "minimal_document_example": {
+      "schema_version": "ALR5/0.1.0",
+      "status_model_ref": "ALR5/0.1.0",
+      "meta": { "system_name": "LEAVE", "form_id": "leave_request_v1", "title": "請假申請書" },
+      "creator": { "id": "u_assistant", "name": "助理小美" },
+      "requester": { "id": "u_sales", "name": "業務阿明" },
+      "cc": { "people": [], "groups": [], "emails": [] },
+      "cc_system": { "people": [], "groups": [], "emails": [] },
+      "fyi": { "people": [], "groups": [], "emails": [] },
+      "fyi_system": { "people": [], "groups": [], "emails": [] },
+      "stages": [
+        {
+          "id": "stage_1",
+          "pass_rule": "all",
+          "approvers": [{ "person": { "id": "u_mgr", "name": "林課長" }, "editable": true, "signed": false }],
+          "stage_notify": { "people": [], "groups": [], "emails": [] }
+        }
+      ],
+      "system": {
+        "status": "in_process",
+        "current_level": 1,
+        "doc_no": "LEAVE業務阿明20260804170000AB1.1",
+        "doc_version": 1,
+        "submitted_at": "2026-08-04 17:00:00",
+        "completed_at": null
+      },
+      "logs": [],
+      "notification_logs": [],
+      "post_approval_amended": false
+    }
+  },
+  "interop_checklist": [
+    { "id": "chk_standard_version", "required": true, "label": "宣告 schema_version／status_model_ref 對應 ALR5/0.1.0（或相容對照表）" },
+    { "id": "chk_status_enum", "required": true, "label": "system.status 僅使用 new／draft／in_process／completed／denied／cancelled" },
+    { "id": "chk_level_semantics", "required": true, "label": "current_level：空=新申請；0=creator／requester；1..=簽核；9999=完成；-1=取消" },
+    { "id": "chk_creator_requester", "required": true, "label": "具 creator 與 requester；允許同一人或不同人（代填）" },
+    { "id": "chk_stages_pass_rule", "required": true, "label": "每一關有 pass_rule=all|any；空 approvers 視為可跳過" },
+    { "id": "chk_skip_empty", "required": true, "label": "實作空關跳過與「全員空白→自動 completed＋9999」" },
+    { "id": "chk_actions_by_level", "required": true, "label": "動作可用性依 current_level 與角色（見 current_level_model）" },
+    { "id": "chk_reject_notify", "required": true, "label": "Reject 必通知 creator＋requester；其餘依 Admin 策略" },
+    { "id": "chk_cancel_resubmit", "required": true, "label": "Cancel→level=-1；之後 creator／requester／admin 可重送" },
+    { "id": "chk_logs_diff", "required": true, "label": "按鈕動作寫 logs（opened／saved／changes）；異動可紅前綠後呈現" },
+    { "id": "chk_notification_logs", "required": true, "label": "通知寫入 notification_logs（時間、內容、類型）" },
+    { "id": "chk_system_fields_lock", "required": true, "label": "*_system／comment*_sys 等系統欄非 admin 不可編" },
+    { "id": "chk_proxy_optional", "required": false, "label": "若支援指派代理人：起迄＋未簽改派＋備註原簽核者" },
+    { "id": "chk_delegate_optional", "required": false, "label": "若支援 Delegate：層層確認回到原當階；Admin 可關該階" },
+    { "id": "chk_post_approval_flag", "required": true, "label": "簽核完成後異動抬 post_approval_amended，且 UI 可辨識" },
+    { "id": "chk_party_list_shape", "required": true, "label": "名單欄位使用 {people,groups,emails} 形狀" }
+  ],
+  "open_questions": [
+    {
+      "id": "q_denied_level",
+      "severity": "high",
+      "question": "Denied 時 current_level 要停在拒件那一關、回到 0、還是另定特殊值？"
+    },
+    {
+      "id": "q_reject_any_all",
+      "severity": "high",
+      "question": "pass_rule=any 時，一人 Reject 是整單 Denied，還是等其他人、或可被其他人 Approve 蓋過？"
+    },
+    {
+      "id": "q_return_invalidate",
+      "severity": "high",
+      "question": "Return 到中間關後，該關之後已簽過的關是否全部作廢重簽？"
+    },
+    {
+      "id": "q_null_vs_0",
+      "severity": "medium",
+      "question": "第一次 SAVE 前 current_level 是 null 還是直接 0？空與 0 的嚴格邊界？"
+    },
+    {
+      "id": "q_cancel_doc_version",
+      "severity": "medium",
+      "question": "Cancel 後重送：沿用同一 doc_no 升 .2，還是新單號？"
+    },
+    {
+      "id": "q_proxy_who_sets",
+      "severity": "medium",
+      "question": "指派代理人：本人可設、需主管核准、還是僅 admin？"
+    },
+    {
+      "id": "q_proxy_end_revert",
+      "severity": "medium",
+      "question": "代理結束後，尚未簽的關是否自動改回原簽核者？"
+    },
+    {
+      "id": "q_cc_system_visibility",
+      "severity": "medium",
+      "question": "cc_system／fyi_system／stage_notify 收件人是否算「單上的人」而有權打開該單？"
+    },
+    {
+      "id": "q_comment1_sys_name",
+      "severity": "low",
+      "question": "代簽備註原簽核者的系統欄正式 id 是否固定為 comment1_sys，還是可配置？"
+    },
+    {
+      "id": "q_archive_vs_cancel",
+      "severity": "low",
+      "question": "Archive 軟刪後能否還原？與 Cancel 在列表／報表如何區分？"
+    },
+    {
+      "id": "q_parallel_delegate",
+      "severity": "medium",
+      "question": "平行簽核 all／any 關卡上，其中一人 Delegate，其他人是否仍可簽？委派中的關算不算通過條件的一員？"
+    },
+    {
+      "id": "q_change_signed",
+      "severity": "low",
+      "question": "admin 能否修改「已簽核」那格的人／結果？（建議僅走版本異動）"
+    }
+  ],
+  "logic_risk_warnings": [
+    {
+      "id": "risk_double_complete",
+      "warning": "空關跳過＋any 平行若實作不當，可能重複觸發 completed 通知或跳過仍有人的關。"
+    },
+    {
+      "id": "risk_proxy_vs_change",
+      "warning": "代理改派與單上 Change 同時發生時，以誰為準？結束代理後是否覆蓋使用者手動 Change？"
+    },
+    {
+      "id": "risk_return_notify_storm",
+      "warning": "Return／Reject／Cancel 若通知「所有曾收件者」可能造成通知風暴；需 Admin 策略與去重。"
+    },
+    {
+      "id": "risk_level_status_desync",
+      "warning": "status 與 current_level 必須成對更新，否則列表篩選會錯（例如 status=in_process 但 level=9999）。"
+    },
+    {
+      "id": "risk_delegate_loop",
+      "warning": "層層委派需防環狀委派（A→B→A）。"
+    }
+  ]
+}

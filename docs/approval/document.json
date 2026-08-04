@@ -14,7 +14,8 @@
   "ui": {
     "views": [
       { "id": "form", "label": "申請單畫面" },
-      { "id": "json", "label": "JSON" }
+      { "id": "json", "label": "JSON" },
+      { "id": "alr5", "label": "ALR5功能" }
     ],
     "sys_fields_aria": "系統欄位（報表用）",
     "sys_hint": "doc_no＝系統名＋申請人＋年月日時分秒＋3隨機碼＋.版本（如 .2＝第二版）　current_level：0＝申請人；1＋＝等待各關　completed_at 僅 Completed／Denied",

@@ -20,6 +20,7 @@
       views: [
         { id: "form", label: "申請單畫面" },
         { id: "json", label: "JSON" },
+        { id: "alr5", label: "ALR5功能" },
       ],
       sys_fields_aria: "系統欄位（報表用）",
       sys_hint:
@@ -183,11 +184,19 @@
   /** 本次開啟／上次按鈕後的快照（對應 log.opened） */
   let openedSnapshot = null;
   let openLogId = null;
+  let alr5Standard = null;
+  let alr5Markdown = "";
+  const CHECK_KEY = "alr5.interop.checks.v1";
 
   const els = {
     tabs: document.getElementById("view-tabs"),
     form: document.getElementById("view-form"),
     json: document.getElementById("view-json"),
+    alr5: document.getElementById("view-alr5"),
+    guideBody: document.getElementById("guide-body"),
+    interopBadge: document.getElementById("interop-badge"),
+    btnCopyAi: document.getElementById("btn-copy-ai"),
+    btnCopyJson: document.getElementById("btn-copy-json"),
     editor: document.getElementById("json-editor"),
     msg: document.getElementById("json-msg"),
   };
@@ -928,11 +937,168 @@
     }
   }
 
+  function loadChecks() {
+    try {
+      return JSON.parse(localStorage.getItem(CHECK_KEY) || "{}");
+    } catch {
+      return {};
+    }
+  }
+  function saveChecks(map) {
+    localStorage.setItem(CHECK_KEY, JSON.stringify(map));
+  }
+
+  function updateInteropBadge() {
+    if (!alr5Standard || !els.interopBadge) return;
+    const map = loadChecks();
+    const req = (alr5Standard.interop_checklist || []).filter((c) => c.required);
+    const pass = req.filter((c) => map[c.id]).length;
+    const ok = req.length > 0 && pass === req.length;
+    els.interopBadge.textContent = ok
+      ? `互通檢查通過（${pass}/${req.length}）— JSON 可互通`
+      : `互通檢查 ${pass}/${req.length}（必填項未全過）`;
+    els.interopBadge.classList.toggle("ok", ok);
+  }
+
+  function renderAlr5Guide() {
+    const root = els.guideBody;
+    if (!root || !alr5Standard) return;
+    root.replaceChildren();
+    const s = alr5Standard;
+    const checks = loadChecks();
+
+    const hero = document.createElement("header");
+    hero.className = "guide-hero";
+    hero.innerHTML = `<h1>${s.title || "ALR5"}</h1>
+      <p class="guide-ver">standard_version ${s.standard_version} · 目標：檢查全過即可 JSON 互通</p>
+      <p class="guide-lead">${s.purpose || ""}</p>`;
+    root.appendChild(hero);
+
+    const featSec = document.createElement("section");
+    featSec.className = "guide-sec";
+    featSec.innerHTML = "<h2>功能 → 實際情境</h2>";
+    const grid = document.createElement("div");
+    grid.className = "feat-grid";
+    (s.features || []).forEach((f) => {
+      const card = document.createElement("article");
+      card.className = "feat-card";
+      const h = document.createElement("h3");
+      h.textContent = f.title;
+      const sc = document.createElement("p");
+      sc.className = "feat-scenario";
+      sc.textContent = f.scenario;
+      const ul = document.createElement("ul");
+      (f.rules || []).forEach((r) => {
+        const li = document.createElement("li");
+        li.textContent = r;
+        ul.appendChild(li);
+      });
+      const js = document.createElement("p");
+      js.className = "feat-json";
+      js.textContent = "JSON：" + (f.json || []).join(" · ");
+      card.appendChild(h);
+      card.appendChild(sc);
+      card.appendChild(ul);
+      card.appendChild(js);
+      grid.appendChild(card);
+    });
+    featSec.appendChild(grid);
+    root.appendChild(featSec);
+
+    const levelSec = document.createElement("section");
+    levelSec.className = "guide-sec";
+    levelSec.innerHTML = "<h2>current_level × 誰能按</h2>";
+    const lt = document.createElement("table");
+    lt.className = "guide-table";
+    lt.innerHTML =
+      "<thead><tr><th>level</th><th>意義</th><th>誰</th><th>動作</th></tr></thead>";
+    const tb = document.createElement("tbody");
+    (s.current_level_model?.values || []).forEach((row) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td><code>${row.level === null ? "空" : row.level}</code></td>
+        <td>${row.meaning}</td>
+        <td>${(row.holders || []).join("／") || "—"}</td>
+        <td>${(row.actions || []).join(", ")}</td>`;
+      tb.appendChild(tr);
+    });
+    lt.appendChild(tb);
+    levelSec.appendChild(lt);
+    root.appendChild(levelSec);
+
+    const chkSec = document.createElement("section");
+    chkSec.className = "guide-sec";
+    chkSec.innerHTML =
+      "<h2>互通檢查清單</h2><p class=\"guide-note\">全部「必填」勾選通過後，視為可與 ALR5 JSON 互通。</p>";
+    const list = document.createElement("ul");
+    list.className = "check-list";
+    (s.interop_checklist || []).forEach((c) => {
+      const li = document.createElement("li");
+      const id = `chk_${c.id}`;
+      const label = document.createElement("label");
+      label.htmlFor = id;
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.id = id;
+      cb.checked = !!checks[c.id];
+      cb.addEventListener("change", () => {
+        const m = loadChecks();
+        m[c.id] = cb.checked;
+        saveChecks(m);
+        updateInteropBadge();
+      });
+      const span = document.createElement("span");
+      span.innerHTML = `${c.required ? "<strong>必填</strong> " : "<em>可選</em> "}${c.label}`;
+      label.appendChild(cb);
+      label.appendChild(span);
+      li.appendChild(label);
+      list.appendChild(li);
+    });
+    chkSec.appendChild(list);
+    root.appendChild(chkSec);
+
+    const qSec = document.createElement("section");
+    qSec.className = "guide-sec";
+    qSec.innerHTML = "<h2>請你拍板（欄位／邏輯未決）</h2>";
+    const ql = document.createElement("ol");
+    ql.className = "q-list";
+    (s.open_questions || []).forEach((q) => {
+      const li = document.createElement("li");
+      li.innerHTML = `<span class="sev sev-${q.severity}">${q.severity}</span> ${q.question}`;
+      ql.appendChild(li);
+    });
+    qSec.appendChild(ql);
+    root.appendChild(qSec);
+
+    const riskSec = document.createElement("section");
+    riskSec.className = "guide-sec";
+    riskSec.innerHTML = "<h2>實作易錯／邏輯風險</h2>";
+    const rl = document.createElement("ul");
+    (s.logic_risk_warnings || []).forEach((w) => {
+      const li = document.createElement("li");
+      li.textContent = w.warning;
+      rl.appendChild(li);
+    });
+    riskSec.appendChild(rl);
+    root.appendChild(riskSec);
+
+    updateInteropBadge();
+  }
+
+  async function copyText(text, btn, okLabel) {
+    try {
+      await navigator.clipboard.writeText(text);
+      const old = btn.textContent;
+      btn.textContent = okLabel || "已複製";
+      setTimeout(() => {
+        btn.textContent = old;
+      }, 1600);
+    } catch {
+      btn.textContent = "複製失敗（請手動選取檔案）";
+    }
+  }
+
   function renderTabs() {
-    const views = doc.ui?.views || [
-      { id: "form", label: "申請單畫面" },
-      { id: "json", label: "JSON" },
-    ];
+    const views = ensureViews(doc.ui?.views);
     els.tabs.replaceChildren();
     views.forEach((v) => {
       const btn = document.createElement("button");
@@ -945,22 +1111,56 @@
     });
   }
 
+  function ensureViews(views) {
+    const base = [
+      { id: "form", label: "申請單畫面" },
+      { id: "json", label: "JSON" },
+      { id: "alr5", label: "ALR5功能" },
+    ];
+    const list = Array.isArray(views) ? views.slice() : [];
+    base.forEach((b) => {
+      if (!list.some((x) => x.id === b.id)) list.push(b);
+    });
+    return list;
+  }
+
   function switchView(next) {
-    if (view === "json" && next === "form" && jsonDirty) {
+    if (view === "json" && next !== "json" && jsonDirty) {
       if (!applyJsonFromEditor()) return;
     }
     view = next;
-    const showForm = view === "form";
-    els.form.hidden = !showForm;
-    els.json.hidden = showForm;
+    els.form.hidden = view !== "form";
+    els.json.hidden = view !== "json";
+    if (els.alr5) els.alr5.hidden = view !== "alr5";
     renderTabs();
-    if (!showForm) {
+    if (view === "json") {
       jsonDirty = false;
       els.editor.value = prettyJson();
       showJsonMsg("");
-    } else {
+    } else if (view === "form") {
       renderForm();
+    } else if (view === "alr5") {
+      renderAlr5Guide();
     }
+  }
+
+  if (els.btnCopyAi) {
+    els.btnCopyAi.addEventListener("click", () => {
+      const text =
+        (alr5Standard?.ai_prompt_prefix || "") +
+        "\n\n" +
+        (alr5Markdown || JSON.stringify(alr5Standard, null, 2));
+      copyText(text, els.btnCopyAi, "已複製給 AI");
+    });
+  }
+  if (els.btnCopyJson) {
+    els.btnCopyJson.addEventListener("click", () => {
+      copyText(
+        JSON.stringify(alr5Standard || {}, null, 2),
+        els.btnCopyJson,
+        "已複製 JSON"
+      );
+    });
   }
 
   els.editor.addEventListener("input", () => {
@@ -977,6 +1177,7 @@
     if (!d.meta) d.meta = base.meta;
     if (!d.ui) d.ui = base.ui;
     else d.ui = { ...base.ui, ...d.ui };
+    d.ui.views = ensureViews(d.ui.views);
     if (!d.actor) d.actor = base.actor;
     if (!d.actions) d.actions = base.actions;
     if (!d.statuses) d.statuses = base.statuses;
@@ -1002,12 +1203,31 @@
     let base = loadStored();
     if (!base) {
       try {
-        const res = await fetch("./document.json?v=log1", { cache: "no-store" });
+        const res = await fetch("./document.json?v=alr5guide1", {
+          cache: "no-store",
+        });
         if (res.ok) base = await res.json();
       } catch {
         /* offline */
       }
     }
+    try {
+      const sr = await fetch("./alr5-standard.json?v=alr5guide1", {
+        cache: "no-store",
+      });
+      if (sr.ok) alr5Standard = await sr.json();
+    } catch {
+      /* offline */
+    }
+    try {
+      const mr = await fetch("./ALR5標準互通.md?v=alr5guide1", {
+        cache: "no-store",
+      });
+      if (mr.ok) alr5Markdown = await mr.text();
+    } catch {
+      alr5Markdown = "";
+    }
+
     doc = ensureDocShape(base ? clone(base) : clone(EMBEDDED_DOC));
     persist();
     resetOpenedSnapshot();
