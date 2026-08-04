@@ -15,3 +15,7 @@ status: active
 
 - https://hyi1105.github.io/SEED/approval/
 - 已蓋：紅雙圈印＋APPROVE＋時間；未蓋：虛線待印
+
+## 更新
+
+改成橫向稟議格（協理／課長／代理人／申請），紅圓印＋時間；下位印章向左微傾。

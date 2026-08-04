@@ -113,97 +113,96 @@ html, body {
   color: #3a342c;
   font-size: 15px;
 }
-.hanko-lead { margin-bottom: 14px; }
+.hanko-lead { margin-bottom: 12px; }
 
-/* —— 日式印章框：姓名 · APPROVE 印 · 時間戳 —— */
-.hanko-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 14px;
-  justify-content: flex-start;
-  margin: 4px 0 8px;
-}
-.hanko {
-  margin: 0;
-  width: 112px;
-  border: 1px solid #cfc6b3;
+/* —— 日式稟議印鑑欄（橫格＋紅印，下位向左微傾） —— */
+.inkan-table {
+  width: 100%;
+  border: 1.5px solid #1a1814;
   background: #faf7f0;
-  padding: 8px 8px 10px;
-  text-align: center;
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.6);
+  margin: 0 0 8px;
 }
-.hanko-stage {
-  font-family: var(--font);
-  font-size: 11px;
-  color: var(--muted);
-  margin-bottom: 8px;
-  letter-spacing: 0.06em;
-}
-.hanko-seal {
+.inkan-head,
+.inkan-body {
   display: grid;
-  place-items: center;
-  min-height: 88px;
-  margin-bottom: 8px;
+  grid-template-columns: repeat(4, 1fr);
 }
-.seal-ring {
-  width: 78px;
-  height: 78px;
-  border-radius: 50%;
-  border: 3px double #c43c2c;
-  color: #c43c2c;
+.inkan-head > div {
+  border-right: 1px solid #1a1814;
+  border-bottom: 1px solid #1a1814;
+  text-align: center;
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  padding: 6px 4px;
+  color: #1a1814;
+}
+.inkan-head > div:last-child,
+.inkan-body > div:last-child { border-right: 0; }
+.inkan-cell {
+  border-right: 1px solid #1a1814;
+  min-height: 118px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
-  transform: rotate(-8deg);
-  box-shadow: inset 0 0 0 1px rgba(196, 60, 44, 0.35);
+  gap: 4px;
+  padding: 10px 4px 8px;
+}
+.inkan-stamp {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 2.5px solid #c43c2c;
+  color: #c43c2c;
+  display: grid;
+  place-items: center;
   background:
-    radial-gradient(circle at 30% 28%, rgba(255,255,255,0.25), transparent 45%),
-    rgba(196, 60, 44, 0.06);
-  font-family: "Noto Serif TC", "PMingLiU", "Songti TC", serif;
+    radial-gradient(circle at 32% 30%, rgba(255,255,255,0.28), transparent 42%),
+    rgba(196, 60, 44, 0.07);
+  box-shadow: inset 0 0 0 1px rgba(196, 60, 44, 0.35);
 }
-.seal-ring.empty {
-  border-color: #b0a898;
-  color: #9a9080;
-  box-shadow: inset 0 0 0 1px rgba(150, 140, 120, 0.25);
-  background: transparent;
-  transform: none;
+.inkan-stamp.empty {
   border-style: dashed;
-  border-width: 2px;
+  border-color: #b0a898;
+  color: #b0a898;
+  background: transparent;
+  box-shadow: none;
 }
-.seal-name {
-  font-size: 13px;
+.inkan-name {
+  font-family: "Noto Serif TC", "PMingLiU", "Songti TC", serif;
+  font-size: 18px;
   font-weight: 700;
-  letter-spacing: 0.12em;
-  line-height: 1.15;
+  line-height: 1;
 }
-.seal-mark {
+.inkan-approve {
+  font-family: var(--font);
   font-size: 9px;
   font-weight: 800;
   letter-spacing: 0.04em;
-  margin-top: 2px;
+  color: #c43c2c;
+}
+.inkan-time {
   font-family: var(--font);
-}
-.hanko.done .seal-mark {
-  border-top: 1px solid rgba(196, 60, 44, 0.45);
-  padding-top: 2px;
-}
-.hanko-meta {
-  font-family: var(--font);
-  font-size: 11px;
-  color: #4a453c;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.hanko-person { font-weight: 650; }
-.hanko-meta time {
   font-size: 10px;
-  color: var(--muted);
+  color: #6e675c;
   font-variant-numeric: tabular-nums;
 }
-.hanko-meta time.wait { color: #a09070; }
+.inkan-time.wait { color: #a09070; font-size: 10px; }
+
+/* 向主管（左側）鞠躬式微傾：越右傾越多 */
+.inkan-stamp.tilt-0 { transform: rotate(0deg); }
+.inkan-stamp.tilt-1 { transform: rotate(-7deg); }
+.inkan-stamp.tilt-2 { transform: rotate(-12deg); }
+.inkan-stamp.tilt-3 { transform: rotate(-18deg); }
+
+.inkan-caption {
+  margin: 0;
+  font-family: var(--font);
+  font-size: 11px;
+  color: var(--muted);
+}
 
 .blank {
   display: inline-block;

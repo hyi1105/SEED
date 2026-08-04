@@ -11,7 +11,7 @@
     <header class="bar">
       <div>
         <h1>簽核｜A4 填空文件</h1>
-        <p>段末小框＝未來自己 · 簽核關＝印章框 · 文末＝公開討論</p>
+        <p>段末小框＝未來自己 · 稟議印鑑欄 · 文末＝公開討論</p>
       </div>
       <label class="who">
         我是
@@ -54,55 +54,50 @@
           </p>
         </section>
 
-        <!-- 階層簽核：日式印章框（姓名 · APPROVE 印 · 時間戳） -->
+        <!-- 日式稟議印章欄：職稱橫列＋蓋印格（下位向主管微傾） -->
         <section class="block hanko-block" data-block="stamps">
           <p class="para narrate hanko-lead">
-            簽核階層（各關一印）：
+            簽核印鑑欄
             <button type="button" class="note-ico" data-kind="self" data-block="stamps" aria-label="給未來自己的備註"><span class="count">0</span></button>
           </p>
-          <div class="hanko-row" role="list">
-            <figure class="hanko done" role="listitem" data-stage="1">
-              <figcaption class="hanko-stage">第 1 關</figcaption>
-              <div class="hanko-seal" aria-hidden="true">
-                <span class="seal-ring">
-                  <span class="seal-name">林　主管</span>
-                  <span class="seal-mark">APPROVE</span>
-                </span>
+          <div class="inkan-table" role="table" aria-label="簽核印鑑">
+            <div class="inkan-head" role="row">
+              <div role="columnheader">協理</div>
+              <div role="columnheader">課長</div>
+              <div role="columnheader">代理人</div>
+              <div role="columnheader">申請</div>
+            </div>
+            <div class="inkan-body" role="row">
+              <div class="inkan-cell pending" role="cell">
+                <div class="inkan-stamp tilt-0 empty">
+                  <span class="inkan-name">嚴</span>
+                </div>
+                <time class="inkan-time wait">尚未蓋印</time>
               </div>
-              <div class="hanko-meta">
-                <span class="hanko-person">林主管</span>
-                <time datetime="2026-08-04T10:18:00">2026-08-04 10:18</time>
+              <div class="inkan-cell done" role="cell">
+                <div class="inkan-stamp tilt-1">
+                  <span class="inkan-name">林</span>
+                </div>
+                <div class="inkan-approve">APPROVE</div>
+                <time class="inkan-time" datetime="2026-08-04T10:18:00">08-04 10:18</time>
               </div>
-            </figure>
-
-            <figure class="hanko pending" role="listitem" data-stage="2">
-              <figcaption class="hanko-stage">第 2 關</figcaption>
-              <div class="hanko-seal" aria-hidden="true">
-                <span class="seal-ring empty">
-                  <span class="seal-name">嚴　協理</span>
-                  <span class="seal-mark">待　印</span>
-                </span>
+              <div class="inkan-cell done" role="cell">
+                <div class="inkan-stamp tilt-2">
+                  <span class="inkan-name">陳</span>
+                </div>
+                <div class="inkan-approve">確認</div>
+                <time class="inkan-time" datetime="2026-08-04T09:55:00">08-04 09:55</time>
               </div>
-              <div class="hanko-meta">
-                <span class="hanko-person">嚴協理</span>
-                <time class="wait">尚未蓋印</time>
+              <div class="inkan-cell done" role="cell">
+                <div class="inkan-stamp tilt-3">
+                  <span class="inkan-name">王</span>
+                </div>
+                <div class="inkan-approve">申請</div>
+                <time class="inkan-time" datetime="2026-08-04T09:40:00">08-04 09:40</time>
               </div>
-            </figure>
-
-            <figure class="hanko pending" role="listitem" data-stage="3">
-              <figcaption class="hanko-stage">第 3 關</figcaption>
-              <div class="hanko-seal" aria-hidden="true">
-                <span class="seal-ring empty">
-                  <span class="seal-name">（空　缺）</span>
-                  <span class="seal-mark">—</span>
-                </span>
-              </div>
-              <div class="hanko-meta">
-                <span class="hanko-person">未指定</span>
-                <time class="wait">—</time>
-              </div>
-            </figure>
+            </div>
           </div>
+          <p class="inkan-caption">左高右低；下位印章略向主管方向傾斜（日式稟議感）。</p>
         </section>
 
         <section class="doc-end">
