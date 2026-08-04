@@ -1,10 +1,10 @@
 (() => {
-  const KEY = "approval.a4.v7";
+  const KEY = "approval.a4.v8";
   const MIN_CH = 2;
   const SYSTEM_NAME = "LEAVE";
   /**
    * 報表統一欄位：
-   * doc_no: 系統名＋申請人＋年月日時分秒＋3隨機碼
+   * doc_no: 系統名＋申請人＋年月日時分秒＋3隨機碼＋.版本號（.1 第一版、.2 第二版…）
    * current_level: 0＝申請人階段；1＝等第1關；2＝等第2關…
    * submitted_at / completed_at / status
    */
@@ -86,9 +86,10 @@
     return out;
   }
 
-  function makeDocNo(applicant, when = new Date()) {
+  function makeDocNo(applicant, when = new Date(), version = 1) {
     const name = (applicant || "未命名").replace(/\s+/g, "");
-    return `${SYSTEM_NAME}${name}${stampNow(when)}${random3()}`;
+    const ver = Math.max(1, Number(version) || 1);
+    return `${SYSTEM_NAME}${name}${stampNow(when)}${random3()}.${ver}`;
   }
 
   const state = load();
@@ -96,11 +97,13 @@
   if (!state.binds.applicant) state.binds.applicant = "王小明";
   if (!state.status) state.status = "in_process";
   if (state.current_level == null) state.current_level = 3;
-  if (!state.doc_no) {
-    // 示範單號固定時間戳，避免每次重新整理都變；真送出時再重產
+  if (state.doc_version == null) state.doc_version = 1;
+  if (!state.doc_no || !/\.\d+$/.test(state.doc_no)) {
+    // 無版本後綴則重產／補上（示範用固定時間，避免每次刷新亂跳）
     state.doc_no = makeDocNo(
       state.binds.applicant,
-      new Date("2026-08-04T09:40:00")
+      new Date("2026-08-04T09:40:00"),
+      state.doc_version
     );
   }
 
@@ -169,18 +172,36 @@
     sfCompleted.textContent = state.completed_at || "—";
   }
 
+  function applicantName() {
+    return (
+      state.binds.applicant ||
+      document.querySelector('[data-bind="applicant"]')?.value ||
+      "未命名"
+    );
+  }
+
   pill.addEventListener("click", () => {
     const i = STATUSES.findIndex((x) => x.id === state.status);
     const next = STATUSES[(i + 1) % STATUSES.length];
+    const prevStatus = state.status;
+
     state.status = next.id;
     applyStatusDefaults(next);
-    // New 時重產單號（模擬新開單）
+
     if (next.id === "new") {
-      state.doc_no = makeDocNo(
-        state.binds.applicant ||
-          document.querySelector('[data-bind="applicant"]')?.value
-      );
+      // 新開單：版本從 .1，重產單號
+      state.doc_version = 1;
+      state.doc_no = makeDocNo(applicantName(), new Date(), state.doc_version);
+    } else if (
+      next.id === "in_process" &&
+      (prevStatus === "denied" || prevStatus === "completed")
+    ) {
+      // 拒件／結案後再送：視為同一申請的下一版（.2、.3…）
+      state.doc_version = (Number(state.doc_version) || 1) + 1;
+      state.doc_no = makeDocNo(applicantName(), new Date(), state.doc_version);
     }
+    // 其餘狀態切換：保留現有 doc_no 與版本
+
     save(state);
     renderStatus();
   });

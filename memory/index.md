@@ -10,6 +10,7 @@
 
 ## 場次
 
+- 2026-08-04 — doc_no 加上 .版本後綴 — 標籤：SEED、Approval、doc_no、版本 — [sessions/2026-08-04-approval-doc-ver.md](sessions/2026-08-04-approval-doc-ver.md)
 - 2026-08-04 — 簽核關日式印章框 — 標籤：SEED、Approval、印章 — [sessions/2026-08-04-approval-hanko.md](sessions/2026-08-04-approval-hanko.md)
 - 2026-08-04 — 段末小對話框給未來自己／文末公開討論 — 標籤：SEED、Approval、A4 — [sessions/2026-08-04-approval-para-note-icon.md](sessions/2026-08-04-approval-para-note-icon.md)
 - 2026-08-04 — 簽核新風格 A4 填空文件 — 標籤：SEED、Approval、A4、填空 — [sessions/2026-08-04-approval-a4-cloze.md](sessions/2026-08-04-approval-a4-cloze.md)
