@@ -7,6 +7,17 @@
 - 原則：**只放可公開的學習筆記**，不放公司敏感資料  
 - 目標：不認識的人也能看、能追知識怎麼累積與改寫；介面用阿嬤用語（存一版、看看改了什麼、回到舊的）
 
+## 公司簽核（Approval · SEED 接手）
+
+上游 https://github.com/hyi1105/Approval 因 **GitHub Pages 無權限**，改由本倉庫維護可執行版：
+
+```bash
+bash approval/scripts/serve.sh
+# → http://127.0.0.1:8765/
+```
+
+詳見 [`approval/README.md`](approval/README.md)、[`approval/學習約定.md`](approval/學習約定.md)。
+
 ## 第一次啟用 Pages（若網址 404／沒綠勾）
 
 **先可看的臨時網址（不必等 Pages）：**  
