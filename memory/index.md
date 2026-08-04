@@ -10,6 +10,7 @@
 
 ## 場次
 
+- 2026-08-04 — 簽核改純對話（欄位嵌框）— 標籤：SEED、Approval、純對話 — [sessions/2026-08-04-approval-chat-only.md](sessions/2026-08-04-approval-chat-only.md)
 - 2026-08-04 — 簽核系統本機化（SEED 接手 Approval A2–A6）— 標籤：SEED、Approval、簽核、本機 — [sessions/2026-08-04-approval-local-real.md](sessions/2026-08-04-approval-local-real.md)
 - 2026-07-21 — 目標會變時怎麼快速大改 — 標籤：協作、溝通、Agent、大改 — [sessions/2026-07-21-pivot-rewrite-playbook.md](sessions/2026-07-21-pivot-rewrite-playbook.md)
 - 2026-07-21 — 減少 UI 來回：溝通方式共識 — 標籤：協作、溝通、Agent — [sessions/2026-07-21-collab-feedback-tips.md](sessions/2026-07-21-collab-feedback-tips.md)

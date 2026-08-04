@@ -24,11 +24,12 @@
 
 | 關卡 | 內容 |
 |------|------|
-| A1／A2 | 讀 `docs/schema.json` 渲染欄位；本機可開 |
-| A3 | 流水線：換代理／換簽核／退回／通知／個人卡（寫入狀態） |
-| A4 | 對話室＋訊息綁定欄位白名單 |
-| A5 | 雙層儲存 PoC：`localStorage` 分 shared／personal(userId)；切簽核人看不到個人欄 |
-| A6 | 登入身分切換（之後接 Entra）；可選 Teams 通知 stub |
+| UI | **純對話**：欄位＋Approver 嵌框；無獨立表單／流水線 |
+| A1／A2 | schema 驅動；本機／SEED Pages 可開 |
+| A3 | 點 Approver 框：換人／退回／通知／個人卡／核准駁回 |
+| A4 | 每框 `bound_fields` 白名單 |
+| A5 | shared／personal(userId) 雙層儲存 |
+| A6 | 登入切換＋Teams stub |
 
 ## 檔案
 
