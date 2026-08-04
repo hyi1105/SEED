@@ -171,8 +171,8 @@ note: 口頭對談整理進本檔；以 diff 確認。尚未口頭確認的區�
 
 | 角色 | 可檢視 | 可編輯 | 可簽核 | 建表／設規則 | 備註 |
 |------|--------|--------|--------|--------------|------|
-| `preparer` | 自己相關單 | 草稿／退回等可編階段的表單欄、`cc`、`fyi`…（細節待補） | 否（除非身兼 approver） | 否 | 流程上的開單／送出 |
-| `requester` | 自己是需求人的單 | （待補：是否可改） | 否 | 否 | 需求歸屬 |
+| preparer | 自己相關單 | 草稿欄位；簽核中可改「可編且未簽」的簽核人 | 否（除非身兼） | 否 | 可代填；可與 requester 不同 |
+| requester | 自己是需求人的單 | 簽核中可改「可編且未簽」的簽核人（其餘待補） | 否 | 否 | 需求歸屬 |
 | `approver` | 自己在簽核鏈上的單 | 通常否（待補意見欄） | ✅ 輪到自己時 approve／reject | 否 | 關卡推進 |
 | `cc`／`fyi` 收件人 | 被列入的單 | 否 | 否 | 否 | 知會 |
 | `admin` | 所管範圍 | **全部欄位**，含**已完成簽核**的單 | 可代操作（完全控制） | ✅ 創立／維護表單 | 每次編輯**必留版本** |
@@ -250,42 +250,131 @@ note: 口頭對談整理進本檔；以 diff 確認。尚未口頭確認的區�
 
 ## 4. 流程
 
-> 從開單到結案的狀態與關卡。
+> 從開單到結案的狀態與關卡。口頭情境（2026-08-04）已整理於 §4.2–§4.6。
 
-### 4.1 狀態一覽（待補；顯示字眼 Admin 可調）
+### 4.1 狀態一覽（顯示字眼 Admin 可調）
 
 | 狀態 ID（內部） | 預設顯示名稱 | 意義 | 可進入的下一狀態 |
 |-----------------|--------------|------|------------------|
-| `draft` | Draft | （待補） | |
-| `in_process` | In Process | （待補） | |
-| `approved` | Approved（可改 Completed／自訂） | 全部同意 | |
-| `rejected` | Rejected（可改 Denied／自訂） | 有人不同意 | |
+| `draft` | Draft | 填寫中／暫存 | submit → `in_process` 或直接 `approved`（見跳關） |
+| `in_process` | In Process | 簽核進行中 | `approved`／`rejected` |
+| `approved` | Approved（可改 Completed／自訂） | 有效關卡皆通過，或**無任何簽核人而自動完成** | （結案；事後補登另計） |
+| `rejected` | Rejected（可改 Denied／自訂） | 有人不同意（關卡 reject 規則待補細節） | （待補） |
 
-### 4.2 關卡／簽核階層（待補）
+### 4.2 關卡模型（一關可多人）
 
-| 關卡順序 | 角色／欄位 | 通過條件 | 通過後通知 | 拒絕後去向 |
-|----------|------------|----------|------------|------------|
-| 1 | `approvers[0]` | approve | `stage_notifies[0]` | （待補） |
-| 2 | `approvers[1]` | approve | `stage_notifies[1]` | （待補） |
-| … | | | | |
-| 全部通過 | — | — | `fyi` + `fyi_system` | — |
+每一「階段／關卡」`stages[n]`：
 
-### 4.3 流程圖（文字版）
+| 項目 | 說明 |
+|------|------|
+| 簽核人 | 可 **一個或多個**（平行簽核） |
+| 通過模式 `pass_rule` | `all`＝**全部**同意才算本關通過；`any`＝**其中一人**同意即本關通過 |
+| 空關 | 該關**所有簽核人欄位都沒值** → **整關跳過**（不當成待簽） |
+| 對應通知 | 本關通過後可觸發 `stage_notifies[n]`（備料等） |
+
+建議結構（示意）：
+
+```json
+{
+  "stages": [
+    {
+      "id": "stage_1",
+      "pass_rule": "all",
+      "approvers": [{ "person": "U001", "editable": true }, { "person": null }],
+      "stage_notify": { "people": [], "groups": [], "emails": [] }
+    }
+  ]
+}
+```
+
+（扁平 `approver_1`／`approver_2` 亦可，但多人關卡較適合 `stages[]`。）
+
+### 4.3 空關跳過與自動完成（核心情境）
+
+| 情境 | 行為 |
+|------|------|
+| Approver1 沒值 | **直接跳到**下一關有值的簽核（如 Approver2） |
+| Approver2 也沒值 | 繼續往下跳，直到某一關有值 |
+| **全部**簽核者都沒值 | 送出後（或進入簽核時）**自動 Approved／Completed**，不必等人簽 |
+| Approver1 有值、Approver2 沒值 | Approver1 簽完後**跳過** Approver2，找下一個有值的關；若後面都沒人 → **自動完成** |
+| 某一關有值但尚未輪到 | 不跳過該關；只跳「當下與後續仍為空」的關 |
+
+文字流程：
 
 ```
-preparer 填單（requester 為需求人）
-  → submit
-      → 通知：cc + cc_system
-      → approver_1 →（approve → 通知 stage_notify_1）→ approver_2 → …
-      → 全數 approve → 通知：fyi + fyi_system → 狀態 approved
-      → 任關 reject → 狀態 rejected（後續待補）
+submit
+  → 找第一個「有至少一名簽核人」的關卡
+      → 若找不到任何關 → 自動 approved（Completed）
+      → 否則進入該關等待簽核
+  → 本關依 pass_rule 通過後
+      → 通知本關相關人（見 §4.5）＋ stage_notify
+      → 再找下一個有值的關；沒有 → 自動 approved＋通知 fyi／fyi_system
 ```
 
-### 4.4 例外流程（待補）
+### 4.4 關內平行簽核（all / any）
+
+| `pass_rule` | 意義 | 本關何時往下 |
+|-------------|------|----------------|
+| `all` | 全部都要通過才算通過 | 該關每位有值的簽核人都 approve |
+| `any` | 其中一個通過就算通過 | 任一人 approve 即本關通過 |
+
+**拒件（reject／denied）對 all／any 的精確影響：**（待補；至少「有人 reject 是否整單 rejected」需定案）
+
+### 4.5 階段結果通知（該關所有人）
+
+> 口頭：若有人簽過且算往下一階段，**當階段所有人都要收到通知**（approved 或 denied）。
+
+| 時機 | 收件人 | 內容方向 |
+|------|--------|----------|
+| 本關通過（往下或結案） | **本關所有簽核人**（含尚未按、或 any 模式下未按到的人） | 本關結果為 approved（已通過） |
+| 本關／整單被拒 | **本關所有簽核人** | denied／rejected（用 Admin 顯示字眼） |
+| 另 | `stage_notifies[n]` | 備料／提早做事（與簽核人通知可分開） |
+
+### 4.6 代填與換簽核人
+
+| 規則 | 說明 |
+|------|------|
+| 代填 | `preparer`（填寫人／代填人）**可以與** `requester`（需求人）**不同** |
+| 誰可在簽核中改簽核人 | **`preparer` 或 `requester`** |
+| 可改哪些人 | 原本填單時**可以編輯**的簽核人欄位，且該人**尚未簽核過** |
+| 為何要改 | 填錯、對方休假不在等 → 直接換人 |
+| 不可由填寫／需求人改 | 填單時即為**預設且不可編輯**的簽核人 → **僅 `admin` 可換人** |
+| 已簽過的人 | 不可再被換成別人（該格已蓋印／已有結果） |
+
+權限摘要：
+
+| 簽核人欄位屬性 | 尚未簽核 | 已簽核 |
+|----------------|----------|--------|
+| 填單時可編輯 | preparer／requester 可換；admin 可換 | 不可換（admin 是否能改已簽：待補，建議走版本異動） |
+| 填單時鎖定（預設不可編） | **僅 admin** 可換 | 同上 |
+
+### 4.7 關卡一覽表（與跳關併用）
+
+| 關卡順序 | 欄位 | 空則 | 通過條件 | 通過後 |
+|----------|------|------|----------|--------|
+| 1…n | `stages[n].approvers` | 跳過整關 | `pass_rule` = all／any | 通知本關所有人＋`stage_notify`；找下一有值關 |
+| 無任何有值關 | — | — | — | 自動 `approved` |
+| 最後有值關通過且後方皆空 | — | — | — | 自動 `approved`；`fyi`＋`fyi_system` |
+
+### 4.8 流程圖（文字版）
+
+```
+preparer 填單（可代填；requester 可為另一人）
+  → submit → 通知 cc + cc_system
+  → 掃描 stages：跳過全空關
+      → 若零關有人 → 自動 approved／Completed → fyi + fyi_system
+      → 否則進入第一有值關（平行：all 或 any）
+            → approve（達通過條件）→ 通知本關所有人（approved）
+                 → stage_notify → 再跳空關…
+            → reject → 通知本關所有人（denied）→ rejected（細節待補）
+  → 簽核中：preparer／requester 可改「可編且未簽」的簽核人；鎖定欄僅 admin
+```
+
+### 4.9 例外流程（待補）
 
 - 抽回／撤回：
 - 加會／會辦：
-- 代理簽核：
+- 代理簽核：（與「換簽核人」不同，待補是否另做）
 - 逾期：
 
 ---
@@ -294,25 +383,29 @@ preparer 填單（requester 為需求人）
 
 > 業務規則、檢核、單號、版本、必填等。
 
-### 5.1 開單／送出規則（待補）
+### 5.1 開單／送出規則
 
+- `preparer` 可與 `requester` 不同（代填）
 - 送出後發送 `cc` + `cc_system` 通知
+- 送出時依 §4.3 **跳過空關**；若無任何簽核人 → **直接 approved／Completed**
 
 ### 5.2 欄位檢核（待補）
 
 | 規則 | 時機 | 說明 |
 |------|------|------|
-| | | |
+| 換簽核人 | 簽核中存檔 | 僅可改「可編＋未簽」；鎖定欄僅 admin |
 
 ### 5.3 單號／版本
 
 - 單號格式：（待補）
 - 申請單版本（如 doc_no `.2`）：（待補，與「重新送出」有關）
 - **內容版本紀錄 `versions[]`／`logs[]`：** 任何人（尤其 `admin`、`super_user`）編輯儲存都要留版；簽核完成後的異動另抬 `post_approval_amended`
+- 換簽核人建議寫入 log（誰、何時、舊簽核人→新簽核人）
 
-### 5.4 其他業務規則（待補）
+### 5.4 其他業務規則
 
 - 簽核完成後：一般參與者不可改主資料；`super_user` 僅可改開放欄；`admin` 可改但必留版本並標示簽核後異動
+- 關卡 `pass_rule`：`all`｜`any`（表單設計時由 admin 設定）
 
 ---
 
@@ -323,8 +416,9 @@ preparer 填單（requester 為需求人）
 | 動作 ID | 預設顯示名稱 | 誰可執行 | 前置條件 | 執行後狀態／副作用 | 寫入 log／版本 |
 |---------|--------------|----------|----------|--------------------|----------------|
 | `save` | 儲存 | preparer（可編階段）、admin、super_user（限其欄） | 有編輯權 | 存檔；可能設 `post_approval_amended` | 是 |
-| `submit` | 送出 | preparer 等（待補） | （待補） | 進流程；通知 `cc`+`cc_system` | 是 |
-| `approve` | Approve（顯示可改） | 該關 approver；admin 可代操作 | 輪到該關 | 往下；stage_notify；末關→fyi＋approved | 是 |
+| `approve` | Approve（顯示可改） | 該關 approver；admin 可代操作 | 輪到該關且該關有值 | 依 pass_rule 過關→通知本關所有人→跳空關；無下一關→approved＋fyi | 是 |
+| `submit` | 送出 | preparer 等（待補） | （待補） | 通知 cc；跳空關；若無簽核人→直接 approved | 是 |
+| `change_approver` | 更換簽核人 | preparer／requester（可編未簽）；admin（含鎖定欄） | 目標人尚未簽 | 寫 log；不重開已簽關 | 是 |
 | `reject` | Reject（顯示可改 Denied 等） | 該關 approver；admin 可代操作 | 輪到該關 | 狀態 `rejected`；（後續待補） | 是 |
 | `admin_amend` | 管理員修正 | admin | 任意狀態（含已完成） | 改資料＋版本；若已 approved → `post_approval_amended=true` | 是（強制） |
 | `super_user_fill` | 進階經辦回填 | super_user | 單據可見；欄位在 super_user_fields | 只寫開放欄；若已 approved → 建議同樣標異動 | 是 |
@@ -366,9 +460,10 @@ preparer 填單（requester 為需求人）
 | 通知 ID | 觸發時機 | 收件人欄位 | 主旨要點 | 內文要點 | 備註 |
 |---------|----------|------------|----------|----------|------|
 | `notify_on_submit` | 送出申請單後 | `cc` + `cc_system` | （待補） | （待補） | |
-| `notify_on_stage_pass` | 第 n 關同意且往下 | `stage_notifies[n]` | （待補） | 備料／提早做事 | 與關卡對齊 |
-| `notify_on_completed` | 整張簽核完成 | `fyi` + `fyi_system` | （待補） | 可往下做事 | |
-| `notify_need_approve` | 輪到某關 | 該關 `approvers[n]` | （待補） | 請簽核 | （待補是否要做） |
+| `notify_on_stage_pass` | 第 n 關通過且往下 | `stage_notifies[n]` | （待補） | 備料／提早做事 | 與關卡對齊 |
+| `notify_stage_peers` | 本關通過或被拒、流程前進／結案 | **本關所有簽核人** | （待補） | 告知本關 approved 或 denied | 含 any 模式下未按鍵者 |
+| `notify_on_completed` | 整張簽核完成（含自動完成） | `fyi` + `fyi_system` | （待補） | 可往下做事 | 含「全員空白自動 approved」 |
+| `notify_need_approve` | 輪到某關 | 該關尚待簽的人 | （待補） | 請簽核 | （待補） |
 
 ### 7.1 通知範本（待補）
 
@@ -404,8 +499,10 @@ preparer 填單（requester 為需求人）
 | 需求人 | `requester` | 人員 |
 | 送出副本 | `cc` | 名單物件 |
 | 系統送出副本 | `cc_system` | 名單物件，鎖定 |
-| 簽核人 | `approvers[]` | 依關卡 |
-| 關卡通過通知 | `stage_notifies[]` | 與 approvers 對齊 |
+| 簽核人 | `stages[].approvers` 或 `approvers[]` | 可空＝跳關 |
+| 關卡通過規則 | `stages[].pass_rule` | `all`｜`any` |
+| 簽核人欄是否可編 | `approvers[].editable`（或欄位 schema） | false＝僅 admin 可換 |
+| 關卡通過通知 | `stages[].stage_notify`／`stage_notifies[]` | 與關卡對齊 |
 | 結案知會 | `fyi` | 名單物件 |
 | 系統結案知會 | `fyi_system` | 名單物件，鎖定 |
 | 目前操作者 | `actor` | 執行按鈕的人 |
@@ -422,16 +519,18 @@ preparer 填單（requester 為需求人）
 
 ## 10. 待決問題
 
-- [ ] `stage_notifies`／`approvers` 用陣列還是 `approver_1` 扁平欄位？（建議陣列）
+- [ ] `stages[]` 物件 vs 扁平 `approver_1`？（多人關卡建議 `stages[]`）
 - [ ] `stage_notifies` 填單時可否編輯，或僅表單設計／Admin 可編？
-- [ ] reject 之後：退回填單人修改？結案不可再送？可升版 `.2` 再送？
+- [ ] reject：`all` 關一人 reject 是否整單 rejected？`any` 關一人 reject 是否整單 rejected、或等其他人？
 - [ ] 預設顯示要用 Rejected 還是 Denied？（建議預設 Rejected，Admin 可改）
-- [ ] preparer 與 requester 是否允許同一人？
+- [ ] preparer 與 requester 是否允許同一人？（已允許不同；同一人應可）
 - [ ] 送出時若 `cc` 與 `cc_system` 重複，是否去重只寄一封？
 - [ ] `cc_system`／`fyi_system`／`stage_notifies` 收件人是否算「單上的人」而有權限檢視？
 - [ ] `super_user` 回填是否一律把 `post_approval_amended` 設為 true？
 - [ ] 印章「中間」的異動標記：對應「兩關之間時段」還是「任意簽核後異動都顯示在每道縫」？
 - [ ] `admin` 與 `super_user` 範圍：依表單、依部門、還是全域？
+- [ ] admin 能否修改「已簽核」的簽核人結果／換人？
+- [ ] 自動 approved 時是否仍發 `notify_need_approve`？（應不發，只發 completed／fyi）
 
 ---
 
@@ -442,3 +541,4 @@ preparer 填單（requester 為需求人）
 | 2026-08-04 | 建立檔案骨架，等待口頭整理 |
 | 2026-08-04 | 角色／名單：preparer、requester、cc、cc_system、approvers、stage_notifies、fyi、fyi_system；同意／不同意用語建議 |
 | 2026-08-04 | 權限角色：admin 完全控制＋版本；super_user 結案後專欄；audit 唯讀；單據可見性；簽核後異動明顯標記（`post_approval_amended`） |
+| 2026-08-04 | 流程：空關跳過、全員空白自動完成、關內 all／any 平行簽核、關員全員通知、代填、簽核中換未簽可編簽核人 |
