@@ -3,179 +3,342 @@
    * API 時代：document JSON 是唯一真相。
    * 畫面只渲染；按鈕會寫入 logs（時間／操作者／開啟時 vs 儲存後／GitHub 紅綠 diff）。
    */
-  const STORAGE_KEY = "approval.document.v2";
+  const STORAGE_KEY = "approval.document.v3";
   const MIN_CH = 2;
 
   const EMBEDDED_DOC = {
-    schema_version: "1.1",
-    meta: {
-      system_name: "LEAVE",
-      form_id: "leave_request_v1",
-      title: "請假申請書",
-      lang: "zh-Hant",
-      note: "未來 API 時代：此 JSON 即申請單完整狀態；畫面只負責渲染。含 actor／actions／logs。",
+    "schema_version": "1.2",
+    "meta": {
+      "system_name": "LEAVE",
+      "form_id": "leave_request_v1",
+      "title": "請假申請書",
+      "lang": "zh-Hant",
+      "note": "ALR5 runtime PoC：印章下按鈕；時間 YYYY-MM-DD HH:mm:ss；comment 灰色；手動切角色／level（切到 2 自動 approve 1）。"
     },
-    actor: { id: "u_wang", name: "王小明" },
-    ui: {
-      views: [
-        { id: "form", label: "申請單畫面" },
-        { id: "json", label: "JSON" },
-        { id: "alr5", label: "ALR5功能" },
-      ],
-      sys_fields_aria: "系統欄位（報表用）",
-      sys_hint:
-        "doc_no＝系統名＋申請人＋年月日時分秒＋3隨機碼＋.版本（如 .2＝第二版）　current_level：0＝申請人；1＋＝等待各關　completed_at 僅 Completed／Denied",
-      empty_mark: "—",
-      pending_stamp_label: "尚未蓋印",
-      actions_title: "操作",
-      log_title: "操作紀錄",
-      log_empty: "尚無操作紀錄",
-      log_opened_label: "開啟時",
-      log_saved_label: "儲存後",
-      log_no_change: "欄位值無變更",
-      actor_label: "目前操作者",
+    "actor": {
+      "id": "u_wang",
+      "name": "王小明",
+      "role": "requester"
     },
-    actions: [
-      { id: "save", label: "儲存", kind: "save" },
-      { id: "submit", label: "送出", kind: "submit" },
+    "roles": [
       {
-        id: "cycle_status",
-        label: "切換狀態",
-        kind: "cycle_status",
-        bound_to: "status_pill",
+        "id": "requester",
+        "label": "申請人／需求人",
+        "person": {
+          "id": "u_wang",
+          "name": "王小明"
+        },
+        "stamp_id": "applicant"
       },
+      {
+        "id": "approver_1",
+        "label": "代理人（level 1）",
+        "person": {
+          "id": "u_chen",
+          "name": "陳美玲"
+        },
+        "stamp_id": "agent"
+      },
+      {
+        "id": "approver_2",
+        "label": "課長（level 2）",
+        "person": {
+          "id": "u_lin",
+          "name": "林課長"
+        },
+        "stamp_id": "manager"
+      },
+      {
+        "id": "approver_3",
+        "label": "協理（level 3）",
+        "person": {
+          "id": "u_yen",
+          "name": "嚴協理"
+        },
+        "stamp_id": "director"
+      },
+      {
+        "id": "admin",
+        "label": "Admin",
+        "person": {
+          "id": "u_admin",
+          "name": "系統管理員"
+        },
+        "stamp_id": null
+      }
     ],
-    statuses: [
+    "ui": {
+      "views": [
+        {
+          "id": "form",
+          "label": "申請單畫面"
+        },
+        {
+          "id": "json",
+          "label": "JSON"
+        },
+        {
+          "id": "alr5",
+          "label": "ALR5功能"
+        }
+      ],
+      "sys_fields_aria": "系統欄位（報表用）",
+      "sys_hint": "測試：上方可手動切角色與 current_level；切到 level 2 會自動核准 level 1。印章下方為動作按鈕；時間為年月日時分秒；comment 為灰色。",
+      "empty_mark": "—",
+      "pending_stamp_label": "尚未蓋印",
+      "actions_title": "操作",
+      "log_title": "操作紀錄",
+      "log_empty": "尚無操作紀錄",
+      "log_opened_label": "開啟時",
+      "log_saved_label": "儲存後",
+      "log_no_change": "欄位值無變更",
+      "actor_label": "目前操作者",
+      "debug_title": "測試切換（角色／level）",
+      "comment_placeholder": "（無意見）"
+    },
+    "actions": [
       {
-        id: "new",
-        label: "New",
-        tip: "新申請",
-        level: 0,
-        submitted_at: null,
-        completed_at: null,
+        "id": "submit",
+        "label": "送出",
+        "kind": "submit"
       },
       {
-        id: "draft",
-        label: "Draft",
-        tip: "被暫存過了",
-        level: 0,
-        submitted_at: null,
-        completed_at: null,
-      },
-      {
-        id: "in_process",
-        label: "In Process",
-        tip: "已經送出等待簽核",
-        level: 3,
-        submitted_at: "2026-08-04 09:40:00",
-        completed_at: null,
-      },
-      {
-        id: "completed",
-        label: "Completed",
-        tip: "全部簽核過",
-        level: 3,
-        submitted_at: "2026-08-04 09:40:00",
-        completed_at: "2026-08-04 11:05:00",
-      },
-      {
-        id: "denied",
-        label: "Denied",
-        tip: "有人拒絕了",
-        level: 2,
-        submitted_at: "2026-08-04 09:40:00",
-        completed_at: "2026-08-04 10:22:00",
-      },
+        "id": "cycle_status",
+        "label": "切換狀態",
+        "kind": "cycle_status",
+        "bound_to": "status_pill"
+      }
     ],
-    fields: {
-      applicant: { type: "text", label: "申請人", value: "王小明" },
-      leave_type: {
-        type: "dropdown",
-        label: "假別",
-        value: "事假",
-        options: [
-          { value: "特休", label: "特休" },
-          { value: "事假", label: "事假" },
-          { value: "病假", label: "病假" },
-          { value: "其他", label: "其他" },
-        ],
+    "statuses": [
+      {
+        "id": "new",
+        "label": "New",
+        "tip": "新申請",
+        "level": null,
+        "submitted_at": null,
+        "completed_at": null
       },
-      leave_date: { type: "text", label: "起始日", value: "明天" },
-      days: { type: "number", label: "天數", value: "1" },
-      agent: { type: "text", label: "代理人", value: "陳美玲" },
-    },
-    body: {
-      paragraphs: [
-        {
-          parts: [
-            { t: "text", v: "申請人" },
-            { t: "field", name: "applicant" },
-            { t: "text", v: "因" },
-            { t: "field", name: "leave_type" },
-            { t: "text", v: "，自" },
-            { t: "field", name: "leave_date" },
-            { t: "text", v: "起請假" },
-            { t: "field", name: "days" },
-            { t: "text", v: "天，代理人為" },
-            { t: "field", name: "agent" },
-            { t: "text", v: "。" },
-          ],
-        },
-      ],
-    },
-    approval: {
-      title: "簽核",
-      columns: [
-        {
-          id: "director",
-          label: "協理",
-          level: 3,
-          stamp: { name: "嚴", mark: null, time: null, pending: true },
-        },
-        {
-          id: "manager",
-          label: "課長",
-          level: 2,
-          stamp: {
-            name: "林",
-            mark: "APPROVE",
-            time: "08-04 10:18",
-            pending: false,
+      {
+        "id": "draft",
+        "label": "Draft",
+        "tip": "被暫存過了",
+        "level": 0,
+        "submitted_at": null,
+        "completed_at": null
+      },
+      {
+        "id": "in_process",
+        "label": "In Process",
+        "tip": "已經送出等待簽核",
+        "level": 1,
+        "submitted_at": null,
+        "completed_at": null
+      },
+      {
+        "id": "completed",
+        "label": "Completed",
+        "tip": "全部簽核過",
+        "level": 9999,
+        "submitted_at": null,
+        "completed_at": null
+      },
+      {
+        "id": "denied",
+        "label": "Denied",
+        "tip": "有人拒絕了",
+        "level": -2,
+        "submitted_at": null,
+        "completed_at": null
+      },
+      {
+        "id": "cancelled",
+        "label": "Cancelled",
+        "tip": "已取消",
+        "level": -1,
+        "submitted_at": null,
+        "completed_at": null
+      }
+    ],
+    "fields": {
+      "applicant": {
+        "type": "text",
+        "label": "申請人",
+        "value": "王小明"
+      },
+      "leave_type": {
+        "type": "dropdown",
+        "label": "假別",
+        "value": "事假",
+        "options": [
+          {
+            "value": "特休",
+            "label": "特休"
           },
+          {
+            "value": "事假",
+            "label": "事假"
+          },
+          {
+            "value": "病假",
+            "label": "病假"
+          },
+          {
+            "value": "其他",
+            "label": "其他"
+          }
+        ]
+      },
+      "leave_date": {
+        "type": "text",
+        "label": "起始日",
+        "value": "明天"
+      },
+      "days": {
+        "type": "number",
+        "label": "天數",
+        "value": "1"
+      },
+      "agent": {
+        "type": "text",
+        "label": "代理人",
+        "value": "陳美玲"
+      }
+    },
+    "body": {
+      "paragraphs": [
+        {
+          "parts": [
+            {
+              "t": "text",
+              "v": "申請人"
+            },
+            {
+              "t": "field",
+              "name": "applicant"
+            },
+            {
+              "t": "text",
+              "v": "因"
+            },
+            {
+              "t": "field",
+              "name": "leave_type"
+            },
+            {
+              "t": "text",
+              "v": "，自"
+            },
+            {
+              "t": "field",
+              "name": "leave_date"
+            },
+            {
+              "t": "text",
+              "v": "起請假"
+            },
+            {
+              "t": "field",
+              "name": "days"
+            },
+            {
+              "t": "text",
+              "v": "天，代理人為"
+            },
+            {
+              "t": "field",
+              "name": "agent"
+            },
+            {
+              "t": "text",
+              "v": "。"
+            }
+          ]
+        }
+      ]
+    },
+    "approval": {
+      "title": "簽核",
+      "columns": [
+        {
+          "id": "director",
+          "label": "協理",
+          "level": 3,
+          "role": "approver_3",
+          "person": {
+            "id": "u_yen",
+            "name": "嚴協理"
+          },
+          "stamp": {
+            "name": "嚴",
+            "mark": null,
+            "time": null,
+            "comment": "",
+            "pending": true
+          }
         },
         {
-          id: "agent",
-          label: "代理人",
-          level: 1,
-          stamp: {
-            name: "陳",
-            mark: "確認",
-            time: "08-04 09:55",
-            pending: false,
+          "id": "manager",
+          "label": "課長",
+          "level": 2,
+          "role": "approver_2",
+          "person": {
+            "id": "u_lin",
+            "name": "林課長"
           },
+          "stamp": {
+            "name": "林",
+            "mark": null,
+            "time": null,
+            "comment": "",
+            "pending": true
+          }
         },
         {
-          id: "applicant",
-          label: "申請",
-          level: 0,
-          stamp: {
-            name: "王",
-            mark: "申請",
-            time: "08-04 09:40",
-            pending: false,
+          "id": "agent",
+          "label": "代理人",
+          "level": 1,
+          "role": "approver_1",
+          "person": {
+            "id": "u_chen",
+            "name": "陳美玲"
           },
+          "stamp": {
+            "name": "陳",
+            "mark": null,
+            "time": null,
+            "comment": "",
+            "pending": true
+          }
         },
-      ],
+        {
+          "id": "applicant",
+          "label": "申請",
+          "level": 0,
+          "role": "requester",
+          "person": {
+            "id": "u_wang",
+            "name": "王小明"
+          },
+          "stamp": {
+            "name": "王",
+            "mark": null,
+            "time": null,
+            "comment": "",
+            "pending": true
+          }
+        }
+      ]
     },
-    system: {
-      doc_no: "LEAVE王小明20260804094000K7M.1",
-      doc_version: 1,
-      current_level: 3,
-      submitted_at: "2026-08-04 09:40:00",
-      completed_at: null,
-      status: "in_process",
+    "system": {
+      "doc_no": "LEAVE王小明20260804183000A1B.1",
+      "doc_version": 1,
+      "current_level": 0,
+      "submitted_at": null,
+      "completed_at": null,
+      "status": "draft",
+      "archived": false
     },
-    logs: [],
+    "logs": []
   };
 
   let doc = null;
@@ -503,6 +666,310 @@
     return p;
   }
 
+
+  function maxApprovalLevel() {
+    const cols = doc.approval?.columns || [];
+    let m = 0;
+    cols.forEach((c) => {
+      const lv = Number(c.level);
+      if (!Number.isNaN(lv) && lv > m) m = lv;
+    });
+    return m;
+  }
+
+  function columnByLevel(level) {
+    return (doc.approval?.columns || []).find((c) => Number(c.level) === Number(level));
+  }
+
+  function roleDef(roleId) {
+    return (doc.roles || []).find((r) => r.id === roleId);
+  }
+
+  function setActorFromRole(roleId) {
+    const r = roleDef(roleId);
+    if (!r) return;
+    doc.actor = {
+      id: r.person?.id || roleId,
+      name: r.person?.name || r.label || roleId,
+      role: r.id,
+    };
+  }
+
+  function stampColumn(col, mark, comment) {
+    if (!col.stamp) col.stamp = {};
+    col.stamp.pending = false;
+    col.stamp.mark = mark;
+    col.stamp.time = nowStamp();
+    if (comment != null) col.stamp.comment = comment;
+    if (!col.stamp.name && col.person?.name) {
+      col.stamp.name = String(col.person.name).slice(0, 1);
+    }
+  }
+
+  function clearColumn(col) {
+    if (!col.stamp) col.stamp = {};
+    col.stamp.pending = true;
+    col.stamp.mark = null;
+    col.stamp.time = null;
+    col.stamp.comment = col.stamp.comment || "";
+  }
+
+  /** 核准某 level 的印章（自動補齊用） */
+  function approveLevel(level, mark = "APPROVE", comment = "（自動核准）") {
+    const col = columnByLevel(level);
+    if (!col) return false;
+    if (col.stamp && !col.stamp.pending && col.stamp.mark) return false;
+    stampColumn(col, mark, comment);
+    return true;
+  }
+
+  /** 切到 targetLevel 時：自動核准所有 < targetLevel 的簽核關（含 0 申請印） */
+  function autoApproveBelow(targetLevel) {
+    const t = Number(targetLevel);
+    if (Number.isNaN(t) || t < 0) return;
+    const cols = doc.approval?.columns || [];
+    cols.forEach((col) => {
+      const lv = Number(col.level);
+      if (Number.isNaN(lv) || lv < 0) return;
+      if (lv < t) {
+        if (!col.stamp || col.stamp.pending || !col.stamp.mark) {
+          const mark = lv === 0 ? "申請" : "APPROVE";
+          stampColumn(col, mark, lv === 0 ? "（已送出）" : "（切 level 自動核准）");
+        }
+      } else if (lv >= t) {
+        // 當前與之後：保持／清空待簽
+        if (lv === t) {
+          // 目前關：待簽
+          if (!col.stamp?.mark || col.stamp.pending) clearColumn(col);
+        } else {
+          clearColumn(col);
+        }
+      }
+    });
+  }
+
+  function syncStatusForLevel(level) {
+    if (!doc.system) doc.system = {};
+    const lv = level === "" || level === null || level === undefined ? null : Number(level);
+    doc.system.current_level = lv;
+    if (lv === null || Number.isNaN(lv)) {
+      doc.system.status = "new";
+      doc.system.completed_at = null;
+    } else if (lv === 0) {
+      doc.system.status = doc.system.submitted_at ? "draft" : "draft";
+      doc.system.completed_at = null;
+    } else if (lv === 9999) {
+      doc.system.status = "completed";
+      doc.system.completed_at = doc.system.completed_at || nowStamp();
+    } else if (lv === -1) {
+      doc.system.status = "cancelled";
+      doc.system.completed_at = null;
+    } else if (lv === -2) {
+      doc.system.status = "denied";
+      doc.system.completed_at = doc.system.completed_at || nowStamp();
+    } else if (lv > 0) {
+      doc.system.status = "in_process";
+      doc.system.completed_at = null;
+      if (!doc.system.submitted_at) doc.system.submitted_at = nowStamp();
+    }
+  }
+
+  function applyManualLevel(raw) {
+    const opened = snapshotState();
+    openedSnapshot = opened;
+    let lv = raw === "" || raw === "null" || raw === "empty" ? null : Number(raw);
+    if (raw !== "" && raw !== "null" && raw !== "empty" && Number.isNaN(lv)) return;
+
+    // 使用者指定：切到 2 → 自動 approve 1（以及更低）
+    if (lv != null && lv > 0) autoApproveBelow(lv);
+    if (lv === 0) {
+      // 退回申請人：清 1+ 印章，保留或清 0
+      (doc.approval?.columns || []).forEach((col) => {
+        if (Number(col.level) > 0) clearColumn(col);
+      });
+    }
+    if (lv === 9999) autoApproveBelow(maxApprovalLevel() + 1);
+    if (lv === -2 || lv === -1) {
+      // 拒件／取消不強制改印章內容
+    }
+
+    syncStatusForLevel(lv);
+    if (lv != null && lv >= 1 && lv !== 9999) {
+      const col = columnByLevel(lv);
+      const role = col?.role;
+      if (role) setActorFromRole(role);
+    } else if (lv === 0 || lv == null) {
+      setActorFromRole("requester");
+    }
+
+    appendLog({
+      id: "set_level",
+      label: `切換 level → ${lv == null ? "空" : lv}`,
+      kind: "debug_level",
+    });
+    persist();
+    renderForm();
+    syncJsonEditorIfVisible();
+  }
+
+  function applyManualRole(roleId) {
+    const opened = snapshotState();
+    openedSnapshot = opened;
+    setActorFromRole(roleId);
+    appendLog({
+      id: "set_role",
+      label: `切換角色 → ${roleDef(roleId)?.label || roleId}`,
+      kind: "debug_role",
+    });
+    persist();
+    renderForm();
+    syncJsonEditorIfVisible();
+  }
+
+  function canActOnColumn(col) {
+    const lv = doc.system?.current_level;
+    const role = doc.actor?.role;
+    if (role === "admin") return true;
+    if (lv == null) return Number(col.level) === 0 && role === "requester";
+    if (Number(lv) === 0) return Number(col.level) === 0 && (role === "requester" || role === col.role);
+    return Number(col.level) === Number(lv) && (role === col.role || role === "admin");
+  }
+
+  function readCommentInput(colId) {
+    const el = document.querySelector(`[data-comment-for="${colId}"]`);
+    return el ? el.value.trim() : "";
+  }
+
+  function runStampAction(col, kind) {
+    const comment = readCommentInput(col.id);
+    const opened = snapshotState();
+    openedSnapshot = opened;
+    if (!doc.system) doc.system = {};
+
+    if (kind === "submit") {
+      stampColumn(col, "申請", comment || "送出申請");
+      doc.system.status = "in_process";
+      doc.system.current_level = 1;
+      doc.system.submitted_at = nowStamp();
+      doc.system.completed_at = null;
+      if (!doc.system.doc_no) {
+        doc.system.doc_version = doc.system.doc_version || 1;
+        doc.system.doc_no = makeDocNo(fieldValue("applicant"), new Date(), doc.system.doc_version);
+      }
+      // 進 level 1：申請關已蓋；level1 待簽
+      const next = columnByLevel(1);
+      if (next) clearColumn(next);
+      setActorFromRole(next?.role || "approver_1");
+      appendLog({ id: "submit", label: "送出", kind: "submit" });
+    } else if (kind === "approve") {
+      stampColumn(col, "APPROVE", comment);
+      const maxLv = maxApprovalLevel();
+      const cur = Number(col.level);
+      if (cur >= maxLv) {
+        doc.system.current_level = 9999;
+        doc.system.status = "completed";
+        doc.system.completed_at = nowStamp();
+      } else {
+        const nextLv = cur + 1;
+        doc.system.current_level = nextLv;
+        doc.system.status = "in_process";
+        const next = columnByLevel(nextLv);
+        if (next) clearColumn(next);
+        if (next?.role) setActorFromRole(next.role);
+      }
+      appendLog({ id: "approve", label: `核准 ${col.label || col.id}`, kind: "approve" });
+    } else if (kind === "reject") {
+      stampColumn(col, "REJECT", comment || "拒件");
+      doc.system.current_level = -2;
+      doc.system.status = "denied";
+      doc.system.completed_at = nowStamp();
+      appendLog({ id: "reject", label: `拒絕 ${col.label || col.id}`, kind: "reject" });
+    } else if (kind === "return") {
+      stampColumn(col, "RETURN", comment || "退回");
+      doc.system.current_level = 0;
+      doc.system.status = "draft";
+      doc.system.completed_at = null;
+      (doc.approval?.columns || []).forEach((c) => {
+        if (Number(c.level) > 0) clearColumn(c);
+      });
+      setActorFromRole("requester");
+      appendLog({ id: "return", label: `退回 ${col.label || col.id}`, kind: "return" });
+    }
+
+    persist();
+    renderForm();
+    syncJsonEditorIfVisible();
+  }
+
+  function renderDebugBar() {
+    const wrap = document.createElement("div");
+    wrap.className = "debug-bar";
+    const title = document.createElement("div");
+    title.className = "debug-title";
+    title.textContent = doc.ui?.debug_title || "測試切換（角色／level）";
+    wrap.appendChild(title);
+
+    const row = document.createElement("div");
+    row.className = "debug-row";
+
+    const roleLab = document.createElement("label");
+    roleLab.textContent = "角色";
+    const roleSel = document.createElement("select");
+    roleSel.className = "debug-select";
+    (doc.roles || []).forEach((r) => {
+      const opt = document.createElement("option");
+      opt.value = r.id;
+      opt.textContent = r.label || r.id;
+      if (doc.actor?.role === r.id) opt.selected = true;
+      roleSel.appendChild(opt);
+    });
+    roleSel.addEventListener("change", () => applyManualRole(roleSel.value));
+    roleLab.appendChild(roleSel);
+    row.appendChild(roleLab);
+
+    const lvLab = document.createElement("label");
+    lvLab.textContent = "current_level";
+    const lvSel = document.createElement("select");
+    lvSel.className = "debug-select";
+    const levels = [
+      ["empty", "空（未 SAVE）"],
+      ["0", "0 申請人"],
+      ["1", "1"],
+      ["2", "2（自動核准 1）"],
+      ["3", "3"],
+      ["9999", "9999 完成"],
+      ["-1", "-1 取消"],
+      ["-2", "-2 Denied"],
+    ];
+    const cur = doc.system?.current_level;
+    levels.forEach(([v, lab]) => {
+      const opt = document.createElement("option");
+      opt.value = v;
+      opt.textContent = lab;
+      const match =
+        (v === "empty" && (cur === null || cur === undefined)) ||
+        String(cur) === v;
+      if (match) opt.selected = true;
+      lvSel.appendChild(opt);
+    });
+    lvSel.addEventListener("change", () => {
+      const v = lvSel.value === "empty" ? "empty" : lvSel.value;
+      applyManualLevel(v === "empty" ? "empty" : v);
+    });
+    lvLab.appendChild(lvSel);
+    row.appendChild(lvLab);
+
+    const hint = document.createElement("span");
+    hint.className = "debug-hint";
+    hint.textContent = "切到 2 → 自動 APPROVE level 1";
+    row.appendChild(hint);
+
+    wrap.appendChild(row);
+    return wrap;
+  }
+
+
+
   function renderInkanTable() {
     const table = document.createElement("table");
     table.className = "inkan-table";
@@ -548,12 +1015,59 @@
       time.className = `inkan-time${pending ? " wait" : ""}`;
       time.textContent = pending ? pendingLabel : stamp.time || "";
       td.appendChild(time);
+
+      const comment = document.createElement("div");
+      comment.className = "inkan-comment";
+      if (pending) {
+        const inp = document.createElement("textarea");
+        inp.className = "inkan-comment-input";
+        inp.rows = 2;
+        inp.placeholder = "comment";
+        inp.dataset.commentFor = col.id;
+        inp.value = stamp.comment || "";
+        comment.appendChild(inp);
+      } else {
+        comment.textContent =
+          stamp.comment || doc.ui?.comment_placeholder || "（無意見）";
+      }
+      td.appendChild(comment);
+
+      const btns = document.createElement("div");
+      btns.className = "inkan-actions";
+      const allow = canActOnColumn(col);
+      const lv = Number(col.level);
+      const cur = doc.system?.current_level;
+
+      const addBtn = (label, kind, cls) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = `inkan-btn ${cls || ""}`;
+        b.textContent = label;
+        b.disabled = !allow;
+        b.addEventListener("click", () => runStampAction(col, kind));
+        btns.appendChild(b);
+      };
+
+      if (lv === 0 && (cur === 0 || cur == null || cur === "")) {
+        addBtn("送出", "submit", "primary");
+      } else if (lv > 0 && Number(cur) === lv) {
+        addBtn("核准", "approve", "primary");
+        addBtn("拒絕", "reject", "danger");
+        addBtn("退回", "return", "");
+      } else if (allow && roleDef(doc.actor?.role)?.id === "admin" && Number(cur) === lv && lv > 0) {
+        addBtn("核准", "approve", "primary");
+        addBtn("拒絕", "reject", "danger");
+        addBtn("退回", "return", "");
+      }
+
+      td.appendChild(btns);
       tr.appendChild(td);
     });
     tbody.appendChild(tr);
     table.appendChild(tbody);
     return table;
   }
+
 
   function renderSysFields() {
     const wrap = document.createElement("dl");
@@ -850,6 +1364,7 @@
     });
     article.appendChild(bodySec);
 
+    article.appendChild(renderDebugBar());
     article.appendChild(renderActions());
 
     const signSec = document.createElement("section");
@@ -1184,8 +1699,22 @@
     if (!d.fields) d.fields = base.fields;
     if (!d.body) d.body = base.body;
     if (!d.approval) d.approval = base.approval;
+    if (!d.roles) d.roles = base.roles;
     if (!d.system) d.system = base.system;
     if (!Array.isArray(d.logs)) d.logs = [];
+    // 升級舊快取：補 comment 欄
+    (d.approval?.columns || []).forEach((c) => {
+      if (!c.stamp) c.stamp = {};
+      if (c.stamp.comment == null) c.stamp.comment = "";
+      if (!c.role) {
+        const hit = (base.approval?.columns || []).find((x) => x.id === c.id);
+        if (hit?.role) c.role = hit.role;
+      }
+      if (!c.person) {
+        const hit = (base.approval?.columns || []).find((x) => x.id === c.id);
+        if (hit?.person) c.person = hit.person;
+      }
+    });
     ensureFieldOptions(d.fields, base.fields);
     if (!d.system.doc_no || !/\.\d+$/.test(d.system.doc_no)) {
       d.system.doc_version = d.system.doc_version || 1;
@@ -1203,7 +1732,7 @@
     let base = loadStored();
     if (!base) {
       try {
-        const res = await fetch("./document.json?v=alr5guide1", {
+        const res = await fetch("./document.json?v=runtime1", {
           cache: "no-store",
         });
         if (res.ok) base = await res.json();
@@ -1212,7 +1741,7 @@
       }
     }
     try {
-      const sr = await fetch("./alr5-standard.json?v=alr5guide029", {
+      const sr = await fetch("./alr5-standard.json?v=runtime1", {
         cache: "no-store",
       });
       if (sr.ok) alr5Standard = await sr.json();
@@ -1220,7 +1749,7 @@
       /* offline */
     }
     try {
-      const mr = await fetch("./ALR5標準互通.md?v=alr5guide1", {
+      const mr = await fetch("./ALR5標準互通.md?v=runtime1", {
         cache: "no-store",
       });
       if (mr.ok) alr5Markdown = await mr.text();

@@ -10,6 +10,7 @@
 
 ## 場次
 
+- 2026-08-04 — ALR5 runtime PoC：印章按鈕＋角色／level 測試切換 — 標籤：SEED、Approval、ALR5、runtime、印章、測試 — [sessions/2026-08-04-alr5-runtime-ui.md](sessions/2026-08-04-alr5-runtime-ui.md)
 - 2026-08-04 — 跨公司公證＋加密鑰匙＋JSON 適用性 — 標籤：SEED、Approval、ALR5、公證、加密、跨公司、JSON、期許 — [sessions/2026-08-04-alr5-notary-crypto.md](sessions/2026-08-04-alr5-notary-crypto.md)
 - 2026-08-04 — 全系統進 ALR5＋大量匯入 header／detail — 標籤：SEED、Approval、ALR5、平台願景、大量匯入、JSON、偏好 — [sessions/2026-08-04-alr5-platform-bulk-import.md](sessions/2026-08-04-alr5-platform-bulk-import.md)
 - 2026-08-04 — 跨單關聯鏈＋兩種開單模式 — 標籤：SEED、Approval、ALR5、跨單關聯、前置條件、開單模式、校正、偏好 — [sessions/2026-08-04-alr5-cross-links-create-modes.md](sessions/2026-08-04-alr5-cross-links-create-modes.md)

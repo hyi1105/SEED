@@ -1,16 +1,24 @@
 {
-  "schema_version": "1.1",
+  "schema_version": "1.2",
   "meta": {
     "system_name": "LEAVE",
     "form_id": "leave_request_v1",
     "title": "請假申請書",
     "lang": "zh-Hant",
-    "note": "未來 API 時代：此 JSON 即申請單完整狀態；畫面只負責渲染。含 actor／actions／logs。"
+    "note": "ALR5 runtime PoC：印章下按鈕；時間 YYYY-MM-DD HH:mm:ss；comment 灰色；手動切角色／level（切到 2 自動 approve 1）。"
   },
   "actor": {
     "id": "u_wang",
-    "name": "王小明"
+    "name": "王小明",
+    "role": "requester"
   },
+  "roles": [
+    { "id": "requester", "label": "申請人／需求人", "person": { "id": "u_wang", "name": "王小明" }, "stamp_id": "applicant" },
+    { "id": "approver_1", "label": "代理人（level 1）", "person": { "id": "u_chen", "name": "陳美玲" }, "stamp_id": "agent" },
+    { "id": "approver_2", "label": "課長（level 2）", "person": { "id": "u_lin", "name": "林課長" }, "stamp_id": "manager" },
+    { "id": "approver_3", "label": "協理（level 3）", "person": { "id": "u_yen", "name": "嚴協理" }, "stamp_id": "director" },
+    { "id": "admin", "label": "Admin", "person": { "id": "u_admin", "name": "系統管理員" }, "stamp_id": null }
+  ],
   "ui": {
     "views": [
       { "id": "form", "label": "申請單畫面" },
@@ -18,7 +26,7 @@
       { "id": "alr5", "label": "ALR5功能" }
     ],
     "sys_fields_aria": "系統欄位（報表用）",
-    "sys_hint": "doc_no＝系統名＋申請人＋年月日時分秒＋3隨機碼＋.版本（如 .2＝第二版）　current_level：0＝申請人；1＋＝等待各關　completed_at 僅 Completed／Denied",
+    "sys_hint": "測試：上方可手動切角色與 current_level；切到 level 2 會自動核准 level 1。印章下方為動作按鈕；時間為年月日時分秒；comment 為灰色。",
     "empty_mark": "—",
     "pending_stamp_label": "尚未蓋印",
     "actions_title": "操作",
@@ -27,61 +35,24 @@
     "log_opened_label": "開啟時",
     "log_saved_label": "儲存後",
     "log_no_change": "欄位值無變更",
-    "actor_label": "目前操作者"
+    "actor_label": "目前操作者",
+    "debug_title": "測試切換（角色／level）",
+    "comment_placeholder": "（無意見）"
   },
   "actions": [
-    { "id": "save", "label": "儲存", "kind": "save" },
     { "id": "submit", "label": "送出", "kind": "submit" },
     { "id": "cycle_status", "label": "切換狀態", "kind": "cycle_status", "bound_to": "status_pill" }
   ],
   "statuses": [
-    {
-      "id": "new",
-      "label": "New",
-      "tip": "新申請",
-      "level": 0,
-      "submitted_at": null,
-      "completed_at": null
-    },
-    {
-      "id": "draft",
-      "label": "Draft",
-      "tip": "被暫存過了",
-      "level": 0,
-      "submitted_at": null,
-      "completed_at": null
-    },
-    {
-      "id": "in_process",
-      "label": "In Process",
-      "tip": "已經送出等待簽核",
-      "level": 3,
-      "submitted_at": "2026-08-04 09:40:00",
-      "completed_at": null
-    },
-    {
-      "id": "completed",
-      "label": "Completed",
-      "tip": "全部簽核過",
-      "level": 3,
-      "submitted_at": "2026-08-04 09:40:00",
-      "completed_at": "2026-08-04 11:05:00"
-    },
-    {
-      "id": "denied",
-      "label": "Denied",
-      "tip": "有人拒絕了",
-      "level": 2,
-      "submitted_at": "2026-08-04 09:40:00",
-      "completed_at": "2026-08-04 10:22:00"
-    }
+    { "id": "new", "label": "New", "tip": "新申請", "level": null, "submitted_at": null, "completed_at": null },
+    { "id": "draft", "label": "Draft", "tip": "被暫存過了", "level": 0, "submitted_at": null, "completed_at": null },
+    { "id": "in_process", "label": "In Process", "tip": "已經送出等待簽核", "level": 1, "submitted_at": null, "completed_at": null },
+    { "id": "completed", "label": "Completed", "tip": "全部簽核過", "level": 9999, "submitted_at": null, "completed_at": null },
+    { "id": "denied", "label": "Denied", "tip": "有人拒絕了", "level": -2, "submitted_at": null, "completed_at": null },
+    { "id": "cancelled", "label": "Cancelled", "tip": "已取消", "level": -1, "submitted_at": null, "completed_at": null }
   ],
   "fields": {
-    "applicant": {
-      "type": "text",
-      "label": "申請人",
-      "value": "王小明"
-    },
+    "applicant": { "type": "text", "label": "申請人", "value": "王小明" },
     "leave_type": {
       "type": "dropdown",
       "label": "假別",
@@ -93,21 +64,9 @@
         { "value": "其他", "label": "其他" }
       ]
     },
-    "leave_date": {
-      "type": "text",
-      "label": "起始日",
-      "value": "明天"
-    },
-    "days": {
-      "type": "number",
-      "label": "天數",
-      "value": "1"
-    },
-    "agent": {
-      "type": "text",
-      "label": "代理人",
-      "value": "陳美玲"
-    }
+    "leave_date": { "type": "text", "label": "起始日", "value": "明天" },
+    "days": { "type": "number", "label": "天數", "value": "1" },
+    "agent": { "type": "text", "label": "代理人", "value": "陳美玲" }
   },
   "body": {
     "paragraphs": [
@@ -135,134 +94,44 @@
         "id": "director",
         "label": "協理",
         "level": 3,
-        "stamp": {
-          "name": "嚴",
-          "mark": null,
-          "time": null,
-          "pending": true
-        }
+        "role": "approver_3",
+        "person": { "id": "u_yen", "name": "嚴協理" },
+        "stamp": { "name": "嚴", "mark": null, "time": null, "comment": "", "pending": true }
       },
       {
         "id": "manager",
         "label": "課長",
         "level": 2,
-        "stamp": {
-          "name": "林",
-          "mark": "APPROVE",
-          "time": "08-04 10:18",
-          "pending": false
-        }
+        "role": "approver_2",
+        "person": { "id": "u_lin", "name": "林課長" },
+        "stamp": { "name": "林", "mark": null, "time": null, "comment": "", "pending": true }
       },
       {
         "id": "agent",
         "label": "代理人",
         "level": 1,
-        "stamp": {
-          "name": "陳",
-          "mark": "確認",
-          "time": "08-04 09:55",
-          "pending": false
-        }
+        "role": "approver_1",
+        "person": { "id": "u_chen", "name": "陳美玲" },
+        "stamp": { "name": "陳", "mark": null, "time": null, "comment": "", "pending": true }
       },
       {
         "id": "applicant",
         "label": "申請",
         "level": 0,
-        "stamp": {
-          "name": "王",
-          "mark": "申請",
-          "time": "08-04 09:40",
-          "pending": false
-        }
+        "role": "requester",
+        "person": { "id": "u_wang", "name": "王小明" },
+        "stamp": { "name": "王", "mark": null, "time": null, "comment": "", "pending": true }
       }
     ]
   },
   "system": {
-    "doc_no": "LEAVE王小明20260804094000K7M.1",
+    "doc_no": "LEAVE王小明20260804183000A1B.1",
     "doc_version": 1,
-    "current_level": 3,
-    "submitted_at": "2026-08-04 09:40:00",
+    "current_level": 0,
+    "submitted_at": null,
     "completed_at": null,
-    "status": "in_process"
+    "status": "draft",
+    "archived": false
   },
-  "logs": [
-    {
-      "id": "log_demo_1",
-      "at": "2026-08-04 09:40:12",
-      "actor": { "id": "u_wang", "name": "王小明" },
-      "action": { "id": "submit", "label": "送出" },
-      "opened": {
-        "fields": {
-          "applicant": "王小明",
-          "leave_type": "事假",
-          "leave_date": "明天",
-          "days": "2",
-          "agent": ""
-        },
-        "system": {
-          "status": "draft",
-          "current_level": 0,
-          "doc_no": null,
-          "doc_version": 1,
-          "submitted_at": null,
-          "completed_at": null
-        }
-      },
-      "saved": {
-        "fields": {
-          "applicant": "王小明",
-          "leave_type": "事假",
-          "leave_date": "明天",
-          "days": "1",
-          "agent": "陳美玲"
-        },
-        "system": {
-          "status": "in_process",
-          "current_level": 3,
-          "doc_no": "LEAVE王小明20260804094000K7M.1",
-          "doc_version": 1,
-          "submitted_at": "2026-08-04 09:40:00",
-          "completed_at": null
-        }
-      },
-      "changes": [
-        {
-          "path": "fields.days",
-          "label": "天數",
-          "before": "2",
-          "after": "1"
-        },
-        {
-          "path": "fields.agent",
-          "label": "代理人",
-          "before": "",
-          "after": "陳美玲"
-        },
-        {
-          "path": "system.status",
-          "label": "status",
-          "before": "draft",
-          "after": "in_process"
-        },
-        {
-          "path": "system.current_level",
-          "label": "current_level",
-          "before": "0",
-          "after": "3"
-        },
-        {
-          "path": "system.doc_no",
-          "label": "doc_no",
-          "before": null,
-          "after": "LEAVE王小明20260804094000K7M.1"
-        },
-        {
-          "path": "system.submitted_at",
-          "label": "submitted_at",
-          "before": null,
-          "after": "2026-08-04 09:40:00"
-        }
-      ]
-    }
-  ]
+  "logs": []
 }

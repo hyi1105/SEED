@@ -436,7 +436,10 @@ table.inkan-table th {
   background: #f3efe6;
 }
 table.inkan-table td {
-  height: 118px;
+  height: auto;
+  min-height: 118px;
+  vertical-align: top;
+  padding-bottom: 8px;
 }
 .inkan-stamp {
   width: 52px;
@@ -479,8 +482,109 @@ table.inkan-table td {
   font-size: 10px;
   color: #6e675c;
   font-variant-numeric: tabular-nums;
+  line-height: 1.35;
+  word-break: break-all;
+  padding: 0 2px;
 }
 .inkan-time.wait { color: #a09070; }
+.inkan-comment {
+  font-family: var(--font);
+  font-size: 10px;
+  color: #9a9286;
+  line-height: 1.35;
+  margin: 4px 2px 6px;
+  min-height: 1.2em;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.inkan-comment-input {
+  width: 100%;
+  min-height: 36px;
+  resize: vertical;
+  border: 1px dashed #cfc6b6;
+  background: #fffdf8;
+  color: #6e675c;
+  font-family: var(--font);
+  font-size: 10px;
+  padding: 4px;
+  border-radius: 4px;
+}
+.inkan-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0 2px 4px;
+}
+.inkan-btn {
+  appearance: none;
+  border: 1px solid #8a8274;
+  background: #fffdf8;
+  color: #1a1814;
+  font-family: var(--font);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.inkan-btn.primary {
+  border-color: #3d4a8f;
+  color: #3d4a8f;
+}
+.inkan-btn.danger {
+  border-color: #a94442;
+  color: #a94442;
+}
+.inkan-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.inkan-btn:not(:disabled):active {
+  background: #efe8d8;
+}
+
+.debug-bar {
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border: 1px dashed #b7ae9c;
+  border-radius: 8px;
+  background: #f3efe6;
+  font-family: var(--font);
+}
+.debug-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #1a1814;
+  margin-bottom: 8px;
+  letter-spacing: 0.04em;
+}
+.debug-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  align-items: center;
+}
+.debug-row label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+  color: #6e675c;
+}
+.debug-select {
+  min-width: 140px;
+  font-family: var(--font);
+  font-size: 13px;
+  padding: 5px 8px;
+  border: 1px solid #8a8274;
+  border-radius: 6px;
+  background: #fffdf8;
+  color: #1a1814;
+}
+.debug-hint {
+  font-size: 11px;
+  color: #8a8274;
+}
 
 .inkan-stamp.tilt-0 { transform: rotate(0deg); }
 .inkan-stamp.tilt-1 { transform: rotate(-7deg); }
