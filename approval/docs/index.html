@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Approval｜A4 填空文件</title>
+  <title>Approval｜A4 填空＋段末小框</title>
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
@@ -11,7 +11,7 @@
     <header class="bar">
       <div>
         <h1>簽核｜A4 填空文件</h1>
-        <p>純文字描述＋填空綁定 · 段末自己看備註 · 文末公開備註</p>
+        <p>段末小對話框＝給未來自己 · 文末小框＝公開討論</p>
       </div>
       <label class="who">
         我是
@@ -27,9 +27,8 @@
       <article class="a4" id="doc">
 
         <h2 class="doc-title">請假申請書</h2>
-        <p class="doc-meta">以描述句填空建立欄位；空白處＝綁定欄位。</p>
+        <p class="doc-meta">描述句填空＝綁定欄位。段末小框給未來的自己；文末小框給公開討論。</p>
 
-        <!-- 段落 1：申請敘述（填空＝綁定） -->
         <section class="block" data-block="apply">
           <p class="para">
             申請人
@@ -42,29 +41,19 @@
             <input class="blank narrow" data-bind="days" value="1" />
             天，代理人為
             <input class="blank" data-bind="agent" value="陳美玲" />
-            。
+            。<button type="button" class="note-ico" data-kind="self" data-block="apply" aria-label="給未來自己的備註"><span class="count">0</span></button>
           </p>
-          <div class="private-note" data-owner-only>
-            <span class="label">僅自己看 · 本段備註</span>
-            <textarea class="priv" data-block="apply" placeholder="這段只有我看得到…"></textarea>
-          </div>
         </section>
 
-        <!-- 段落 2：系統／流程敘述（純文字，無框） -->
         <section class="block" data-block="flow">
           <p class="para narrate">
-            系統已排程郵件通知簽核人林主管。此關可簽核、可退回、可換代理人；申請欄位送出後改為唯讀。
+            系統已排程郵件通知簽核人林主管。此關可簽核、可退回、可換代理人；申請欄位送出後改為唯讀。<button type="button" class="note-ico" data-kind="self" data-block="flow-a" aria-label="給未來自己的備註"><span class="count">0</span></button>
           </p>
           <p class="para narrate">
-            變更紀錄：假別由「特休」改為「事假」；日期由空白改為「明天」；天數為「1」。
+            變更紀錄：假別由「特休」改為「事假」；日期由空白改為「明天」；天數為「1」。<button type="button" class="note-ico" data-kind="self" data-block="flow-b" aria-label="給未來自己的備註"><span class="count">0</span></button>
           </p>
-          <div class="private-note" data-owner-only>
-            <span class="label">僅自己看 · 本段備註</span>
-            <textarea class="priv" data-block="flow" placeholder="這段只有我看得到…"></textarea>
-          </div>
         </section>
 
-        <!-- 段落 3：簽核敘述＋可填空意見 -->
         <section class="block" data-block="sign1">
           <p class="para">
             第一關簽核人
@@ -73,12 +62,8 @@
             <input class="blank wide" data-bind="status1" value="等待申請人送出" />
             。簽核意見：
             <input class="blank wider" data-bind="opinion1" value="" placeholder="（填空）" />
-            。
+            。<button type="button" class="note-ico" data-kind="self" data-block="sign1" aria-label="給未來自己的備註"><span class="count">0</span></button>
           </p>
-          <div class="private-note" data-owner-only>
-            <span class="label">僅自己看 · 本段備註</span>
-            <textarea class="priv" data-block="sign1" placeholder="這段只有我看得到…"></textarea>
-          </div>
         </section>
 
         <section class="block" data-block="sign2">
@@ -89,34 +74,38 @@
             <input class="blank wide" data-bind="status2" value="等待前關完成" />
             。簽核意見：
             <input class="blank wider" data-bind="opinion2" value="" placeholder="（填空）" />
-            。
+            。<button type="button" class="note-ico" data-kind="self" data-block="sign2" aria-label="給未來自己的備註"><span class="count">0</span></button>
           </p>
-          <div class="private-note" data-owner-only>
-            <span class="label">僅自己看 · 本段備註</span>
-            <textarea class="priv" data-block="sign2" placeholder="這段只有我看得到…"></textarea>
-          </div>
         </section>
 
-        <!-- 文件最下方：公開備註（別人不能改已寫入的） -->
-        <section class="public-notes" aria-label="公開備註">
-          <h3>公開備註</h3>
-          <p class="hint">加在文件最下方；已送出的公開備註他人不可改。</p>
-          <ul id="public-list">
-            <li>
-              <strong>人資公告</strong>
-              <span>請假逾三日請附證明。</span>
-              <em>不可改</em>
-            </li>
-          </ul>
-          <form id="public-form" class="public-form">
-            <input type="text" id="public-input" placeholder="新增一則公開備註…" autocomplete="off" />
-            <button type="submit">加上</button>
-          </form>
+        <section class="doc-end">
+          <p class="end-line">
+            —— 文件結束 ——
+            <button type="button" class="note-ico public" data-kind="public" data-block="public" aria-label="公開討論"><span class="count">0</span></button>
+          </p>
+          <p class="end-hint">文末小框＝公開討論（大家看得到）</p>
         </section>
 
       </article>
     </div>
   </div>
+
+  <!-- 點小框後展開：給未來自己 / 公開討論 -->
+  <div class="sheet hidden" id="sheet" role="dialog" aria-modal="true">
+    <div class="sheet-card">
+      <header class="sheet-head">
+        <h3 id="sheet-title">給未來的自己</h3>
+        <button type="button" class="sheet-x" id="sheet-close" aria-label="關閉">×</button>
+      </header>
+      <p class="sheet-desc" id="sheet-desc">只有你看得到。像留給以後的自己的書籤。</p>
+      <div class="thread" id="sheet-thread"></div>
+      <form class="sheet-form" id="sheet-form">
+        <input type="text" id="sheet-input" placeholder="寫一句給未來的自己…" autocomplete="off" />
+        <button type="submit">留下</button>
+      </form>
+    </div>
+  </div>
+
   <script src="./app.js"></script>
 </body>
 </html>

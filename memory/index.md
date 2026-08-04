@@ -10,6 +10,7 @@
 
 ## 場次
 
+- 2026-08-04 — 段末小對話框給未來自己／文末公開討論 — 標籤：SEED、Approval、A4 — [sessions/2026-08-04-approval-para-note-icon.md](sessions/2026-08-04-approval-para-note-icon.md)
 - 2026-08-04 — 簽核新風格 A4 填空文件 — 標籤：SEED、Approval、A4、填空 — [sessions/2026-08-04-approval-a4-cloze.md](sessions/2026-08-04-approval-a4-cloze.md)
 - 2026-08-04 — 畫面規則紅框黃字 — 標籤：SEED、Approval、紅框黃字 — [sessions/2026-08-04-approval-red-yellow.md](sessions/2026-08-04-approval-red-yellow.md)
 - 2026-08-04 — 系統資訊放回對話泡 — 標籤：SEED、Approval、對話泡 — [sessions/2026-08-04-approval-sys-in-bubbles.md](sessions/2026-08-04-approval-sys-in-bubbles.md)
