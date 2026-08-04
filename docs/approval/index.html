@@ -3,127 +3,79 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Approval｜A4 填空＋段末小框</title>
-  <link rel="stylesheet" href="./styles.css?v=inkan2" />
+  <title>Approval｜請假申請書</title>
+  <link rel="stylesheet" href="./styles.css?v=clean1" />
 </head>
 <body>
-  <div class="app">
-    <header class="bar">
-      <div>
-        <h1>簽核｜A4 填空文件</h1>
-        <p>段末小框＝未來自己 · 稟議印鑑欄 · 文末＝公開討論</p>
-      </div>
-      <label class="who">
-        我是
-        <select id="login">
-          <option value="u_ming" selected>王小明（申請人）</option>
-          <option value="u_lin">林主管</option>
-          <option value="u_yen">嚴協理</option>
-        </select>
-      </label>
-    </header>
+  <div class="stage">
+    <article class="a4" id="doc">
 
-    <div class="stage">
-      <article class="a4" id="doc">
+      <h2 class="doc-title">請假申請書</h2>
 
-        <h2 class="doc-title">請假申請書</h2>
-        <p class="doc-meta">描述句填空＝綁定欄位。段末小框給未來的自己；文末小框給公開討論。</p>
+      <section class="block">
+        <p class="para">
+          申請人
+          <input class="blank" data-bind="applicant" value="王小明" />
+          因
+          <input class="blank" data-bind="leave_type" value="事假" />
+          ，自
+          <input class="blank wide" data-bind="leave_date" value="明天" />
+          起請假
+          <input class="blank narrow" data-bind="days" value="1" />
+          天，代理人為
+          <input class="blank" data-bind="agent" value="陳美玲" />
+          。
+        </p>
+      </section>
 
-        <section class="block" data-block="apply">
-          <p class="para">
-            申請人
-            <input class="blank" data-bind="applicant" value="王小明" />
-            因
-            <input class="blank" data-bind="leave_type" value="事假" />
-            ，自
-            <input class="blank wide" data-bind="leave_date" value="明天" />
-            起請假
-            <input class="blank narrow" data-bind="days" value="1" />
-            天，代理人為
-            <input class="blank" data-bind="agent" value="陳美玲" />
-            。<button type="button" class="note-ico" data-kind="self" data-block="apply" aria-label="給未來自己的備註"><span class="count">0</span></button>
-          </p>
-        </section>
+      <section class="block">
+        <p class="para narrate">
+          系統已排程郵件通知簽核人。此關可簽核、可退回、可換代理人；申請欄位送出後改為唯讀。
+        </p>
+        <p class="para narrate">
+          變更紀錄：假別由「特休」改為「事假」；日期由空白改為「明天」；天數為「1」。
+        </p>
+      </section>
 
-        <section class="block" data-block="flow">
-          <p class="para narrate">
-            系統已排程郵件通知簽核人。此關可簽核、可退回、可換代理人；申請欄位送出後改為唯讀。<button type="button" class="note-ico" data-kind="self" data-block="flow-a" aria-label="給未來自己的備註"><span class="count">0</span></button>
-          </p>
-          <p class="para narrate">
-            變更紀錄：假別由「特休」改為「事假」；日期由空白改為「明天」；天數為「1」。<button type="button" class="note-ico" data-kind="self" data-block="flow-b" aria-label="給未來自己的備註"><span class="count">0</span></button>
-          </p>
-        </section>
+      <section class="block hanko-block">
+        <p class="para narrate hanko-lead">簽核印鑑欄</p>
+        <table class="inkan-table">
+          <thead>
+            <tr>
+              <th scope="col">協理</th>
+              <th scope="col">課長</th>
+              <th scope="col">代理人</th>
+              <th scope="col">申請</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="pending">
+                <div class="inkan-stamp tilt-0 empty"><span class="inkan-name">嚴</span></div>
+                <div class="inkan-time wait">尚未蓋印</div>
+              </td>
+              <td class="done">
+                <div class="inkan-stamp tilt-1"><span class="inkan-name">林</span></div>
+                <div class="inkan-approve">APPROVE</div>
+                <div class="inkan-time">08-04 10:18</div>
+              </td>
+              <td class="done">
+                <div class="inkan-stamp tilt-2"><span class="inkan-name">陳</span></div>
+                <div class="inkan-approve">確認</div>
+                <div class="inkan-time">08-04 09:55</div>
+              </td>
+              <td class="done">
+                <div class="inkan-stamp tilt-3"><span class="inkan-name">王</span></div>
+                <div class="inkan-approve">申請</div>
+                <div class="inkan-time">08-04 09:40</div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
 
-        <!-- 日式稟議印鑑欄：表格橫排（非條列） -->
-        <section class="block hanko-block" data-block="stamps">
-          <p class="para narrate hanko-lead">
-            簽核印鑑欄
-            <button type="button" class="note-ico" data-kind="self" data-block="stamps" aria-label="給未來自己的備註"><span class="count">0</span></button>
-          </p>
-          <table class="inkan-table">
-            <thead>
-              <tr>
-                <th scope="col">協理</th>
-                <th scope="col">課長</th>
-                <th scope="col">代理人</th>
-                <th scope="col">申請</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td class="pending">
-                  <div class="inkan-stamp tilt-0 empty"><span class="inkan-name">嚴</span></div>
-                  <div class="inkan-time wait">尚未蓋印</div>
-                </td>
-                <td class="done">
-                  <div class="inkan-stamp tilt-1"><span class="inkan-name">林</span></div>
-                  <div class="inkan-approve">APPROVE</div>
-                  <div class="inkan-time">08-04 10:18</div>
-                </td>
-                <td class="done">
-                  <div class="inkan-stamp tilt-2"><span class="inkan-name">陳</span></div>
-                  <div class="inkan-approve">確認</div>
-                  <div class="inkan-time">08-04 09:55</div>
-                </td>
-                <td class="done">
-                  <div class="inkan-stamp tilt-3"><span class="inkan-name">王</span></div>
-                  <div class="inkan-approve">申請</div>
-                  <div class="inkan-time">08-04 09:40</div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-          <p class="inkan-caption">左高右低；下位印章略向主管方向傾斜。</p>
-        </section>
-
-        <section class="doc-end">
-          <p class="end-line">
-            —— 文件結束 ——
-            <button type="button" class="note-ico public" data-kind="public" data-block="public" aria-label="公開討論"><span class="count">0</span></button>
-          </p>
-          <p class="end-hint">文末小框＝公開討論（大家看得到）</p>
-        </section>
-
-      </article>
-    </div>
+    </article>
   </div>
-
-  <!-- 點小框後展開：給未來自己 / 公開討論 -->
-  <div class="sheet hidden" id="sheet" role="dialog" aria-modal="true">
-    <div class="sheet-card">
-      <header class="sheet-head">
-        <h3 id="sheet-title">給未來的自己</h3>
-        <button type="button" class="sheet-x" id="sheet-close" aria-label="關閉">×</button>
-      </header>
-      <p class="sheet-desc" id="sheet-desc">只有你看得到。像留給以後的自己的書籤。</p>
-      <div class="thread" id="sheet-thread"></div>
-      <form class="sheet-form" id="sheet-form">
-        <input type="text" id="sheet-input" placeholder="寫一句給未來的自己…" autocomplete="off" />
-        <button type="submit">留下</button>
-      </form>
-    </div>
-  </div>
-
-  <script src="./app.js"></script>
+  <script src="./app.js?v=clean1"></script>
 </body>
 </html>

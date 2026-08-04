@@ -20,48 +20,8 @@ html, body {
   color: #eee;
 }
 
-.app {
-  min-height: 100%;
-  display: grid;
-  grid-template-rows: auto 1fr;
-}
-
-.bar {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  align-items: flex-start;
-  padding: 12px 16px;
-  border-bottom: 1px solid #333;
-  background: #151515;
-  flex-wrap: wrap;
-}
-.bar h1 {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 650;
-}
-.bar p {
-  margin: 4px 0 0;
-  font-size: 12px;
-  color: #9a9a9a;
-}
-.who {
-  font-size: 13px;
-  color: #bbb;
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-.who select {
-  border: 0;
-  border-radius: 6px;
-  background: #2d2d2d;
-  color: #eee;
-  padding: 6px 8px;
-}
-
 .stage {
+  min-height: 100%;
   overflow: auto;
   padding: 20px 12px 40px;
   background:
@@ -82,18 +42,11 @@ html, body {
 }
 
 .doc-title {
-  margin: 0 0 6px;
+  margin: 0 0 28px;
   text-align: center;
   font-size: 22px;
   font-weight: 700;
   letter-spacing: 0.12em;
-}
-.doc-meta {
-  margin: 0 0 22px;
-  text-align: center;
-  font-family: var(--font);
-  font-size: 12px;
-  color: var(--muted);
 }
 
 .block {
@@ -226,165 +179,6 @@ table.inkan-table td {
 .blank::placeholder {
   color: #a09888;
   font-size: 14px;
-}
-
-/* 段末／文末：小說閱讀器式小對話框圖（沒有就是 0） */
-.note-ico {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  vertical-align: middle;
-  margin-left: 4px;
-  width: 1.55em;
-  height: 1.15em;
-  padding: 0;
-  border: 1px solid rgba(90, 80, 60, 0.35);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.35);
-  color: #7a7264;
-  font: 600 10px/1 var(--font);
-  cursor: pointer;
-  position: relative;
-  top: -0.05em;
-}
-.note-ico::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  box-shadow: 0 0 0 1px rgba(0,0,0,0.02);
-}
-.note-ico .count { position: relative; z-index: 1; }
-.note-ico.has {
-  border-color: rgba(61, 74, 143, 0.45);
-  color: var(--accent);
-  background: rgba(61, 74, 143, 0.08);
-}
-.note-ico.public {
-  border-color: rgba(90, 80, 60, 0.5);
-}
-.note-ico.public.has {
-  border-color: rgba(61, 74, 143, 0.55);
-}
-
-.doc-end {
-  margin-top: 28px;
-  padding-top: 16px;
-  border-top: 2px solid var(--ink);
-  text-align: center;
-}
-.end-line {
-  margin: 0;
-  font-size: 14px;
-  letter-spacing: 0.08em;
-  color: #4a453c;
-}
-.end-hint {
-  margin: 8px 0 0;
-  font-family: var(--font);
-  font-size: 11px;
-  color: var(--muted);
-}
-
-/* 點小框後的面板 */
-.sheet {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.45);
-  display: grid;
-  place-items: end center;
-  padding: 0;
-  z-index: 30;
-}
-.sheet.hidden { display: none; }
-.sheet-card {
-  width: min(420px, 100%);
-  max-height: 70vh;
-  background: #f7f3ea;
-  color: var(--ink);
-  border-radius: 16px 16px 0 0;
-  padding: 14px 14px calc(14px + env(safe-area-inset-bottom));
-  display: grid;
-  grid-template-rows: auto auto 1fr auto;
-  gap: 8px;
-  box-shadow: 0 -8px 30px rgba(0,0,0,0.25);
-}
-.sheet-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.sheet-head h3 {
-  margin: 0;
-  font-size: 16px;
-  font-family: var(--font);
-}
-.sheet-x {
-  border: 0;
-  background: transparent;
-  font-size: 22px;
-  line-height: 1;
-  cursor: pointer;
-  color: #666;
-}
-.sheet-desc {
-  margin: 0;
-  font-family: var(--font);
-  font-size: 12px;
-  color: var(--muted);
-}
-.thread {
-  overflow: auto;
-  min-height: 120px;
-  max-height: 40vh;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 4px 0;
-}
-.msg {
-  background: #efe8d8;
-  border-radius: 10px;
-  padding: 8px 10px;
-  font-family: var(--font);
-  font-size: 13px;
-  line-height: 1.45;
-}
-.msg .when {
-  display: block;
-  font-size: 10px;
-  color: var(--muted);
-  margin-bottom: 2px;
-}
-.msg.mine { background: #e4e8f7; }
-.empty {
-  font-family: var(--font);
-  font-size: 13px;
-  color: var(--muted);
-  text-align: center;
-  padding: 24px 8px;
-}
-.sheet-form {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 8px;
-}
-.sheet-form input {
-  border: 1px solid #d5cdb8;
-  border-radius: 8px;
-  background: #fff;
-  padding: 10px 12px;
-  font: 400 14px var(--font);
-  outline: none;
-}
-.sheet-form button {
-  border: 0;
-  border-radius: 8px;
-  background: var(--accent);
-  color: #fff;
-  font: 600 13px var(--font);
-  padding: 0 14px;
-  cursor: pointer;
 }
 
 @media (max-width: 640px) {
