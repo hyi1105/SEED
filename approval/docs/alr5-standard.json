@@ -1,10 +1,10 @@
 {
   "standard_id": "ALR5",
-  "standard_version": "0.2.6",
+  "standard_version": "0.2.7",
   "lang": "zh-Hant",
   "title": "ALR5 簽核標準（功能／情境／JSON 互通）",
-  "purpose": "讓不同系統用同一套欄位與檢查清單交換申請單 JSON；支援 AB 表單（表頭＋明細）、使用者可設定的固定格式匯出、以及依 JSON 規範自動補齊缺少功能／欄位；畫面「ALR5功能」供人一眼看懂；本檔可整份貼給新 AI 實作同等互傳。",
-  "ai_prompt_prefix": "你是實作 ALR5 簽核互通的工程 Agent。請嚴格依 standard_version ALR5/0.2.6 與 json_contract／interop_checklist／decisions／form_composition／export_profiles／json_completeness 實作。狀態、current_level、動作 id 不得自創別名。decisions 已定案不得違反。產出必須通過全部 required=true 檢查；缺欄／缺功能依 json_completeness 用標準預設自動補齊。",
+  "purpose": "讓不同系統用同一套欄位與檢查清單交換申請單 JSON；支援 AB 表單、可設定匯出、跨單／跨系統關聯與前置條件、兩種開單模式（需要時建立／預先建立搶位）、以及依 JSON 規範自動補齊缺少功能／欄位；畫面「ALR5功能」供人一眼看懂；本檔可整份貼給新 AI 實作同等互傳。",
+  "ai_prompt_prefix": "你是實作 ALR5 簽核互通的工程 Agent。請嚴格依 standard_version ALR5/0.2.7 與 json_contract／interop_checklist／decisions／form_composition／export_profiles／json_completeness／cross_links／create_modes 實作。狀態、current_level、動作 id 不得自創別名。decisions 已定案不得違反。產出必須通過全部 required=true 檢查；缺欄／缺功能依 json_completeness 用標準預設自動補齊。",
   "status_model": {
     "field": "system.status",
     "values": [
@@ -669,6 +669,38 @@
         "json_completeness",
         "defaults"
       ]
+    },
+    {
+      "id": "cross_links",
+      "title": "跨單關聯／前置條件／完成回寫",
+      "scenario": "B 要等 A 完成才準；C 要 B 甚至也要 A；校正報告完成後改儀器下次校正日。",
+      "rules": [
+        "prerequisites：建立／Submit／某 level 前檢查他單狀態與欄位",
+        "links[]：記錄關聯單號",
+        "effects_on：本單達狀態時回寫關聯單欄位（必留 log）",
+        "建議主檔＋事件模式承載「認證感」"
+      ],
+      "json": [
+        "form_schema.prerequisites[]",
+        "form_schema.effects_on[]",
+        "links[]"
+      ]
+    },
+    {
+      "id": "create_modes",
+      "title": "需要時建立 vs 預先建立搶位",
+      "scenario": "一般申請隨時開單；或展示區名額／待補貨位先建好，行事曆上看 open item 來搶，條件滿足再往下。",
+      "rules": [
+        "on_demand：需要時建立",
+        "preallocated：容量＋allocation 狀態＋行事曆／清單搶位",
+        "設定完成，JSON 可轉移"
+      ],
+      "json": [
+        "form_schema.create_mode",
+        "capacity",
+        "allocation",
+        "system.allocation_state"
+      ]
     }
   ],
   "json_contract": {
@@ -699,7 +731,9 @@
       "header",
       "lines",
       "form_schema",
-      "export_profiles"
+      "export_profiles",
+      "links",
+      "allocation"
     ],
     "system_required_keys": [
       "status",
@@ -1027,6 +1061,16 @@
       "id": "chk_full_json_transfer",
       "required": true,
       "label": "form／item／匯出設定／權限／流程皆可序列化為 JSON 完全轉移"
+    },
+    {
+      "id": "chk_cross_links",
+      "required": false,
+      "label": "若有跨單依賴：實作 prerequisites／links／effects_on（回寫留 log；禁循環依賴）"
+    },
+    {
+      "id": "chk_create_modes",
+      "required": false,
+      "label": "若支援預建：create_mode＋allocation 狀態＋容量／行事曆搶位語意"
     }
   ],
   "open_questions": [
@@ -1039,6 +1083,26 @@
       "id": "q_export_file_store",
       "priority": "low",
       "question": "匯出檔存放與重送策略（只留 log、還是存檔案 blob）？"
+    },
+    {
+      "id": "q_cross_link_ui",
+      "priority": "medium",
+      "question": "跨單關聯在畫面上如何選他單／顯示認證鏈（單號＋狀態燈）？"
+    },
+    {
+      "id": "q_effect_conflict",
+      "priority": "medium",
+      "question": "多張 B 回寫同一 A 欄位時，以最後完成／最大日期／手動為準？"
+    },
+    {
+      "id": "q_preallocate_who_generates",
+      "priority": "low",
+      "question": "預建池由誰／何時批次產生（排程、owner、admin）？"
+    },
+    {
+      "id": "q_hold_timeout",
+      "priority": "low",
+      "question": "搶位 held 逾時多久自動 released？"
     }
   ],
   "logic_risk_warnings": [
@@ -1183,6 +1247,14 @@
     {
       "id": "d_user_config_first",
       "decision": "AB 表單與匯出格式等優先用設定讓使用者自己完成，不靠改程式"
+    },
+    {
+      "id": "d_cross_links",
+      "decision": "支援跨單／跨系統關聯：prerequisites（前置）＋links（引用）＋effects_on（完成回寫）；皆設定化 JSON；建議主檔＋事件承載認證／校正類情境"
+    },
+    {
+      "id": "d_create_modes",
+      "decision": "開單兩模式：on_demand（需要時建立）與 preallocated（預先建立名額／庫位，行事曆搶 open item）；設定驅動"
     }
   ],
   "resolved_questions": [
@@ -1289,6 +1361,14 @@
     {
       "id": "q_json_autofill",
       "answer": "依 JSON 規範自動補齊缺欄／缺功能；standard 必須寫好機讀預設"
+    },
+    {
+      "id": "q_cross_system_chain",
+      "answer": "用 prerequisites＋links＋effects_on 串 A／B／C；校正類建議 A 主檔＋B 事件回寫 A；細節 UI／衝突規則仍待補"
+    },
+    {
+      "id": "q_two_create_modes",
+      "answer": "on_demand 與 preallocated（名額／庫位／行事曆搶位）兩種；設定完成"
     }
   ],
   "field_schema": {
@@ -1390,7 +1470,8 @@
       "principle": "一切以可完全轉移的 JSON 為準：form 定義、申請單、匯出設定、權限、流程皆可序列化搬遷",
       "auto_fill": "接收端依 ALR5 JSON 規範／本 standard，對缺少的功能或欄位用預設自動補齊，再與本地擴充合併",
       "user_config": "AB 表單、匯出格式等優先用設定完成，不靠改程式"
-    }
+    },
+    "cross_system": "跨系統＝不同 form_id／系統代號之間用同一套 links／prerequisites／effects；仍是可轉移 JSON，不是另外的登入認證協定。"
   },
   "form_composition": {
     "id": "AB_form",
@@ -1552,7 +1633,167 @@
       "header": {},
       "lines": [],
       "export_profiles": [],
-      "stages[].approvers[].comment": ""
+      "stages[].approvers[].comment": "",
+      "links": [],
+      "prerequisites": [],
+      "effects_on": []
     }
+  },
+  "cross_links": {
+    "id": "cross_form_links",
+    "label": "跨單／跨系統關聯與前置條件",
+    "description": "例如 B 必須等 A 跑完（有單號＋狀態）才能往下；C 可等 B，也可要求 A 也完成才能申請。儀器校正：A＝儀器主檔、B＝年度校正報告；B 完成後回寫 A 的下次校正日。語感像「認證／合格證明鏈」，本質是可設定的前置條件＋完成後效果，不是登入認證。",
+    "concepts": [
+      {
+        "id": "prerequisite",
+        "meaning": "開單或 Submit／進某 level 前，必須滿足的他單條件"
+      },
+      {
+        "id": "link",
+        "meaning": "本單與他單的關聯（引用單號／item_id／form_id）"
+      },
+      {
+        "id": "effect",
+        "meaning": "本單達某狀態時，回寫／建立／通知關聯單（如改 A 的 next_calibration_at）"
+      },
+      {
+        "id": "master_event",
+        "meaning": "建議模式：A＝主檔（長期存在）、B＝事件單（每次校正）；事件完成→效果回寫主檔"
+      }
+    ],
+    "form_schema_shape": {
+      "prerequisites": [
+        {
+          "id": "need_a_completed",
+          "when": "before_submit | before_create | before_level:N",
+          "require": {
+            "form_id": "instrument_master",
+            "link_field": "header.instrument_ref",
+            "status_in": [
+              "completed"
+            ],
+            "current_level_in": [
+              9999
+            ],
+            "extra_field_checks": [
+              {
+                "path": "header.active",
+                "equals": true
+              }
+            ]
+          },
+          "message": "須先完成儀器主檔／前一流程"
+        }
+      ],
+      "effects_on": [
+        {
+          "id": "write_next_cal",
+          "when": "status_becomes:completed",
+          "target": {
+            "from_link": "header.instrument_ref",
+            "form_id": "instrument_master"
+          },
+          "actions": [
+            {
+              "op": "set_field",
+              "path": "header.next_calibration_at",
+              "value_from": "header.calibration_valid_until"
+            },
+            {
+              "op": "append_log",
+              "note": "由校正單回寫下次校正日"
+            }
+          ]
+        }
+      ]
+    },
+    "document_runtime": {
+      "links": [
+        {
+          "role": "prerequisite_of | master_of | caused_by | related",
+          "form_id": "string",
+          "doc_no": "string",
+          "item_id": "string",
+          "status_snapshot": "optional"
+        }
+      ]
+    },
+    "chain_example": {
+      "A": "儀器主檔（可長期存在；或先跑完的系統單）",
+      "B": "校正報告：Submit 前要求 link 到 A 且 A 狀態合格；Completed 後 effect 回寫 A.next_calibration_at",
+      "C": "後續申請：prerequisites 可要求 B completed，和／或 A completed（且下次校正日未過期）"
+    },
+    "recommended_pattern": {
+      "name": "主檔＋事件＋效果回寫",
+      "why": "比「只有流程先後」更穩：A 是被認證的對象（儀器），B 是一次認證事件；有效狀態存在 A 上（下次校正日／合格旗標），C 查 A 即可，不必每次追整條鏈。",
+      "alt": "純流程鏈（僅 prerequisites 串 A→B→C）適合無主檔、一次性專案"
+    },
+    "rules": [
+      "前置條件與效果皆為 form 設定（JSON），可完全轉移",
+      "檢查時機可設：建立前／Submit 前／進某 level 前",
+      "條件看他單：form_id、doc_no／item_id、status、current_level、欄位值",
+      "完成效果：set_field／clear_field／create_item／notify（至少先支援 set_field）",
+      "回寫他單必留 logs／版本；若他單已 archived 則依設定擋或仍寫",
+      "循環依賴禁止（A 要 B 且 B 要 A 同時成立）"
+    ],
+    "json": [
+      "form_schema.prerequisites[]",
+      "form_schema.effects_on[]",
+      "links[]",
+      "header.*_ref"
+    ]
+  },
+  "create_modes": {
+    "id": "item_create_modes",
+    "label": "兩種新增／開單方式",
+    "modes": [
+      {
+        "id": "on_demand",
+        "label": "需要時建立",
+        "meaning": "要用才開單；預設無數量上限（除非另設配額）",
+        "rules": [
+          "使用者直接 New／Submit",
+          "可仍受 prerequisites 約束（例如必須先有關聯 A）"
+        ]
+      },
+      {
+        "id": "preallocated",
+        "label": "預先建立（名額／庫位／時段）",
+        "meaning": "先產生可被占用的 item 池：例如既有物品待補貨、展示區每日每區限五組。人從行事曆／清單看「未被使用」的 item 來搶；實物到齊或條件滿足後才繼續流程。",
+        "rules": [
+          "form 可設 create_mode=preallocated 與容量規則（capacity）",
+          "預建 item：status 可為 draft／new，另加 allocation 狀態：open｜held｜consumed｜released",
+          "搶位＝把 open item 變成 held（綁使用者／時段）；逾時可 released 回 open",
+          "「物品補齊才繼續」＝held／draft 上設 gate：實物確認欄或前置條件滿足才能 Submit",
+          "展示區例：每個區域×工作天 capacity=5；行事曆列出該日未使用（open）的 slots"
+        ],
+        "capacity_shape": {
+          "dimensions": [
+            "zone",
+            "workdate",
+            "slot_index"
+          ],
+          "limit": 5,
+          "calendar_view": "依 dimensions 查 open items 供搶"
+        },
+        "allocation_states": [
+          "open",
+          "held",
+          "consumed",
+          "released"
+        ]
+      }
+    ],
+    "form_schema_keys": [
+      "create_mode",
+      "capacity",
+      "allocation",
+      "preallocate_rules"
+    ],
+    "rules": [
+      "兩種模式可並存於不同 form；同一 form 通常擇一為主",
+      "設定驅動，JSON 可轉移",
+      "預建池可由排程／admin／owner 批次產生（例如每月產生校正空單、每日產生展示名額）"
+    ]
   }
 }

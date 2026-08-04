@@ -1,58 +1,42 @@
 # ALR5 標準互通規格（可貼給 AI）
 
-> **用途：** 整份複製貼給新的 AI／Agent，要求依此實作簽核 JSON 互傳。  
-> **機器可讀原文：** `docs/approval/alr5-standard.json`（standard_version **0.2.6**）  
-> **人讀總規：** `approval/ALR5簽核系統.md`  
-> **檢查原則：** `interop_checklist` 裡所有 `required: true` 通過 → 視為可與 ALR5 互通。
+> **機器可讀原文：** `docs/approval/alr5-standard.json`（**0.2.7**）  
+> **人讀總規：** `approval/ALR5簽核系統.md`
 
----
+## 給 AI 的開場
 
-## 給 AI 的開場（請一併貼上）
+你是實作 ALR5 簽核互通的工程 Agent。請嚴格依 standard_version **ALR5/0.2.7** 與 `json_contract`／`interop_checklist`／`decisions`／`form_composition`／`export_profiles`／`json_completeness`／`cross_links`／`create_modes` 實作。`decisions` 已定案不得違反。缺欄／缺功能依 `json_completeness` 自動補齊。
 
-你是實作 ALR5 簽核互通的工程 Agent。請嚴格依 standard_version **ALR5/0.2.6** 與 `json_contract`／`interop_checklist`／`decisions`／`form_composition`／`export_profiles`／`json_completeness` 實作。狀態、`current_level`、動作 id 不得自創別名。`decisions` 已定案不得違反。產出必須通過全部 `required: true` 檢查；缺欄／缺功能依 `json_completeness` 用標準預設自動補齊。
+## 互通 MVC
 
----
+**M**＝可完全轉移 JSON｜**C**＝功能符合 checklist｜**V**＝各端／AI 自訂畫面
 
-## 互通架構（MVC 語意）
+## 跨單關聯（建議串法）
 
-| 層 | 對應 | 說明 |
-|----|------|------|
-| **M** | **可完全轉移的 JSON** | form／申請單／匯出設定／權限／流程皆可序列化；結構認證後可傳給其他平台 |
-| **C** | 功能是否符合 ALR5 | checklist／decisions；缺功能依規範補預設 |
-| **V** | 畫面 | 各端／AI 自訂；**不綁死 UI** |
-
----
-
-## AB 表單／匯出／自動補齊（0.2.6）
-
-| 項目 | 定案 |
+| 元件 | 用途 |
 |------|------|
-| AB | **A＝`header`**（表頭一筆）、**B＝`lines[]`**（明細多列）；使用者設定 |
-| 固定格式匯出 | **`export_profiles[]`**（格式＋欄位對應；可多 profile）；設定也是 JSON |
-| 完整遷移包 | form 定義＋歷史 items＋附件（另案 `d_export_full`） |
-| 自動補齊 | 缺選用欄→預設；未知欄→保留；缺必填無法推導→incomplete |
-| 設定優先 | 不靠改程式 |
+| `prerequisites` | B／C 開單或 Submit 前：他單須達 status／level／欄位 |
+| `links` | 引用他單 doc_no／item_id |
+| `effects_on` | 本單完成 → 回寫他單（如校正日）；必留 log |
 
-機器原文：`form_composition`、`export_profiles`、`json_completeness`。
+**校正建議：** A＝主檔（下次校正日）、B＝事件（每次校正）→ 回寫 A；C 查 A。  
+語感像認證鏈，**不是**登入認證。
 
----
+## 開單兩模式
 
-## 已定案（必遵守，摘要）
+| 模式 | 說明 |
+|------|------|
+| `on_demand` | 需要時建立 |
+| `preallocated` | 預建名額／庫位；行事曆搶 `open`；條件滿足再往下 |
 
-Denied=-2；一人 Reject 整單 Denied；Return 作廢後續；SAVE→0；Cancel 同單升版；Denied Copy；Archive＝`system.archived`（不改 status，admin 復原）；ACL item 優先；required_from_level；多 owner；it_admin 補 owner；每關 comment；MVC；**AB／export_profiles／json_completeness**。
+## 其他已定案（摘要）
 
-完整表見 `alr5-standard.json` → `decisions`。
-
----
+AB 表單、export_profiles、自動補齊、Archive 旗標、Denied Copy、ACL item 優先、required_from_level、多 owner、it_admin… → 見 `decisions`。
 
 ## 仍待決
 
-1. 明細是否列級簽核／ACL？  
-2. 匯出檔存放與重送策略？  
-
----
+跨單 UI／回寫衝突；預建誰產生／held 逾時；明細列級簽核；匯出檔存放。
 
 ## 版本
 
-- standard_version: **0.2.6**  
-- 更新日期: 2026-08-04  
+**0.2.7**｜2026-08-04

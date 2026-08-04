@@ -57,7 +57,20 @@ note: 口頭對談整理進本檔；以 diff 確認。尚未口頭確認的區�
 | **設定優先** | 上述能力優先讓使用者自己設定完成，**不靠改程式** |
 | **JSON 要寫好** | `alr5-standard.json` 必須機讀：形狀、預設、checklist、decisions 齊全 |
 
-機器原文：`form_composition`／`export_profiles`／`json_completeness`（standard **0.2.6**）。
+### 1d. 跨單關聯／認證鏈／兩種開單（定案方向）
+
+> 你說「有點像認證」——在規格裡當成**合格證明／主檔狀態鏈**，不是登入認證。
+
+| 項目 | 建議／定案 |
+|------|------------|
+| **怎麼串** | 三件套：`prerequisites`（前置）＋`links`（引用單號）＋`effects_on`（完成回寫） |
+| **B 等 A** | B 的 Submit／建立前：prerequisite 要求已 link 的 A 達某 status／level |
+| **C 等 B／A** | C 可同時設多條 prerequisite（B completed，和／或 A completed＋欄位未過期） |
+| **校正較佳寫法** | **A＝儀器主檔**（存下次校正日）；**B＝每次校正事件**；B 完成 → effect 回寫 A；C 主要查 A |
+| **開單 on_demand** | 需要時建立，預設無上限 |
+| **開單 preallocated** | 預建名額／庫位／時段；行事曆看 **open** item 搶；實物到齊再往下 |
+
+機器原文：`cross_links`／`create_modes`（standard **0.2.7**）。
 
 ---
 
@@ -844,11 +857,16 @@ creator 開單／填單（可代填；requester 可為另一人）
 | 固定格式匯出 | **`export_profiles[]`** 設定對應；與完整遷移包分開 |
 | JSON 自動補齊 | 依規範補缺欄／缺功能預設；未知欄保留 |
 | 設定優先 | AB／匯出等讓使用者自己設定完成，不靠改程式 |
+| 跨單關聯 | prerequisites＋links＋effects_on；建議主檔＋事件（校正回寫） |
+| 開單模式 | **on_demand**／**preallocated**（名額搶位＋行事曆） |
 
 ## 10b. 仍待決
 
 - [ ] 明細是否支援列級簽核／列級 ACL，或一律整單簽核？
 - [ ] 匯出檔存放與重送策略（只留 log，還是存檔案）？
+- [ ] 跨單：畫面如何選他單／顯示認證鏈？
+- [ ] 多張事件單回寫同一主檔欄位時，衝突以誰為準？
+- [ ] 預建池誰批次產生？held 逾時多久自動釋放？
 
 ---
 
@@ -872,3 +890,4 @@ creator 開單／填單（可代填；requester 可為另一人）
 | 2026-08-04 | v0.2.4：拍板 Archive≠Cancel、已簽格權限、多 owner、it_admin 補 owner、完整 export、form archive→Cancel、Copy 授權、紅點 |
 | 2026-08-04 | v0.2.5：Archive＝`system.archived` 與 status 無關；admin unarchive 復原；互通 MVC（M＝JSON／C＝功能／V＝自訂畫面） |
 | 2026-08-04 | v0.2.6：AB 表單、可設定 export_profiles、json_completeness 自動補齊；設定優先＋JSON 完全轉移 |
+| 2026-08-04 | v0.2.7：跨單 prerequisites／links／effects_on；開單 on_demand／preallocated；校正主檔＋事件建議 |
