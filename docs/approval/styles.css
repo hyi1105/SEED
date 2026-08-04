@@ -1,15 +1,12 @@
 :root {
   --bg: #101010;
   --feed: #141414;
-  --bubble: #2c2c2c;
-  --me: #2e3050;
-  --me-private: #3a3428;
   --text: #ececec;
   --muted: #8e8e8e;
-  --sub: #b0b0b0;
-  --form: #f3efe6;
-  --form-ink: #1c1914;
-  --form-line: #d5cdb8;
+  --plain: #c8c8c8;
+  --box: #f3efe6;
+  --box-ink: #1c1914;
+  --box-line: #d5cdb8;
   --accent: #a78bfa;
   --private: #c9a35a;
   --font: "Segoe UI", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
@@ -48,72 +45,63 @@ html, body {
   background: var(--feed);
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
 }
 
-/* —— 對話泡：人與系統／關卡／版本都用泡泡 —— */
-.bubble {
-  max-width: 88%;
-  align-self: flex-start;
-  background: var(--bubble);
-  border-radius: 16px 16px 16px 6px;
-  padding: 9px 12px 10px;
+/* —— 黃：純文字，絕對不要框／泡泡底 —— */
+.plain {
+  max-width: 100%;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
 }
-.bubble.me {
-  align-self: flex-end;
-  background: var(--me);
-  border-radius: 16px 16px 6px 16px;
-}
-.bubble.me.private {
-  background: var(--me-private);
-  box-shadow: inset 0 0 0 1px rgba(201, 163, 90, 0.28);
-}
-.meta {
+.plain.me { align-self: stretch; }
+.plain .who {
   display: flex;
-  justify-content: space-between;
-  gap: 10px;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: baseline;
   font-size: 11px;
   color: var(--muted);
   margin-bottom: 4px;
 }
-.meta strong { color: #d2d2d2; font-weight: 600; }
-.bubble p {
+.plain .who strong {
+  color: #bdbdbd;
+  font-weight: 600;
+}
+.plain.me .who strong { color: #c5c8ef; }
+.plain p {
   margin: 0;
   font-size: 15px;
-  line-height: 1.5;
+  line-height: 1.6;
+  color: var(--plain);
+  font-family: var(--doc);
+  font-weight: 400;
 }
-.bubble p.sub {
-  margin-top: 6px;
-  font-size: 13px;
-  line-height: 1.45;
-  color: var(--sub);
-}
-.vis {
-  margin-top: 7px;
-  font-size: 11px;
-  color: var(--muted);
-}
-.vis.private { color: var(--private); }
+.plain.me p { color: #e4e4f5; }
+.plain.private .priv { color: var(--private); }
 
-/* —— 唯一「框」：申請單欄位 —— */
-.form-card {
+/* —— 紅：申請單欄位框；同階段同一框 —— */
+.box.stage {
   align-self: stretch;
-  background: var(--form);
-  color: var(--form-ink);
-  border-radius: 4px;
+  background: var(--box);
+  color: var(--box-ink);
+  border-radius: 6px;
   padding: 14px 14px 12px;
   box-shadow:
     0 0 0 1px #cfc6b3,
     0 10px 28px rgba(0, 0, 0, 0.35);
   font-family: var(--doc);
 }
-.form-head {
-  font-size: 16px;
+.box-head {
+  font-size: 15px;
   font-weight: 700;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.03em;
   padding-bottom: 10px;
-  margin-bottom: 4px;
-  border-bottom: 1px solid var(--form-line);
+  margin-bottom: 2px;
+  border-bottom: 1px solid var(--box-line);
 }
 .field {
   display: grid;
@@ -121,7 +109,7 @@ html, body {
   gap: 8px;
   align-items: baseline;
   padding: 9px 0 7px;
-  border-bottom: 1px solid var(--form-line);
+  border-bottom: 1px solid var(--box-line);
 }
 .field .k {
   font-family: var(--font);
@@ -131,14 +119,14 @@ html, body {
 .field .v {
   border: 0;
   background: transparent;
-  color: var(--form-ink);
+  color: var(--box-ink);
   font: 400 15px/1.4 var(--doc);
   padding: 0;
   width: 100%;
   outline: none;
 }
 .field .v:focus { box-shadow: 0 1px 0 0 #1c1914; }
-.form-note {
+.box-note {
   margin: 10px 0 0;
   font-family: var(--font);
   font-size: 11px;

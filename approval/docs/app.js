@@ -23,23 +23,24 @@
     ).padStart(2, "0")}`;
 
     const me = document.createElement("article");
-    me.className = "bubble me" + (visibility === "private" ? " private" : "");
+    me.className = "plain me" + (visibility === "private" ? " private" : "");
     me.innerHTML = `
-      <div class="meta"><strong>我</strong><time></time></div>
+      <div class="who"><strong>我</strong><time></time> · <span class="vislabel"></span></div>
       <p></p>
-      <div class="vis"></div>
     `;
     me.querySelector("time").textContent = time;
+    me.querySelector(".vislabel").textContent =
+      visibility === "private" ? "僅自己看" : "公開";
+    if (visibility === "private") {
+      me.querySelector(".vislabel").classList.add("priv");
+    }
     me.querySelector("p").textContent = text;
-    const vis = me.querySelector(".vis");
-    vis.textContent = visibility === "private" ? "僅自己看" : "公開";
-    if (visibility === "private") vis.classList.add("private");
     feed.appendChild(me);
 
     const sys = document.createElement("article");
-    sys.className = "bubble";
+    sys.className = "plain";
     sys.innerHTML = `
-      <div class="meta"><strong>系統</strong><time></time></div>
+      <div class="who"><strong>系統</strong><time></time></div>
       <p></p>
     `;
     sys.querySelector("time").textContent = time;

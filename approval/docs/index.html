@@ -3,28 +3,27 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Approval｜系統資訊在對話泡</title>
+  <title>Approval｜紅框黃字</title>
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
   <div class="phone">
     <header class="top">
       <h1>簽核｜請假申請</h1>
-      <p>系統／關卡／版本 → 對話泡 · 申請單欄位才有框</p>
+      <p>紅＝申請單欄位有框 · 黃＝純文字無框</p>
     </header>
 
     <main class="feed" id="feed">
 
-      <!-- 人：普通對話泡（不塞欄位） -->
-      <article class="bubble me">
-        <div class="meta"><strong>王小明</strong><time>17:02</time></div>
+      <!-- 黃：純文字對話，不要框／不要泡泡 -->
+      <article class="plain me">
+        <div class="who"><strong>王小明</strong><time>17:02</time> · 公開</div>
         <p>請幫我簽一下，明天上午請假。</p>
-        <div class="vis">公開</div>
       </article>
 
-      <!-- 主角：申請單欄位（唯一表單框，不是對話泡） -->
-      <section class="form-card" aria-label="申請單欄位">
-        <header class="form-head">請假申請單</header>
+      <!-- 紅：申請單欄位 → 框裡；同一階段同一框 -->
+      <section class="box stage" aria-label="申請階段欄位">
+        <header class="box-head">請假申請單 · 申請階段</header>
         <label class="field">
           <span class="k">假別</span>
           <input class="v" value="事假" />
@@ -37,53 +36,47 @@
           <span class="k">代理人</span>
           <input class="v" value="陳美玲" />
         </label>
-        <p class="form-note">預設欄位／預設值，可直接改</p>
+        <p class="box-note">同階段欄位收在同一框 · 預設值可改</p>
       </section>
 
-      <!-- 以下「剛剛被拿掉泡泡」的系統資訊 → 全部改回對話泡 -->
-      <article class="bubble">
-        <div class="meta"><strong>系統</strong><time>17:02</time></div>
-        <p>已排程郵件通知林主管，主旨「請假待簽」。</p>
-        <p class="sub">該關權限：可簽核、可退回、可換代理人；申請人欄位送出後唯讀。</p>
+      <!-- 黃：系統／版本 → 無框純文字 -->
+      <article class="plain">
+        <div class="who"><strong>系統</strong><time>17:02</time></div>
+        <p>已排程郵件通知林主管，主旨「請假待簽」。該關權限：可簽核、可退回、可換代理人；申請人欄位送出後唯讀。</p>
       </article>
 
-      <article class="bubble">
-        <div class="meta"><strong>版本</strong><time>17:02</time></div>
-        <p>Edited 2 fields</p>
-        <p class="sub">假別：特休 → 事假 · 日期：未填 → 明天（1 天）</p>
+      <article class="plain">
+        <div class="who"><strong>版本</strong><time>17:02</time></div>
+        <p>Edited 2 fields — 假別：特休 → 事假；日期：未填 → 明天（1 天）。</p>
       </article>
 
-      <article class="bubble">
-        <div class="meta"><strong>Approver1</strong><time>17:10</time></div>
-        <p>林主管 · 等待申請人送出</p>
-        <p class="sub">可見公開欄位 · 看不到「僅自己看」內容</p>
+      <article class="plain">
+        <div class="who"><strong>Approver1</strong><time>17:10</time></div>
+        <p>林主管 · 等待申請人送出。可見公開欄位，看不到「僅自己看」內容。</p>
       </article>
 
-      <article class="bubble">
-        <div class="meta"><strong>Approver2</strong><time>17:10</time></div>
-        <p>嚴協理 · 等待前關完成</p>
-        <p class="sub">此關可簽核、可駁回 · 不可改假別</p>
+      <article class="plain">
+        <div class="who"><strong>Approver2</strong><time>17:10</time></div>
+        <p>嚴協理 · 等待前關完成。此關可簽核、可駁回，不可改假別。</p>
       </article>
 
-      <article class="bubble me">
-        <div class="meta"><strong>王小明</strong><time>17:12</time></div>
+      <article class="plain me">
+        <div class="who"><strong>王小明</strong><time>17:12</time> · 公開</div>
         <p>有，陳美玲已同意代理。</p>
-        <div class="vis">公開</div>
       </article>
 
-      <article class="bubble">
-        <div class="meta"><strong>系統</strong><time>17:12</time></div>
+      <article class="plain">
+        <div class="who"><strong>系統</strong><time>17:12</time></div>
         <p>代理人已寫入共用區，並抄送陳美玲信箱。</p>
       </article>
 
-      <article class="bubble me private">
-        <div class="meta"><strong>王小明</strong><time>17:13</time></div>
+      <article class="plain me private">
+        <div class="who"><strong>王小明</strong><time>17:13</time> · <span class="priv">僅自己看</span></div>
         <p>醫生回診，先跟自己留個底。</p>
-        <div class="vis private">僅自己看</div>
       </article>
 
-      <article class="bubble">
-        <div class="meta"><strong>系統</strong><time>17:13</time></div>
+      <article class="plain">
+        <div class="who"><strong>系統</strong><time>17:13</time></div>
         <p>上一則未進共用庫，只存在申請人個人空間。</p>
       </article>
 

@@ -10,6 +10,7 @@
 
 ## 場次
 
+- 2026-08-04 — 畫面規則紅框黃字 — 標籤：SEED、Approval、紅框黃字 — [sessions/2026-08-04-approval-red-yellow.md](sessions/2026-08-04-approval-red-yellow.md)
 - 2026-08-04 — 系統資訊放回對話泡 — 標籤：SEED、Approval、對話泡 — [sessions/2026-08-04-approval-sys-in-bubbles.md](sessions/2026-08-04-approval-sys-in-bubbles.md)
 - 2026-08-04 — 申請單欄位為唯一框，其餘純對話 — 標籤：SEED、Approval、申請單 — [sessions/2026-08-04-approval-form-hero.md](sessions/2026-08-04-approval-form-hero.md)
 - 2026-08-04 — 簽核畫面：對話框＋Cursor 系統時間軸 — 標籤：SEED、Approval、Cursor感 — [sessions/2026-08-04-approval-cursor-timeline.md](sessions/2026-08-04-approval-cursor-timeline.md)
