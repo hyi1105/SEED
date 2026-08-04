@@ -33,7 +33,7 @@ note: 口頭對談整理進本檔；以 diff 確認。尚未口頭確認的區�
 | 用途 | （待補） |
 | 與其他簽核系統關係 | （待補：是否要整合／取代／並存） |
 | 資料交換 | 以 JSON／API 為主（與現行 SEED 申請單 document JSON 對齊方向） |
-| 權限模型摘要 | 單據參與者可見；`admin` 全控＋版本；`super_user` 結案後專欄；`audit` 唯讀 |
+| 權限模型摘要 | 單據參與者＋`cc_system`／`fyi_system` 收件人可見；`owner`＝form 全控；`admin`＝item 全控（不能改表單設計）；`super_user` 結案後專欄；`audit` 唯讀 |
 
 ---
 
@@ -59,9 +59,11 @@ note: 口頭對談整理進本檔；以 diff 確認。尚未口頭確認的區�
 
 | 你說的概念 | 建議角色 id | 建議顯示名稱 | 一句話 |
 |------------|-------------|--------------|--------|
-| 創立申請表單的 admin | `admin` | 表單管理員 | 建表、設規則、**完全控制**單據（含已完成）；編輯必留版本 |
+| 設計表單的人 | `owner` | 表單擁有者 | 對 **form** full control（欄位／流程／權限範本） |
+| Admin（單據） | `admin` | 單據管理員 | **不能改表單設計**；對 **item** full control（改資料、決該單權限）；編輯留版本 |
 | Super user | `super_user` | 進階經辦 | 可看符合條件／全部單；簽核完畢後仍可編**專門開給他的欄位** |
 | Audit | `audit` | 稽核 | **只能看**申請單，不可編、不可簽 |
+| 主管 | `supervisor` | 主管 | 可與本人／admin 設定代理人 |
 
 欄位主名採舊系統熟悉的 **`creator`**（建立者／填單人；可為代填）。不再以 preparer 為主 id。
 
@@ -75,9 +77,11 @@ note: 口頭對談整理進本檔；以 diff 確認。尚未口頭確認的區�
 | `approvers[]` | 關卡數不定時用陣列；若必須扁平欄位可用 `approver_1`、`approver_2` |
 | `stage_notifies[]` | 強調「關卡通過才通知」，與送出時的 `cc`、結案的 `fyi` 分開 |
 | `fyi` / `fyi_system` | 業界常用 FYI＝知會、不需簽核；同樣用 `_system` 表鎖定 |
-| `admin` | 表單／租戶管理員，非單上名單 |
-| `super_user` | 事後補登欄位（發票等），權限小於 admin |
+| `owner` | 表單設計者；form full control |
+| `admin` | 單據管理員；item full control；**不能改表單設計** |
+| `super_user` | 事後補登欄位（發票等） |
 | `audit` | 唯讀稽核 |
+| `supervisor` | 可設代理人（與本人、admin） |
 
 不建議繼續當正式 id 的寫法：`CopyTo`（大小寫混）、`CopyTo_sys`、`Notify1`（與關卡對齊關係不明顯）。
 
@@ -93,9 +97,11 @@ note: 口頭對談整理進本檔；以 diff 確認。尚未口頭確認的區�
 | `stage_notifies[]` | 與關卡對齊：某關**確定同意、往下一關**時通知（例如要備料、提早準備） |
 | `fyi` | 整張都簽完後通知；通常是確定要接著做事的人；可空或有預設 |
 | `fyi_system` | 結案知會的系統鎖定名單，Admin 決定，不可編 |
-| `admin` | **創立／維護申請表單**的管理員：能做所有事，含改已完成簽核單；每次編輯留版本紀錄 |
+| `owner` | **設計表單**的人：對 form full control |
+| `admin` | **單據**管理員：不能改表單設計；對 item full control（改資料、決該單權限）；每次編輯留版本 |
 | `super_user` | 可看符合條件或全部申請單；簽核已完成後，仍可編輯**表單專門開放給 super_user 的欄位**（例：退貨單最後回填發票號碼） |
 | `audit` | 稽核：只能純粹查看申請單，不能改、不能簽 |
+| `supervisor` | 主管：可與本人／admin 設定代理人 |
 
 ### 2.3 名單值型別（`cc`／`cc_system`／`stage_notifies`／`fyi`／`fyi_system`）
 
@@ -152,7 +158,10 @@ note: 口頭對談整理進本檔；以 diff 確認。尚未口頭確認的區�
 |------|----------|------|
 | 建立者 | `creator` | ✅ |
 | 需求人 | `requester` | ✅ |
-| CopyTo | `cc`（及是否含 `cc_system`：待補，建議 ✅） | ✅ |
+| CopyTo | `cc` | ✅ |
+| 系統副本收件 | `cc_system` | ✅（定案：可開單） |
+| 系統結案知會收件 | `fyi_system` | ✅（定案：可開單） |
+| 關卡通過通知收件 | `stage_notifies` | ✅（定案：可開單） |
 | FYI | `fyi`（及是否含 `fyi_system`：待補，建議 ✅） | ✅ |
 | Approver | `approvers[]` 任一關 | ✅ |
 | 關卡通過通知收件 | `stage_notifies[]` | （待補：建議 ✅ 至少可看） |
@@ -162,7 +171,8 @@ note: 口頭對談整理進本檔；以 diff 確認。尚未口頭確認的區�
 
 | 角色 | 可見範圍 |
 |------|----------|
-| `admin` | 其所管表單下的申請單（通常＝全部相關單；待補是否跨表單） |
+| `owner` | 其所設計表單相關單（及設計權） |
+| `admin` | 所管範圍之申請單 item（不可改表單設計） |
 | `super_user` | **符合條件**的申請單，或設定為可看**全部**（依表單／條件設定） |
 | `audit` | 依稽核範圍可看的申請單（唯讀；範圍待補：全部 or 條件） |
 
@@ -174,18 +184,28 @@ note: 口頭對談整理進本檔；以 diff 確認。尚未口頭確認的區�
 | requester | 自己是需求人的單 | 簽核中可改「可編且未簽」的簽核人（其餘待補） | 否 | 否 | 需求歸屬 |
 | `approver` | 自己在簽核鏈上的單 | 通常否（待補意見欄） | ✅ 輪到自己時 approve／reject | 否 | 關卡推進 |
 | `cc`／`fyi` 收件人 | 被列入的單 | 否 | 否 | 否 | 知會 |
-| `admin` | 所管範圍 | **全部欄位**，含**已完成簽核**的單 | 可代操作（完全控制） | ✅ 創立／維護表單 | 每次編輯**必留版本** |
+| `owner` | 所設計表單 | 設計期欄位／流程 | — | ✅ form full control | 設計表單 |
+| `admin` | 所管範圍 | **全部欄位**，含**已完成簽核**的單 | 可代操作（item 全控） | ❌ 不能改表單設計 | 每次編輯**必留版本**；可決單一 item 權限 |
 | `super_user` | 條件／全部（設定） | 僅 **`super_user_fields`**（表單設計時開給他的欄） | 否 | 否 | **簽核完畢後仍可編**這些欄（例：發票號碼） |
 | `audit` | 稽核範圍內 | ❌ 純看 | ❌ | 否 | 不可改任何資料 |
 
-### 3.3 `admin`（表單管理員）— 完全控制
+### 3.3 `owner` vs `admin`（定案）
+
+| 角色 | 範圍 | 規則 |
+|------|------|------|
+| `owner` | **form** | 設計表單的人；對表單 **full control**（欄位、流程、預設、權限範本） |
+| `admin` | **item** | **不能改表單設計**；對申請單 **full control**（改資料、決定該 item 權限）；含已完成單 |
+| 版本 | item 編輯 | admin／owner 若改單據資料，**每一次編輯都留版本** |
+
+### 3.3b 欄位型別／必填／欄位權限（定案骨架）
 
 | 項目 | 規則 |
 |------|------|
-| 職責 | 創立申請表單、流程、預設名單、狀態顯示字眼、`cc_system`／`fyi_system`、super_user 可編欄位等 |
-| 單據權限 | 能做所有事，**包含修改已完成簽核的申請單資訊** |
-| 版本 | **每一次編輯都留下版本紀錄**（不可默默改） |
-| 與一般人差異 | 一般人簽完不能改主資料；admin 可以，但必須可稽核 |
+| 型別 | `text`／`number`／`dropdown`／`multiline`／`date`／… |
+| 必填 | `required`；或 `required_when`（依其他欄位值） |
+| 階段必填 | `required_from_level`：例如設 level1 必填 → **2、3、4… 都必填** |
+| 欄位 ACL | `visible_to`／`editable_by`／`hidden_from`：可指定人員、群組、角色、或「某欄位裡的人」 |
+| item 覆寫 | admin 可針對**單一申請單**調整權限（細節待補衝突規則） |
 
 ### 3.4 `super_user` — 事後補登
 
@@ -259,19 +279,20 @@ note: 口頭對談整理進本檔；以 diff 確認。尚未口頭確認的區�
 | `draft` | Draft | 被暫存過了；或送出後被退回在建立者／需求人手上 | `0` |
 | `in_process` | In Process | 已經送出，等待簽核 | `1`／`2`／`3`… |
 | `completed` | Completed | 全部簽核過（含自動完成） | `9999` |
-| `denied` | Denied | 有人拒絕了 | （待補：是否停在拒件當階 or 特殊值） |
-| `cancelled` | Cancelled | 已取消（正式列入） | `-1` |
+| `denied` | Denied | 有人拒絕了 | **`-2`** |
+| `cancelled` | Cancelled | 已取消 | `-1` |
 
 | 常見轉換 | 說明 |
 |----------|------|
-| `new` → `draft` | SAVE；`current_level`→`0` |
+| `new` → `draft` | **SAVE → `current_level=0`**（定案） |
 | `new`／`draft` → `in_process` | Submit 且尚有待簽關；`current_level`→第一個有值關（1…） |
 | `new`／`draft` → `completed` | Submit 後無簽核人；`current_level`→`9999` |
 | `in_process` → `completed` | 全過／後方皆空；`current_level`→`9999` |
-| `in_process` → `denied` | Reject |
+| `in_process` → `denied` | Reject；**`current_level=-2`**（定案）；**一人 Reject 整單 Denied** |
 | `in_process` → `draft`（level `0`） | Return 退回 creator／requester |
+| Return 到中間關 | **之後已簽關作廢並重簽**（定案） |
 | 進行中 → `cancelled` | Cancel；`current_level`→`-1` |
-| `cancelled` → 再送 | creator／requester／admin **可重送**（Submit／Resubmit） |
+| `cancelled` → 再送 | 同 **doc_no** 升 **.N**（同一張紙）；creator／requester／admin 可重送 |
 
 ### 4.1b 角色 × `current_level`（口頭定案）
 
@@ -279,11 +300,12 @@ note: 口頭對談整理進本檔；以 diff 確認。尚未口頭確認的區�
 
 | `current_level` | 意義 | 誰在手上 | 可按動作 |
 |-----------------|------|----------|----------|
-| **空／null** | 申請狀態（新單、尚未進入 level 體系） | `creator`／`requester` | **SAVE**、**Submit** |
-| **`0`** | 在 creator／requester 手上（已儲存過，或送出後被退回） | `creator`／`requester` | **SAVE**、進 Draft、**Archive**（軟刪除） |
-| **`1, 2, 3…`** | 簽核狀態（第 n 關） | Current approver | **Approve**、**Reject**、**Return**、**Cancel**、**Change**、**Delegate**（委派；該階 Admin 可關） |
-| **`9999`** | 簽核完成 | — | 一般簽核動作結束；`super_user`／`admin` 事後欄另計 |
-| **`-1`** | 已 Cancel | — | **creator／requester／admin 可重送** |
+| **空／null** | 新單、尚未 SAVE | `creator`／`requester` | **SAVE**、**Submit** |
+| **`0`** | SAVE 後，或送出後退回人手上 | `creator`／`requester` | **SAVE**、**Submit**、**Archive**（軟刪除） |
+| **`1, 2, 3…`** | 簽核關 | Current approver | Approve／Reject／Return／Cancel／Change；**Delegate 僅非平行關**且該階允許 |
+| **`9999`** | 完成 | — | `super_user`／`admin` 事後欄 |
+| **`-1`** | 已 Cancel | — | 同單號升版重送 |
+| **`-2`** | 已 Denied | — | （後續是否可改送：待補） |
 
 **Cancel 誰可按（簽核關 `1…`）：** Current approver；另 **`creator`／`requester`／`admin` 也可 Cancel**（不限當階）。
 
@@ -295,7 +317,8 @@ note: 口頭對談整理進本檔；以 diff 確認。尚未口頭確認的區�
 |------|------|
 | 目的 | 臨時多一個確認人（缺資訊、要請同事／別部門確認） |
 | 誰發起 | Current approver（該階允許時） |
-| 開關 | **Admin 決定該階段要不要能委派** |
+| 開關 | owner／Admin 決定該階段要不要能委派 |
+| **平行關** | **禁止 Delegate**（定案：同關多人／平行簽核不可委派） |
 | 流程 | 委派出去 → 被委派人**確認**後 → **回到該階原簽核者**身上 |
 | 層層委派 | 若再委派，則**層層確認回來**後，才回到該階簽核者 |
 | 與 Change 差別 | Change＝換掉簽核者；Delegate＝臨時外加確認，簽核責任仍回到原當階簽核者 |
@@ -368,7 +391,7 @@ submit
 | `all` | 全部都要通過才算通過 | 該關每位有值的簽核人都 approve |
 | `any` | 其中一個通過就算通過 | 任一人 approve 即本關通過 |
 
-**拒件（Reject → Denied）對 all／any 的精確影響：**（待補；至少「有人 reject 是否整單 denied」需定案）
+**拒件（Reject → Denied）：** 定案——**不論 all／any，一人 Reject → 整單 Denied**，`current_level=-2`。
 
 ### 4.5 階段結果通知（該關所有人）
 
@@ -432,14 +455,15 @@ creator 開單／填單（可代填；requester 可為另一人）
 | 項目 | 規則 |
 |------|------|
 | 前提 | **系統有支援**指派代理人功能時才啟用 |
+| 誰可設 | **本人／主管／admin**（定案） |
 | 生效範圍 | 生效期間內，原簽核者名下**所有相關申請單**可改為**代簽核** |
 | 改哪些關 | **所有還沒簽到的**簽核人欄位 → 改成代理人 |
-| 已簽過的 | **不动**（已蓋印／已有結果的關不改） |
-| 代理期間 | 可設定 **代理開始**、**代理結束** 時間 |
-| 系統欄位 | `*_system` 等系統欄位 **除 admin 外不可編輯**（代理改派也不准動系統鎖定欄，除非 admin） |
-| 原簽核者備註 | 代簽時須留下原簽核者資訊，例：系統備註欄 `comment1_sys`（或同等 `*_sys`）**備註原簽核者** |
-| 與 Change | Change＝單張單上換人；本功能＝**跨單、依時段**批次代簽 |
-| 與 Delegate | Delegate＝單內臨時請人確認再回到原簽核者；本功能＝請假期間由代理人行使簽核 |
+| 已簽過的 | **不动** |
+| 代理期間 | 可設定 **代理開始**、**代理結束** |
+| 代理結束 | **自動改回原本簽核人**；之後仍可用 **Change** 換人 |
+| 系統欄位 | `*_system` 等 **除 admin 外不可編輯** |
+| 原簽核者備註 | 例：`comment1_sys` **備註原簽核者** |
+| 與 Change／Delegate | Change＝單張換人；Delegate＝單內臨時確認；本功能＝請假跨單代簽 |
 
 建議資料（示意）：
 
@@ -692,23 +716,29 @@ creator 開單／填單（可代填；requester 可為另一人）
 
 ---
 
-## 10. 待決問題
+## 10. 已定案（2026-08-04 口頭）
 
-- [ ] 指派代理人：誰可設（本人 only／需主管核准／僅 admin）？
-- [ ] 代理結束後未簽關是否自動改回原簽核者？
-- [ ] 代理期間新建的單 vs 已存在未簽單，是否同一套改派規則？
-- [ ] `comment1_sys` 為舉例欄名，正式系統備註欄 id 是否固定？
-- [ ] `current_level` 空與 `0` 邊界：第一次 SAVE 前是否一律 null？
-- [ ] Denied 時 `current_level` 停在拒件關還是另定值？
-- [ ] Archive 軟刪後列表／還原／與 Cancel 差異
-- [ ] Delegate 確認動作 id（`confirm_delegate`？）與平行簽核 all／any 並存規則
-- [ ] Return 到中間關時，該關之後已簽紀錄是否作廢
-- [ ] Cancel 重送是否升 doc 版本 `.2`、是否沿用原 doc_no
-- [ ] `stages[]` vs 扁平 `approver_1`
-- [ ] reject 在 all／any 下是否整單 denied
-- [ ] Notify／Return 完整授權名單
-- [ ] cc／fyi system 收件人是否可檢視該單
-- [ ] 印章縫異動標記粒度；admin／super_user 資料範圍
+| 題 | 定案 |
+|----|------|
+| Denied 的 level | **`-2`** |
+| any 關一人 Reject | **整單 Denied** |
+| Return 到中間關 | **後面已簽關作廢並重簽** |
+| 第一次 SAVE | **level → 0**（SAVE 前可為空） |
+| Cancel 後重送 | **同 doc_no，升 .N**（同一張紙） |
+| 誰可設代理人 | **本人／主管／admin**；結束**自動改回**原簽核人；仍可用 Change |
+| 平行關＋Delegate | **平行關禁止 Delegate** |
+| cc_system／fyi_system 能否開單 | **能** |
+
+## 10b. 仍待決
+
+- [ ] `comment1_sys` 欄名固定或可配置？
+- [ ] Archive 還原規則；與 Cancel 列表區分
+- [ ] admin 能否改已簽那格？
+- [ ] `required_from_level`：草稿／Submit 時何時擋？
+- [ ] form acl 與 item 覆寫衝突以誰為準？
+- [ ] form 可否多個 owner？
+- [ ] Denied（-2）之後能否改送／升版再送？
+- [ ] 印章縫異動標記粒度
 
 ---
 
@@ -725,3 +755,4 @@ creator 開單／填單（可代填；requester 可為另一人）
 | 2026-08-04 | `current_level`：空／0／1…／9999／-1；Archive；Delegate 層層回來；Cancel 後可重送；cancelled 正式列入 |
 | 2026-08-04 | 流程外指派代理人：起迄時段、未簽改代簽、`comment1_sys` 備註原簽核者、系統欄非 admin 不可編 |
 | 2026-08-04 | 標準化：alr5-standard.json＋ALR5標準互通.md＋網頁「ALR5功能」與互通檢查清單 |
+| 2026-08-04 | 定案：Denied=-2；一人Reject整單Denied；Return作廢後續；SAVE→0；Cancel同單號升版；代理人本人／主管／admin；平行禁Delegate；sys收件可開單；owner≠admin；欄位型別／條件必填／ACL |
