@@ -30,10 +30,21 @@ note: 口頭對談整理進本檔；以 diff 確認。尚未口頭確認的區�
 | 項目 | 內容 |
 |------|------|
 | 系統名稱 | ALR5 |
-| 用途 | （待補） |
+| 目標 | 表單＋關卡簽核＋通知＋權限；JSON 可跨系統互通 |
+| 本機 PoC | SEED `docs/approval/`（Pages） |
 | 與其他簽核系統關係 | （待補：是否要整合／取代／並存） |
 | 資料交換 | 以 JSON／API 為主（與現行 SEED 申請單 document JSON 對齊方向） |
-| 權限模型摘要 | 單據參與者＋sys 收件可見；`owner`＝form 全控；`admin`＝item 全控；`it_admin`＝全 Form 治理（無主可 archive／export）；`super_user`／`audit` 另計 |
+| 權限模型摘要 | 單據參與者＋sys 收件可見；`owner`＝form 全控；`admin`＝item 全控；`it_admin`＝全 Form 治理（無主可 archive／export／補 owner）；`super_user`／`audit` 另計 |
+
+### 1b. 互通架構（MVC 語意，定案）
+
+| 層 | 對應 | 說明 |
+|----|------|------|
+| **M（Model）** | 申請單／表單 **JSON** | 同一套結構認證後，可傳給其他平台 |
+| **C（Controller）** | **功能**是否符合 ALR5 | `interop_checklist`／`decisions`；動作、level、權限、檢核 |
+| **V（View）** | **畫面** | 依需求調整；AI 時代可由各人與 AI 自訂長相，**不綁死 UI** |
+
+> 互通驗收看 **M＋C**；V 不強制同一畫面。
 
 ---
 
@@ -208,15 +219,15 @@ note: 口頭對談整理進本檔；以 diff 確認。尚未口頭確認的區�
 
 ### 3.3a Archive ≠ Cancel（定案）
 
-| | **Archive** | **Cancel** |
-|--|-------------|------------|
-| 意義 | 使用者**平常列表看不到**（軟隱藏） | 流程**已取消** |
-| 怎麼找到 | 用 **Archive filter／狀態清單**進入 | 用 cancelled 篩選／報表 |
-| 進去之後 | 可**編輯** → **SAVE＝Draft** 或 **Submit** | 可用 Resubmit 同單號升 `.N`（同一張紙） |
-| `current_level` | 通常仍在申請人階段（如 `0`） | **`-1`** |
-| 列表／報表 | **與 cancelled 分開**，不可混成同一狀態 | 獨立 cancelled |
+| | **Archive（軟刪除）** | **Cancel（取消流程）** |
+|--|----------------------|------------------------|
+| 與 status | **無關**；**不改**原本 `status`／`current_level` | `status=cancelled`，`current_level=-1` |
+| 旗標 | **`system.archived=true`**（不用 `status=archived`） | — |
+| 列表 | 一般列表**預設看不到**；從 **Archive filter** 進入 | 用 cancelled 篩選／報表 |
+| 進去之後 | 可檢視／編輯（權限內）；仍依原 level 規則 SAVE／Submit | Resubmit 同單號升 `.N` |
+| **復原** | **admin 取消 archive／搬回來**（`archived=false`） | 見 Cancel→重送規則 |
 
-> 實作形狀待對齊：獨立 `status=archived`，或保留原 status＋`system.archived=true`（見仍待決）。
+> 整份 **form** 封存（`form.archived`）另案：進行中 items **一律 Cancel**——與單據 item 的軟刪除旗標不同。
 
 ### 3.3b 欄位型別／必填／欄位權限（定案）
 
@@ -330,7 +341,8 @@ note: 口頭對談整理進本檔；以 diff 確認。尚未口頭確認的區�
 | `completed` | Completed | 全部簽核過（含自動完成） | `9999` |
 | `denied` | Denied | 有人拒絕了 | **`-2`** |
 | `cancelled` | Cancelled | 已取消 | `-1` |
-| `archived` | Archived | 軟隱藏；一般列表看不到（見 §3.3a） | 通常 `0` |
+
+> **Archive 不是 status。** 用 `system.archived=true` 軟刪除；原本 `status`／`current_level` **不變**（見 §3.3a）。
 
 | 常見轉換 | 說明 |
 |----------|------|
@@ -342,10 +354,11 @@ note: 口頭對談整理進本檔；以 diff 確認。尚未口頭確認的區�
 | `in_process` → `draft`（level `0`） | Return 退回 creator／requester |
 | Return 到中間關 | **之後已簽關作廢並重簽**（定案） |
 | 進行中 → `cancelled` | Cancel；`current_level`→`-1` |
-| level `0` → `archived` | **Archive**：預設列表隱藏；從 archive filter 進入可編→Draft／Submit |
+| 任一狀態 → 軟隱藏 | **Archive**：`system.archived=true`；**status 不變**；一般列表隱藏 |
+| 軟隱藏 → 一般列表 | **admin unarchive／搬回**：`archived=false` |
 | `cancelled` → 再送 | 同 **doc_no** 升 **.N**（同一張紙）；creator／requester／admin 可重送 |
 | `denied` → 再送 | **不可**同單號升版；用 **Copy** 開**全新單**；Denied 原單保留；**owner** 定可 copy 欄；**admin** 定誰／哪幾張可 copy |
-| **整份 form archive** | 進行中的 items **一律 Cancel** |
+| **整份 form archive** | 進行中的 items **一律 Cancel**（與 item 軟刪除不同） |
 
 ### 4.1b 角色 × `current_level`（口頭定案）
 
@@ -806,17 +819,18 @@ creator 開單／填單（可代填；requester 可為另一人）
 | `required_from_level` | 自該 level 起必填；**＝0** 申請人 Submit 擋；**≥1** Approve 前擋、不擋 Submit |
 | 每關 comment | **固定**每位 approver 有 `comment`；階段補資料用業務欄 |
 | 代簽備註 | 正式 id **`proxy_original_note`**（舊例 `comment1_sys`） |
-| Archive ≠ Cancel | Archive＝列表預設隱藏，從 archive filter 進入可編→Draft／Submit；報表分開篩選 |
+| Archive ≠ Cancel | **`system.archived` 軟刪除**，**不改 status**；admin **unarchive** 復原；與 cancelled 分開 |
 | 已簽核格改人／結果 | **admin 不行**；**owner／it_admin** 可以，必留紀錄 |
 | 多 owner | **可以**（多 owner／owner 群組） |
 | it_admin 無主 form | **最高治理**：可 **補派 owner**（不只 archive／export） |
 | export 範圍 | **全部**：form 定義＋歷史 items＋附件（完整給新平台） |
 | form archive → items | 進行中 **一律 Cancel** |
 | 簽核後異動標記 | **`post_approval_amended`** 判斷；畫面**明顯小紅點** |
+| 互通架構 | **MVC 語意**：M＝可認證 JSON；C＝功能符合 checklist；V＝各端／AI 自訂畫面 |
 
 ## 10b. 仍待決
 
-- [ ] Archive 資料形狀：獨立 `status=archived`，還是原 status＋`system.archived=true`？
+（目前無。新問題再往這裡加。）
 
 ---
 
@@ -838,3 +852,4 @@ creator 開單／填單（可代填；requester 可為另一人）
 | 2026-08-04 | v0.2.2：ACL item 優先；required_from_level 檢核時機；Denied Copy；每關 comment／proxy_original_note |
 | 2026-08-04 | v0.2.3：補定 `required_from_level=0`＝申請人階段起必填（Submit 擋，後續亦必填） |
 | 2026-08-04 | v0.2.4：拍板 Archive≠Cancel、已簽格權限、多 owner、it_admin 補 owner、完整 export、form archive→Cancel、Copy 授權、紅點 |
+| 2026-08-04 | v0.2.5：Archive＝`system.archived` 與 status 無關；admin unarchive 復原；互通 MVC（M＝JSON／C＝功能／V＝自訂畫面） |

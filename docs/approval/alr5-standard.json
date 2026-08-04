@@ -1,10 +1,10 @@
 {
   "standard_id": "ALR5",
-  "standard_version": "0.2.4",
+  "standard_version": "0.2.5",
   "lang": "zh-Hant",
   "title": "ALR5 簽核標準（功能／情境／JSON 互通）",
   "purpose": "讓不同系統用同一套欄位與檢查清單交換申請單 JSON；畫面「ALR5功能」供人一眼看懂；本檔可整份貼給新 AI 實作同等互傳。",
-  "ai_prompt_prefix": "你是實作 ALR5 簽核互通的工程 Agent。請嚴格依 standard_version ALR5/0.2.4 與 json_contract／interop_checklist／decisions 實作。狀態、current_level、動作 id 不得自創別名。decisions 已定案不得違反。產出必須通過全部 required=true 檢查。",
+  "ai_prompt_prefix": "你是實作 ALR5 簽核互通的工程 Agent。請嚴格依 standard_version ALR5/0.2.5 與 json_contract／interop_checklist／decisions 實作。狀態、current_level、動作 id 不得自創別名。decisions 已定案不得違反。產出必須通過全部 required=true 檢查。",
   "status_model": {
     "field": "system.status",
     "values": [
@@ -43,12 +43,6 @@
         "label": "Cancelled",
         "meaning": "已取消",
         "typical_current_level": -1
-      },
-      {
-        "id": "archived",
-        "label": "Archived",
-        "meaning": "軟隱藏；一般列表看不到；從 archive filter 進入後可編輯→Draft／Submit",
-        "typical_current_level": 0
       }
     ]
   },
@@ -135,13 +129,13 @@
       "admin 不可改變表單結構，只能編輯資料與權限相關設定",
       "required_from_level：自該 level 起（含之後）必填；＝0 → 申請人填寫階段（空／0）Submit 就擋，後續各關也必填；≥1 → 進到該 level 後 Approve／往下送前擋，不擋申請人 Submit；SAVE 草稿一律不擋",
       "每關／每位 approver 固定有 comment（簽核意見）；階段補資料用業務欄＋required_from_level／ACL，不是用 comment 取代",
-      "Archive≠Cancel：Archive＝預設列表隱藏，須從 archive filter 進入；可再編輯→Draft／Submit",
       "form archive → 進行中 items 一律 Cancel",
       "已簽核格：admin 不可改；owner／it_admin 可改且必留紀錄",
       "Copy 權限：admin 決定誰可 copy、可 copy 哪幾張（可到單一 item）",
       "簽核後異動：post_approval_amended＝true 時畫面顯示小紅點",
       "form 可多 owner／owner 群組；it_admin 可為無主 form 補派 owner",
-      "export＝完整包（form 定義＋歷史 items＋附件）供遷到新平台"
+      "export＝完整包（form 定義＋歷史 items＋附件）供遷到新平台",
+      "Archive＝軟刪除旗標 system.archived=true，與 status 無關；原 status／current_level 不變；一般列表隱藏；admin 可 unarchive 搬回"
     ]
   },
   "roles": {
@@ -561,20 +555,23 @@
     },
     {
       "id": "archive_vs_cancel",
-      "title": "Archive 與 Cancel 區分",
-      "scenario": "Cancel＝流程取消；Archive＝使用者平常列表看不到，要從 Archive 篩選清單進去。",
+      "title": "Archive 軟刪除（與 status 無關）",
+      "scenario": "Archive 是軟刪除動作，不改寫原本的 status／current_level；一般列表看不到，從 Archive 清單進入；Admin 可取消 archive 搬回來。",
       "rules": [
-        "Cancel：status=cancelled、current_level=-1；流程終止；列表／報表以 cancelled 篩選",
-        "Archive：軟隱藏；一般列表預設看不到；須用 status／filter＝archive 的清單進入",
-        "從 Archive 清單可開啟編輯 → SAVE 成 Draft（level 0）或 Submit",
-        "列表／報表：cancelled 與 archived 分欄或分篩選，不可混成同一狀態",
-        "建議欄位：system.archived（bool）或 status 另含 archived；勿與 cancelled 共用同一值"
+        "Archive ≠ status：不設 status=archived；用 system.archived=true（或同等旗標）",
+        "執行 Archive 時：原本 status／current_level 不變（例如仍是 in_process／draft）",
+        "一般列表預設過濾 archived=true；須用 Archive filter 清單進入",
+        "從 Archive 清單可開啟檢視／編輯（權限內）；編輯後仍可 SAVE／Submit（依原 level／規則）",
+        "復原：admin 取消 archive（unarchive／搬回來）→ archived=false，回到一般列表",
+        "Cancel 仍是流程取消：status=cancelled、current_level=-1；與 Archive 分開",
+        "列表／報表：用 archived 旗標與 cancelled 狀態分開篩選，不可混用"
       ],
       "json": [
         "system.archived",
-        "status.cancelled",
         "actions.archive",
-        "actions.unarchive_edit"
+        "actions.unarchive",
+        "system.status",
+        "system.current_level"
       ]
     },
     {
@@ -612,8 +609,10 @@
       "title": "Form archive 連帶 Cancel 進行中單",
       "scenario": "整份表單下架時，進行中的申請單怎麼辦。",
       "rules": [
-        "form 被 archive 時，進行中的 items 一律 Cancel（current_level=-1）",
-        "已 completed／denied／cancelled 的 items 不另強制改寫（保留原狀態）"
+        "此處指「整份 form 下架／封存」（form.archived），與單據 item 的 system.archived 軟刪除不同",
+        "form 被封存時，進行中的 items 一律 Cancel（current_level=-1）",
+        "已 completed／denied／cancelled 的 items 不另強制改寫",
+        "item Archive（system.archived）不改 status，僅軟隱藏"
       ],
       "json": [
         "form.archived",
@@ -660,8 +659,7 @@
       "in_process",
       "completed",
       "denied",
-      "cancelled",
-      "archived"
+      "cancelled"
     ],
     "action_enum": [
       "save",
@@ -760,7 +758,8 @@
         "doc_no": "LEAVE業務阿明20260804170000AB1.1",
         "doc_version": 1,
         "submitted_at": "2026-08-04 17:00:00",
-        "completed_at": null
+        "completed_at": null,
+        "archived": false
       },
       "logs": [],
       "notification_logs": [],
@@ -776,7 +775,7 @@
     {
       "id": "chk_status_enum",
       "required": true,
-      "label": "system.status 僅使用 new／draft／in_process／completed／denied／cancelled／archived"
+      "label": "system.status 僅使用 new／draft／in_process／completed／denied／cancelled（不含 archived）"
     },
     {
       "id": "chk_level_semantics",
@@ -911,7 +910,7 @@
     {
       "id": "chk_archive_vs_cancel",
       "required": true,
-      "label": "Archive≠Cancel：Archive 預設列表隱藏、從 archive filter 進入可編→Draft／Submit；cancelled 分開篩選"
+      "label": "Archive＝system.archived 軟刪除、不改 status；列表隱藏；admin unarchive 復原；與 cancelled 分開"
     },
     {
       "id": "chk_signed_edit_roles",
@@ -947,15 +946,14 @@
       "id": "chk_post_approval_red_dot",
       "required": true,
       "label": "post_approval_amended 為判斷欄；畫面有明顯小紅點"
-    }
-  ],
-  "open_questions": [
+    },
     {
-      "id": "q_archive_status_shape",
-      "priority": "low",
-      "question": "Archive 要用獨立 status=archived，還是保留原 status＋system.archived=true？（實作二選一需對齊）"
+      "id": "chk_mvc_interop",
+      "required": false,
+      "label": "互通驗收以 M（JSON 結構）＋C（功能符合 checklist）為準；V 不強制同一畫面"
     }
   ],
+  "open_questions": [],
   "logic_risk_warnings": [
     {
       "id": "risk_double_complete",
@@ -1045,7 +1043,7 @@
     },
     {
       "id": "d_archive_vs_cancel",
-      "decision": "Archive≠Cancel：Archive＝預設列表隱藏，從 archive filter 進入可編輯→Draft／Submit；列表／報表分開篩選"
+      "decision": "Archive＝軟刪除（system.archived=true），與 status 無關；原 status／level 不變；一般列表隱藏；admin 取消 archive／搬回；Cancel 仍用 cancelled／-1"
     },
     {
       "id": "d_signed_stamp_edit",
@@ -1074,6 +1072,14 @@
     {
       "id": "d_post_approval_red_dot",
       "decision": "簽核後異動以 post_approval_amended 判斷；畫面顯示明顯小紅點"
+    },
+    {
+      "id": "d_archive_flag",
+      "decision": "不使用 status=archived；用 system.archived；復原＝admin unarchive"
+    },
+    {
+      "id": "d_mvc_interop",
+      "decision": "互通採 MVC 語意：M＝可認證的 JSON；C＝功能符合 ALR5 checklist／decisions；V＝各端／AI 自訂畫面，不綁死 UI"
     }
   ],
   "resolved_questions": [
@@ -1131,7 +1137,7 @@
     },
     {
       "id": "q_archive_vs_cancel",
-      "answer": "Archive＝列表預設看不到，從 archive filter 進入可編→Draft／Submit；與 cancelled 分開篩選／報表"
+      "answer": "Archive＝軟刪除旗標，與 status 無關；原狀態不變；從 archive 清單進入；admin unarchive 復原；Cancel 分開"
     },
     {
       "id": "q_change_signed",
@@ -1160,6 +1166,14 @@
     {
       "id": "q_stamp_amend_grain",
       "answer": "用 post_approval_amended 判斷；畫面明顯小紅點"
+    },
+    {
+      "id": "q_archive_status_shape",
+      "answer": "不用獨立 status=archived；用 system.archived=true；原 status 不變；復原＝admin 取消 archive／搬回"
+    },
+    {
+      "id": "q_mvc_mapping",
+      "answer": "是：M＝JSON 資料／結構認證；C＝功能是否符合 ALR5；V＝依需求與 AI 自訂畫面"
     }
   ],
   "field_schema": {
@@ -1237,5 +1251,24 @@
       "proxy_original_note": "stages[].approvers[].proxy_original_note — 代簽時備註原簽核者（系統欄）",
       "stage_fill_fields": "一般 fields[] + required_from_level + acl.editable_by 該關角色"
     }
+  },
+  "architecture": {
+    "pattern": "MVC（互通語意）",
+    "model": {
+      "id": "M",
+      "meaning": "申請單／表單資料＝JSON（schema 相容即可跨平台傳遞）",
+      "artifact": "document JSON＋form_schema；以 alr5-standard.json 的 json_contract／decisions 認證結構"
+    },
+    "controller": {
+      "id": "C",
+      "meaning": "功能／流程是否符合 ALR5（動作、level、權限、檢核）",
+      "artifact": "interop_checklist 全部 required=true；decisions 不得違反"
+    },
+    "view": {
+      "id": "V",
+      "meaning": "畫面長相依需求調整；AI 時代可由各端與 AI 自行設計 UI",
+      "artifact": "不強制單一畫面；只要能正確讀寫同一套 JSON／動作語意即可互通"
+    },
+    "note": "互通驗收看 M＋C；V 不綁死。"
   }
 }
