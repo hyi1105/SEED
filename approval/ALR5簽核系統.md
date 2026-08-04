@@ -31,6 +31,7 @@ note: 口頭對談整理進本檔；以 diff 確認。尚未口頭確認的區�
 | 用途 | （待補） |
 | 與其他簽核系統關係 | （待補：是否要整合／取代／並存） |
 | 資料交換 | 以 JSON／API 為主（與現行 SEED 申請單 document JSON 對齊方向） |
+| 權限模型摘要 | 單據參與者可見；`admin` 全控＋版本；`super_user` 結案後專欄；`audit` 唯讀 |
 
 ---
 
@@ -380,16 +381,18 @@ preparer 填單（requester 為需求人）
 
 ---
 
-## 8. 操作紀錄（Log）
+## 8. 操作紀錄（Log）與版本
 
-> 與現行方向對齊：按按鈕時記錄時間、操作者、開啟時值、儲存後值；diff 紅前綠後。
+> 按按鈕／存檔記錄時間、操作者、開啟時值、儲存後值；diff 紅前綠後。  
+> **簽核後異動**另見 §3.7：印章中間＋Completed 後明顯標記。
 
 | 項目 | 規則 |
 |------|------|
-| 何時寫入 | （待補：哪些動作要寫；至少 save／submit／approve／reject） |
+| 何時寫入 | save／submit／approve／reject／admin_amend／super_user_fill 等 |
 | 必記欄位 | 時間、操作者、動作、opened、saved、changes |
 | 呈現 | GitHub 風格：舊值紅刪線在前、新值綠在後 |
-| 存放 | document JSON／未來 API（待補細節） |
+| 存放 | document JSON／未來 API：`logs[]`／`versions[]` |
+| 簽核後異動旗標 | `post_approval_amended`；畫面不可只靠文末文字 |
 
 ---
 
@@ -397,7 +400,7 @@ preparer 填單（requester 為需求人）
 
 | 規格概念 | JSON／API 欄位 | 說明 |
 |----------|----------------|------|
-| 填單人 | `preparer` | 人員 |
+| 填單人／creator | `preparer`（alias `creator`） | 人員 |
 | 需求人 | `requester` | 人員 |
 | 送出副本 | `cc` | 名單物件 |
 | 系統送出副本 | `cc_system` | 名單物件，鎖定 |
@@ -408,8 +411,12 @@ preparer 填單（requester 為需求人）
 | 目前操作者 | `actor` | 執行按鈕的人 |
 | 狀態 | `system.status` | 內部 id |
 | 狀態顯示字對照 | `status_labels`（待補結構） | Admin 自訂顯示 |
+| 系統角色 | 使用者／群組綁定 `admin`／`super_user`／`audit` | 非單上欄位 |
+| super_user 可編欄 | 表單 schema：`editable_by` 含 `super_user` | 例：`invoice_no` |
+| 簽核後曾異動 | `post_approval_amended` | bool |
+| 簽核後異動摘要 | `post_approval_amendment_summary` | 可選 |
 | 動作 | `actions[]` | |
-| 紀錄 | `logs[]` | |
+| 紀錄／版本 | `logs[]`／`versions[]` | |
 
 ---
 
@@ -421,6 +428,10 @@ preparer 填單（requester 為需求人）
 - [ ] 預設顯示要用 Rejected 還是 Denied？（建議預設 Rejected，Admin 可改）
 - [ ] preparer 與 requester 是否允許同一人？
 - [ ] 送出時若 `cc` 與 `cc_system` 重複，是否去重只寄一封？
+- [ ] `cc_system`／`fyi_system`／`stage_notifies` 收件人是否算「單上的人」而有權限檢視？
+- [ ] `super_user` 回填是否一律把 `post_approval_amended` 設為 true？
+- [ ] 印章「中間」的異動標記：對應「兩關之間時段」還是「任意簽核後異動都顯示在每道縫」？
+- [ ] `admin` 與 `super_user` 範圍：依表單、依部門、還是全域？
 
 ---
 
@@ -430,3 +441,4 @@ preparer 填單（requester 為需求人）
 |------|------|
 | 2026-08-04 | 建立檔案骨架，等待口頭整理 |
 | 2026-08-04 | 角色／名單：preparer、requester、cc、cc_system、approvers、stage_notifies、fyi、fyi_system；同意／不同意用語建議 |
+| 2026-08-04 | 權限角色：admin 完全控制＋版本；super_user 結案後專欄；audit 唯讀；單據可見性；簽核後異動明顯標記（`post_approval_amended`） |
