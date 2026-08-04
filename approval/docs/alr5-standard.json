@@ -1,10 +1,10 @@
 {
   "standard_id": "ALR5",
-  "standard_version": "0.2.8",
+  "standard_version": "0.2.9",
   "lang": "zh-Hant",
   "title": "ALR5 簽核標準（功能／情境／JSON 互通）",
-  "purpose": "ALR5 作為統一承載平台：未來各業務系統皆交付於此，以可完全轉移的 JSON 處理與互通；支援簽核、AB 表單、可設定匯出、跨單關聯、兩種開單、大量匯入表頭＋明細等；畫面「ALR5功能」供人一眼看懂；本檔可整份貼給新 AI 實作同等互傳。",
-  "ai_prompt_prefix": "你是實作 ALR5 簽核互通的工程 Agent。請嚴格依 standard_version ALR5/0.2.8 與 json_contract／interop_checklist／decisions／form_composition／export_profiles／json_completeness／cross_links／create_modes／bulk_import／platform_scope 實作。狀態、current_level、動作 id 不得自創別名。decisions 已定案不得違反。產出必須通過全部 required=true 檢查；缺欄／缺功能依 json_completeness 用標準預設自動補齊。",
+  "purpose": "ALR5 作為跨公司可承載平台：各系統交付於此，以可轉移 JSON 處理與互通；期許具備類似律師／法院的跨組織公證效力，以及檔案加密（手上鑰匙或第三方備份鑰匙才能解密）；支援簽核、AB、匯出匯入、跨單關聯、開單模式等；本檔可整份貼給新 AI 實作。",
+  "ai_prompt_prefix": "你是實作 ALR5 簽核互通的工程 Agent。請嚴格依 standard_version ALR5/0.2.9 與 json_contract／interop_checklist／decisions／platform_scope／trust_notary／crypto_envelope／form_composition／cross_links／bulk_import 等實作。狀態、current_level、動作 id 不得自創別名。decisions 已定案不得違反。JSON 承載可讀結構與信封中繼資料；密文本體以 envelope 引用，不得把金鑰明文寫進可轉移 JSON。",
   "status_model": {
     "field": "system.status",
     "values": [
@@ -733,6 +733,35 @@
         "header",
         "lines"
       ]
+    },
+    {
+      "id": "trust_notary",
+      "title": "跨公司公證／見證",
+      "scenario": "像律師見證／法院公證：對內容雜湊＋時間背書，跨公司可查驗。",
+      "rules": [
+        "notary_records[] 可轉移 JSON",
+        "Approve≠Notary",
+        "可設定達狀態自動送公證"
+      ],
+      "json": [
+        "notary_records[]",
+        "notary_policy",
+        "content_hash"
+      ]
+    },
+    {
+      "id": "crypto_envelope",
+      "title": "加密信封＋手上／第三方鑰匙",
+      "scenario": "檔案加密；手上鑰匙或第三方備份鑰匙才能解密。",
+      "rules": [
+        "JSON 放 envelope，不放私鑰",
+        "recipients[]：holder＋third_party_backup",
+        "大檔密文外掛 blob"
+      ],
+      "json": [
+        "attachments[].envelope",
+        "crypto_envelopes[]"
+      ]
     }
   ],
   "json_contract": {
@@ -767,7 +796,9 @@
       "links",
       "allocation",
       "import_profiles",
-      "import_jobs"
+      "import_jobs",
+      "notary_records",
+      "crypto_envelopes"
     ],
     "system_required_keys": [
       "status",
@@ -1115,6 +1146,21 @@
       "id": "chk_bulk_import",
       "required": false,
       "label": "若支援大量匯入：import_profiles 對應到 header／lines；結果可 draft＋logs"
+    },
+    {
+      "id": "chk_json_no_private_keys",
+      "required": true,
+      "label": "可轉移 JSON 不得含私鑰／對稱金鑰明文；加密用 envelope＋引用"
+    },
+    {
+      "id": "chk_notary_optional",
+      "required": false,
+      "label": "若支援公證：notary_records 含 content_hash、時間、公證端簽章"
+    },
+    {
+      "id": "chk_crypto_envelope_optional",
+      "required": false,
+      "label": "若支援加密附件：envelope 含 alg、ciphertext_ref、recipients（holder／backup）"
     }
   ],
   "open_questions": [
@@ -1157,6 +1203,21 @@
       "id": "q_import_async",
       "priority": "low",
       "question": "大量匯入檢核是否一律非同步？失敗列 UI 如何修？"
+    },
+    {
+      "id": "q_notary_provider",
+      "priority": "medium",
+      "question": "公證節點：自建 notary、接外部 TSA／律師機構、或聯盟多簽？"
+    },
+    {
+      "id": "q_key_escrow_policy",
+      "priority": "medium",
+      "question": "第三方備份鑰匙的解鎖條件（本人申請／法院令／n-of-m）？"
+    },
+    {
+      "id": "q_encrypt_which_fields",
+      "priority": "low",
+      "question": "預設哪些附件／欄位強制加密？"
     }
   ],
   "logic_risk_warnings": [
@@ -1317,6 +1378,18 @@
     {
       "id": "d_bulk_import",
       "decision": "支援大量匯入 header＋detail（如退貨發票超多明細）；對應設定化；先入 draft 再檢核"
+    },
+    {
+      "id": "d_cross_company_notary",
+      "decision": "期許跨公司公證效力（類律師／法院）：對內容雜湊＋時間背書；notary_records 為可轉移 JSON；與組織內簽核分開"
+    },
+    {
+      "id": "d_crypto_dual_custody",
+      "decision": "檔案加密；解密需手上鑰匙或第三方備份鑰匙；JSON 只承載 envelope，不承載私鑰"
+    },
+    {
+      "id": "d_json_for_envelope_not_secrets",
+      "decision": "JSON 適合結構／證據鏈／信封中繼；密文本體可引用；機密明文與私鑰不進可轉移 JSON"
     }
   ],
   "resolved_questions": [
@@ -1439,6 +1512,18 @@
     {
       "id": "q_bulk_header_detail",
       "answer": "要：大量匯入 header＋lines；設定 mapping；退貨發票等場景"
+    },
+    {
+      "id": "q_cross_company_notary",
+      "answer": "期許納入：跨公司公證／見證；標準先定 notary_records 形狀"
+    },
+    {
+      "id": "q_encryption_keys",
+      "answer": "要加密；手上鑰匙＋第三方備份鑰匙；JSON 用 envelope"
+    },
+    {
+      "id": "q_json_suitable_crypto",
+      "answer": "適合做信封與證據鏈；不適合放私鑰／明文機密"
     }
   ],
   "field_schema": {
@@ -1542,7 +1627,8 @@
       "user_config": "AB 表單、匯出格式等優先用設定完成，不靠改程式"
     },
     "cross_system": "跨系統＝不同 form_id／系統代號之間用同一套 links／prerequisites／effects；仍是可轉移 JSON，不是另外的登入認證協定。",
-    "platform": "ALR5＝各系統統一承載層；一切可處理能力最終落到可轉移 JSON（M），功能符合 checklist（C），畫面可分系統自訂（V）。"
+    "platform": "ALR5＝各系統統一承載層；一切可處理能力最終落到可轉移 JSON（M），功能符合 checklist（C），畫面可分系統自訂（V）。",
+    "trust_and_crypto": "跨公司公信＝notary 證據鏈（JSON）；保密＝crypto envelope（JSON 中繼＋密文 blob＋外部金鑰保管）。兩者可並用且責任分離。"
   },
   "form_composition": {
     "id": "AB_form",
@@ -1709,7 +1795,9 @@
       "prerequisites": [],
       "effects_on": [],
       "import_profiles": [],
-      "import_jobs": []
+      "import_jobs": [],
+      "notary_records": [],
+      "crypto_envelopes": []
     }
   },
   "cross_links": {
@@ -1877,14 +1965,16 @@
       "業務能力用 form_schema／流程／匯出／關聯等設定承載，優先設定而非改核心程式",
       "進出 ALR5 的資料皆可序列化為 JSON（含 form、item、links、export_profiles、logs）",
       "外部舊系統遷入：匯入→對應→補齊缺欄（json_completeness）→納入同一套 status／level／動作語意",
-      "V 可各系統自訂畫面；M＋C 共用 ALR5 規範"
+      "V 可各系統自訂畫面；M＋C 共用 ALR5 規範",
+      "跨公司公證與加密為期許能力：標準先定 JSON 形狀與責任分離，實作可分階段"
     ],
     "json": [
       "schema_version",
       "form_schema",
       "json_contract",
       "platform_scope"
-    ]
+    ],
+    "cross_company": "跨公司：同一套 ALR5 JSON＋可選 notary／crypto；各公司可自有 V，共用 M 結構與公證／加密信封語意。"
   },
   "bulk_import": {
     "id": "bulk_header_detail_import",
@@ -1952,6 +2042,106 @@
       "import_logs[]",
       "header",
       "lines"
+    ]
+  },
+  "json_and_crypto_guidance": {
+    "question": "加密與公證適合用 JSON 嗎？",
+    "answer": "適合用 JSON 做「信封與證據鏈的中繼資料／結構／互通」；不適合把明文機密或私鑰放進可轉移 JSON。密文、簽章值、憑證指紋用 JSON 描述與引用；實際密文可為 base64 欄或外部 blob。",
+    "split": {
+      "use_json_for": [
+        "單據結構、流程狀態、關聯、匯出匯入設定",
+        "公證／見證紀錄（誰、何時、對哪份雜湊背書）",
+        "加密信封中繼：alg、key_id、密文引用、收件者 key 指紋",
+        "稽核 log（可對敏感欄做紅acted）"
+      ],
+      "do_not_put_in_transfer_json": [
+        "私鑰、對稱金鑰明文、復原種子",
+        "未加密的機密附件本體（應先加密再引用）"
+      ],
+      "pattern": "JSON envelope + ciphertext blob + external key custody"
+    }
+  },
+  "trust_notary": {
+    "id": "cross_org_notary",
+    "label": "跨公司公證／見證（期許）",
+    "vision": "跨公司生效，效果類似律師事務所見證或法院公證：獨立第三方（或受信任網路）對「某份 JSON／檔案在某時刻的內容雜湊」背書，使日後可驗證未被竄改、何時存在、經誰見證。",
+    "analogy": {
+      "law_firm": "受託見證／保管證明",
+      "court_notary": "公證：時間、內容、身分可對外公信",
+      "alr5_role": "ALR5 承載流程與證據鏈；公證節點可為內建 notary 服務或外接受信任機構"
+    },
+    "notary_record_shape": {
+      "id": "string",
+      "subject": {
+        "form_id": "string",
+        "doc_no": "string",
+        "item_id": "string",
+        "content_hash": "sha256 of canonical JSON or file",
+        "hash_alg": "sha256"
+      },
+      "notary": {
+        "org_id": "公證／見證機構",
+        "notary_id": "執行者或服務 id",
+        "role": "witness | notary | timestamp_authority"
+      },
+      "attested_at": "ISO-8601",
+      "signature": "公證端簽章（對 subject＋時間）",
+      "status": "attested | revoked | superseded",
+      "evidence_refs": [
+        "可選：存證收據、外部 TSA token"
+      ]
+    },
+    "rules": [
+      "公證對象是內容雜湊＋時間＋身分，不是把整份明文交給所有人",
+      "跨公司：雙方／多方持有同一 notary_record 或可向 notary 查驗",
+      "與簽核 Approve 不同：Approve＝組織內流程；Notary＝跨組織公信",
+      "設定化：哪些 form／狀態達成就自動送公證（form_schema.notary_policy）",
+      "紀錄本身是可轉移 JSON；私鑰僅在公證端保管"
+    ],
+    "json": [
+      "notary_records[]",
+      "form_schema.notary_policy",
+      "system.content_hash"
+    ]
+  },
+  "crypto_envelope": {
+    "id": "encryption_key_custody",
+    "label": "檔案加密與鑰匙保管",
+    "vision": "檔案須加密；解密需要手上的鑰匙，或第三方備份的鑰匙（雙軌／托管）。",
+    "envelope_shape": {
+      "id": "string",
+      "alg": "例：AES-256-GCM + RSA-OAEP 或 age / libsodium box",
+      "ciphertext_ref": "blob id 或 data:base64（大檔建議外掛）",
+      "content_hash": "明文或密文雜湊（政策要寫清）",
+      "recipients": [
+        {
+          "key_id": "使用者手上鑰匙指紋",
+          "wrapped_key": "用公鑰包起來的對稱金鑰",
+          "custody": "holder"
+        },
+        {
+          "key_id": "第三方備份鑰匙指紋",
+          "wrapped_key": "…",
+          "custody": "third_party_backup",
+          "escrow_org": "备份機構 id"
+        }
+      ],
+      "created_at": "ISO-8601",
+      "policy": "who_can_unwrap | recovery_requires_n_of_m"
+    },
+    "rules": [
+      "可轉移 JSON 只放 envelope（中繼＋wrapped_key），不放私鑰",
+      "手上鑰匙＝使用者／裝置持有的私鑰；第三方備份＝escrow／備份機構持有另一份 unwrap 能力",
+      "建議：檔案對稱加密；對稱金鑰分別用「手上公鑰」與「備份公鑰」包裝進 recipients[]",
+      "與公證可並用：先 hash 明文或密文→公證；解密權與公信權分離",
+      "金鑰輪替／遺失復原：走 backup custody 或 n-of-m，流程寫入 logs（不寫金鑰）",
+      "設定：form／欄位級 encrypt=true；attachments 預設可強制加密"
+    ],
+    "json_fit": "適合：envelope JSON。不適合：私鑰進 JSON。",
+    "json": [
+      "attachments[].envelope",
+      "crypto_envelopes[]",
+      "key_registry_refs"
     ]
   }
 }

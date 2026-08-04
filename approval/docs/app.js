@@ -1212,7 +1212,7 @@
       }
     }
     try {
-      const sr = await fetch("./alr5-standard.json?v=alr5guide028", {
+      const sr = await fetch("./alr5-standard.json?v=alr5guide029", {
         cache: "no-store",
       });
       if (sr.ok) alr5Standard = await sr.json();

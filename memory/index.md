@@ -10,6 +10,7 @@
 
 ## 場次
 
+- 2026-08-04 — 跨公司公證＋加密鑰匙＋JSON 適用性 — 標籤：SEED、Approval、ALR5、公證、加密、跨公司、JSON、期許 — [sessions/2026-08-04-alr5-notary-crypto.md](sessions/2026-08-04-alr5-notary-crypto.md)
 - 2026-08-04 — 全系統進 ALR5＋大量匯入 header／detail — 標籤：SEED、Approval、ALR5、平台願景、大量匯入、JSON、偏好 — [sessions/2026-08-04-alr5-platform-bulk-import.md](sessions/2026-08-04-alr5-platform-bulk-import.md)
 - 2026-08-04 — 跨單關聯鏈＋兩種開單模式 — 標籤：SEED、Approval、ALR5、跨單關聯、前置條件、開單模式、校正、偏好 — [sessions/2026-08-04-alr5-cross-links-create-modes.md](sessions/2026-08-04-alr5-cross-links-create-modes.md)
 - 2026-08-04 — 需求記憶：AB 表單＋可設定匯出＋JSON 完全轉移 — 標籤：SEED、Approval、ALR5、AB表單、匯出、JSON、偏好 — [sessions/2026-08-04-alr5-ab-export-json.md](sessions/2026-08-04-alr5-ab-export-json.md)
@@ -60,6 +61,7 @@
 
 ## 主題
 
+- **ALR5：跨公司公證與加密**— [topics/alr5-notary-crypto.md](topics/alr5-notary-crypto.md)
 - **ALR5：跨單關聯與開單模式**— [topics/alr5-cross-links-create-modes.md](topics/alr5-cross-links-create-modes.md)
 - **ALR5：AB 表單、可設定匯出、JSON 完全轉移**— [topics/alr5-ab-export-json-transfer.md](topics/alr5-ab-export-json-transfer.md)
 - **怎麼跟 Agent 講 UI，少重複改**— [topics/agent-ui-briefing.md](topics/agent-ui-briefing.md)

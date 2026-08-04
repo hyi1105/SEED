@@ -84,6 +84,18 @@ note: 口頭對談整理進本檔；以 diff 確認。尚未口頭確認的區�
 
 機器原文：`platform_scope`／`bulk_import`（standard **0.2.8**）。
 
+### 1f. 跨公司公證＋加密鑰匙（期許，定案方向）
+
+| 項目 | 定案／說明 |
+|------|------------|
+| **跨公司公證** | 期許類似**律師見證／法院公證**：對「內容雜湊＋時間＋身分」背書，跨公司可查驗 |
+| **與簽核差別** | Approve＝組織內流程；**Notary＝跨組織公信** |
+| **加密** | 檔案加密；**手上鑰匙**或**第三方備份鑰匙**才能解密 |
+| **JSON 適合嗎？** | **適合**做結構、證據鏈、**加密信封中繼**；**不適合**放私鑰／明文機密。密文用引用／blob |
+| **形狀** | `notary_records[]`；`attachments[].envelope`（alg、ciphertext_ref、recipients[]） |
+
+機器原文：`trust_notary`／`crypto_envelope`／`json_and_crypto_guidance`（standard **0.2.9**）。
+
 ---
 
 ## 2. 角色與名單欄位
@@ -873,6 +885,9 @@ creator 開單／填單（可代填；requester 可為另一人）
 | 開單模式 | **on_demand**／**preallocated**（名額搶位＋行事曆） |
 | 全系統進 ALR5 | 各系統交付於此，處理並轉成可轉移 JSON |
 | 大量匯入 | header＋lines 批次匯入（退貨發票等）；import_profiles 設定 |
+| 跨公司公證 | 期許類律師／法院：content_hash＋時間背書；notary_records |
+| 加密鑰匙 | 手上鑰匙或第三方備份才能解密；JSON 只放 envelope |
+| JSON×加密 | 信封／證據鏈用 JSON；私鑰與明文機密不進可轉移 JSON |
 
 ## 10b. 仍待決
 
@@ -883,6 +898,9 @@ creator 開單／填單（可代填；requester 可為另一人）
 - [ ] 預建池誰批次產生？held 逾時多久自動釋放？
 - [ ] 明細超級多：lines 全內嵌，還是分片／外掛？單單上限？
 - [ ] 大量匯入檢核是否非同步？失敗列如何修？
+- [ ] 公證節點：自建、外部 TSA／律師機構、或聯盟多簽？
+- [ ] 第三方備份鑰匙解鎖條件（本人／法院令／n-of-m）？
+- [ ] 哪些附件／欄位預設強制加密？
 
 ---
 
@@ -908,3 +926,4 @@ creator 開單／填單（可代填；requester 可為另一人）
 | 2026-08-04 | v0.2.6：AB 表單、可設定 export_profiles、json_completeness 自動補齊；設定優先＋JSON 完全轉移 |
 | 2026-08-04 | v0.2.7：跨單 prerequisites／links／effects_on；開單 on_demand／preallocated；校正主檔＋事件建議 |
 | 2026-08-04 | v0.2.8：全系統交付 ALR5→JSON；大量匯入 header＋detail（import_profiles） |
+| 2026-08-04 | v0.2.9：跨公司公證期許；加密信封＋手上／第三方備份鑰匙；JSON 適合信封不適合私鑰 |
