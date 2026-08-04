@@ -3,95 +3,119 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Approval｜紅框黃字</title>
+  <title>Approval｜A4 填空文件</title>
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
-  <div class="phone">
-    <header class="top">
-      <h1>簽核｜請假申請</h1>
-      <p>紅＝申請單欄位有框 · 黃＝純文字無框</p>
+  <div class="app">
+    <header class="bar">
+      <div>
+        <h1>簽核｜A4 填空文件</h1>
+        <p>純文字描述＋填空綁定 · 段末自己看備註 · 文末公開備註</p>
+      </div>
+      <label class="who">
+        我是
+        <select id="login">
+          <option value="u_ming" selected>王小明（申請人）</option>
+          <option value="u_lin">林主管</option>
+          <option value="u_yen">嚴協理</option>
+        </select>
+      </label>
     </header>
 
-    <main class="feed" id="feed">
+    <div class="stage">
+      <article class="a4" id="doc">
 
-      <!-- 黃：純文字對話，不要框／不要泡泡 -->
-      <article class="plain me">
-        <div class="who"><strong>王小明</strong><time>17:02</time> · 公開</div>
-        <p>請幫我簽一下，明天上午請假。</p>
+        <h2 class="doc-title">請假申請書</h2>
+        <p class="doc-meta">以描述句填空建立欄位；空白處＝綁定欄位。</p>
+
+        <!-- 段落 1：申請敘述（填空＝綁定） -->
+        <section class="block" data-block="apply">
+          <p class="para">
+            申請人
+            <input class="blank" data-bind="applicant" value="王小明" />
+            因
+            <input class="blank" data-bind="leave_type" value="事假" />
+            ，自
+            <input class="blank wide" data-bind="leave_date" value="明天" />
+            起請假
+            <input class="blank narrow" data-bind="days" value="1" />
+            天，代理人為
+            <input class="blank" data-bind="agent" value="陳美玲" />
+            。
+          </p>
+          <div class="private-note" data-owner-only>
+            <span class="label">僅自己看 · 本段備註</span>
+            <textarea class="priv" data-block="apply" placeholder="這段只有我看得到…"></textarea>
+          </div>
+        </section>
+
+        <!-- 段落 2：系統／流程敘述（純文字，無框） -->
+        <section class="block" data-block="flow">
+          <p class="para narrate">
+            系統已排程郵件通知簽核人林主管。此關可簽核、可退回、可換代理人；申請欄位送出後改為唯讀。
+          </p>
+          <p class="para narrate">
+            變更紀錄：假別由「特休」改為「事假」；日期由空白改為「明天」；天數為「1」。
+          </p>
+          <div class="private-note" data-owner-only>
+            <span class="label">僅自己看 · 本段備註</span>
+            <textarea class="priv" data-block="flow" placeholder="這段只有我看得到…"></textarea>
+          </div>
+        </section>
+
+        <!-- 段落 3：簽核敘述＋可填空意見 -->
+        <section class="block" data-block="sign1">
+          <p class="para">
+            第一關簽核人
+            <input class="blank" data-bind="approver1" value="林主管" />
+            ，狀態為
+            <input class="blank wide" data-bind="status1" value="等待申請人送出" />
+            。簽核意見：
+            <input class="blank wider" data-bind="opinion1" value="" placeholder="（填空）" />
+            。
+          </p>
+          <div class="private-note" data-owner-only>
+            <span class="label">僅自己看 · 本段備註</span>
+            <textarea class="priv" data-block="sign1" placeholder="這段只有我看得到…"></textarea>
+          </div>
+        </section>
+
+        <section class="block" data-block="sign2">
+          <p class="para">
+            第二關簽核人
+            <input class="blank" data-bind="approver2" value="嚴協理" />
+            ，狀態為
+            <input class="blank wide" data-bind="status2" value="等待前關完成" />
+            。簽核意見：
+            <input class="blank wider" data-bind="opinion2" value="" placeholder="（填空）" />
+            。
+          </p>
+          <div class="private-note" data-owner-only>
+            <span class="label">僅自己看 · 本段備註</span>
+            <textarea class="priv" data-block="sign2" placeholder="這段只有我看得到…"></textarea>
+          </div>
+        </section>
+
+        <!-- 文件最下方：公開備註（別人不能改已寫入的） -->
+        <section class="public-notes" aria-label="公開備註">
+          <h3>公開備註</h3>
+          <p class="hint">加在文件最下方；已送出的公開備註他人不可改。</p>
+          <ul id="public-list">
+            <li>
+              <strong>人資公告</strong>
+              <span>請假逾三日請附證明。</span>
+              <em>不可改</em>
+            </li>
+          </ul>
+          <form id="public-form" class="public-form">
+            <input type="text" id="public-input" placeholder="新增一則公開備註…" autocomplete="off" />
+            <button type="submit">加上</button>
+          </form>
+        </section>
+
       </article>
-
-      <!-- 紅：申請單欄位 → 框裡；同一階段同一框 -->
-      <section class="box stage" aria-label="申請階段欄位">
-        <header class="box-head">請假申請單 · 申請階段</header>
-        <label class="field">
-          <span class="k">假別</span>
-          <input class="v" value="事假" />
-        </label>
-        <label class="field">
-          <span class="k">日期</span>
-          <input class="v" value="明天（1 天）" />
-        </label>
-        <label class="field">
-          <span class="k">代理人</span>
-          <input class="v" value="陳美玲" />
-        </label>
-        <p class="box-note">同階段欄位收在同一框 · 預設值可改</p>
-      </section>
-
-      <!-- 黃：系統／版本 → 無框純文字 -->
-      <article class="plain">
-        <div class="who"><strong>系統</strong><time>17:02</time></div>
-        <p>已排程郵件通知林主管，主旨「請假待簽」。該關權限：可簽核、可退回、可換代理人；申請人欄位送出後唯讀。</p>
-      </article>
-
-      <article class="plain">
-        <div class="who"><strong>版本</strong><time>17:02</time></div>
-        <p>Edited 2 fields — 假別：特休 → 事假；日期：未填 → 明天（1 天）。</p>
-      </article>
-
-      <article class="plain">
-        <div class="who"><strong>Approver1</strong><time>17:10</time></div>
-        <p>林主管 · 等待申請人送出。可見公開欄位，看不到「僅自己看」內容。</p>
-      </article>
-
-      <article class="plain">
-        <div class="who"><strong>Approver2</strong><time>17:10</time></div>
-        <p>嚴協理 · 等待前關完成。此關可簽核、可駁回，不可改假別。</p>
-      </article>
-
-      <article class="plain me">
-        <div class="who"><strong>王小明</strong><time>17:12</time> · 公開</div>
-        <p>有，陳美玲已同意代理。</p>
-      </article>
-
-      <article class="plain">
-        <div class="who"><strong>系統</strong><time>17:12</time></div>
-        <p>代理人已寫入共用區，並抄送陳美玲信箱。</p>
-      </article>
-
-      <article class="plain me private">
-        <div class="who"><strong>王小明</strong><time>17:13</time> · <span class="priv">僅自己看</span></div>
-        <p>醫生回診，先跟自己留個底。</p>
-      </article>
-
-      <article class="plain">
-        <div class="who"><strong>系統</strong><time>17:13</time></div>
-        <p>上一則未進共用庫，只存在申請人個人空間。</p>
-      </article>
-
-    </main>
-
-    <footer class="dock">
-      <div class="visibility" role="group" aria-label="可見範圍">
-        <button type="button" class="vis-opt" data-vis="private">自己看</button>
-        <button type="button" class="vis-opt on" data-vis="public">公開</button>
-      </div>
-      <form class="composer" id="composer">
-        <input type="text" id="msg" placeholder="輸入一段訊息" autocomplete="off" />
-        <button type="submit" class="send">傳送</button>
-      </form>
-    </footer>
+    </div>
   </div>
   <script src="./app.js"></script>
 </body>
