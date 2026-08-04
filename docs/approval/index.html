@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Approval｜A4 填空＋段末小框</title>
-  <link rel="stylesheet" href="./styles.css" />
+  <link rel="stylesheet" href="./styles.css?v=inkan2" />
 </head>
 <body>
   <div class="app">
@@ -54,50 +54,46 @@
           </p>
         </section>
 
-        <!-- 日式稟議印章欄：職稱橫列＋蓋印格（下位向主管微傾） -->
+        <!-- 日式稟議印鑑欄：表格橫排（非條列） -->
         <section class="block hanko-block" data-block="stamps">
           <p class="para narrate hanko-lead">
             簽核印鑑欄
             <button type="button" class="note-ico" data-kind="self" data-block="stamps" aria-label="給未來自己的備註"><span class="count">0</span></button>
           </p>
-          <div class="inkan-table" role="table" aria-label="簽核印鑑">
-            <div class="inkan-head" role="row">
-              <div role="columnheader">協理</div>
-              <div role="columnheader">課長</div>
-              <div role="columnheader">代理人</div>
-              <div role="columnheader">申請</div>
-            </div>
-            <div class="inkan-body" role="row">
-              <div class="inkan-cell pending" role="cell">
-                <div class="inkan-stamp tilt-0 empty">
-                  <span class="inkan-name">嚴</span>
-                </div>
-                <time class="inkan-time wait">尚未蓋印</time>
-              </div>
-              <div class="inkan-cell done" role="cell">
-                <div class="inkan-stamp tilt-1">
-                  <span class="inkan-name">林</span>
-                </div>
-                <div class="inkan-approve">APPROVE</div>
-                <time class="inkan-time" datetime="2026-08-04T10:18:00">08-04 10:18</time>
-              </div>
-              <div class="inkan-cell done" role="cell">
-                <div class="inkan-stamp tilt-2">
-                  <span class="inkan-name">陳</span>
-                </div>
-                <div class="inkan-approve">確認</div>
-                <time class="inkan-time" datetime="2026-08-04T09:55:00">08-04 09:55</time>
-              </div>
-              <div class="inkan-cell done" role="cell">
-                <div class="inkan-stamp tilt-3">
-                  <span class="inkan-name">王</span>
-                </div>
-                <div class="inkan-approve">申請</div>
-                <time class="inkan-time" datetime="2026-08-04T09:40:00">08-04 09:40</time>
-              </div>
-            </div>
-          </div>
-          <p class="inkan-caption">左高右低；下位印章略向主管方向傾斜（日式稟議感）。</p>
+          <table class="inkan-table">
+            <thead>
+              <tr>
+                <th scope="col">協理</th>
+                <th scope="col">課長</th>
+                <th scope="col">代理人</th>
+                <th scope="col">申請</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="pending">
+                  <div class="inkan-stamp tilt-0 empty"><span class="inkan-name">嚴</span></div>
+                  <div class="inkan-time wait">尚未蓋印</div>
+                </td>
+                <td class="done">
+                  <div class="inkan-stamp tilt-1"><span class="inkan-name">林</span></div>
+                  <div class="inkan-approve">APPROVE</div>
+                  <div class="inkan-time">08-04 10:18</div>
+                </td>
+                <td class="done">
+                  <div class="inkan-stamp tilt-2"><span class="inkan-name">陳</span></div>
+                  <div class="inkan-approve">確認</div>
+                  <div class="inkan-time">08-04 09:55</div>
+                </td>
+                <td class="done">
+                  <div class="inkan-stamp tilt-3"><span class="inkan-name">王</span></div>
+                  <div class="inkan-approve">申請</div>
+                  <div class="inkan-time">08-04 09:40</div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <p class="inkan-caption">左高右低；下位印章略向主管方向傾斜。</p>
         </section>
 
         <section class="doc-end">

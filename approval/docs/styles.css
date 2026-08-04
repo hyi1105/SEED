@@ -115,49 +115,44 @@ html, body {
 }
 .hanko-lead { margin-bottom: 12px; }
 
-/* —— 日式稟議印鑑欄（橫格＋紅印，下位向左微傾） —— */
-.inkan-table {
+/* —— 日式稟議印鑑欄：真正 table 橫排，不要條列 —— */
+table.inkan-table {
   width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
   border: 1.5px solid #1a1814;
   background: #faf7f0;
   margin: 0 0 8px;
 }
-.inkan-head,
-.inkan-body {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-}
-.inkan-head > div {
-  border-right: 1px solid #1a1814;
-  border-bottom: 1px solid #1a1814;
+table.inkan-table th,
+table.inkan-table td {
+  border: 1px solid #1a1814;
   text-align: center;
+  vertical-align: middle;
+  padding: 8px 4px;
+}
+table.inkan-table th {
   font-family: var(--font);
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.12em;
-  padding: 6px 4px;
   color: #1a1814;
+  padding: 6px 4px;
+  background: #f3efe6;
 }
-.inkan-head > div:last-child,
-.inkan-body > div:last-child { border-right: 0; }
-.inkan-cell {
-  border-right: 1px solid #1a1814;
-  min-height: 118px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  padding: 10px 4px 8px;
+table.inkan-table td {
+  height: 118px;
 }
 .inkan-stamp {
   width: 52px;
   height: 52px;
+  margin: 0 auto 4px;
   border-radius: 50%;
   border: 2.5px solid #c43c2c;
   color: #c43c2c;
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background:
     radial-gradient(circle at 32% 30%, rgba(255,255,255,0.28), transparent 42%),
     rgba(196, 60, 44, 0.07);
@@ -182,6 +177,7 @@ html, body {
   font-weight: 800;
   letter-spacing: 0.04em;
   color: #c43c2c;
+  margin-bottom: 2px;
 }
 .inkan-time {
   font-family: var(--font);
@@ -189,9 +185,8 @@ html, body {
   color: #6e675c;
   font-variant-numeric: tabular-nums;
 }
-.inkan-time.wait { color: #a09070; font-size: 10px; }
+.inkan-time.wait { color: #a09070; }
 
-/* 向主管（左側）鞠躬式微傾：越右傾越多 */
 .inkan-stamp.tilt-0 { transform: rotate(0deg); }
 .inkan-stamp.tilt-1 { transform: rotate(-7deg); }
 .inkan-stamp.tilt-2 { transform: rotate(-12deg); }
