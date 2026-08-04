@@ -1,6 +1,6 @@
 {
-  "$schema_version": "1.0",
-  "note": "此檔為欄位／權限契約參考；執行期完整申請單狀態請見 document.json（畫面純渲染）。",
+  "$schema_version": "1.1",
+  "note": "契約參考；執行期完整狀態見 document.json（含 actor／actions／logs）。",
   "form_id": "leave_request_v1",
   "title": "請假申請書",
   "document_ref": "./document.json",
@@ -9,14 +9,17 @@
     "renderer": "json_only",
     "views": ["form", "json"]
   },
+  "logging": {
+    "on_button": true,
+    "fields": ["at", "actor", "action", "opened", "saved", "changes"],
+    "diff_style": "github_red_before_green_after"
+  },
   "fields": [
     {
       "name": "applicant",
       "display_name": "申請人",
       "type": "text",
       "required": true,
-      "editable_by": ["applicant"],
-      "visible_to": ["applicant", "approver", "agent"],
       "storage": "shared"
     },
     {
@@ -25,8 +28,6 @@
       "type": "dropdown",
       "options": ["特休", "事假", "病假", "其他"],
       "required": true,
-      "editable_by": ["applicant"],
-      "visible_to": ["applicant", "approver", "agent"],
       "storage": "shared"
     },
     {
@@ -34,8 +35,6 @@
       "display_name": "起始日",
       "type": "text",
       "required": true,
-      "editable_by": ["applicant"],
-      "visible_to": ["applicant", "approver", "agent"],
       "storage": "shared"
     },
     {
@@ -43,8 +42,6 @@
       "display_name": "天數",
       "type": "number",
       "required": true,
-      "editable_by": ["applicant"],
-      "visible_to": ["applicant", "approver", "agent"],
       "storage": "shared"
     },
     {
@@ -52,8 +49,6 @@
       "display_name": "代理人",
       "type": "text",
       "required": false,
-      "editable_by": ["applicant"],
-      "visible_to": ["applicant", "approver", "agent"],
       "storage": "shared"
     }
   ],
@@ -67,6 +62,6 @@
   "privacy": {
     "identity_key": "user_id",
     "shared_store": "api_document_json",
-    "rule": "畫面不內建文案；所有呈現與選項來自 document JSON／未來 API"
+    "rule": "畫面不內建文案；所有呈現、選項與操作 log 來自 document JSON／未來 API"
   }
 }

@@ -6,8 +6,6 @@
   const STORAGE_KEY = "approval.document.v2";
   const MIN_CH = 2;
 
-  const DEFAULT_DOC = null; // boot 時從 document.json 或內嵌副本載入
-
   const EMBEDDED_DOC = {
     schema_version: "1.1",
     meta: {
@@ -1011,8 +1009,6 @@
       }
     }
     doc = ensureDocShape(base ? clone(base) : clone(EMBEDDED_DOC));
-    // 忽略未使用的 DEFAULT_DOC 佔位
-    void DEFAULT_DOC;
     persist();
     resetOpenedSnapshot();
     document.documentElement.lang = doc.meta?.lang || "zh-Hant";
