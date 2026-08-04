@@ -44,7 +44,7 @@ note: 口頭對談整理進本檔；以 diff 確認。尚未口頭確認的區�
 
 | # | 你說的概念 | 建議欄位 id | 建議顯示名稱 | 可編輯 | 通知時機 | 值型別 |
 |---|------------|-------------|--------------|--------|----------|--------|
-| 1 | 填單人（多為助理） | `preparer` | 填單人 | 視權限（待補） | —（身分欄，非通知名單） | 單一人員 |
+| 1 | 建立者／填單人（多為助理） | `creator` | 建立者 | 視權限（待補） | —（身分欄，非通知名單） | 單一人員 |
 | 2 | 需求人（多為業務） | `requester` | 需求人 | 視權限（待補） | — | 單一人員 |
 | 3 | CopyTo | `cc` | 副本 | ✅ 可編；可空或有預設 | **送出申請單後** | 名單（見 2.3） |
 | 4 | CopyTo_sys | `cc_system` | 系統副本 | ❌ 不可編（Admin 預設） | **送出申請單後** | 名單 |
@@ -61,14 +61,14 @@ note: 口頭對談整理進本檔；以 diff 確認。尚未口頭確認的區�
 | Super user | `super_user` | 進階經辦 | 可看符合條件／全部單；簽核完畢後仍可編**專門開給他的欄位** |
 | Audit | `audit` | 稽核 | **只能看**申請單，不可編、不可簽 |
 
-別名：口頭的 **creator** ＝ 開單／填單人 → 欄位 id 用 `preparer`（必要時 JSON 可同時暴露 alias `creator`）。
+欄位主名採舊系統熟悉的 **`creator`**（建立者／填單人；可為代填）。不再以 preparer 為主 id。
 
 **為何這樣取名（簡短）：**
 
 | 建議 id | 理由 |
 |---------|------|
-| `preparer`（alias `creator`） | 國際表單常見「填單／代填」＝preparer；你說的 creator 對齊此欄 |
-| `requester` | 「需求提出人／受益業務」最通用；避免與 preparer 都叫 applicant |
+| `creator` | 舊系統慣用詞＝建立者／填單人（可代填）；國際文檔若需可註 alias preparer |
+| `requester` | 「需求提出人／受益業務」最通用；避免與 creator 都叫 applicant |
 | `cc` / `cc_system` | 對應郵件 CC；`_system`＝系統鎖定、不可改（比 `_sys` 好讀） |
 | `approvers[]` | 關卡數不定時用陣列；若必須扁平欄位可用 `approver_1`、`approver_2` |
 | `stage_notifies[]` | 強調「關卡通過才通知」，與送出時的 `cc`、結案的 `fyi` 分開 |
@@ -83,7 +83,7 @@ note: 口頭對談整理進本檔；以 diff 確認。尚未口頭確認的區�
 
 | 角色／欄位 id | 說明 |
 |---------------|------|
-| `preparer`（creator） | 實際填單／開單的人，通常是助理 |
+| `creator` | 建立者：實際開單／填單的人，通常是助理；可與 requester 不同（代填） |
 | `requester` | 真正有需求的人，通常是業務 |
 | `cc` | 送出後要副本通知的名單；可空、可有預設；可多選人員／群組，或手動輸入 mail |
 | `cc_system` | 同上時機，但名單由 Admin 預設，填單者不可改 |
@@ -151,7 +151,7 @@ note: 口頭對談整理進本檔；以 diff 確認。尚未口頭確認的區�
 
 | 身分 | 對應欄位 | 可見 |
 |------|----------|------|
-| creator／填單人 | `preparer` | ✅ |
+| 建立者 | `creator` | ✅ |
 | 需求人 | `requester` | ✅ |
 | CopyTo | `cc`（及是否含 `cc_system`：待補，建議 ✅） | ✅ |
 | FYI | `fyi`（及是否含 `fyi_system`：待補，建議 ✅） | ✅ |
@@ -171,7 +171,7 @@ note: 口頭對談整理進本檔；以 diff 確認。尚未口頭確認的區�
 
 | 角色 | 可檢視 | 可編輯 | 可簽核 | 建表／設規則 | 備註 |
 |------|--------|--------|--------|--------------|------|
-| preparer | 自己相關單 | 草稿欄位；簽核中可改「可編且未簽」的簽核人 | 否（除非身兼） | 否 | 可代填；可與 requester 不同 |
+| `creator` | 自己相關單 | 草稿欄位；簽核中可改「可編且未簽」的簽核人 | 否（除非身兼） | 否 | 可代填；可與 requester 不同 |
 | requester | 自己是需求人的單 | 簽核中可改「可編且未簽」的簽核人（其餘待補） | 否 | 否 | 需求歸屬 |
 | `approver` | 自己在簽核鏈上的單 | 通常否（待補意見欄） | ✅ 輪到自己時 approve／reject | 否 | 關卡推進 |
 | `cc`／`fyi` 收件人 | 被列入的單 | 否 | 否 | 否 | 知會 |
@@ -208,7 +208,7 @@ note: 口頭對談整理進本檔；以 diff 確認。尚未口頭確認的區�
 
 ### 3.6 名單欄位可編規則
 
-| 欄位 id | preparer／填單時 | admin | super_user | audit |
+| 欄位 id | creator／填單時 | admin | super_user | audit |
 |---------|------------------|-------|------------|-------|
 | `cc` | ✅ 可編（可空／預設） | ✅ | ❌（除非列入 super_user_fields） | ❌ |
 | `cc_system` | ❌ | ✅ 維護 | ❌ | ❌ |
@@ -241,7 +241,7 @@ note: 口頭對談整理進本檔；以 diff 確認。尚未口頭確認的區�
 
 ### 3.8 欄位可見／可編（業務欄，其餘待補）
 
-| 欄位 | preparer | requester | approver | super_user | admin | audit |
+| 欄位 | creator | requester | approver | super_user | admin | audit |
 |------|----------|-----------|----------|------------|-------|-------|
 | 一般業務欄 | 草稿可編 | （待補） | 看 | 否 | 全可編＋版本 | 看 |
 | 發票號碼等 | 否 | 否 | 看 | ✅ 結案後 | ✅ | 看 |
@@ -334,8 +334,8 @@ submit
 
 | 規則 | 說明 |
 |------|------|
-| 代填 | `preparer`（填寫人／代填人）**可以與** `requester`（需求人）**不同** |
-| 誰可在簽核中改簽核人 | **`preparer` 或 `requester`** |
+| 代填 | `creator`（建立者／代填人）**可以與** `requester`（需求人）**不同** |
+| 誰可在簽核中改簽核人 | **`creator` 或 `requester`** |
 | 可改哪些人 | 原本填單時**可以編輯**的簽核人欄位，且該人**尚未簽核過** |
 | 為何要改 | 填錯、對方休假不在等 → 直接換人 |
 | 不可由填寫／需求人改 | 填單時即為**預設且不可編輯**的簽核人 → **僅 `admin` 可換人** |
@@ -345,7 +345,7 @@ submit
 
 | 簽核人欄位屬性 | 尚未簽核 | 已簽核 |
 |----------------|----------|--------|
-| 填單時可編輯 | preparer／requester 可換；admin 可換 | 不可換（admin 是否能改已簽：待補，建議走版本異動） |
+| 填單時可編輯 | creator／requester 可換；admin 可換 | 不可換（admin 是否能改已簽：待補，建議走版本異動） |
 | 填單時鎖定（預設不可編） | **僅 admin** 可換 | 同上 |
 
 ### 4.7 關卡一覽表（與跳關併用）
@@ -359,7 +359,7 @@ submit
 ### 4.8 流程圖（文字版）
 
 ```
-preparer 填單（可代填；requester 可為另一人）
+creator 開單／填單（可代填；requester 可為另一人）
   → submit → 通知 cc + cc_system
   → 掃描 stages：跳過全空關
       → 若零關有人 → 自動 approved／Completed → fyi + fyi_system
@@ -367,7 +367,7 @@ preparer 填單（可代填；requester 可為另一人）
             → approve（達通過條件）→ 通知本關所有人（approved）
                  → stage_notify → 再跳空關…
             → reject → 通知本關所有人（denied）→ rejected（細節待補）
-  → 簽核中：preparer／requester 可改「可編且未簽」的簽核人；鎖定欄僅 admin
+  → 簽核中：creator／requester 可改「可編且未簽」的簽核人；鎖定欄僅 admin
 ```
 
 ### 4.9 例外流程（待補）
@@ -385,7 +385,7 @@ preparer 填單（可代填；requester 可為另一人）
 
 ### 5.1 開單／送出規則
 
-- `preparer` 可與 `requester` 不同（代填）
+- `creator` 可與 `requester` 不同（代填）
 - 送出後發送 `cc` + `cc_system` 通知
 - 送出時依 §4.3 **跳過空關**；若無任何簽核人 → **直接 approved／Completed**
 
@@ -415,10 +415,10 @@ preparer 填單（可代填；requester 可為另一人）
 
 | 動作 ID | 預設顯示名稱 | 誰可執行 | 前置條件 | 執行後狀態／副作用 | 寫入 log／版本 |
 |---------|--------------|----------|----------|--------------------|----------------|
-| `save` | 儲存 | preparer（可編階段）、admin、super_user（限其欄） | 有編輯權 | 存檔；可能設 `post_approval_amended` | 是 |
+| `save` | 儲存 | creator（可編階段）、admin、super_user（限其欄） | 有編輯權 | 存檔；可能設 `post_approval_amended` | 是 |
 | `approve` | Approve（顯示可改） | 該關 approver；admin 可代操作 | 輪到該關且該關有值 | 依 pass_rule 過關→通知本關所有人→跳空關；無下一關→approved＋fyi | 是 |
-| `submit` | 送出 | preparer 等（待補） | （待補） | 通知 cc；跳空關；若無簽核人→直接 approved | 是 |
-| `change_approver` | 更換簽核人 | preparer／requester（可編未簽）；admin（含鎖定欄） | 目標人尚未簽 | 寫 log；不重開已簽關 | 是 |
+| `submit` | 送出 | creator 等（待補） | （待補） | 通知 cc；跳空關；若無簽核人→直接 approved | 是 |
+| `change_approver` | 更換簽核人 | creator／requester（可編未簽）；admin（含鎖定欄） | 目標人尚未簽 | 寫 log；不重開已簽關 | 是 |
 | `reject` | Reject（顯示可改 Denied 等） | 該關 approver；admin 可代操作 | 輪到該關 | 狀態 `rejected`；（後續待補） | 是 |
 | `admin_amend` | 管理員修正 | admin | 任意狀態（含已完成） | 改資料＋版本；若已 approved → `post_approval_amended=true` | 是（強制） |
 | `super_user_fill` | 進階經辦回填 | super_user | 單據可見；欄位在 super_user_fields | 只寫開放欄；若已 approved → 建議同樣標異動 | 是 |
@@ -495,7 +495,7 @@ preparer 填單（可代填；requester 可為另一人）
 
 | 規格概念 | JSON／API 欄位 | 說明 |
 |----------|----------------|------|
-| 填單人／creator | `preparer`（alias `creator`） | 人員 |
+| 建立者 | `creator` | 人員（舊系統用語；可代填） |
 | 需求人 | `requester` | 人員 |
 | 送出副本 | `cc` | 名單物件 |
 | 系統送出副本 | `cc_system` | 名單物件，鎖定 |
@@ -523,7 +523,7 @@ preparer 填單（可代填；requester 可為另一人）
 - [ ] `stage_notifies` 填單時可否編輯，或僅表單設計／Admin 可編？
 - [ ] reject：`all` 關一人 reject 是否整單 rejected？`any` 關一人 reject 是否整單 rejected、或等其他人？
 - [ ] 預設顯示要用 Rejected 還是 Denied？（建議預設 Rejected，Admin 可改）
-- [ ] preparer 與 requester 是否允許同一人？（已允許不同；同一人應可）
+- [ ] creator 與 requester 是否允許同一人？（已允許不同；同一人應可）
 - [ ] 送出時若 `cc` 與 `cc_system` 重複，是否去重只寄一封？
 - [ ] `cc_system`／`fyi_system`／`stage_notifies` 收件人是否算「單上的人」而有權限檢視？
 - [ ] `super_user` 回填是否一律把 `post_approval_amended` 設為 true？
@@ -539,6 +539,7 @@ preparer 填單（可代填；requester 可為另一人）
 | 日期 | 變更 |
 |------|------|
 | 2026-08-04 | 建立檔案骨架，等待口頭整理 |
-| 2026-08-04 | 角色／名單：preparer、requester、cc、cc_system、approvers、stage_notifies、fyi、fyi_system；同意／不同意用語建議 |
+| 2026-08-04 | 角色／名單：creator、requester、cc、cc_system、approvers、stage_notifies、fyi、fyi_system；同意／不同意用語建議 |
 | 2026-08-04 | 權限角色：admin 完全控制＋版本；super_user 結案後專欄；audit 唯讀；單據可見性；簽核後異動明顯標記（`post_approval_amended`） |
 | 2026-08-04 | 流程：空關跳過、全員空白自動完成、關內 all／any 平行簽核、關員全員通知、代填、簽核中換未簽可編簽核人 |
+| 2026-08-04 | 欄位主名：建立者改為舊系統慣用 `creator`（不再以 preparer 為主） |
