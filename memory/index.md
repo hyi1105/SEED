@@ -10,6 +10,7 @@
 
 ## 場次
 
+- 2026-08-04 — ALR5 列表對比＋系統／內容欄位拆分 — 標籤：SEED、Approval、ALR5、列表、系統欄位、step、UI — [sessions/2026-08-04-alr5-list-sys-fields.md](sessions/2026-08-04-alr5-list-sys-fields.md)
 - 2026-08-04 — ALR5 兩層導覽＋申請畫面三處修正 — 標籤：SEED、Approval、ALR5、兩層導覽、設計表單、UI — [sessions/2026-08-04-alr5-two-layer-nav.md](sessions/2026-08-04-alr5-two-layer-nav.md)
 - 2026-08-04 — Form 版本／環境試跑／發布 SOP／JSON 升級 — 標籤：SEED、Approval、ALR5、版本、環境、發布、遷移、偏好 — [sessions/2026-08-04-alr5-env-versioning.md](sessions/2026-08-04-alr5-env-versioning.md)
 - 2026-08-04 — ALR5 runtime PoC：印章按鈕＋角色／level 測試切換 — 標籤：SEED、Approval、ALR5、runtime、印章、測試 — [sessions/2026-08-04-alr5-runtime-ui.md](sessions/2026-08-04-alr5-runtime-ui.md)
@@ -64,6 +65,7 @@
 
 ## 主題
 
+- **ALR5：系統欄位（Creator／Approval_n／step）**— [topics/alr5-system-fields.md](topics/alr5-system-fields.md)
 - **ALR5：Form 版本、環境與發布**— [topics/alr5-env-versioning-publish.md](topics/alr5-env-versioning-publish.md)
 - **ALR5：跨公司公證與加密**— [topics/alr5-notary-crypto.md](topics/alr5-notary-crypto.md)
 - **ALR5：跨單關聯與開單模式**— [topics/alr5-cross-links-create-modes.md](topics/alr5-cross-links-create-modes.md)

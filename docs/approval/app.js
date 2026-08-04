@@ -3,10 +3,29 @@
    * API 時代：document JSON 是唯一真相。
    * 畫面只渲染；按鈕會寫入 logs（時間／操作者／開啟時 vs 儲存後／GitHub 紅綠 diff）。
    */
-  const STORAGE_KEY = "approval.document.v4";
-  const FORMS_KEY = "approval.forms.catalog.v1";
+  const STORAGE_KEY = "approval.document.v5";
+  const FORMS_KEY = "approval.forms.catalog.v2";
   const NAV_KEY = "approval.nav.v1";
   const MIN_CH = 2;
+
+  /** 系統內建欄位（簽核／報表用；Owner 不可當內容欄增刪） */
+  const SYSTEM_FIELD_DEFS = [
+    { id: "Creator", label: "建立者", note: "表單／文件建立者" },
+    { id: "Requester", label: "申請人", note: "提出申請的人" },
+    { id: "Status", label: "狀態", note: "New／Draft／In Process…" },
+    { id: "CC", label: "副本", note: "副本收件" },
+    { id: "FYI", label: "知會", note: "知會對象" },
+    { id: "current_level", label: "目前關卡", note: "0／1…／9999／-1／-2" },
+    { id: "current_approver", label: "目前簽核人", note: "當前應操作者" },
+  ];
+  const SYSTEM_STEP_FIELD_TMPL = [
+    { suffix: "Name", label: "簽核人姓名" },
+    { suffix: "Date", label: "簽核時間" },
+    { suffix: "Status", label: "簽核結果" },
+    { suffix: "Comment", label: "簽核意見" },
+    { suffix: "Comment_sys", label: "系統意見" },
+    { suffix: "Mail", label: "通知信箱", prefix: "Notify" },
+  ];
 
   const EMBEDDED_DOC = {
     "schema_version": "1.2",
@@ -15,8 +34,10 @@
       "form_id": "leave_request_v1",
       "form_version": "1.0.0",
       "title": "請假申請書",
+      "creator": "王小明",
+      "location": "",
       "lang": "zh-Hant",
-      "note": "ALR5：兩層導覽（選表單→申請／設計表單表格編輯）；印章下按鈕；操作者在 sys；狀態只顯示；測試下拉變窄。"
+      "note": "ALR5：列表暗色＋名稱／建立者；設計拆系統欄位／內容欄位；簽核關 step_N 可刪。"
     },
     "actor": {
       "id": "u_wang",
@@ -31,7 +52,7 @@
           "id": "u_wang",
           "name": "王小明"
         },
-        "stamp_id": "applicant"
+        "stamp_id": "step_0"
       },
       {
         "id": "approver_1",
@@ -40,7 +61,7 @@
           "id": "u_chen",
           "name": "陳美玲"
         },
-        "stamp_id": "agent"
+        "stamp_id": "step_1"
       },
       {
         "id": "approver_2",
@@ -49,7 +70,7 @@
           "id": "u_lin",
           "name": "林課長"
         },
-        "stamp_id": "manager"
+        "stamp_id": "step_2"
       },
       {
         "id": "approver_3",
@@ -58,7 +79,7 @@
           "id": "u_yen",
           "name": "嚴協理"
         },
-        "stamp_id": "director"
+        "stamp_id": "step_3"
       },
       {
         "id": "admin",
@@ -90,7 +111,7 @@
         }
       ],
       "sys_fields_aria": "系統欄位（報表用）",
-      "sys_hint": "測試：上方可手動切角色與 current_level；切到 level 2 會自動核准 level 1。印章下方為動作按鈕；目前操作者在下方系統欄位；狀態只顯示不可點。",
+      "sys_hint": "測試：上方可手動切角色與 current_level；切到 level 2 會自動核准 level 1。印章下方為動作按鈕；系統欄位含 Creator／Requester／Approval_n_*；狀態只顯示不可點。",
       "empty_mark": "—",
       "pending_stamp_label": "尚未蓋印",
       "actions_title": "操作",
@@ -168,11 +189,13 @@
     ],
     "fields": {
       "applicant": {
+        "kind": "content",
         "type": "text",
         "label": "申請人",
         "value": "王小明"
       },
       "leave_type": {
+        "kind": "content",
         "type": "dropdown",
         "label": "假別",
         "value": "事假",
@@ -196,16 +219,19 @@
         ]
       },
       "leave_date": {
+        "kind": "content",
         "type": "text",
         "label": "起始日",
         "value": "明天"
       },
       "days": {
+        "kind": "content",
         "type": "number",
         "label": "天數",
         "value": "1"
       },
       "agent": {
+        "kind": "content",
         "type": "text",
         "label": "代理人",
         "value": "陳美玲"
@@ -267,7 +293,7 @@
       "title": "簽核",
       "columns": [
         {
-          "id": "director",
+          "id": "step_3",
           "label": "協理",
           "level": 3,
           "role": "approver_3",
@@ -284,7 +310,7 @@
           }
         },
         {
-          "id": "manager",
+          "id": "step_2",
           "label": "課長",
           "level": 2,
           "role": "approver_2",
@@ -301,7 +327,7 @@
           }
         },
         {
-          "id": "agent",
+          "id": "step_1",
           "label": "代理人",
           "level": 1,
           "role": "approver_1",
@@ -318,7 +344,7 @@
           }
         },
         {
-          "id": "applicant",
+          "id": "step_0",
           "label": "申請",
           "level": 0,
           "role": "requester",
@@ -1092,15 +1118,30 @@
     const empty = doc.ui?.empty_mark || "—";
     const st = statusOf(doc.system?.status);
     const actorName = doc.actor?.name || "";
-    const actorRole = doc.actor?.role || "";
     const rows = [
-      ["目前操作者", actorRole ? `${actorName}（${actorRole}）` : actorName],
-      ["doc_no", doc.system?.doc_no],
+      ["Creator", doc.meta?.creator || ""],
+      ["Requester", fieldValue("applicant") || actorName],
+      ["Status", st?.label || doc.system?.status],
       ["current_level", doc.system?.current_level],
+      ["current_approver", actorName],
+      ["doc_no", doc.system?.doc_no],
       ["submitted_at", doc.system?.submitted_at],
       ["completed_at", doc.system?.completed_at],
-      ["status", st?.label || doc.system?.status],
     ];
+    const steps = (doc.approval?.columns || []).filter((c) => Number(c.level) > 0);
+    steps
+      .slice()
+      .sort((a, b) => Number(a.level) - Number(b.level))
+      .forEach((col) => {
+        const n = Number(col.level);
+        rows.push([`Approval_${n}_Name`, col.person?.name || col.stamp?.name || ""]);
+        rows.push([`Approval_${n}_Date`, col.stamp?.time || ""]);
+        rows.push([
+          `Approval_${n}_Status`,
+          col.stamp?.pending ? "pending" : col.stamp?.mark || "",
+        ]);
+        rows.push([`Approval_${n}_Comment`, col.stamp?.comment || ""]);
+      });
     rows.forEach(([k, v]) => {
       const row = document.createElement("div");
       row.className = "sys-row";
@@ -1621,6 +1662,8 @@
       {
         form_id: id,
         title: d?.meta?.title || "請假申請書",
+        creator: d?.meta?.creator || d?.actor?.name || "王小明",
+        location: d?.meta?.location || "",
         form_version: d?.meta?.form_version || "1.0.0",
         system_name: d?.meta?.system_name || "LEAVE",
         updated_at: nowStamp(),
@@ -1628,6 +1671,8 @@
       {
         form_id: "expense_claim_v1",
         title: "費用報銷單",
+        creator: "系統範本",
+        location: "",
         form_version: "0.1.0",
         system_name: "EXPENSE",
         updated_at: nowStamp(),
@@ -1635,12 +1680,26 @@
     ];
   }
 
+  function normalizeCatalogRow(f) {
+    return {
+      form_id: f.form_id,
+      title: f.title || f.form_id,
+      creator: f.creator || "—",
+      location: f.location || "",
+      form_version: f.form_version || "",
+      system_name: f.system_name || "",
+      updated_at: f.updated_at || "",
+    };
+  }
+
   function loadFormsCatalog() {
     try {
       const raw = localStorage.getItem(FORMS_KEY);
       if (raw) {
         const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length) return parsed;
+        if (Array.isArray(parsed) && parsed.length) {
+          return parsed.map(normalizeCatalogRow);
+        }
       }
     } catch {}
     return null;
@@ -1671,17 +1730,67 @@
   function upsertCatalogEntry(d) {
     const id = d?.meta?.form_id;
     if (!id) return;
-    const row = {
+    const row = normalizeCatalogRow({
       form_id: id,
       title: d?.meta?.title || id,
+      creator: d?.meta?.creator || d?.actor?.name || "—",
+      location: d?.meta?.location || "",
       form_version: d?.meta?.form_version || "1.0.0",
       system_name: d?.meta?.system_name || "",
       updated_at: nowStamp(),
-    };
+    });
     const i = formsCatalog.findIndex((x) => x.form_id === id);
     if (i >= 0) formsCatalog[i] = { ...formsCatalog[i], ...row };
     else formsCatalog.push(row);
     persistFormsCatalog();
+  }
+
+  function migrateStepIds(d) {
+    const legacy = {
+      director: "step_3",
+      manager: "step_2",
+      agent: "step_1",
+      applicant: "step_0",
+    };
+    (d.approval?.columns || []).forEach((c) => {
+      if (legacy[c.id]) c.id = legacy[c.id];
+    });
+    (d.roles || []).forEach((r) => {
+      if (legacy[r.stamp_id]) r.stamp_id = legacy[r.stamp_id];
+    });
+    Object.keys(d.fields || {}).forEach((fid) => {
+      const f = d.fields[fid];
+      if (f && !f.kind) f.kind = "content";
+    });
+    if (!d.meta) d.meta = {};
+    if (!d.meta.creator) d.meta.creator = d.actor?.name || "";
+    if (d.meta.location == null) d.meta.location = "";
+    return d;
+  }
+
+  function renumberApprovalSteps(d) {
+    const cols = d.approval?.columns || [];
+    const applyCol = cols.find((c) => Number(c.level) === 0);
+    const steps = cols
+      .filter((c) => Number(c.level) > 0)
+      .sort((a, b) => Number(a.level) - Number(b.level));
+    steps.forEach((c, i) => {
+      c.level = i + 1;
+      c.id = `step_${i + 1}`;
+    });
+    if (applyCol) {
+      applyCol.level = 0;
+      applyCol.id = "step_0";
+    }
+    const ordered = [...steps].sort((a, b) => Number(b.level) - Number(a.level));
+    if (applyCol) ordered.push(applyCol);
+    d.approval.columns = ordered;
+    (d.roles || []).forEach((r) => {
+      if (!r.stamp_id) return;
+      const hit = ordered.find((c) => c.role === r.id);
+      if (hit) r.stamp_id = hit.id;
+    });
+    return d;
   }
 
   function docStorageKey(formId) {
@@ -1704,12 +1813,14 @@
     } catch {}
   }
 
-  function makeBlankForm(formId, title) {
+  function makeBlankForm(formId, title, creator) {
     const d = clone(EMBEDDED_DOC);
     d.meta = {
       ...d.meta,
       form_id: formId,
       title: title || formId,
+      creator: creator || d.meta.creator || "—",
+      location: "",
       form_version: "0.1.0",
       system_name: (formId.split("_")[0] || "FORM").toUpperCase(),
       note: "新建表單（設計中）",
@@ -1782,6 +1893,23 @@
     return bar;
   }
 
+  function appendListCols(tr, f) {
+    const loc =
+      f.location && String(f.location).trim()
+        ? f.location
+        : "（尚未設計）";
+    [
+      [f.title || "", ""],
+      [f.creator || "—", ""],
+      [loc, "muted-cell"],
+    ].forEach(([text, cls]) => {
+      const td = document.createElement("td");
+      if (cls) td.className = cls;
+      td.textContent = text;
+      tr.appendChild(td);
+    });
+  }
+
   function renderApplyList() {
     const stage = els.form;
     stage.replaceChildren();
@@ -1794,13 +1922,11 @@
     const table = document.createElement("table");
     table.className = "mgmt-table";
     table.innerHTML =
-      "<thead><tr><th>form_id</th><th>名稱</th><th>版本</th><th>系統</th><th></th></tr></thead>";
+      "<thead><tr><th>名稱</th><th>建立者</th><th>所屬位置</th><th></th></tr></thead>";
     const tb = document.createElement("tbody");
     formsCatalog.forEach((f) => {
       const tr = document.createElement("tr");
-      tr.innerHTML = `<td>${f.form_id}</td><td>${f.title || ""}</td><td>${
-        f.form_version || ""
-      }</td><td>${f.system_name || ""}</td>`;
+      appendListCols(tr, f);
       const td = document.createElement("td");
       const go = document.createElement("button");
       go.type = "button";
@@ -1832,22 +1958,34 @@
     add.className = "table-btn primary";
     add.textContent = "＋ 新增表單";
     add.addEventListener("click", () => {
-      const id = prompt("新 form_id（英文／底線）", "new_form_v1");
-      if (!id) return;
+      const title = prompt("表單名稱", "新表單");
+      if (!title) return;
+      const id =
+        "form_" +
+        String(title)
+          .replace(/\s+/g, "_")
+          .replace(/[^\w\u4e00-\u9fff\-]/g, "")
+          .slice(0, 24) +
+        "_" +
+        Date.now().toString(36).slice(-4);
       if (formsCatalog.some((x) => x.form_id === id)) {
-        alert("form_id 已存在");
+        alert("form_id 已存在，請再試一次");
         return;
       }
-      const title = prompt("表單名稱", id) || id;
-      const d = makeBlankForm(id, title);
+      const creator = prompt("建立者", "王小明") || "王小明";
+      const d = makeBlankForm(id, title, creator);
       persistDocForForm(id, d);
-      formsCatalog.push({
-        form_id: id,
-        title,
-        form_version: "0.1.0",
-        system_name: d.meta.system_name,
-        updated_at: nowStamp(),
-      });
+      formsCatalog.push(
+        normalizeCatalogRow({
+          form_id: id,
+          title,
+          creator,
+          location: "",
+          form_version: "0.1.0",
+          system_name: d.meta.system_name,
+          updated_at: nowStamp(),
+        })
+      );
       persistFormsCatalog();
       openDesignForm(id);
     });
@@ -1857,17 +1995,11 @@
     const table = document.createElement("table");
     table.className = "mgmt-table";
     table.innerHTML =
-      "<thead><tr><th>form_id</th><th>名稱</th><th>form_version</th><th>系統</th><th>更新</th><th></th></tr></thead>";
+      "<thead><tr><th>名稱</th><th>建立者</th><th>所屬位置</th><th></th></tr></thead>";
     const tb = document.createElement("tbody");
     formsCatalog.forEach((f) => {
       const tr = document.createElement("tr");
-      ["form_id", "title", "form_version", "system_name", "updated_at"].forEach(
-        (k) => {
-          const td = document.createElement("td");
-          td.textContent = f[k] || "";
-          tr.appendChild(td);
-        }
-      );
+      appendListCols(tr, f);
       const td = document.createElement("td");
       const edit = document.createElement("button");
       edit.type = "button";
@@ -1883,12 +2015,14 @@
     const tip = document.createElement("p");
     tip.className = "list-tip";
     tip.textContent =
-      "第一層管理現有表單；點進去第二層用表格大量調整欄位／簽核關設定。";
+      "列表以名稱、建立者為主；所屬位置之後再設計。點進去用表格調整系統欄位／內容欄位／簽核關。";
     wrap.appendChild(tip);
     stage.appendChild(wrap);
   }
 
   function renderDesignEdit() {
+    migrateStepIds(doc);
+    renumberApprovalSteps(doc);
     const stage = els.form;
     stage.replaceChildren();
     const wrap = document.createElement("div");
@@ -1905,17 +2039,16 @@
     h.textContent = "編輯設定：" + (doc.meta?.title || doc.meta?.form_id || "");
     wrap.appendChild(h);
 
-    // meta table
+    // meta：使用者在意名稱／建立者
     const metaTable = document.createElement("table");
     metaTable.className = "mgmt-table edit-table";
     metaTable.innerHTML =
       "<thead><tr><th>設定</th><th>值</th></tr></thead>";
     const mtb = document.createElement("tbody");
     const metaFields = [
-      ["form_id", "form_id", true],
       ["title", "名稱", false],
-      ["form_version", "form_version", false],
-      ["system_name", "系統代號", false],
+      ["creator", "建立者", false],
+      ["location", "所屬位置（暫未）", true],
     ];
     metaFields.forEach(([key, label, ro]) => {
       const tr = document.createElement("tr");
@@ -1924,7 +2057,10 @@
       const td = document.createElement("td");
       const inp = document.createElement("input");
       inp.className = "cell-input";
-      inp.value = doc.meta?.[key] ?? "";
+      inp.value =
+        key === "location"
+          ? doc.meta?.location || "（尚未設計）"
+          : doc.meta?.[key] ?? "";
       inp.disabled = !!ro;
       inp.addEventListener("change", () => {
         if (!doc.meta) doc.meta = {};
@@ -1940,14 +2076,54 @@
     metaTable.appendChild(mtb);
     wrap.appendChild(sectionBlock("基本", metaTable));
 
-    // fields table
+    // 系統內建欄位
+    const sysTable = document.createElement("table");
+    sysTable.className = "mgmt-table";
+    sysTable.innerHTML =
+      "<thead><tr><th>欄位 id</th><th>名稱</th><th>說明</th></tr></thead>";
+    const stb = document.createElement("tbody");
+    SYSTEM_FIELD_DEFS.forEach((def) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>${def.id}</td><td>${def.label}</td><td class="muted-cell">${def.note || ""}</td>`;
+      stb.appendChild(tr);
+    });
+    const stepLevels = (doc.approval?.columns || [])
+      .filter((c) => Number(c.level) > 0)
+      .map((c) => Number(c.level))
+      .sort((a, b) => a - b);
+    stepLevels.forEach((n) => {
+      SYSTEM_STEP_FIELD_TMPL.forEach((t) => {
+        const fieldId =
+          t.prefix === "Notify"
+            ? `Notify_${n}_Mail`
+            : `Approval_${n}_${t.suffix}`;
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${fieldId}</td><td>第 ${n} 關／${t.label}</td><td class="muted-cell">對應 step_${n}</td>`;
+        stb.appendChild(tr);
+      });
+    });
+    sysTable.appendChild(stb);
+    const sysSec = sectionBlock("系統欄位（內建／簽核相關）", sysTable);
+    const sysNote = document.createElement("p");
+    sysNote.className = "sec-note";
+    sysNote.textContent =
+      "系統欄位由簽核流程產生，Owner 不能當內容欄增刪；Approval_n_*／Notify_n_Mail 隨簽核關增減。";
+    sysSec.insertBefore(sysNote, sysTable);
+    const badge = document.createElement("span");
+    badge.className = "badge-sys";
+    badge.textContent = "系統";
+    sysSec.querySelector("h3")?.appendChild(badge);
+    wrap.appendChild(sysSec);
+
+    // 簽核內容欄位（可增刪）
     const fTable = document.createElement("table");
-    fTable.className = "mgmt-table edit-table";
+    fTable.className = "mgmt-table";
     fTable.innerHTML =
-      "<thead><tr><th>欄位 id</th><th>顯示名稱</th><th>型別</th><th>預設值</th></tr></thead>";
+      "<thead><tr><th>欄位 id</th><th>顯示名稱</th><th>型別</th><th>預設值</th><th></th></tr></thead>";
     const ftb = document.createElement("tbody");
     Object.keys(doc.fields || {}).forEach((fid) => {
       const f = doc.fields[fid];
+      if (f.kind && f.kind !== "content") return;
       const tr = document.createElement("tr");
       const cells = [
         [fid, true],
@@ -1965,47 +2141,76 @@
           inp.value = String(val);
           inp.addEventListener("change", () => {
             f[prop] = inp.value;
+            f.kind = "content";
             persistDocForForm(doc.meta.form_id, doc);
-            upsertCatalogEntry(doc);
           });
           td.appendChild(inp);
         }
         tr.appendChild(td);
       });
+      const tdDel = document.createElement("td");
+      const del = document.createElement("button");
+      del.type = "button";
+      del.className = "table-btn danger";
+      del.textContent = "刪除";
+      del.addEventListener("click", () => {
+        if (!confirm(`刪除內容欄位「${fid}」？`)) return;
+        delete doc.fields[fid];
+        (doc.body?.paragraphs || []).forEach((para) => {
+          para.parts = (para.parts || []).filter(
+            (p) => !(p.t === "field" && p.name === fid)
+          );
+        });
+        persistDocForForm(doc.meta.form_id, doc);
+        renderDesignEdit();
+      });
+      tdDel.appendChild(del);
+      tr.appendChild(tdDel);
       ftb.appendChild(tr);
     });
     fTable.appendChild(ftb);
-    const fSec = sectionBlock("欄位（可大量改）", fTable);
+    const fSec = sectionBlock("簽核內容欄位（可新增／刪除）", fTable);
+    const fNote = document.createElement("p");
+    fNote.className = "sec-note";
+    fNote.textContent =
+      "申請人、假別、起始日、天數、代理人等畫面填寫欄；與系統簽核欄位分開。";
+    fSec.insertBefore(fNote, fTable);
     const addField = document.createElement("button");
     addField.type = "button";
     addField.className = "table-btn";
-    addField.textContent = "＋ 新增欄位";
+    addField.textContent = "＋ 新增內容欄位";
     addField.addEventListener("click", () => {
-      const id = prompt("新欄位 id", "field_" + (Object.keys(doc.fields || {}).length + 1));
+      const id = prompt(
+        "新欄位 id（英文／底線）",
+        "field_" + (Object.keys(doc.fields || {}).length + 1)
+      );
       if (!id || (doc.fields && doc.fields[id])) {
         if (id) alert("欄位 id 已存在或無效");
         return;
       }
       if (!doc.fields) doc.fields = {};
-      doc.fields[id] = { type: "text", label: id, value: "" };
+      doc.fields[id] = { kind: "content", type: "text", label: id, value: "" };
       persistDocForForm(doc.meta.form_id, doc);
       renderDesignEdit();
     });
-    fSec.appendChild(addField);
+    const fActions = document.createElement("div");
+    fActions.className = "table-actions";
+    fActions.appendChild(addField);
+    fSec.appendChild(fActions);
     wrap.appendChild(fSec);
 
-    // approval columns table
+    // 簽核階層 step_N
     const aTable = document.createElement("table");
-    aTable.className = "mgmt-table edit-table";
+    aTable.className = "mgmt-table";
     aTable.innerHTML =
-      "<thead><tr><th>關 id</th><th>顯示</th><th>level</th><th>角色</th><th>印名</th></tr></thead>";
+      "<thead><tr><th>關 id</th><th>顯示</th><th>level</th><th>角色</th><th>印名</th><th></th></tr></thead>";
     const atb = document.createElement("tbody");
     (doc.approval?.columns || []).forEach((col) => {
       const tr = document.createElement("tr");
       const specs = [
         [col.id, true, null],
         [col.label || "", false, "label"],
-        [col.level ?? "", false, "level"],
+        [col.level ?? "", true, "level"],
         [col.role || "", false, "role"],
         [col.stamp?.name || "", false, "stamp.name"],
       ];
@@ -2020,8 +2225,6 @@
             if (prop === "stamp.name") {
               if (!col.stamp) col.stamp = {};
               col.stamp.name = inp.value;
-            } else if (prop === "level") {
-              col.level = Number(inp.value);
             } else {
               col[prop] = inp.value;
             }
@@ -2031,41 +2234,71 @@
         }
         tr.appendChild(td);
       });
+      const tdDel = document.createElement("td");
+      if (Number(col.level) > 0) {
+        const del = document.createElement("button");
+        del.type = "button";
+        del.className = "table-btn danger";
+        del.textContent = "刪除";
+        del.addEventListener("click", () => {
+          if (!confirm(`刪除簽核關 ${col.id}（${col.label || ""}）？`)) return;
+          doc.approval.columns = (doc.approval.columns || []).filter(
+            (c) => c.id !== col.id
+          );
+          renumberApprovalSteps(doc);
+          persistDocForForm(doc.meta.form_id, doc);
+          renderDesignEdit();
+        });
+        tdDel.appendChild(del);
+      } else {
+        tdDel.className = "muted-cell";
+        tdDel.textContent = "申請關";
+      }
+      tr.appendChild(tdDel);
       atb.appendChild(tr);
     });
     aTable.appendChild(atb);
-    const aSec = sectionBlock("簽核關（表格調整）", aTable);
+    const aSec = sectionBlock("簽核階層（step_1…可刪）", aTable);
+    const aNote = document.createElement("p");
+    aNote.className = "sec-note";
+    aNote.textContent =
+      "簽核人 id 固定為 step_1、step_2…；刪除後自動重編。step_0 為申請關。";
+    aSec.insertBefore(aNote, aTable);
     const addCol = document.createElement("button");
     addCol.type = "button";
     addCol.className = "table-btn";
     addCol.textContent = "＋ 新增簽核關";
     addCol.addEventListener("click", () => {
-      const id = prompt("關 id", "step_" + ((doc.approval?.columns || []).length + 1));
-      if (!id) return;
-      if ((doc.approval?.columns || []).some((c) => c.id === id)) {
-        alert("關 id 已存在");
-        return;
-      }
       if (!doc.approval) doc.approval = { title: "簽核", columns: [] };
       if (!doc.approval.columns) doc.approval.columns = [];
-      const lv = doc.approval.columns.length;
+      const nextLv =
+        Math.max(
+          0,
+          ...doc.approval.columns.map((c) => Number(c.level) || 0)
+        ) + 1;
+      const label = prompt("關顯示名稱", `簽核 ${nextLv}`) || `簽核 ${nextLv}`;
       doc.approval.columns.unshift({
-        id,
-        label: id,
-        level: lv,
-        role: "",
+        id: `step_${nextLv}`,
+        label,
+        level: nextLv,
+        role: `approver_${nextLv}`,
         person: { id: "", name: "" },
         stamp: { name: "印", mark: null, time: null, comment: "", pending: true },
       });
+      renumberApprovalSteps(doc);
       persistDocForForm(doc.meta.form_id, doc);
       renderDesignEdit();
     });
-    aSec.appendChild(addCol);
+    const aActions = document.createElement("div");
+    aActions.className = "table-actions";
+    aActions.appendChild(addCol);
+    aSec.appendChild(aActions);
     wrap.appendChild(aSec);
 
     const saveNote = document.createElement("p");
     saveNote.className = "list-tip";
-    saveNote.textContent = "變更即寫入本機（設計 PoC）；申請畫面從列表點進後使用該 form。";
+    saveNote.textContent =
+      "變更即寫入本機（設計 PoC）。form_id／版本在 JSON 分頁可見，列表不強調。";
     wrap.appendChild(saveNote);
     stage.appendChild(wrap);
   }
@@ -2165,16 +2398,21 @@
     if (!d.roles) d.roles = base.roles;
     if (!d.system) d.system = base.system;
     if (!Array.isArray(d.logs)) d.logs = [];
+    migrateStepIds(d);
     // 升級舊快取：補 comment 欄
     (d.approval?.columns || []).forEach((c) => {
       if (!c.stamp) c.stamp = {};
       if (c.stamp.comment == null) c.stamp.comment = "";
       if (!c.role) {
-        const hit = (base.approval?.columns || []).find((x) => x.id === c.id);
+        const hit = (base.approval?.columns || []).find(
+          (x) => x.id === c.id || Number(x.level) === Number(c.level)
+        );
         if (hit?.role) c.role = hit.role;
       }
       if (!c.person) {
-        const hit = (base.approval?.columns || []).find((x) => x.id === c.id);
+        const hit = (base.approval?.columns || []).find(
+          (x) => x.id === c.id || Number(x.level) === Number(c.level)
+        );
         if (hit?.person) c.person = hit.person;
       }
     });
@@ -2195,7 +2433,7 @@
     let base = loadStored();
     if (!base) {
       try {
-        const res = await fetch("./document.json?v=nav2", {
+        const res = await fetch("./document.json?v=list1", {
           cache: "no-store",
         });
         if (res.ok) base = await res.json();
@@ -2204,7 +2442,7 @@
       }
     }
     try {
-      const sr = await fetch("./alr5-standard.json?v=nav2", {
+      const sr = await fetch("./alr5-standard.json?v=list1", {
         cache: "no-store",
       });
       if (sr.ok) alr5Standard = await sr.json();
@@ -2212,7 +2450,7 @@
       /* offline */
     }
     try {
-      const mr = await fetch("./ALR5標準互通.md?v=nav2", {
+      const mr = await fetch("./ALR5標準互通.md?v=list1", {
         cache: "no-store",
       });
       if (mr.ok) alr5Markdown = await mr.text();
