@@ -1,10 +1,10 @@
 {
   "standard_id": "ALR5",
-  "standard_version": "0.2.2",
+  "standard_version": "0.2.3",
   "lang": "zh-Hant",
   "title": "ALR5 簽核標準（功能／情境／JSON 互通）",
   "purpose": "讓不同系統用同一套欄位與檢查清單交換申請單 JSON；畫面「ALR5功能」供人一眼看懂；本檔可整份貼給新 AI 實作同等互傳。",
-  "ai_prompt_prefix": "你是實作 ALR5 簽核互通的工程 Agent。請嚴格依 standard_version ALR5/0.2.2 與 json_contract／interop_checklist／decisions 實作。狀態、current_level、動作 id 不得自創別名。decisions 已定案不得違反。產出必須通過全部 required=true 檢查。",
+  "ai_prompt_prefix": "你是實作 ALR5 簽核互通的工程 Agent。請嚴格依 standard_version ALR5/0.2.3 與 json_contract／interop_checklist／decisions 實作。狀態、current_level、動作 id 不得自創別名。decisions 已定案不得違反。產出必須通過全部 required=true 檢查。",
   "status_model": {
     "field": "system.status",
     "values": [
@@ -127,7 +127,7 @@
       "Denied（-2）不可同單號升版再送；用 Copy 開全新單，Denied 原單保留紀錄",
       "form 預設 ACL 與 admin 對單一 item 覆寫衝突時，以 admin／item 為準",
       "admin 不可改變表單結構，只能編輯資料與權限相關設定",
-      "required_from_level：自該 level 起（含之後）必填；檢核在 current_level≥門檻後、該關 Approve／往下送前，不因≥1 的門檻在 Submit／草稿擋申請人",
+      "required_from_level：自該 level 起（含之後）必填；＝0 → 申請人填寫階段（空／0）Submit 就擋，後續各關也必填；≥1 → 進到該 level 後 Approve／往下送前擋，不擋申請人 Submit；SAVE 草稿一律不擋",
       "每關／每位 approver 固定有 comment（簽核意見）；階段補資料用業務欄＋required_from_level／ACL，不是用 comment 取代"
     ]
   },
@@ -458,13 +458,14 @@
     {
       "id": "field_types_and_required",
       "title": "欄位型別與必填／條件必填",
-      "scenario": "欄位可永遠必填，或依其他欄位值／到達某 level 後才必填。required_from_level 專門給「進到某關才要填」的階段補資料（不是簽核按鈕本身）。",
+      "scenario": "欄位可永遠必填，或依其他欄位值／到達某 level 後才必填。required_from_level=0＝申請人階段起必填；≥1＝該簽核關起才必填（階段補資料）。",
       "rules": [
         "type：text｜number｜dropdown｜multiline｜date｜…",
-        "required：true／false（申請人欄；Submit／送出時檢核）",
-        "required_when：依其他欄位值條件必填（送出或該關動作時依條件檢核）",
-        "required_from_level：自某 current_level 起必填，之後各關都必填（例：設 1 → 1、2、3…）",
-        "檢核時機（定案）：當 current_level ≥ required_from_level 時才強制；於該關 Approve／往下送前擋；SAVE 草稿不擋；Submit 不因 required_from_level≥1 擋申請人（該欄通常是階段補資料）"
+        "required：true／false（與 required_from_level=0 語意近似：申請人送出前必填）",
+        "required_when：依其他欄位值條件必填",
+        "required_from_level：自某 current_level 起必填，之後各關都必填",
+        "＝0：申請人填寫階段（current_level 空或 0）起必填 → Submit 擋；後續 1、2、3… 也必填",
+        "≥1：進到該 level 後、Approve／往下送前擋；Submit 不擋申請人；SAVE 草稿不擋"
       ],
       "json": [
         "form_schema.fields[].type",
@@ -816,7 +817,7 @@
     {
       "id": "chk_required_from_level_timing",
       "required": true,
-      "label": "required_from_level 於 current_level≥門檻後、Approve／往下送前檢核；不因≥1 門檻擋 Submit"
+      "label": "required_from_level＝0：申請人 Submit 擋；≥1：該關 Approve 前擋、不擋 Submit；SAVE 不擋"
     },
     {
       "id": "chk_denied_copy",
@@ -859,6 +860,16 @@
       "id": "q_it_admin_archive_items",
       "severity": "low",
       "question": "form archive 後，進行中的 items 要一併凍結、仍可簽完、還是強制 Cancel？"
+    },
+    {
+      "id": "q_copy_who",
+      "severity": "low",
+      "question": "Denied Copy 除 creator／requester／admin 外，是否還開放其他人？"
+    },
+    {
+      "id": "q_stamp_amend_grain",
+      "severity": "low",
+      "question": "印章縫「簽核後異動」標記的粒度（每版／每關之間／僅結案後）？"
     }
   ],
   "logic_risk_warnings": [
@@ -884,7 +895,7 @@
     },
     {
       "id": "risk_required_from_level",
-      "warning": "已定案：required_from_level≥1 不在 Submit 擋申請人；若實作成 Submit 就擋，會讓階段補資料無法進流程。"
+      "warning": "勿把 required_from_level≥1 實作成 Submit 就擋；＝0 才應在申請人 Submit 擋。空 current_level 對門檻 0 應視為申請人階段。"
     },
     {
       "id": "risk_return_resign_chain",
@@ -938,7 +949,7 @@
     },
     {
       "id": "d_required_from_level_timing",
-      "decision": "required_from_level 自該 level 起（含之後）必填；檢核在 current_level≥門檻後、該關 Approve／往下送前；Submit／草稿不因門檻≥1 擋申請人"
+      "decision": "required_from_level 自該 level 起（含之後）必填；＝0：申請人階段（空／0）Submit 就擋且後續亦必填；≥1：current_level≥門檻後 Approve／往下送前擋，不擋申請人 Submit；SAVE 草稿不擋"
     },
     {
       "id": "d_denied_copy",
@@ -992,7 +1003,7 @@
     },
     {
       "id": "q_required_from_level_ui",
-      "answer": "進入該 level 後、Approve／往下送前檢核；不因≥1 擋 Submit"
+      "answer": "＝0：申請人階段 Submit 擋（後續也必填）；≥1：進入該 level 後 Approve／往下送前檢核，不擋 Submit"
     },
     {
       "id": "q_denied_after",
@@ -1020,7 +1031,7 @@
       "label": "顯示名稱",
       "required": "是否必填",
       "required_when": "條件必填（其他欄位值）",
-      "required_from_level": "自某 current_level 起必填（含之後各關）。檢核：current_level≥門檻後、Approve／往下送前；SAVE 不擋；Submit 不因門檻≥1 擋申請人",
+      "required_from_level": "自某 current_level 起必填（含之後）。0＝申請人階段起（Submit 擋）；≥1＝該關起（Approve 前擋、不擋 Submit）；SAVE 不擋",
       "acl": {
         "visible_to": [
           "users",
@@ -1071,7 +1082,7 @@
     "validation_timing": {
       "required": "Submit（及 Resubmit）時檢核；SAVE 草稿不強制",
       "required_when": "條件成立時，於 Submit 或該關 Approve／往下送前檢核",
-      "required_from_level": "僅當 current_level ≥ 門檻時強制；於該關 Approve／往下送前擋；草稿／Submit 不因門檻≥1 擋"
+      "required_from_level": "current_level≥門檻（空／null 視為申請人階段，對門檻 0 生效）時強制；門檻 0 → Submit 擋；門檻≥1 → 該關 Approve／往下送前擋；SAVE 不擋"
     },
     "stage_runtime": {
       "approver_comment": "stages[].approvers[].comment — 每關每位簽核人固定意見欄",

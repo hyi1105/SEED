@@ -218,19 +218,22 @@ note: 口頭對談整理進本檔；以 diff 確認。尚未口頭確認的區�
 
 #### `required_from_level` 是什麼？
 
-欄位「**從某個 `current_level` 起才變成必填**」，且**之後各關都必填**。  
-例：設 `required_from_level = 1` → 在 level **1、2、3…** 都必須有值（不是只在 level1 那一關）。
+欄位「**從某個 `current_level` 起才變成必填**」，且**之後各關都必填**。
 
-用途：某關的人要**階段性補資料**（不是按同意／不同意那種純簽核），就給他一個業務欄位，並設從此關起必填。
+| 門檻 | 意義 | 何時擋 |
+|------|------|--------|
+| **`0`** | **申請人填寫階段**起就必填，後續 1、2、3… 也必填 | 申請人 **Submit** 就擋（`current_level` 空或 0） |
+| **`1`**（或更大） | 從該簽核關起必填（階段補資料） | **進到該 level 後**、**Approve／往下送前**擋；**不擋**申請人 Submit |
+| （未設／null） | 不依 level 強制（可另用 `required`／`required_when`） | — |
 
-| 檢核時機（定案） | 說明 |
-|------------------|------|
-| **進到該 level 之後** | 當 `current_level ≥ required_from_level` 才強制 |
-| **該關 Approve／往下送前擋** | 缺值則不能過關 |
+例：設 `1` → level **1、2、3…** 都必須有值。設 `0` → 申請人送出前就要有，之後各關仍要有。
+
+| 共通規則 | 說明 |
+|----------|------|
 | **SAVE 草稿不擋** | 暫存可空 |
-| **Submit 不因門檻 ≥ 1 擋申請人** | 申請人送出時不必先填「關卡才要填」的欄；那些欄等該關的人填 |
+| 比較式 | 當 `current_level ≥ required_from_level` 才強制（空／尚未 SAVE 視為申請人階段，對門檻 **0** 生效） |
 
-> 對照：一般 `required: true`（申請人欄）仍在 **Submit** 時檢核。
+> `required: true` 語意近似「申請人送出前必填」；與 `required_from_level: 0` 可並用或擇一實作，互通時兩者都應在 Submit 擋。
 
 #### 每關 comment vs 階段補資料（定案）
 
@@ -549,7 +552,7 @@ creator 開單／填單（可代填；requester 可為另一人）
 |------|------|------|
 | `required` | Submit／Resubmit | 申請人必填欄；SAVE 草稿不強制 |
 | `required_when` | 條件成立時 | Submit 或該關 Approve／往下送前 |
-| `required_from_level` | `current_level ≥ 門檻` 後 | **該關 Approve／往下送前**擋；**不因門檻≥1 擋 Submit** |
+| `required_from_level` | `current_level ≥ 門檻` | **＝0** → 申請人 **Submit** 擋；**≥1** → 該關 Approve／往下送前擋；SAVE 不擋 |
 | form ACL vs item | 讀寫權限計算 | **以 admin 對該 item 的覆寫為準** |
 | 換簽核人 | Change | 當階 approver／admin／creator／requester；鎖定欄僅 admin |
 | 通知客製 | 寄信前 | 每人範本可客製；Admin 決定給不給改 |
@@ -783,7 +786,7 @@ creator 開單／填單（可代填；requester 可為另一人）
 | 平行關＋Delegate | **平行關禁止 Delegate** |
 | cc_system／fyi_system 能否開單 | **能** |
 | form ACL vs item 覆寫 | **以 admin／item 為準**；admin 不可改表單結構 |
-| `required_from_level` | 自該 level 起必填；**Approve／往下送前**檢核；**不因≥1 擋 Submit** |
+| `required_from_level` | 自該 level 起必填；**＝0** 申請人 Submit 擋；**≥1** Approve 前擋、不擋 Submit |
 | 每關 comment | **固定**每位 approver 有 `comment`；階段補資料用業務欄 |
 | 代簽備註 | 正式 id **`proxy_original_note`**（舊例 `comment1_sys`） |
 
@@ -815,3 +818,4 @@ creator 開單／填單（可代填；requester 可為另一人）
 | 2026-08-04 | 定案：Denied=-2；一人Reject整單Denied；Return作廢後續；SAVE→0；Cancel同單號升版；代理人本人／主管／admin；平行禁Delegate；sys收件可開單；owner≠admin；欄位型別／條件必填／ACL |
 | 2026-08-04 | 新增 `it_admin`：一次管理所有 Form；無主／離職／無人維護可整份 archive／export |
 | 2026-08-04 | v0.2.2：ACL item 優先；required_from_level 檢核時機；Denied Copy；每關 comment／proxy_original_note |
+| 2026-08-04 | v0.2.3：補定 `required_from_level=0`＝申請人階段起必填（Submit 擋，後續亦必填） |
