@@ -251,25 +251,62 @@ note: 口頭對談整理進本檔；以 diff 確認。尚未口頭確認的區�
 
 ### 4.1 申請單狀態（口頭定案）
 
-| 狀態 ID（內部） | 顯示名稱 | 意義 |
-|-----------------|----------|------|
-| `new` | New | 新申請（尚未暫存過） |
-| `draft` | Draft | 被暫存過了（SAVE 過） |
-| `in_process` | In Process | 已經送出，等待簽核 |
-| `completed` | Completed | 全部簽核過（含空關跳過後自動完成） |
-| `denied` | Denied | 有人拒絕了 |
+| 狀態 ID（內部） | 顯示名稱 | 意義 | 典型 `current_level` |
+|-----------------|----------|------|----------------------|
+| `new` | New | 新申請（尚未暫存過） | 空／null |
+| `draft` | Draft | 被暫存過了；或送出後被退回在建立者／需求人手上 | `0` |
+| `in_process` | In Process | 已經送出，等待簽核 | `1`／`2`／`3`… |
+| `completed` | Completed | 全部簽核過（含自動完成） | `9999` |
+| `denied` | Denied | 有人拒絕了 | （待補：是否停在拒件當階 or 特殊值） |
+| `cancelled` | Cancelled | 已取消（正式列入） | `-1` |
 
 | 常見轉換 | 說明 |
 |----------|------|
-| `new` → `draft` | SAVE 暫存 |
-| `new`／`draft` → `in_process` | Submit 送出且尚有待簽關 |
-| `new`／`draft` → `completed` | Submit 後無任何簽核人（自動完成） |
-| `in_process` → `completed` | 有效關卡皆通過，或後方皆空自動完成 |
+| `new` → `draft` | SAVE；`current_level`→`0` |
+| `new`／`draft` → `in_process` | Submit 且尚有待簽關；`current_level`→第一個有值關（1…） |
+| `new`／`draft` → `completed` | Submit 後無簽核人；`current_level`→`9999` |
+| `in_process` → `completed` | 全過／後方皆空；`current_level`→`9999` |
 | `in_process` → `denied` | Reject |
-| `in_process` → `draft`（或停留可編） | Return 退回後待修改再往下簽（精確狀態待補，見 §6 Return） |
-| 任意進行中 → 取消態 | Cancel（取消後狀態 id 建議 `cancelled`，待補是否列入正式五態之外） |
+| `in_process` → `draft`（level `0`） | Return 退回 creator／requester |
+| 進行中 → `cancelled` | Cancel；`current_level`→`-1` |
+| `cancelled` → 再送 | creator／requester／admin **可重送**（Submit／Resubmit） |
 
-> 顯示字眼仍可由 Admin 微調；**內部 id 以上表為準**（Completed／Denied 對齊舊系統口語，不再以 approved／rejected 當主狀態 id）。
+### 4.1b 角色 × `current_level`（口頭定案）
+
+> `current_level`＝目前流程位置；與 `status` 並存（報表／權限都看得到）。
+
+| `current_level` | 意義 | 誰在手上 | 可按動作 |
+|-----------------|------|----------|----------|
+| **空／null** | 申請狀態（新單、尚未進入 level 體系） | `creator`／`requester` | **SAVE**、**Submit** |
+| **`0`** | 在 creator／requester 手上（已儲存過，或送出後被退回） | `creator`／`requester` | **SAVE**、進 Draft、**Archive**（軟刪除） |
+| **`1, 2, 3…`** | 簽核狀態（第 n 關） | Current approver | **Approve**、**Reject**、**Return**、**Cancel**、**Change**、**Delegate**（委派；該階 Admin 可關） |
+| **`9999`** | 簽核完成 | — | 一般簽核動作結束；`super_user`／`admin` 事後欄另計 |
+| **`-1`** | 已 Cancel | — | **creator／requester／admin 可重送** |
+
+**Cancel 誰可按（簽核關 `1…`）：** Current approver；另 **`creator`／`requester`／`admin` 也可 Cancel**（不限當階）。
+
+**Archive（軟刪除）：** 在 `current_level = 0` 時由 creator／requester 使用（是否 admin 也可：待補）。
+
+### 4.1c 委派 Delegate
+
+| 項目 | 規則 |
+|------|------|
+| 目的 | 臨時多一個確認人（缺資訊、要請同事／別部門確認） |
+| 誰發起 | Current approver（該階允許時） |
+| 開關 | **Admin 決定該階段要不要能委派** |
+| 流程 | 委派出去 → 被委派人**確認**後 → **回到該階原簽核者**身上 |
+| 層層委派 | 若再委派，則**層層確認回來**後，才回到該階簽核者 |
+| 與 Change 差別 | Change＝換掉簽核者；Delegate＝臨時外加確認，簽核責任仍回到原當階簽核者 |
+
+示意：
+
+```
+Approver@Level2
+  → Delegate → 同事A 確認
+       → Delegate → 部門B 確認
+            → B 確認完畢 → 回到 A
+                 → A 確認完畢 → 回到 Approver@Level2（繼續 Approve／Reject…）
+```
 
 ### 4.2 關卡模型（一關可多人）
 
