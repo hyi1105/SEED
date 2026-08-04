@@ -1,21 +1,23 @@
 (() => {
   /**
    * API 時代：document JSON 是唯一真相。
-   * 畫面只渲染、不內建文案；編輯寫回同一份 JSON。
+   * 畫面只渲染；按鈕會寫入 logs（時間／操作者／開啟時 vs 儲存後／GitHub 紅綠 diff）。
    */
-  const STORAGE_KEY = "approval.document.v1";
+  const STORAGE_KEY = "approval.document.v2";
   const MIN_CH = 2;
 
-  /** 預設文件（document.json 的內嵌副本；fetch 失敗時使用） */
-  const DEFAULT_DOC = {
-    schema_version: "1.0",
+  const DEFAULT_DOC = null; // boot 時從 document.json 或內嵌副本載入
+
+  const EMBEDDED_DOC = {
+    schema_version: "1.1",
     meta: {
       system_name: "LEAVE",
       form_id: "leave_request_v1",
       title: "請假申請書",
       lang: "zh-Hant",
-      note: "未來 API 時代：此 JSON 即申請單完整狀態；畫面只負責渲染，不內建任何文案。",
+      note: "未來 API 時代：此 JSON 即申請單完整狀態；畫面只負責渲染。含 actor／actions／logs。",
     },
+    actor: { id: "u_wang", name: "王小明" },
     ui: {
       views: [
         { id: "form", label: "申請單畫面" },
@@ -26,7 +28,24 @@
         "doc_no＝系統名＋申請人＋年月日時分秒＋3隨機碼＋.版本（如 .2＝第二版）　current_level：0＝申請人；1＋＝等待各關　completed_at 僅 Completed／Denied",
       empty_mark: "—",
       pending_stamp_label: "尚未蓋印",
+      actions_title: "操作",
+      log_title: "操作紀錄",
+      log_empty: "尚無操作紀錄",
+      log_opened_label: "開啟時",
+      log_saved_label: "儲存後",
+      log_no_change: "欄位值無變更",
+      actor_label: "目前操作者",
     },
+    actions: [
+      { id: "save", label: "儲存", kind: "save" },
+      { id: "submit", label: "送出", kind: "submit" },
+      {
+        id: "cycle_status",
+        label: "切換狀態",
+        kind: "cycle_status",
+        bound_to: "status_pill",
+      },
+    ],
     statuses: [
       {
         id: "new",
@@ -75,7 +94,12 @@
         type: "dropdown",
         label: "假別",
         value: "事假",
-        options: ["特休", "事假", "病假", "其他"],
+        options: [
+          { value: "特休", label: "特休" },
+          { value: "事假", label: "事假" },
+          { value: "病假", label: "病假" },
+          { value: "其他", label: "其他" },
+        ],
       },
       leave_date: { type: "text", label: "起始日", value: "明天" },
       days: { type: "number", label: "天數", value: "1" },
@@ -152,11 +176,15 @@
       completed_at: null,
       status: "in_process",
     },
+    logs: [],
   };
 
   let doc = null;
   let view = "form";
   let jsonDirty = false;
+  /** 本次開啟／上次按鈕後的快照（對應 log.opened） */
+  let openedSnapshot = null;
+  let openLogId = null;
 
   const els = {
     tabs: document.getElementById("view-tabs"),
@@ -185,7 +213,7 @@
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(doc));
     } catch {
-      /* ignore quota */
+      /* ignore */
     }
   }
 
@@ -203,7 +231,23 @@
     return String(n).padStart(len, "0");
   }
 
-  function stampNow(d = new Date()) {
+  function nowStamp(d = new Date()) {
+    return (
+      d.getFullYear() +
+      "-" +
+      pad(d.getMonth() + 1) +
+      "-" +
+      pad(d.getDate()) +
+      " " +
+      pad(d.getHours()) +
+      ":" +
+      pad(d.getMinutes()) +
+      ":" +
+      pad(d.getSeconds())
+    );
+  }
+
+  function stampCompact(d = new Date()) {
     return (
       d.getFullYear() +
       pad(d.getMonth() + 1) +
@@ -227,7 +271,7 @@
     const sys = systemName || doc?.meta?.system_name || "LEAVE";
     const name = String(applicant || "未命名").replace(/\s+/g, "");
     const ver = Math.max(1, Number(version) || 1);
-    return `${sys}${name}${stampNow(when)}${random3()}.${ver}`;
+    return `${sys}${name}${stampCompact(when)}${random3()}.${ver}`;
   }
 
   function statusOf(id) {
@@ -238,15 +282,142 @@
     return doc.fields?.[name]?.value ?? "";
   }
 
+  /** 正規化 options：字串或 {value,label} → {value,label}[] */
+  function normalizeOptions(raw) {
+    if (!Array.isArray(raw)) return [];
+    return raw
+      .map((opt) => {
+        if (opt == null) return null;
+        if (typeof opt === "string" || typeof opt === "number") {
+          const v = String(opt);
+          return { value: v, label: v };
+        }
+        if (typeof opt === "object") {
+          const value =
+            opt.value != null
+              ? String(opt.value)
+              : opt.label != null
+                ? String(opt.label)
+                : "";
+          const label = opt.label != null ? String(opt.label) : value;
+          return value ? { value, label } : null;
+        }
+        return null;
+      })
+      .filter(Boolean);
+  }
+
+  function ensureFieldOptions(fields, fallbackFields) {
+    Object.keys(fields || {}).forEach((key) => {
+      const f = fields[key];
+      if (!f || f.type !== "dropdown") return;
+      let opts = normalizeOptions(f.options);
+      if (!opts.length && fallbackFields?.[key]) {
+        opts = normalizeOptions(fallbackFields[key].options);
+      }
+      f.options = opts;
+      if (f.value == null || f.value === "") {
+        f.value = opts[0]?.value ?? "";
+      }
+    });
+  }
+
+  function snapshotState() {
+    const fields = {};
+    Object.keys(doc.fields || {}).forEach((k) => {
+      fields[k] =
+        doc.fields[k]?.value == null ? null : String(doc.fields[k].value);
+    });
+    const sys = doc.system || {};
+    return {
+      fields,
+      system: {
+        status: sys.status ?? null,
+        current_level: sys.current_level ?? null,
+        doc_no: sys.doc_no ?? null,
+        doc_version: sys.doc_version ?? null,
+        submitted_at: sys.submitted_at ?? null,
+        completed_at: sys.completed_at ?? null,
+      },
+    };
+  }
+
+  function displayVal(v) {
+    if (v == null || v === "") return doc.ui?.empty_mark || "—";
+    return String(v);
+  }
+
+  function sameVal(a, b) {
+    const na = a == null || a === "" ? null : String(a);
+    const nb = b == null || b === "" ? null : String(b);
+    return na === nb;
+  }
+
+  function diffSnapshots(opened, saved) {
+    const changes = [];
+    const fieldKeys = new Set([
+      ...Object.keys(opened.fields || {}),
+      ...Object.keys(saved.fields || {}),
+    ]);
+    fieldKeys.forEach((k) => {
+      const before = opened.fields?.[k] ?? null;
+      const after = saved.fields?.[k] ?? null;
+      if (sameVal(before, after)) return;
+      changes.push({
+        path: `fields.${k}`,
+        label: doc.fields?.[k]?.label || k,
+        before,
+        after,
+      });
+    });
+    const sysKeys = [
+      "status",
+      "current_level",
+      "doc_no",
+      "doc_version",
+      "submitted_at",
+      "completed_at",
+    ];
+    sysKeys.forEach((k) => {
+      const before = opened.system?.[k] ?? null;
+      const after = saved.system?.[k] ?? null;
+      if (sameVal(before, after)) return;
+      changes.push({
+        path: `system.${k}`,
+        label: k,
+        before: before == null ? null : String(before),
+        after: after == null ? null : String(after),
+      });
+    });
+    return changes;
+  }
+
+  function resetOpenedSnapshot() {
+    openedSnapshot = snapshotState();
+  }
+
   function fitBlank(el) {
     const cs = getComputedStyle(el);
     mirror.style.font = cs.font;
     mirror.style.letterSpacing = cs.letterSpacing;
     mirror.style.padding = cs.padding;
-    const text = el.value || el.options?.[el.selectedIndex]?.text || "";
+    let text = "";
+    if (el.tagName === "SELECT") {
+      const opt = el.options[el.selectedIndex];
+      text = opt ? opt.text : el.value || "";
+      // 用最長選項估寬，避免下拉顯示被裁成空白
+      let longest = text;
+      Array.from(el.options).forEach((o) => {
+        if (String(o.text).length > String(longest).length) longest = o.text;
+      });
+      text = longest || text;
+    } else {
+      text = el.value || "";
+    }
     const sample = String(text).length >= MIN_CH ? text : "字".repeat(MIN_CH);
     mirror.textContent = sample;
-    el.style.width = `${Math.ceil(mirror.getBoundingClientRect().width) + 8}px`;
+    const w = Math.ceil(mirror.getBoundingClientRect().width) + (el.tagName === "SELECT" ? 22 : 8);
+    el.style.width = `${Math.max(w, 48)}px`;
   }
 
   function setFieldValue(name, value) {
@@ -266,24 +437,32 @@
     if (type === "dropdown") {
       el = document.createElement("select");
       el.className = "blank blank-select";
-      const opts = Array.isArray(def.options) ? def.options : [];
+      const opts = normalizeOptions(def.options);
+      if (!opts.length) {
+        // 防呆：仍無選項時至少顯示目前值
+        const fallback = def.value != null ? String(def.value) : "";
+        if (fallback) opts.push({ value: fallback, label: fallback });
+      }
+      def.options = opts;
       opts.forEach((opt) => {
         const o = document.createElement("option");
-        o.value = opt;
-        o.textContent = opt;
-        if (String(def.value) === String(opt)) o.selected = true;
+        o.value = opt.value;
+        o.textContent = opt.label;
+        el.appendChild(o);
       });
-      if (def.value != null && !opts.map(String).includes(String(def.value))) {
+      const cur = def.value != null ? String(def.value) : "";
+      if (cur && !opts.some((o) => o.value === cur)) {
         const o = document.createElement("option");
-        o.value = def.value;
-        o.textContent = def.value;
-        o.selected = true;
+        o.value = cur;
+        o.textContent = cur;
         el.appendChild(o);
       }
+      el.value = cur || opts[0]?.value || "";
+      if (def.value !== el.value) def.value = el.value;
     } else {
       el = document.createElement("input");
       el.className = "blank";
-      el.type = type === "number" ? "text" : "text";
+      el.type = "text";
       el.inputMode = type === "number" ? "decimal" : "text";
       el.value = def.value != null ? String(def.value) : "";
       el.size = MIN_CH;
@@ -403,7 +582,7 @@
     doc.system.completed_at = st.completed_at;
   }
 
-  function cycleStatus() {
+  function runCycleStatus() {
     const list = doc.statuses || [];
     if (!list.length) return;
     const prev = doc.system?.status;
@@ -430,14 +609,222 @@
         new Date(),
         doc.system.doc_version
       );
+    } else if (next.id === "in_process" && !doc.system.submitted_at) {
+      doc.system.submitted_at = nowStamp();
     }
+  }
 
+  function runSubmit() {
+    const cur = statusOf(doc.system?.status);
+    if (!doc.system) doc.system = {};
+    if (doc.system.status === "new" || doc.system.status === "draft") {
+      doc.system.status = "in_process";
+      const st = statusOf("in_process");
+      if (st) applyStatusDefaults(st);
+      if (!doc.system.doc_no || !/\.\d+$/.test(doc.system.doc_no)) {
+        doc.system.doc_version = doc.system.doc_version || 1;
+        doc.system.doc_no = makeDocNo(
+          fieldValue("applicant"),
+          new Date(),
+          doc.system.doc_version
+        );
+      }
+      doc.system.submitted_at = nowStamp();
+      doc.system.completed_at = null;
+    } else if (cur) {
+      // 已在流程中：送出視為再存一次狀態時間
+      doc.system.submitted_at = doc.system.submitted_at || nowStamp();
+    }
+  }
+
+  function appendLog(actionDef) {
+    const opened = openedSnapshot || snapshotState();
+    const saved = snapshotState();
+    const changes = diffSnapshots(opened, saved);
+    const entry = {
+      id: `log_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+      at: nowStamp(),
+      actor: clone(doc.actor || { id: "unknown", name: "未知" }),
+      action: {
+        id: actionDef.id,
+        label: actionDef.label,
+        kind: actionDef.kind || actionDef.id,
+      },
+      opened,
+      saved,
+      changes,
+    };
+    if (!Array.isArray(doc.logs)) doc.logs = [];
+    doc.logs.unshift(entry);
+    openLogId = entry.id;
+    resetOpenedSnapshot();
+    return entry;
+  }
+
+  function performAction(actionDef) {
+    const kind = actionDef.kind || actionDef.id;
+    // 先保留 opened；執行動作改 doc；再寫 log
+    if (kind === "cycle_status") runCycleStatus();
+    else if (kind === "submit") runSubmit();
+    // save：只寫 log，欄位已在編輯時寫入 doc
+    appendLog(actionDef);
     persist();
     renderForm();
     syncJsonEditorIfVisible();
   }
 
+  function renderDiffLine(change) {
+    const row = document.createElement("div");
+    row.className = "diff-row";
+
+    const label = document.createElement("div");
+    label.className = "diff-label";
+    label.textContent = change.label || change.path;
+    row.appendChild(label);
+
+    const vals = document.createElement("div");
+    vals.className = "diff-vals";
+
+    const before = document.createElement("span");
+    before.className = "diff-del";
+    before.textContent = displayVal(change.before);
+    before.title = doc.ui?.log_opened_label || "開啟時";
+
+    const after = document.createElement("span");
+    after.className = "diff-add";
+    after.textContent = displayVal(change.after);
+    after.title = doc.ui?.log_saved_label || "儲存後";
+
+    // GitHub 風格：紅（刪／舊）在前，綠（增／新）在後
+    vals.appendChild(before);
+    vals.appendChild(after);
+    row.appendChild(vals);
+    return row;
+  }
+
+  function renderLogDetail(entry) {
+    const box = document.createElement("div");
+    box.className = "log-detail";
+
+    const meta = document.createElement("div");
+    meta.className = "log-detail-meta";
+    meta.textContent = `${doc.ui?.log_opened_label || "開啟時"} → ${
+      doc.ui?.log_saved_label || "儲存後"
+    }`;
+    box.appendChild(meta);
+
+    const changes = entry.changes || [];
+    if (!changes.length) {
+      const empty = document.createElement("p");
+      empty.className = "log-no-change";
+      empty.textContent = doc.ui?.log_no_change || "欄位值無變更";
+      box.appendChild(empty);
+      return box;
+    }
+    changes.forEach((c) => box.appendChild(renderDiffLine(c)));
+    return box;
+  }
+
+  function renderLogs() {
+    const sec = document.createElement("section");
+    sec.className = "log-block";
+    const h = document.createElement("h3");
+    h.className = "log-title";
+    h.textContent = doc.ui?.log_title || "操作紀錄";
+    sec.appendChild(h);
+
+    const list = Array.isArray(doc.logs) ? doc.logs : [];
+    if (!list.length) {
+      const empty = document.createElement("p");
+      empty.className = "log-empty";
+      empty.textContent = doc.ui?.log_empty || "尚無操作紀錄";
+      sec.appendChild(empty);
+      return sec;
+    }
+
+    const ul = document.createElement("ul");
+    ul.className = "log-list";
+    list.forEach((entry) => {
+      const li = document.createElement("li");
+      li.className = "log-item" + (openLogId === entry.id ? " open" : "");
+
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "log-summary";
+      const n = (entry.changes || []).length;
+      btn.innerHTML = "";
+      const t = document.createElement("span");
+      t.className = "log-time";
+      t.textContent = entry.at || "";
+      const who = document.createElement("span");
+      who.className = "log-actor";
+      who.textContent = entry.actor?.name || "";
+      const act = document.createElement("span");
+      act.className = "log-action";
+      act.textContent = entry.action?.label || entry.action?.id || "";
+      const ch = document.createElement("span");
+      ch.className = "log-change-count";
+      ch.textContent = n ? `${n} 欄位` : "無變更";
+      btn.appendChild(t);
+      btn.appendChild(who);
+      btn.appendChild(act);
+      btn.appendChild(ch);
+      btn.addEventListener("click", () => {
+        openLogId = openLogId === entry.id ? null : entry.id;
+        renderForm();
+      });
+      li.appendChild(btn);
+
+      if (openLogId === entry.id) {
+        li.appendChild(renderLogDetail(entry));
+      }
+      ul.appendChild(li);
+    });
+    sec.appendChild(ul);
+    return sec;
+  }
+
+  function renderActions() {
+    const wrap = document.createElement("div");
+    wrap.className = "action-bar";
+
+    const actorLine = document.createElement("div");
+    actorLine.className = "actor-line";
+    const actorLabel = document.createElement("span");
+    actorLabel.textContent = (doc.ui?.actor_label || "目前操作者") + "：";
+    const actorName = document.createElement("strong");
+    actorName.textContent = doc.actor?.name || "";
+    actorLine.appendChild(actorLabel);
+    actorLine.appendChild(actorName);
+    wrap.appendChild(actorLine);
+
+    const btns = document.createElement("div");
+    btns.className = "action-buttons";
+    const title = document.createElement("span");
+    title.className = "action-title";
+    title.textContent = doc.ui?.actions_title || "操作";
+    btns.appendChild(title);
+
+    (doc.actions || [])
+      .filter((a) => a.bound_to !== "status_pill")
+      .forEach((a) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "action-btn";
+        b.textContent = a.label || a.id;
+        b.addEventListener("click", () => performAction(a));
+        btns.appendChild(b);
+      });
+    wrap.appendChild(btns);
+    return wrap;
+  }
+
+  function findAction(predicate) {
+    return (doc.actions || []).find(predicate);
+  }
+
   function renderForm() {
+    ensureFieldOptions(doc.fields, EMBEDDED_DOC.fields);
     const stage = els.form;
     stage.replaceChildren();
 
@@ -456,6 +843,8 @@
     });
     article.appendChild(bodySec);
 
+    article.appendChild(renderActions());
+
     const signSec = document.createElement("section");
     signSec.className = "block hanko-block";
 
@@ -471,7 +860,16 @@
     pill.dataset.status = st?.id || "";
     pill.textContent = st?.label || "";
     pill.title = st?.tip || "";
-    pill.addEventListener("click", cycleStatus);
+    pill.addEventListener("click", () => {
+      const a =
+        findAction((x) => x.bound_to === "status_pill") ||
+        findAction((x) => x.kind === "cycle_status") || {
+          id: "cycle_status",
+          label: "切換狀態",
+          kind: "cycle_status",
+        };
+      performAction(a);
+    });
     head.appendChild(h3);
     head.appendChild(pill);
     signSec.appendChild(head);
@@ -487,6 +885,7 @@
     }
 
     article.appendChild(signSec);
+    article.appendChild(renderLogs());
     stage.appendChild(article);
   }
 
@@ -516,10 +915,9 @@
       if (!parsed || typeof parsed !== "object") {
         throw new Error("根節點必須是物件");
       }
-      doc = parsed;
-      if (!doc.system) doc.system = {};
-      if (!doc.fields) doc.fields = {};
+      doc = ensureDocShape(parsed);
       jsonDirty = false;
+      resetOpenedSnapshot();
       persist();
       renderForm();
       els.editor.value = prettyJson();
@@ -577,13 +975,19 @@
   });
 
   function ensureDocShape(d) {
-    if (!d.meta) d.meta = clone(DEFAULT_DOC.meta);
-    if (!d.ui) d.ui = clone(DEFAULT_DOC.ui);
-    if (!d.statuses) d.statuses = clone(DEFAULT_DOC.statuses);
-    if (!d.fields) d.fields = clone(DEFAULT_DOC.fields);
-    if (!d.body) d.body = clone(DEFAULT_DOC.body);
-    if (!d.approval) d.approval = clone(DEFAULT_DOC.approval);
-    if (!d.system) d.system = clone(DEFAULT_DOC.system);
+    const base = clone(EMBEDDED_DOC);
+    if (!d.meta) d.meta = base.meta;
+    if (!d.ui) d.ui = base.ui;
+    else d.ui = { ...base.ui, ...d.ui };
+    if (!d.actor) d.actor = base.actor;
+    if (!d.actions) d.actions = base.actions;
+    if (!d.statuses) d.statuses = base.statuses;
+    if (!d.fields) d.fields = base.fields;
+    if (!d.body) d.body = base.body;
+    if (!d.approval) d.approval = base.approval;
+    if (!d.system) d.system = base.system;
+    if (!Array.isArray(d.logs)) d.logs = [];
+    ensureFieldOptions(d.fields, base.fields);
     if (!d.system.doc_no || !/\.\d+$/.test(d.system.doc_no)) {
       d.system.doc_version = d.system.doc_version || 1;
       d.system.doc_no = makeDocNo(
@@ -600,22 +1004,17 @@
     let base = loadStored();
     if (!base) {
       try {
-        const res = await fetch("./document.json?v=json1", { cache: "no-store" });
+        const res = await fetch("./document.json?v=log1", { cache: "no-store" });
         if (res.ok) base = await res.json();
       } catch {
-        /* file:// 或離線時用內嵌預設 */
+        /* offline */
       }
     }
-    doc = ensureDocShape(base ? clone(base) : clone(DEFAULT_DOC));
-    // makeDocNo 需要 doc.meta；ensure 後再補一次單號若剛 clone
-    if (!doc.system.doc_no || !/\.\d+$/.test(doc.system.doc_no)) {
-      doc.system.doc_no = makeDocNo(
-        fieldValue("applicant"),
-        new Date("2026-08-04T09:40:00"),
-        doc.system.doc_version || 1
-      );
-    }
+    doc = ensureDocShape(base ? clone(base) : clone(EMBEDDED_DOC));
+    // 忽略未使用的 DEFAULT_DOC 佔位
+    void DEFAULT_DOC;
     persist();
+    resetOpenedSnapshot();
     document.documentElement.lang = doc.meta?.lang || "zh-Hant";
     document.title = `Approval｜${doc.meta?.title || ""}`;
     renderTabs();

@@ -1,11 +1,15 @@
 {
-  "schema_version": "1.0",
+  "schema_version": "1.1",
   "meta": {
     "system_name": "LEAVE",
     "form_id": "leave_request_v1",
     "title": "請假申請書",
     "lang": "zh-Hant",
-    "note": "未來 API 時代：此 JSON 即申請單完整狀態；畫面只負責渲染，不內建任何文案。"
+    "note": "未來 API 時代：此 JSON 即申請單完整狀態；畫面只負責渲染。含 actor／actions／logs。"
+  },
+  "actor": {
+    "id": "u_wang",
+    "name": "王小明"
   },
   "ui": {
     "views": [
@@ -15,8 +19,20 @@
     "sys_fields_aria": "系統欄位（報表用）",
     "sys_hint": "doc_no＝系統名＋申請人＋年月日時分秒＋3隨機碼＋.版本（如 .2＝第二版）　current_level：0＝申請人；1＋＝等待各關　completed_at 僅 Completed／Denied",
     "empty_mark": "—",
-    "pending_stamp_label": "尚未蓋印"
+    "pending_stamp_label": "尚未蓋印",
+    "actions_title": "操作",
+    "log_title": "操作紀錄",
+    "log_empty": "尚無操作紀錄",
+    "log_opened_label": "開啟時",
+    "log_saved_label": "儲存後",
+    "log_no_change": "欄位值無變更",
+    "actor_label": "目前操作者"
   },
+  "actions": [
+    { "id": "save", "label": "儲存", "kind": "save" },
+    { "id": "submit", "label": "送出", "kind": "submit" },
+    { "id": "cycle_status", "label": "切換狀態", "kind": "cycle_status", "bound_to": "status_pill" }
+  ],
   "statuses": [
     {
       "id": "new",
@@ -69,7 +85,12 @@
       "type": "dropdown",
       "label": "假別",
       "value": "事假",
-      "options": ["特休", "事假", "病假", "其他"]
+      "options": [
+        { "value": "特休", "label": "特休" },
+        { "value": "事假", "label": "事假" },
+        { "value": "病假", "label": "病假" },
+        { "value": "其他", "label": "其他" }
+      ]
     },
     "leave_date": {
       "type": "text",
@@ -162,5 +183,85 @@
     "submitted_at": "2026-08-04 09:40:00",
     "completed_at": null,
     "status": "in_process"
-  }
+  },
+  "logs": [
+    {
+      "id": "log_demo_1",
+      "at": "2026-08-04 09:40:12",
+      "actor": { "id": "u_wang", "name": "王小明" },
+      "action": { "id": "submit", "label": "送出" },
+      "opened": {
+        "fields": {
+          "applicant": "王小明",
+          "leave_type": "事假",
+          "leave_date": "明天",
+          "days": "2",
+          "agent": ""
+        },
+        "system": {
+          "status": "draft",
+          "current_level": 0,
+          "doc_no": null,
+          "doc_version": 1,
+          "submitted_at": null,
+          "completed_at": null
+        }
+      },
+      "saved": {
+        "fields": {
+          "applicant": "王小明",
+          "leave_type": "事假",
+          "leave_date": "明天",
+          "days": "1",
+          "agent": "陳美玲"
+        },
+        "system": {
+          "status": "in_process",
+          "current_level": 3,
+          "doc_no": "LEAVE王小明20260804094000K7M.1",
+          "doc_version": 1,
+          "submitted_at": "2026-08-04 09:40:00",
+          "completed_at": null
+        }
+      },
+      "changes": [
+        {
+          "path": "fields.days",
+          "label": "天數",
+          "before": "2",
+          "after": "1"
+        },
+        {
+          "path": "fields.agent",
+          "label": "代理人",
+          "before": "",
+          "after": "陳美玲"
+        },
+        {
+          "path": "system.status",
+          "label": "status",
+          "before": "draft",
+          "after": "in_process"
+        },
+        {
+          "path": "system.current_level",
+          "label": "current_level",
+          "before": "0",
+          "after": "3"
+        },
+        {
+          "path": "system.doc_no",
+          "label": "doc_no",
+          "before": null,
+          "after": "LEAVE王小明20260804094000K7M.1"
+        },
+        {
+          "path": "system.submitted_at",
+          "label": "submitted_at",
+          "before": null,
+          "after": "2026-08-04 09:40:00"
+        }
+      ]
+    }
+  ]
 }
