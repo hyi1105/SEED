@@ -1,6 +1,13 @@
 (() => {
-  const KEY = "approval.a4.v4";
+  const KEY = "approval.a4.v5";
   const MIN_CH = 2;
+  const STATUSES = [
+    { id: "new", label: "New", tip: "新申請" },
+    { id: "draft", label: "Draft", tip: "被暫存過了" },
+    { id: "in_process", label: "In Process", tip: "已經送出等待簽核" },
+    { id: "completed", label: "Completed", tip: "全部簽核過" },
+    { id: "denied", label: "Denied", tip: "有人拒絕了" },
+  ];
 
   function load() {
     try {
@@ -15,8 +22,8 @@
 
   const state = load();
   if (!state.binds) state.binds = {};
+  if (!state.status) state.status = "in_process";
 
-  // 隱藏量尺：用與 .blank 相同字體量文字寬
   const mirror = document.createElement("span");
   mirror.setAttribute("aria-hidden", "true");
   Object.assign(mirror.style, {
@@ -34,7 +41,6 @@
     mirror.style.letterSpacing = cs.letterSpacing;
     mirror.style.padding = cs.padding;
     const text = el.value || "";
-    // 至少兩字寬；超過則依內容
     const sample = text.length >= MIN_CH ? text : "字".repeat(MIN_CH);
     mirror.textContent = sample;
     const w = Math.ceil(mirror.getBoundingClientRect().width) + 4;
@@ -55,4 +61,20 @@
       save(state);
     });
   });
+
+  const pill = document.getElementById("status-pill");
+  function renderStatus() {
+    const s = STATUSES.find((x) => x.id === state.status) || STATUSES[2];
+    pill.dataset.status = s.id;
+    pill.textContent = s.label;
+    pill.title = s.tip;
+  }
+  // 點一下可切換狀態（畫面草稿用）
+  pill.addEventListener("click", () => {
+    const i = STATUSES.findIndex((x) => x.id === state.status);
+    state.status = STATUSES[(i + 1) % STATUSES.length].id;
+    save(state);
+    renderStatus();
+  });
+  renderStatus();
 })();

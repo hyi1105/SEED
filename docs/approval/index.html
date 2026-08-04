@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Approval｜請假申請書</title>
-  <link rel="stylesheet" href="./styles.css?v=read1" />
+  <link rel="stylesheet" href="./styles.css?v=status1" />
 </head>
 <body>
   <div class="stage">
@@ -29,7 +29,10 @@
       </section>
 
       <section class="block hanko-block">
-        <p class="para narrate hanko-lead">簽核印鑑欄</p>
+        <div class="sign-head">
+          <h3 class="sign-title">簽核</h3>
+          <span class="status-pill" id="status-pill" data-status="in_process" title="已經送出等待簽核">In Process</span>
+        </div>
         <table class="inkan-table">
           <thead>
             <tr>
@@ -67,6 +70,6 @@
 
     </article>
   </div>
-  <script src="./app.js?v=read1"></script>
+  <script src="./app.js?v=status1"></script>
 </body>
 </html>

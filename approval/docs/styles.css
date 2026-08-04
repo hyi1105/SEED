@@ -66,9 +66,62 @@ html, body {
   color: #3a342c;
   font-size: 15px;
 }
-.hanko-lead { margin-bottom: 12px; }
+.sign-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 12px;
+  flex-wrap: wrap;
+}
+.sign-title {
+  margin: 0;
+  font-family: var(--doc);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--ink);
+}
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 14px;
+  border: 1.5px solid #5a5348;
+  border-radius: 999px;
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  color: #3a342c;
+  background: rgba(255, 255, 255, 0.55);
+  line-height: 1.2;
+  cursor: pointer;
+  user-select: none;
+}
+.status-pill[data-status="new"] {
+  border-color: #4a6fa5;
+  color: #2f4f7a;
+}
+.status-pill[data-status="draft"] {
+  border-color: #8a7a4a;
+  color: #5c4e28;
+}
+.status-pill[data-status="in_process"] {
+  border-color: #3d6b4f;
+  color: #2a4d38;
+  background: rgba(61, 107, 79, 0.08);
+}
+.status-pill[data-status="completed"] {
+  border-color: #2f5d9a;
+  color: #1e3f6b;
+  background: rgba(47, 93, 154, 0.08);
+}
+.status-pill[data-status="denied"] {
+  border-color: #a33d3d;
+  color: #7a2424;
+  background: rgba(163, 61, 61, 0.08);
+}
 
-/* —— 日式稟議印鑑欄：真正 table 橫排，不要條列 —— */
 table.inkan-table {
   width: 100%;
   border-collapse: collapse;
