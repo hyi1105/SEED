@@ -1,12 +1,12 @@
 (() => {
-  const KEY = "approval.a4.v6";
+  const KEY = "approval.a4.v7";
   const MIN_CH = 2;
+  const SYSTEM_NAME = "LEAVE";
   /**
    * 報表統一欄位：
+   * doc_no: 系統名＋申請人＋年月日時分秒＋3隨機碼
    * current_level: 0＝申請人階段；1＝等第1關；2＝等第2關…
-   * submitted_at: 最後送出時間
-   * completed_at: Approved／Denied 完成時間，其餘為 null
-   * status: New | Draft | In Process | Completed | Denied
+   * submitted_at / completed_at / status
    */
   const STATUSES = [
     {
@@ -62,10 +62,47 @@
     localStorage.setItem(KEY, JSON.stringify(s));
   }
 
+  function pad(n, len = 2) {
+    return String(n).padStart(len, "0");
+  }
+
+  function stampNow(d = new Date()) {
+    return (
+      d.getFullYear() +
+      pad(d.getMonth() + 1) +
+      pad(d.getDate()) +
+      pad(d.getHours()) +
+      pad(d.getMinutes()) +
+      pad(d.getSeconds())
+    );
+  }
+
+  function random3() {
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    let out = "";
+    for (let i = 0; i < 3; i++) {
+      out += chars[Math.floor(Math.random() * chars.length)];
+    }
+    return out;
+  }
+
+  function makeDocNo(applicant, when = new Date()) {
+    const name = (applicant || "未命名").replace(/\s+/g, "");
+    return `${SYSTEM_NAME}${name}${stampNow(when)}${random3()}`;
+  }
+
   const state = load();
   if (!state.binds) state.binds = {};
+  if (!state.binds.applicant) state.binds.applicant = "王小明";
   if (!state.status) state.status = "in_process";
   if (state.current_level == null) state.current_level = 3;
+  if (!state.doc_no) {
+    // 示範單號固定時間戳，避免每次重新整理都變；真送出時再重產
+    state.doc_no = makeDocNo(
+      state.binds.applicant,
+      new Date("2026-08-04T09:40:00")
+    );
+  }
 
   const mirror = document.createElement("span");
   mirror.setAttribute("aria-hidden", "true");
@@ -105,13 +142,13 @@
   });
 
   const pill = document.getElementById("status-pill");
+  const sfDocno = document.getElementById("sf-docno");
   const sfLevel = document.getElementById("sf-level");
   const sfSubmitted = document.getElementById("sf-submitted");
   const sfCompleted = document.getElementById("sf-completed");
   const sfStatus = document.getElementById("sf-status");
 
   function applyStatusDefaults(s) {
-    // 切狀態時帶入示範用 level／時間；之後接真資料再覆寫
     state.current_level = s.level;
     state.submitted_at = s.submitted;
     state.completed_at = s.completed;
@@ -123,6 +160,7 @@
     pill.textContent = s.label;
     pill.title = s.tip;
 
+    sfDocno.textContent = state.doc_no || "—";
     sfStatus.textContent = s.label;
     sfLevel.textContent = String(
       state.current_level != null ? state.current_level : s.level
@@ -136,11 +174,17 @@
     const next = STATUSES[(i + 1) % STATUSES.length];
     state.status = next.id;
     applyStatusDefaults(next);
+    // New 時重產單號（模擬新開單）
+    if (next.id === "new") {
+      state.doc_no = makeDocNo(
+        state.binds.applicant ||
+          document.querySelector('[data-bind="applicant"]')?.value
+      );
+    }
     save(state);
     renderStatus();
   });
 
-  // 初次：若尚無時間欄，依狀態補齊
   const cur = STATUSES.find((x) => x.id === state.status) || STATUSES[2];
   if (state.submitted_at === undefined) state.submitted_at = cur.submitted;
   if (state.completed_at === undefined) state.completed_at = cur.completed;
