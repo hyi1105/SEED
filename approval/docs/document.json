@@ -1,0 +1,166 @@
+{
+  "schema_version": "1.0",
+  "meta": {
+    "system_name": "LEAVE",
+    "form_id": "leave_request_v1",
+    "title": "請假申請書",
+    "lang": "zh-Hant",
+    "note": "未來 API 時代：此 JSON 即申請單完整狀態；畫面只負責渲染，不內建任何文案。"
+  },
+  "ui": {
+    "views": [
+      { "id": "form", "label": "申請單畫面" },
+      { "id": "json", "label": "JSON" }
+    ],
+    "sys_fields_aria": "系統欄位（報表用）",
+    "sys_hint": "doc_no＝系統名＋申請人＋年月日時分秒＋3隨機碼＋.版本（如 .2＝第二版）　current_level：0＝申請人；1＋＝等待各關　completed_at 僅 Completed／Denied",
+    "empty_mark": "—",
+    "pending_stamp_label": "尚未蓋印"
+  },
+  "statuses": [
+    {
+      "id": "new",
+      "label": "New",
+      "tip": "新申請",
+      "level": 0,
+      "submitted_at": null,
+      "completed_at": null
+    },
+    {
+      "id": "draft",
+      "label": "Draft",
+      "tip": "被暫存過了",
+      "level": 0,
+      "submitted_at": null,
+      "completed_at": null
+    },
+    {
+      "id": "in_process",
+      "label": "In Process",
+      "tip": "已經送出等待簽核",
+      "level": 3,
+      "submitted_at": "2026-08-04 09:40:00",
+      "completed_at": null
+    },
+    {
+      "id": "completed",
+      "label": "Completed",
+      "tip": "全部簽核過",
+      "level": 3,
+      "submitted_at": "2026-08-04 09:40:00",
+      "completed_at": "2026-08-04 11:05:00"
+    },
+    {
+      "id": "denied",
+      "label": "Denied",
+      "tip": "有人拒絕了",
+      "level": 2,
+      "submitted_at": "2026-08-04 09:40:00",
+      "completed_at": "2026-08-04 10:22:00"
+    }
+  ],
+  "fields": {
+    "applicant": {
+      "type": "text",
+      "label": "申請人",
+      "value": "王小明"
+    },
+    "leave_type": {
+      "type": "dropdown",
+      "label": "假別",
+      "value": "事假",
+      "options": ["特休", "事假", "病假", "其他"]
+    },
+    "leave_date": {
+      "type": "text",
+      "label": "起始日",
+      "value": "明天"
+    },
+    "days": {
+      "type": "number",
+      "label": "天數",
+      "value": "1"
+    },
+    "agent": {
+      "type": "text",
+      "label": "代理人",
+      "value": "陳美玲"
+    }
+  },
+  "body": {
+    "paragraphs": [
+      {
+        "parts": [
+          { "t": "text", "v": "申請人" },
+          { "t": "field", "name": "applicant" },
+          { "t": "text", "v": "因" },
+          { "t": "field", "name": "leave_type" },
+          { "t": "text", "v": "，自" },
+          { "t": "field", "name": "leave_date" },
+          { "t": "text", "v": "起請假" },
+          { "t": "field", "name": "days" },
+          { "t": "text", "v": "天，代理人為" },
+          { "t": "field", "name": "agent" },
+          { "t": "text", "v": "。" }
+        ]
+      }
+    ]
+  },
+  "approval": {
+    "title": "簽核",
+    "columns": [
+      {
+        "id": "director",
+        "label": "協理",
+        "level": 3,
+        "stamp": {
+          "name": "嚴",
+          "mark": null,
+          "time": null,
+          "pending": true
+        }
+      },
+      {
+        "id": "manager",
+        "label": "課長",
+        "level": 2,
+        "stamp": {
+          "name": "林",
+          "mark": "APPROVE",
+          "time": "08-04 10:18",
+          "pending": false
+        }
+      },
+      {
+        "id": "agent",
+        "label": "代理人",
+        "level": 1,
+        "stamp": {
+          "name": "陳",
+          "mark": "確認",
+          "time": "08-04 09:55",
+          "pending": false
+        }
+      },
+      {
+        "id": "applicant",
+        "label": "申請",
+        "level": 0,
+        "stamp": {
+          "name": "王",
+          "mark": "申請",
+          "time": "08-04 09:40",
+          "pending": false
+        }
+      }
+    ]
+  },
+  "system": {
+    "doc_no": "LEAVE王小明20260804094000K7M.1",
+    "doc_version": 1,
+    "current_level": 3,
+    "submitted_at": "2026-08-04 09:40:00",
+    "completed_at": null,
+    "status": "in_process"
+  }
+}

@@ -20,13 +20,87 @@ html, body {
   color: #eee;
 }
 
-.stage {
+.app-shell {
   min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.view-tabs {
+  display: flex;
+  gap: 8px;
+  padding: 10px 12px;
+  background: #121212;
+  border-bottom: 1px solid #2e2e2e;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+.view-tab {
+  appearance: none;
+  border: 1px solid #3a3a3a;
+  background: #1e1e1e;
+  color: #cfcfcf;
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.view-tab.active {
+  background: #f7f3ea;
+  color: #1a1814;
+  border-color: #f7f3ea;
+}
+
+.stage {
+  flex: 1;
+  min-height: 0;
   overflow: auto;
   padding: 20px 12px 40px;
   background:
     radial-gradient(ellipse at top, #333 0%, transparent 55%),
     var(--desk);
+}
+
+.json-stage {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  background: #0f0f0f;
+  gap: 8px;
+}
+.json-editor {
+  flex: 1;
+  min-height: 60vh;
+  width: 100%;
+  resize: vertical;
+  margin: 0;
+  padding: 14px 16px;
+  border: 1px solid #333;
+  border-radius: 8px;
+  background: #161616;
+  color: #e8e4d8;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 12.5px;
+  line-height: 1.55;
+  tab-size: 2;
+  outline: none;
+}
+.json-editor:focus {
+  border-color: #5a6a9a;
+}
+.json-msg {
+  margin: 0;
+  font-size: 12px;
+  color: #9aaa7a;
+}
+.json-msg.err {
+  color: #d08080;
 }
 
 /* —— A4 紙 —— */
@@ -97,6 +171,7 @@ html, body {
   line-height: 1.2;
   cursor: pointer;
   user-select: none;
+  appearance: none;
 }
 .status-pill[data-status="new"] {
   border-color: #4a6fa5;

@@ -3,97 +3,19 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Approval｜請假申請書</title>
-  <link rel="stylesheet" href="./styles.css?v=docver2" />
+  <title>Approval</title>
+  <link rel="stylesheet" href="./styles.css?v=json1" />
 </head>
 <body>
-  <div class="stage">
-    <article class="a4" id="doc">
-
-      <h2 class="doc-title">請假申請書</h2>
-
-      <section class="block">
-        <p class="para">
-          申請人
-          <input class="blank" data-bind="applicant" value="王小明" size="2" />
-          因
-          <input class="blank" data-bind="leave_type" value="事假" size="2" />
-          ，自
-          <input class="blank" data-bind="leave_date" value="明天" size="2" />
-          起請假
-          <input class="blank" data-bind="days" value="1" size="2" />
-          天，代理人為
-          <input class="blank" data-bind="agent" value="陳美玲" size="2" />
-          。
-        </p>
-      </section>
-
-      <section class="block hanko-block">
-        <div class="sign-head">
-          <h3 class="sign-title">簽核</h3>
-          <span class="status-pill" id="status-pill" data-status="in_process" title="已經送出等待簽核">In Process</span>
-        </div>
-        <table class="inkan-table">
-          <thead>
-            <tr>
-              <th scope="col">協理</th>
-              <th scope="col">課長</th>
-              <th scope="col">代理人</th>
-              <th scope="col">申請</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td class="pending">
-                <div class="inkan-stamp tilt-0 empty"><span class="inkan-name">嚴</span></div>
-                <div class="inkan-time wait">尚未蓋印</div>
-              </td>
-              <td class="done">
-                <div class="inkan-stamp tilt-1"><span class="inkan-name">林</span></div>
-                <div class="inkan-approve">APPROVE</div>
-                <div class="inkan-time">08-04 10:18</div>
-              </td>
-              <td class="done">
-                <div class="inkan-stamp tilt-2"><span class="inkan-name">陳</span></div>
-                <div class="inkan-approve">確認</div>
-                <div class="inkan-time">08-04 09:55</div>
-              </td>
-              <td class="done">
-                <div class="inkan-stamp tilt-3"><span class="inkan-name">王</span></div>
-                <div class="inkan-approve">申請</div>
-                <div class="inkan-time">08-04 09:40</div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-
-        <dl class="sys-fields" id="sys-fields" aria-label="系統欄位（報表用）">
-          <div class="sys-row">
-            <dt>doc_no</dt>
-            <dd id="sf-docno">—</dd>
-          </div>
-          <div class="sys-row">
-            <dt>current_level</dt>
-            <dd id="sf-level">1</dd>
-          </div>
-          <div class="sys-row">
-            <dt>submitted_at</dt>
-            <dd id="sf-submitted">2026-08-04 09:40:00</dd>
-          </div>
-          <div class="sys-row">
-            <dt>completed_at</dt>
-            <dd id="sf-completed">—</dd>
-          </div>
-          <div class="sys-row">
-            <dt>status</dt>
-            <dd id="sf-status">In Process</dd>
-          </div>
-        </dl>
-        <p class="sys-hint">doc_no＝系統名＋申請人＋年月日時分秒＋3隨機碼＋.版本（如 .2＝第二版）　current_level：0＝申請人；1＋＝等待各關　completed_at 僅 Completed／Denied</p>
-      </section>
-
-    </article>
+  <!-- 畫面殼：不含申請單文案；全部由 document JSON 渲染 -->
+  <div class="app-shell">
+    <nav class="view-tabs" id="view-tabs" aria-label="view"></nav>
+    <div class="stage" id="view-form" hidden></div>
+    <div class="json-stage" id="view-json" hidden>
+      <textarea class="json-editor" id="json-editor" spellcheck="false" aria-label="JSON"></textarea>
+      <p class="json-msg" id="json-msg" hidden></p>
+    </div>
   </div>
-  <script src="./app.js?v=docver2"></script>
+  <script src="./app.js?v=json1"></script>
 </body>
 </html>
