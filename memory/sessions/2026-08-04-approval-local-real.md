@@ -13,7 +13,8 @@ status: active
 
 ## 重點
 
-- 開啟：`bash approval/scripts/serve.sh` → http://127.0.0.1:8765/
+- 「本機」＝Agent／電腦端 HTTP；**手機要用 SEED Pages** `…/SEED/approval/`
+- 開發開啟：`bash approval/scripts/serve.sh` → http://127.0.0.1:8765/
 - schema 驅動欄位；簽名流水線／對話綁欄寫入狀態
 - 雙層儲存：shared vs personal.{userId}；切成簽核人看不到個人備註格
 - 登入身分切換＋可選 Teams 通知 stub

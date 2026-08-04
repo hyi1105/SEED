@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Approval｜紙本簽核（本機）</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="app" id="app">
+    <nav class="rail" aria-label="主選單">
+      <button class="rail-btn" title="活動" type="button">🔔</button>
+      <button class="rail-btn active" title="聊天" type="button">💬</button>
+      <button class="rail-btn" title="團隊" type="button">👥</button>
+      <button class="rail-btn" title="行事曆" type="button">📅</button>
+      <button class="rail-btn" title="通話" type="button">📞</button>
+      <button class="rail-btn" title="檔案" type="button">📁</button>
+      <div class="rail-spacer"></div>
+      <button class="rail-btn avatar" title="切換登入" type="button" id="me-rail">我</button>
+    </nav>
+
+    <aside class="sidebar">
+      <header class="sidebar-head">
+        <h1>聊天</h1>
+        <span class="demo-pill">本機真系統</span>
+      </header>
+      <label class="search">
+        <span class="sr-only">搜尋</span>
+        <input type="search" placeholder="搜尋" disabled />
+      </label>
+      <ul class="chat-list">
+        <li class="chat-item active">
+          <span class="dot online"></span>
+          <div>
+            <strong>簽核｜請假申請</strong>
+            <p id="sidebar-preview">載入中…</p>
+          </div>
+        </li>
+        <li class="chat-item">
+          <span class="dot"></span>
+          <div>
+            <strong>人資公告</strong>
+            <p>本週表單改版說明</p>
+          </div>
+        </li>
+      </ul>
+      <div class="login-panel" id="login-panel">
+        <p class="login-label">登入身分（A6 模擬／之後接 Entra）</p>
+        <select id="login-select" aria-label="選擇登入身分"></select>
+        <label class="teams-opt">
+          <input type="checkbox" id="teams-notify" />
+          可選：模擬 Teams 通知
+        </label>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="main-head">
+        <div>
+          <h2 id="main-title">簽核｜請假申請</h2>
+          <p class="sub" id="main-sub">本機模式 · schema 驅動 · 雙層儲存</p>
+        </div>
+        <div class="main-actions">
+          <button type="button" class="ghost" id="btn-design">設計預覽</button>
+          <button type="button" class="ghost" id="btn-reset">重設本機資料</button>
+        </div>
+      </header>
+
+      <div class="stage">
+        <section class="paper" id="paper" aria-label="紙本簽核表單">
+          <div class="paper-meta">
+            <span id="form-id-label">表單：—</span>
+            <span id="viewer-role">檢視中：—</span>
+          </div>
+          <h3 class="paper-title" id="paper-title">—</h3>
+          <div class="grid" id="field-grid"></div>
+
+          <div class="waterline" aria-label="簽名流水線">
+            <p class="waterline-caption">簽名流水線（點人名可操作）· 狀態：<span id="status-label">draft</span></p>
+            <ol class="nodes" id="sign-nodes"></ol>
+          </div>
+
+          <div class="btn-row" id="action-row"></div>
+        </section>
+
+        <section class="thread" aria-label="對話室">
+          <h3>對話室 <span class="hint">一人一句一格 · 可限定欄位</span></h3>
+          <div class="bound-picker" id="bound-picker"></div>
+          <div class="boxes" id="boxes"></div>
+          <form class="composer" id="composer">
+            <input type="text" id="msg" placeholder="輸入一則訊息" autocomplete="off" />
+            <button type="submit">傳送</button>
+          </form>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <div class="sheet hidden" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
+    <div class="sheet-card">
+      <h3 id="sheet-title">操作</h3>
+      <p id="sheet-desc"></p>
+      <ul id="sheet-actions"></ul>
+      <button type="button" class="ghost" id="sheet-close">關閉</button>
+    </div>
+  </div>
+
+  <div class="sheet hidden" id="profile" role="dialog" aria-modal="true">
+    <div class="sheet-card">
+      <h3 id="profile-title">個人資料</h3>
+      <dl id="profile-body"></dl>
+      <button type="button" class="ghost" id="profile-close">關閉</button>
+    </div>
+  </div>
+
+  <div class="sheet hidden" id="pick-person" role="dialog" aria-modal="true">
+    <div class="sheet-card">
+      <h3 id="pick-title">選人</h3>
+      <p id="pick-desc"></p>
+      <ul id="pick-list"></ul>
+      <button type="button" class="ghost" id="pick-close">取消</button>
+    </div>
+  </div>
+
+  <div class="toast hidden" id="toast" role="status"></div>
+  <script src="./app.js" type="module"></script>
+</body>
+</html>
