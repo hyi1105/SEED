@@ -10,6 +10,7 @@
 
 ## 場次
 
+- 2026-08-04 — 簽核畫面：對話框＋Cursor 系統時間軸 — 標籤：SEED、Approval、Cursor感 — [sessions/2026-08-04-approval-cursor-timeline.md](sessions/2026-08-04-approval-cursor-timeline.md)
 - 2026-08-04 — 簽核畫面柔和欄位＋自己看／公開 — 標籤：SEED、Approval、畫面 — [sessions/2026-08-04-approval-chat-soft.md](sessions/2026-08-04-approval-chat-soft.md)
 - 2026-08-04 — 簽核先做畫面草稿（功能暫緩）— 標籤：SEED、Approval、畫面 — [sessions/2026-08-04-approval-ui-sketch.md](sessions/2026-08-04-approval-ui-sketch.md)
 - 2026-08-04 — 簽核改純對話（欄位嵌框）— 標籤：SEED、Approval、純對話 — [sessions/2026-08-04-approval-chat-only.md](sessions/2026-08-04-approval-chat-only.md)

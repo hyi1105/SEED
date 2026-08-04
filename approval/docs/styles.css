@@ -1,16 +1,18 @@
 :root {
-  --bg: #121212;
-  --chat: #1a1a1a;
-  --me: #3d3f6b;
+  --bg: #0f0f0f;
+  --feed: #141414;
+  --bubble: #2b2b2b;
+  --me: #2f3152;
   --me-private: #3a3428;
-  --other: #2a2a2a;
-  --soft: #222;
   --text: #ececec;
-  --muted: #9a9a9a;
-  --line: rgba(255, 255, 255, 0.14);
-  --accent: #6e76d8;
+  --muted: #8f8f8f;
+  --line: rgba(255, 255, 255, 0.12);
+  --sys: #1b1b1b;
+  --accent: #a78bfa;
+  --accent-dim: rgba(167, 139, 250, 0.16);
   --private: #c9a35a;
   --font: "Segoe UI", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 }
 
 * { box-sizing: border-box; }
@@ -34,13 +36,12 @@ html, body {
 
 .top {
   padding: 14px 16px 10px;
-  border-bottom: 1px solid #2a2a2a;
+  border-bottom: 1px solid #242424;
 }
 .top h1 {
   margin: 0;
   font-size: 16px;
   font-weight: 650;
-  letter-spacing: 0.01em;
 }
 .top p {
   margin: 4px 0 0;
@@ -48,19 +49,20 @@ html, body {
   color: var(--muted);
 }
 
-.chat {
+.feed {
   overflow: auto;
-  padding: 18px 14px 22px;
-  background: var(--chat);
+  padding: 16px 14px 24px;
+  background: var(--feed);
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
+/* —— 人的對話框 —— */
 .bubble {
-  max-width: 86%;
+  max-width: 88%;
   align-self: flex-start;
-  background: var(--other);
+  background: var(--bubble);
   border-radius: 16px 16px 16px 6px;
   padding: 9px 12px 10px;
 }
@@ -73,12 +75,6 @@ html, body {
   background: var(--me-private);
   box-shadow: inset 0 0 0 1px rgba(201, 163, 90, 0.28);
 }
-.bubble.soft {
-  background: transparent;
-  border: 1px solid #333;
-  padding: 8px 12px;
-}
-
 .meta {
   display: flex;
   justify-content: space-between;
@@ -87,25 +83,13 @@ html, body {
   color: var(--muted);
   margin-bottom: 4px;
 }
-.meta strong {
-  color: #cfcfcf;
-  font-weight: 600;
-}
+.meta strong { color: #d4d4d4; font-weight: 600; }
 .bubble p {
   margin: 0;
   font-size: 15px;
   line-height: 1.5;
-  font-weight: 400;
 }
-.bubble .line {
-  color: #ddd;
-  font-size: 14px;
-}
-.bubble .line .name { color: #eee; }
-.bubble .line .sep { color: #666; margin: 0 4px; }
-.bubble .line .hint { color: var(--muted); font-size: 13px; }
 
-/* 預設欄位：像便條底線，不是按鈕塊 */
 .fields {
   margin-top: 8px;
   display: flex;
@@ -120,11 +104,9 @@ html, body {
   padding: 5px 0 4px;
   border-bottom: 1px solid var(--line);
 }
-.field:last-child { border-bottom-color: rgba(255,255,255,0.08); }
 .field .k {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.55);
-  font-weight: 500;
+  color: rgba(255, 255, 255, 0.5);
 }
 .field .v {
   border: 0;
@@ -135,30 +117,70 @@ html, body {
   width: 100%;
   outline: none;
 }
-.field .v:focus {
-  color: #fff;
-  border-radius: 2px;
-  box-shadow: 0 1px 0 0 rgba(255, 255, 255, 0.45);
-}
-
 .vis {
   margin-top: 7px;
   font-size: 11px;
   color: var(--muted);
-  letter-spacing: 0.02em;
 }
 .vis.private { color: var(--private); }
 
+/* —— Cursor 感：對話框之間的系統區塊（不是對話泡） —— */
+.sys {
+  align-self: stretch;
+  width: 100%;
+  background: var(--sys);
+  border: 1px solid #2a2a2a;
+  border-radius: 10px;
+  padding: 10px 12px 11px;
+}
+.sys.soft { background: transparent; }
+.sys.dim { opacity: 0.78; }
+.sys-kicker {
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+.sys-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #f0f0f0;
+}
+.sys-body {
+  margin: 4px 0 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #bdbdbd;
+  font-family: var(--mono);
+}
+.sys-meta {
+  margin-top: 8px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--muted);
+}
+.sys-chip {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 5px 9px;
+  border-radius: 8px;
+  background: var(--accent-dim);
+  color: #ddd6fe;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* —— 底欄：只打字＋可見範圍 —— */
 .dock {
-  border-top: 1px solid #2a2a2a;
-  background: #151515;
+  border-top: 1px solid #242424;
+  background: #121212;
   padding: 8px 12px calc(10px + env(safe-area-inset-bottom));
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
-
-/* 自己看／公開：文字切換，不要厚按鈕 */
 .visibility {
   display: flex;
   gap: 14px;
@@ -180,7 +202,6 @@ html, body {
   color: var(--private);
   box-shadow: inset 0 -1px 0 var(--private);
 }
-
 .composer {
   display: grid;
   grid-template-columns: 1fr auto;
@@ -190,7 +211,7 @@ html, body {
 .composer input {
   border: 0;
   border-radius: 20px;
-  background: #2a2a2a;
+  background: #262626;
   color: var(--text);
   padding: 11px 14px;
   font-size: 15px;

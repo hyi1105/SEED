@@ -3,23 +3,21 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Approval｜對話畫面</title>
+  <title>Approval｜對話＋系統時間軸</title>
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
   <div class="phone">
     <header class="top">
       <h1>簽核｜請假申請</h1>
-      <p>預設欄位可改 · 下方只打字</p>
+      <p>對話框＋中間系統互動（Cursor 感）</p>
     </header>
 
-    <main class="chat" id="chat" aria-label="對話">
-      <!-- 申請人：預設欄位＋預設值，讀起來像便條不是按鈕 -->
+    <main class="feed" id="feed" aria-label="對話與系統時間軸">
+
+      <!-- 人：對話框 -->
       <article class="bubble me">
-        <div class="meta">
-          <strong>王小明</strong>
-          <time>17:02</time>
-        </div>
+        <div class="meta"><strong>王小明</strong><time>17:02</time></div>
         <p>請幫我簽一下，明天上午請假。</p>
         <div class="fields">
           <label class="field">
@@ -34,53 +32,64 @@
         <div class="vis public">公開</div>
       </article>
 
-      <!-- 簽核槽：淡文字，不要厚標籤 -->
-      <article class="bubble soft">
-        <div class="meta">
-          <strong>Approver1</strong>
-          <time>17:10</time>
-        </div>
-        <p class="line">
-          <span class="name">林主管</span>
-          <span class="sep">·</span>
-          <span class="hint">等待申請人送出</span>
-        </p>
-      </article>
+      <!-- 系統：穿插在對話框之間 -->
+      <section class="sys" aria-label="系統互動">
+        <div class="sys-kicker">系統</div>
+        <p class="sys-title">已排程郵件通知</p>
+        <p class="sys-body">寄給 Approver1 林主管 · 主旨「請假待簽」</p>
+        <div class="sys-meta">該關權限：可簽核、可退回、可換代理人 · 申請人欄位送出後唯讀</div>
+      </section>
 
-      <article class="bubble soft">
-        <div class="meta">
-          <strong>Approver2</strong>
-          <time>17:10</time>
-        </div>
-        <p class="line">
-          <span class="name">嚴協理</span>
-          <span class="sep">·</span>
-          <span class="hint">等待申請人送出</span>
-        </p>
-      </article>
+      <section class="sys" aria-label="版本敘述">
+        <div class="sys-kicker">版本</div>
+        <p class="sys-title">Edited 2 fields</p>
+        <p class="sys-body">假別：特休 → 事假 · 日期：未填 → 明天（1 天）</p>
+        <div class="sys-chip">查看變更說明</div>
+      </section>
 
+      <section class="sys soft" aria-label="簽核關卡">
+        <div class="sys-kicker">關卡</div>
+        <p class="sys-title">Approver1 · 林主管</p>
+        <p class="sys-body">狀態：等待申請人送出</p>
+        <div class="sys-meta">可見範圍：公開欄位 · 看不到「僅自己看」內容</div>
+      </section>
+
+      <section class="sys soft" aria-label="簽核關卡">
+        <div class="sys-kicker">關卡</div>
+        <p class="sys-title">Approver2 · 嚴協理</p>
+        <p class="sys-body">狀態：等待前關完成</p>
+        <div class="sys-meta">該關權限：可簽核、可駁回 · 不可改假別</div>
+      </section>
+
+      <!-- 人：對話框 -->
       <article class="bubble me">
-        <div class="meta">
-          <strong>王小明</strong>
-          <time>17:12</time>
-        </div>
+        <div class="meta"><strong>王小明</strong><time>17:12</time></div>
         <p>有，陳美玲已同意代理。</p>
         <div class="vis public">公開</div>
       </article>
 
-      <!-- 示範：僅自己可見 -->
+      <section class="sys" aria-label="系統互動">
+        <div class="sys-kicker">系統</div>
+        <p class="sys-title">代理人確認已寫入共用區</p>
+        <p class="sys-body">agent = 陳美玲 · 通知已抄送代理人信箱</p>
+      </section>
+
+      <!-- 人：僅自己看 -->
       <article class="bubble me private">
-        <div class="meta">
-          <strong>王小明</strong>
-          <time>17:13</time>
-        </div>
+        <div class="meta"><strong>王小明</strong><time>17:13</time></div>
         <p>醫生回診，先跟自己留個底。</p>
         <div class="vis private">僅自己看</div>
       </article>
+
+      <section class="sys dim" aria-label="系統互動">
+        <div class="sys-kicker">隱私</div>
+        <p class="sys-title">此則未進共用庫</p>
+        <p class="sys-body">僅申請人個人空間可見 · 簽核畫面不渲染此格</p>
+      </section>
+
     </main>
 
     <footer class="dock">
-      <!-- 下方：不要欄位按鈕；只打字＋可見範圍 -->
       <div class="visibility" role="group" aria-label="可見範圍">
         <button type="button" class="vis-opt" data-vis="private">自己看</button>
         <button type="button" class="vis-opt on" data-vis="public">公開</button>
