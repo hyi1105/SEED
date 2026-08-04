@@ -26,6 +26,7 @@
 | 平行關＋Delegate | **平行關禁止 Delegate** |
 | cc_system／fyi_system | **收件人可以打開該單** |
 | Owner vs Admin | **owner＝form full control**；**admin＝item full control，不能改表單設計** |
+| IT Administrator | **`it_admin`**：一次管所有 Form；無 owner／離職／無人維護 → 整份 **archive** 或 **export** |
 
 ---
 

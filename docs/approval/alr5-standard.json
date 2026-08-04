@@ -1,6 +1,6 @@
 {
   "standard_id": "ALR5",
-  "standard_version": "0.2.0",
+  "standard_version": "0.2.1",
   "lang": "zh-Hant",
   "title": "ALR5 簽核標準（功能／情境／JSON 互通）",
   "purpose": "讓不同系統用同一套欄位與檢查清單交換申請單 JSON；畫面「ALR5功能」供人一眼看懂；本檔可整份貼給新 AI 實作同等互傳。",
@@ -176,6 +176,11 @@
         "id": "owner",
         "label": "表單擁有者／設計者",
         "scenario": "設計表單；對 form 為 full control"
+      },
+      {
+        "id": "it_admin",
+        "label": "IT Administrator",
+        "scenario": "可一次管理所有 Form；無 owner／owner 離職／無人維護的 form 可整份 archive 或 export"
       },
       {
         "id": "admin",
@@ -358,7 +363,8 @@
       "rules": [
         "參與者：creator、requester、cc、fyi、approvers",
         "cc_system／fyi_system／stage_notify 收件人也可以打開該單",
-        "owner／admin／super_user／audit 依角色範圍"
+        "owner／admin／super_user／audit 依角色範圍",
+        "it_admin：可看到所有 Form 資產（治理用）"
       ],
       "json": [
         "creator",
@@ -424,17 +430,21 @@
     },
     {
       "id": "form_owner_vs_admin",
-      "title": "Owner（表單）vs Admin（單據）",
+      "title": "Owner／Admin／IT Administrator",
       "scenario": "設計表單的人是 owner；admin 不能動表單設計，但對每一張申請單有 full control。",
       "rules": [
         "owner：對 form full control（欄位、流程、預設、權限範本）",
         "admin：對 item full control（改資料、決定該 item 權限）；不可改表單設計",
-        "admin 編輯必留版本"
+        "admin 編輯必留版本",
+        "it_admin：一次管理所有 Form；無主／離職／無人維護可整份 archive 或 export"
       ],
       "json": [
         "meta.owner",
         "item_permissions",
-        "form_schema"
+        "form_schema",
+        "it_admin",
+        "form.archived",
+        "form_export"
       ]
     },
     {
@@ -466,6 +476,26 @@
       "json": [
         "form_schema.fields[].acl",
         "item_permissions"
+      ]
+    },
+    {
+      "id": "it_admin_forms",
+      "title": "IT Administrator 全域表單治理",
+      "scenario": "公司沒有 owner、owner 離職、或表單沒人維護時，IT 可一次管所有 Form，整份 archive 或 export。",
+      "rules": [
+        "角色 id：it_admin",
+        "可一次性管理／瀏覽所有 Form（跨 owner）",
+        "適用：無 owner、owner 已離職、無人維護的 form",
+        "可對整個 form 執行 archive（表單級軟下架／封存）",
+        "可對整個 form 執行 export（匯出表單定義＋相關資料範圍待補）",
+        "與 owner 差別：owner 管自己的 form 設計；it_admin 是平台治理／救火",
+        "與 admin 差別：admin 管 item；it_admin 管 form 資產存續（archive／export）"
+      ],
+      "json": [
+        "meta.owner",
+        "form_registry",
+        "form.archived",
+        "form_export"
       ]
     }
   ],
@@ -722,6 +752,11 @@
       "id": "chk_field_schema",
       "required": true,
       "label": "欄位具 type／required／required_when／required_from_level／acl"
+    },
+    {
+      "id": "chk_it_admin",
+      "required": true,
+      "label": "具 it_admin：可跨 Form 治理；無主／無人維護 form 可 archive／export"
     }
   ],
   "open_questions": [
@@ -754,6 +789,21 @@
       "id": "q_owner_multiple",
       "severity": "low",
       "question": "一個 form 可否多個 owner／owner 群組？"
+    },
+    {
+      "id": "q_it_admin_can_design",
+      "severity": "medium",
+      "question": "it_admin 對無主 form 能否改派新 owner、或暫時編輯表單設計？還是只能 archive／export？"
+    },
+    {
+      "id": "q_it_admin_export_scope",
+      "severity": "medium",
+      "question": "export 範圍：僅 form 定義、還是含歷史 items／附件？"
+    },
+    {
+      "id": "q_it_admin_archive_items",
+      "severity": "low",
+      "question": "form archive 後，進行中的 items 要一併凍結、仍可簽完、還是強制 Cancel？"
     }
   ],
   "logic_risk_warnings": [
@@ -822,6 +872,10 @@
     {
       "id": "d_owner_vs_admin",
       "decision": "owner=form full control；admin=item full control 且不能改表單設計"
+    },
+    {
+      "id": "d_it_admin",
+      "decision": "it_admin 可一次管理所有 Form；無 owner／離職／無人維護之 form 可整份 archive 或 export"
     }
   ],
   "resolved_questions": [

@@ -33,7 +33,7 @@ note: 口頭對談整理進本檔；以 diff 確認。尚未口頭確認的區�
 | 用途 | （待補） |
 | 與其他簽核系統關係 | （待補：是否要整合／取代／並存） |
 | 資料交換 | 以 JSON／API 為主（與現行 SEED 申請單 document JSON 對齊方向） |
-| 權限模型摘要 | 單據參與者＋`cc_system`／`fyi_system` 收件人可見；`owner`＝form 全控；`admin`＝item 全控（不能改表單設計）；`super_user` 結案後專欄；`audit` 唯讀 |
+| 權限模型摘要 | 單據參與者＋sys 收件可見；`owner`＝form 全控；`admin`＝item 全控；`it_admin`＝全 Form 治理（無主可 archive／export）；`super_user`／`audit` 另計 |
 
 ---
 
@@ -60,6 +60,7 @@ note: 口頭對談整理進本檔；以 diff 確認。尚未口頭確認的區�
 | 你說的概念 | 建議角色 id | 建議顯示名稱 | 一句話 |
 |------------|-------------|--------------|--------|
 | 設計表單的人 | `owner` | 表單擁有者 | 對 **form** full control（欄位／流程／權限範本） |
+| IT Administrator | `it_admin` | IT 管理員 | **一次管理所有 Form**；無 owner／owner 離職／無人維護 → 整份 **archive** 或 **export** |
 | Admin（單據） | `admin` | 單據管理員 | **不能改表單設計**；對 **item** full control（改資料、決該單權限）；編輯留版本 |
 | Super user | `super_user` | 進階經辦 | 可看符合條件／全部單；簽核完畢後仍可編**專門開給他的欄位** |
 | Audit | `audit` | 稽核 | **只能看**申請單，不可編、不可簽 |
@@ -78,6 +79,7 @@ note: 口頭對談整理進本檔；以 diff 確認。尚未口頭確認的區�
 | `stage_notifies[]` | 強調「關卡通過才通知」，與送出時的 `cc`、結案的 `fyi` 分開 |
 | `fyi` / `fyi_system` | 業界常用 FYI＝知會、不需簽核；同樣用 `_system` 表鎖定 |
 | `owner` | 表單設計者；form full control |
+| `it_admin` | IT：跨所有 Form 治理；無主 form 可 archive／export |
 | `admin` | 單據管理員；item full control；**不能改表單設計** |
 | `super_user` | 事後補登欄位（發票等） |
 | `audit` | 唯讀稽核 |
@@ -98,6 +100,7 @@ note: 口頭對談整理進本檔；以 diff 確認。尚未口頭確認的區�
 | `fyi` | 整張都簽完後通知；通常是確定要接著做事的人；可空或有預設 |
 | `fyi_system` | 結案知會的系統鎖定名單，Admin 決定，不可編 |
 | `owner` | **設計表單**的人：對 form full control |
+| `it_admin` | **IT Administrator**：可一次管理所有 Form；無 owner／離職／無人維護的 form 可整份 archive 或 export |
 | `admin` | **單據**管理員：不能改表單設計；對 item full control（改資料、決該單權限）；每次編輯留版本 |
 | `super_user` | 可看符合條件或全部申請單；簽核已完成後，仍可編輯**表單專門開放給 super_user 的欄位**（例：退貨單最後回填發票號碼） |
 | `audit` | 稽核：只能純粹查看申請單，不能改、不能簽 |
@@ -172,6 +175,7 @@ note: 口頭對談整理進本檔；以 diff 確認。尚未口頭確認的區�
 | 角色 | 可見範圍 |
 |------|----------|
 | `owner` | 其所設計表單相關單（及設計權） |
+| `it_admin` | **所有 Form**（治理）；尤其無主／無人維護者 |
 | `admin` | 所管範圍之申請單 item（不可改表單設計） |
 | `super_user` | **符合條件**的申請單，或設定為可看**全部**（依表單／條件設定） |
 | `audit` | 依稽核範圍可看的申請單（唯讀；範圍待補：全部 or 條件） |
@@ -185,17 +189,21 @@ note: 口頭對談整理進本檔；以 diff 確認。尚未口頭確認的區�
 | `approver` | 自己在簽核鏈上的單 | 通常否（待補意見欄） | ✅ 輪到自己時 approve／reject | 否 | 關卡推進 |
 | `cc`／`fyi` 收件人 | 被列入的單 | 否 | 否 | 否 | 知會 |
 | `owner` | 所設計表單 | 設計期欄位／流程 | — | ✅ form full control | 設計表單 |
+| `it_admin` | 所有 Form | 治理檢視 | — | 跨 Form；無主可 **archive／export** | 平台救火 |
 | `admin` | 所管範圍 | **全部欄位**，含**已完成簽核**的單 | 可代操作（item 全控） | ❌ 不能改表單設計 | 每次編輯**必留版本**；可決單一 item 權限 |
 | `super_user` | 條件／全部（設定） | 僅 **`super_user_fields`**（表單設計時開給他的欄） | 否 | 否 | **簽核完畢後仍可編**這些欄（例：發票號碼） |
 | `audit` | 稽核範圍內 | ❌ 純看 | ❌ | 否 | 不可改任何資料 |
 
-### 3.3 `owner` vs `admin`（定案）
+### 3.3 `owner` vs `admin` vs `it_admin`（定案）
 
 | 角色 | 範圍 | 規則 |
 |------|------|------|
-| `owner` | **form** | 設計表單的人；對表單 **full control**（欄位、流程、預設、權限範本） |
-| `admin` | **item** | **不能改表單設計**；對申請單 **full control**（改資料、決定該 item 權限）；含已完成單 |
+| `owner` | **form** | 設計表單的人；對自己的表單 **full control** |
+| `admin` | **item** | **不能改表單設計**；對申請單 **full control**（改資料、決定該 item 權限） |
+| `it_admin` | **全平台 Form** | 可**一次管理所有 Form**；當 **沒有 owner、owner 離職、無人維護** 時，可對該 form **整份 archive** 或 **export** |
 | 版本 | item 編輯 | admin／owner 若改單據資料，**每一次編輯都留版本** |
+
+> `it_admin` ≠ 日常改單的 `admin`：前者是表單資產治理／救火；後者是單據資料與 item 權限。
 
 ### 3.3b 欄位型別／必填／欄位權限（定案骨架）
 
