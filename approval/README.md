@@ -9,16 +9,13 @@
 
 ## 怎麼開（手機優先）
 
-「本機 serve」是給 **雲端 Agent／你的電腦** 用的；**手機開不了 `127.0.0.1`**（那是對方機器自己）。
-
 | 你在哪 | 怎麼開 |
 |--------|--------|
-| **手機／任何瀏覽器** | 合併進 `main` 後：https://hyi1105.github.io/SEED/approval/ （走 **SEED 的 Pages**，不是 Approval 的） |
-| **還沒合併時** | https://raw.githack.com/hyi1105/SEED/cursor/approval-local-real-237c/docs/approval/index.html |
-| **電腦本機開發** | `bash approval/scripts/serve.sh` → http://127.0.0.1:8765/ |
+| **手機** | https://hyi1105.github.io/SEED/approval/ |
 
-可執行檔同步放在 `docs/approval/`（SEED Pages 只發佈 `docs/`）。  
-⚠️ 不要用 `file://` 或 GitHub Raw 直接開（會變純文字／fetch 失敗）。
+**現況：** 純對話**畫面草稿**（對齊假想圖）。傳送／簽核等功能先不做，畫面定了再接。
+
+可執行檔在 `docs/approval/`（SEED Pages 發佈 `docs/`）。
 
 ## 已做成的關卡能力
 

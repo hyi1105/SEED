@@ -3,69 +3,69 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Approval｜簽核對話</title>
+  <title>Approval｜對話畫面草稿</title>
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
-  <div class="app" id="app">
-    <header class="topbar">
-      <div class="topbar-text">
-        <h1 id="main-title">簽核｜請假申請</h1>
-        <p class="sub" id="main-sub">純對話 · 框內欄位受控</p>
-      </div>
-      <div class="topbar-actions">
-        <select id="login-select" aria-label="登入身分"></select>
-        <button type="button" class="ghost" id="btn-reset" title="重設">重設</button>
-      </div>
+  <div class="phone">
+    <header class="top">
+      <h1>簽核｜請假申請</h1>
+      <p>畫面草稿 · 功能稍後再接</p>
     </header>
 
-    <div class="thread" aria-label="簽核對話">
-      <div class="boxes" id="boxes"></div>
-    </div>
+    <main class="chat" aria-label="對話草稿">
+      <!-- 申請人訊息：框內嵌欄位標籤 -->
+      <article class="bubble me">
+        <div class="meta"><strong>王小明</strong><time>17:02</time></div>
+        <p>請幫我簽一下，明天上午請假。</p>
+        <div class="tags">
+          <div class="tag"><span>假別：</span><em>事假</em></div>
+          <div class="tag"><span>日期：</span><em>明天（1 天）</em></div>
+        </div>
+      </article>
+
+      <!-- 簽核槽 1 -->
+      <article class="bubble">
+        <div class="meta"><strong>簽核</strong><time>17:10</time></div>
+        <div class="tags">
+          <div class="tag approver">
+            <span>Approver1：</span><em>林主管</em>
+          </div>
+          <div class="tag wait">
+            <span>（等待申請人送出）</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- 簽核槽 2＋申請人回覆並列感：分開兩泡 -->
+      <article class="bubble">
+        <div class="meta"><strong>簽核</strong><time>17:10</time></div>
+        <div class="tags">
+          <div class="tag approver">
+            <span>Approver2：</span><em>嚴協理</em>
+          </div>
+          <div class="tag wait">
+            <span>（等待申請人送出）</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="bubble me">
+        <div class="meta"><strong>王小明</strong><time>17:12</time></div>
+        <p>有，陳美玲已同意代理。</p>
+      </article>
+    </main>
 
     <footer class="dock">
-      <div class="compose-fields" id="compose-fields"></div>
-      <form class="composer" id="composer">
-        <input type="text" id="msg" placeholder="輸入一段訊息" autocomplete="off" />
-        <button type="submit">傳送</button>
+      <form class="composer" id="composer" action="#">
+        <input type="text" placeholder="輸入一段訊息" readonly />
+        <button type="button">傳送</button>
       </form>
-      <div class="dock-meta">
-        <label class="teams-opt">
-          <input type="checkbox" id="teams-notify" />
-          Teams 通知
-        </label>
-        <span id="status-chip">draft</span>
-      </div>
     </footer>
   </div>
-
-  <div class="sheet hidden" id="sheet" role="dialog" aria-modal="true">
-    <div class="sheet-card">
-      <h3 id="sheet-title">操作</h3>
-      <p id="sheet-desc"></p>
-      <ul id="sheet-actions"></ul>
-      <button type="button" class="ghost" id="sheet-close">關閉</button>
-    </div>
-  </div>
-
-  <div class="sheet hidden" id="profile" role="dialog" aria-modal="true">
-    <div class="sheet-card">
-      <h3 id="profile-title">個人資料</h3>
-      <dl id="profile-body"></dl>
-      <button type="button" class="ghost" id="profile-close">關閉</button>
-    </div>
-  </div>
-
-  <div class="sheet hidden" id="pick-person" role="dialog" aria-modal="true">
-    <div class="sheet-card">
-      <h3 id="pick-title">選人</h3>
-      <p id="pick-desc"></p>
-      <ul id="pick-list"></ul>
-      <button type="button" class="ghost" id="pick-close">取消</button>
-    </div>
-  </div>
-
-  <div class="toast hidden" id="toast" role="status"></div>
-  <script src="./app.js" type="module"></script>
+  <script>
+    // 畫面草稿：刻意不做功能
+    document.getElementById("composer").addEventListener("submit", (e) => e.preventDefault());
+  </script>
 </body>
 </html>
