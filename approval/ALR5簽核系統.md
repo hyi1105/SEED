@@ -297,6 +297,7 @@ note: 口頭對談整理進本檔；以 diff 確認。尚未口頭確認的區�
 | 流程 | 委派出去 → 被委派人**確認**後 → **回到該階原簽核者**身上 |
 | 層層委派 | 若再委派，則**層層確認回來**後，才回到該階簽核者 |
 | 與 Change 差別 | Change＝換掉簽核者；Delegate＝臨時外加確認，簽核責任仍回到原當階簽核者 |
+| 與「指派代理人」差別 | 指派代理人＝流程外、依時段跨單代簽（§4.9）；Delegate＝單內臨時確認 |
 
 示意：
 
@@ -519,6 +520,7 @@ creator 開單／填單（可代填；requester 可為另一人）
 | **Return** | `1,2,3…` | Current approver（等） | 退回上一階／上上階／creator／requester；退到人手上常→`0` |
 | **Change** | `1,2,3…` | 當階簽核者、admin、creator、requester | 換簽核人 |
 | **Delegate** | `1,2,3…` | Current approver（**Admin 決定該階開不開**） | 臨時加確認人；確認後層層回到原當階簽核者 |
+| **指派代理人**（流程外） | — | 本人／admin（待補） | 設定代理起迄；未簽關改代理人；`comment1_sys` 等備註原簽核者 |
 | **Cancel** | `1,2,3…`（進行中） | Current approver；**另 creator／requester／admin** | →`cancelled`，`current_level=-1`；通知策略見 Admin |
 | **Notify** | （多階段） | 有權限者／admin | 手動通知＋`notification_logs` |
 | **Resubmit** | `-1` | `creator`／`requester`／`admin` | Cancel 後重送（可與 Submit 同一動作） |
@@ -565,6 +567,12 @@ creator 開單／填單（可代填；requester 可為另一人）
 
 - 臨時加確認人；確認後回到原當階簽核者；可層層委派再層層回來
 - **Admin 決定該階段能不能委派**
+- 不同於 §4.9 **指派代理人**（請假／長假跨單代簽）
+
+### 6.7c 指派代理人（流程外）
+
+- 見 §4.9
+- 代理開始／結束可設；期間內未簽關改代理人；系統欄（如 `comment1_sys`）備註原簽核者；非 admin 不可編系統欄
 
 ### 6.8 Cancel
 
@@ -671,6 +679,8 @@ creator 開單／填單（可代填；requester 可為另一人）
 | 狀態 | `system.status` | `new`／`draft`／`in_process`／`completed`／`denied`／`cancelled` |
 | 目前關卡 | `system.current_level` | 空＝新申請；`0`＝creator／requester；`1…`＝簽核關；`9999`＝完成；`-1`＝取消 |
 | 委派鏈 | `delegation_stack[]`（建議） | 層層委派／確認回來 |
+| 指派代理人 | `proxy_assignment`（人員層） | start_at／end_at／principal／agent |
+| 代簽備註原簽核者 | 例：`comment1_sys` | 系統欄；非 admin 不可編 |
 | 軟刪除 | `archived` 或同等旗標 | Archive 於 level `0` |
 | 動作 | `actions[]` | save／submit／approve／reject／return／change／cancel／notify… |
 | 操作 log | `logs[]` | |
@@ -682,6 +692,10 @@ creator 開單／填單（可代填；requester 可為另一人）
 
 ## 10. 待決問題
 
+- [ ] 指派代理人：誰可設（本人 only／需主管核准／僅 admin）？
+- [ ] 代理結束後未簽關是否自動改回原簽核者？
+- [ ] 代理期間新建的單 vs 已存在未簽單，是否同一套改派規則？
+- [ ] `comment1_sys` 為舉例欄名，正式系統備註欄 id 是否固定？
 - [ ] `current_level` 空與 `0` 邊界：第一次 SAVE 前是否一律 null？
 - [ ] Denied 時 `current_level` 停在拒件關還是另定值？
 - [ ] Archive 軟刪後列表／還原／與 Cancel 差異
@@ -707,3 +721,4 @@ creator 開單／填單（可代填；requester 可為另一人）
 | 2026-08-04 | 欄位主名：建立者改為舊系統慣用 `creator`（不再以 preparer 為主） |
 | 2026-08-04 | 狀態五態＋動作 SAVE／Submit／Approve／Reject／Return／Change／Cancel／Notify；通知客製與 notification_logs |
 | 2026-08-04 | `current_level`：空／0／1…／9999／-1；Archive；Delegate 層層回來；Cancel 後可重送；cancelled 正式列入 |
+| 2026-08-04 | 流程外指派代理人：起迄時段、未簽改代簽、`comment1_sys` 備註原簽核者、系統欄非 admin 不可編 |
