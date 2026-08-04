@@ -5,8 +5,10 @@
     "form_id": "leave_request_v1",
     "form_version": "1.0.0",
     "title": "請假申請書",
+    "creator": "王小明",
+    "location": "",
     "lang": "zh-Hant",
-    "note": "ALR5：兩層導覽（選表單→申請／設計表單表格編輯）；印章下按鈕；操作者在 sys；狀態只顯示；測試下拉變窄。"
+    "note": "ALR5：列表暗色＋名稱／建立者；設計拆系統欄位／內容欄位；簽核關 step_N 可刪。"
   },
   "actor": {
     "id": "u_wang",
@@ -14,10 +16,10 @@
     "role": "requester"
   },
   "roles": [
-    { "id": "requester", "label": "申請人／需求人", "person": { "id": "u_wang", "name": "王小明" }, "stamp_id": "applicant" },
-    { "id": "approver_1", "label": "代理人（level 1）", "person": { "id": "u_chen", "name": "陳美玲" }, "stamp_id": "agent" },
-    { "id": "approver_2", "label": "課長（level 2）", "person": { "id": "u_lin", "name": "林課長" }, "stamp_id": "manager" },
-    { "id": "approver_3", "label": "協理（level 3）", "person": { "id": "u_yen", "name": "嚴協理" }, "stamp_id": "director" },
+    { "id": "requester", "label": "申請人／需求人", "person": { "id": "u_wang", "name": "王小明" }, "stamp_id": "step_0" },
+    { "id": "approver_1", "label": "代理人（level 1）", "person": { "id": "u_chen", "name": "陳美玲" }, "stamp_id": "step_1" },
+    { "id": "approver_2", "label": "課長（level 2）", "person": { "id": "u_lin", "name": "林課長" }, "stamp_id": "step_2" },
+    { "id": "approver_3", "label": "協理（level 3）", "person": { "id": "u_yen", "name": "嚴協理" }, "stamp_id": "step_3" },
     { "id": "admin", "label": "Admin", "person": { "id": "u_admin", "name": "系統管理員" }, "stamp_id": null }
   ],
   "ui": {
@@ -28,7 +30,7 @@
       { "id": "alr5", "label": "ALR5功能" }
     ],
     "sys_fields_aria": "系統欄位（報表用）",
-    "sys_hint": "測試：上方可手動切角色與 current_level；切到 level 2 會自動核准 level 1。印章下方為動作按鈕；目前操作者在下方系統欄位；狀態只顯示不可點。",
+    "sys_hint": "測試：上方可手動切角色與 current_level；切到 level 2 會自動核准 level 1。印章下方為動作按鈕；系統欄位含 Creator／Requester／Approval_n_*；狀態只顯示不可點。",
     "empty_mark": "—",
     "pending_stamp_label": "尚未蓋印",
     "actions_title": "操作",
@@ -54,8 +56,9 @@
     { "id": "cancelled", "label": "Cancelled", "tip": "已取消", "level": -1, "submitted_at": null, "completed_at": null }
   ],
   "fields": {
-    "applicant": { "type": "text", "label": "申請人", "value": "王小明" },
+    "applicant": { "kind": "content", "type": "text", "label": "申請人", "value": "王小明" },
     "leave_type": {
+      "kind": "content",
       "type": "dropdown",
       "label": "假別",
       "value": "事假",
@@ -66,9 +69,9 @@
         { "value": "其他", "label": "其他" }
       ]
     },
-    "leave_date": { "type": "text", "label": "起始日", "value": "明天" },
-    "days": { "type": "number", "label": "天數", "value": "1" },
-    "agent": { "type": "text", "label": "代理人", "value": "陳美玲" }
+    "leave_date": { "kind": "content", "type": "text", "label": "起始日", "value": "明天" },
+    "days": { "kind": "content", "type": "number", "label": "天數", "value": "1" },
+    "agent": { "kind": "content", "type": "text", "label": "代理人", "value": "陳美玲" }
   },
   "body": {
     "paragraphs": [
@@ -93,7 +96,7 @@
     "title": "簽核",
     "columns": [
       {
-        "id": "director",
+        "id": "step_3",
         "label": "協理",
         "level": 3,
         "role": "approver_3",
@@ -101,7 +104,7 @@
         "stamp": { "name": "嚴", "mark": null, "time": null, "comment": "", "pending": true }
       },
       {
-        "id": "manager",
+        "id": "step_2",
         "label": "課長",
         "level": 2,
         "role": "approver_2",
@@ -109,7 +112,7 @@
         "stamp": { "name": "林", "mark": null, "time": null, "comment": "", "pending": true }
       },
       {
-        "id": "agent",
+        "id": "step_1",
         "label": "代理人",
         "level": 1,
         "role": "approver_1",
@@ -117,7 +120,7 @@
         "stamp": { "name": "陳", "mark": null, "time": null, "comment": "", "pending": true }
       },
       {
-        "id": "applicant",
+        "id": "step_0",
         "label": "申請",
         "level": 0,
         "role": "requester",

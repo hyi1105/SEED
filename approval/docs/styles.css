@@ -809,10 +809,13 @@ table.inkan-table td {
   border: 1px solid #aceebb;
 }
 
-/* 兩層導覽：列表／設計表單 */
+/* 兩層導覽：列表／設計表單（暗色，對齊上方 tabs） */
 .list-stage {
   padding: 12px 4px 28px;
   font-family: var(--font);
+  color: #e8e4d8;
+  max-width: 920px;
+  margin: 0 auto;
 }
 .list-head {
   display: flex;
@@ -824,11 +827,11 @@ table.inkan-table td {
 }
 .list-title {
   margin: 0 0 12px;
-  font-family: var(--doc);
-  font-size: 18px;
+  font-family: var(--font);
+  font-size: 17px;
   font-weight: 700;
-  letter-spacing: 0.06em;
-  color: var(--ink);
+  letter-spacing: 0.04em;
+  color: #f0ebe0;
 }
 .list-head .list-title {
   margin: 0;
@@ -837,7 +840,7 @@ table.inkan-table td {
   margin: 12px 0 0;
   font-size: 12px;
   line-height: 1.5;
-  color: #8a8274;
+  color: #8a8a8a;
 }
 .layer-back {
   margin: 0 0 12px;
@@ -846,7 +849,7 @@ table.inkan-table td {
   appearance: none;
   border: 0;
   background: transparent;
-  color: #4a6fa5;
+  color: #9ab0d0;
   font-family: var(--font);
   font-size: 13px;
   font-weight: 600;
@@ -855,71 +858,99 @@ table.inkan-table td {
 }
 .layer-back-btn:hover {
   text-decoration: underline;
+  color: #c5d4ec;
 }
 .mgmt-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
-  background: #fffdf8;
-  border: 1px solid #d2caba;
+  background: #1e1e1e;
+  border: 1px solid #3a3a3a;
+  border-radius: 8px;
+  overflow: hidden;
+  color: #e8e4d8;
 }
 .mgmt-table th,
 .mgmt-table td {
-  border: 1px solid #e0d8c8;
-  padding: 7px 8px;
+  border: 1px solid #2e2e2e;
+  padding: 10px 12px;
   text-align: left;
   vertical-align: middle;
   word-break: break-word;
+  color: #e8e4d8;
 }
 .mgmt-table thead th {
-  background: #f3efe6;
+  background: #121212;
   font-weight: 650;
-  color: #3a342c;
+  color: #cfcfcf;
   font-size: 12px;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
+}
+.mgmt-table tbody tr:hover td {
+  background: #252525;
+}
+.mgmt-table .muted-cell {
+  color: #8a8a8a;
+  font-size: 12px;
 }
 .mgmt-table.edit-table th {
-  width: 7em;
-  background: #f7f3eb;
+  width: 8.5em;
+  background: #181818;
   font-weight: 600;
-  color: #5a5348;
+  color: #b8b0a4;
 }
 .cell-input {
   width: 100%;
   box-sizing: border-box;
   font-family: var(--font);
   font-size: 13px;
-  padding: 4px 6px;
-  border: 1px solid #c8c0b0;
-  border-radius: 4px;
-  background: #fff;
-  color: #1a1814;
+  padding: 6px 8px;
+  border: 1px solid #3a3a3a;
+  border-radius: 6px;
+  background: #161616;
+  color: #e8e4d8;
   text-align: left;
 }
 .cell-input:disabled {
-  background: #f3efe6;
-  color: #8a8274;
+  background: #1a1a1a;
+  color: #8a8a8a;
+}
+.cell-input:focus {
+  outline: none;
+  border-color: #5a6a9a;
 }
 .table-btn {
   appearance: none;
-  border: 1px solid #5a5348;
-  background: #fffdf8;
-  color: #1a1814;
+  border: 1px solid #3a3a3a;
+  background: #1e1e1e;
+  color: #cfcfcf;
   font-family: var(--font);
   font-size: 12px;
   font-weight: 600;
-  padding: 4px 10px;
-  border-radius: 5px;
+  letter-spacing: 0.04em;
+  padding: 6px 12px;
+  border-radius: 6px;
   cursor: pointer;
   white-space: nowrap;
 }
 .table-btn.primary {
-  background: #1a1814;
-  border-color: #1a1814;
-  color: #fffdf8;
+  background: #f7f3ea;
+  border-color: #f7f3ea;
+  color: #1a1814;
+}
+.table-btn.danger {
+  border-color: #6a3030;
+  color: #e0a0a0;
+  background: #241818;
 }
 .table-btn:active {
   opacity: 0.85;
+}
+.table-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
 }
 .design-section {
   margin: 18px 0 0;
@@ -929,10 +960,29 @@ table.inkan-table td {
   font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.04em;
-  color: var(--ink);
+  color: #f0ebe0;
+}
+.design-section .sec-note {
+  margin: 0 0 8px;
+  font-size: 12px;
+  color: #8a8a8a;
+  line-height: 1.45;
 }
 .design-edit .list-title {
   margin-top: 4px;
+}
+.badge-sys {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid #3a3a3a;
+  color: #9ab0d0;
+  background: #181818;
+  margin-left: 6px;
+  vertical-align: middle;
 }
 
 @media (max-width: 640px) {
