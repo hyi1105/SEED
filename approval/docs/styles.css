@@ -1,11 +1,12 @@
 :root {
   --bg: #101010;
   --feed: #141414;
-  --text: #ececec;
-  --muted: #8e8e8e;
+  --bubble: #2c2c2c;
   --me: #2e3050;
   --me-private: #3a3428;
-  --sys-text: #c5c5c5;
+  --text: #ececec;
+  --muted: #8e8e8e;
+  --sub: #b0b0b0;
   --form: #f3efe6;
   --form-ink: #1c1914;
   --form-line: #d5cdb8;
@@ -47,59 +48,54 @@ html, body {
   background: var(--feed);
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
 }
 
-/* —— 純對話（人／系統都沒有厚卡片框） —— */
-.say {
-  max-width: 92%;
+/* —— 對話泡：人與系統／關卡／版本都用泡泡 —— */
+.bubble {
+  max-width: 88%;
   align-self: flex-start;
+  background: var(--bubble);
+  border-radius: 16px 16px 16px 6px;
+  padding: 9px 12px 10px;
 }
-.say.me {
+.bubble.me {
   align-self: flex-end;
   background: var(--me);
   border-radius: 16px 16px 6px 16px;
-  padding: 9px 12px 10px;
-  max-width: 86%;
 }
-.say.me.private {
+.bubble.me.private {
   background: var(--me-private);
-  box-shadow: inset 0 0 0 1px rgba(201, 163, 90, 0.25);
+  box-shadow: inset 0 0 0 1px rgba(201, 163, 90, 0.28);
 }
-.say.sys {
-  /* 系統＝文件式純文字，不套對話泡框 */
-  padding: 2px 2px;
-  max-width: 100%;
-}
-.who {
+.meta {
   display: flex;
-  gap: 8px;
-  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
   font-size: 11px;
   color: var(--muted);
-  margin-bottom: 3px;
+  margin-bottom: 4px;
 }
-.who strong { font-weight: 600; color: #cfcfcf; }
-.say.sys .who strong { color: #9a9a9a; font-weight: 500; }
-.say p {
+.meta strong { color: #d2d2d2; font-weight: 600; }
+.bubble p {
   margin: 0;
   font-size: 15px;
-  line-height: 1.55;
+  line-height: 1.5;
 }
-.say.sys p {
-  font-family: var(--doc);
-  font-size: 14.5px;
-  line-height: 1.65;
-  color: var(--sys-text);
-  font-weight: 400;
-}
-.mark {
+.bubble p.sub {
   margin-top: 6px;
-  font-size: 11px;
-  color: var(--private);
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--sub);
 }
+.vis {
+  margin-top: 7px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.vis.private { color: var(--private); }
 
-/* —— 主角：申請單欄位（唯一框） —— */
+/* —— 唯一「框」：申請單欄位 —— */
 .form-card {
   align-self: stretch;
   background: var(--form);
@@ -141,9 +137,7 @@ html, body {
   width: 100%;
   outline: none;
 }
-.field .v:focus {
-  box-shadow: 0 1px 0 0 #1c1914;
-}
+.field .v:focus { box-shadow: 0 1px 0 0 #1c1914; }
 .form-note {
   margin: 10px 0 0;
   font-family: var(--font);

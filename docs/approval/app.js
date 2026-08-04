@@ -1,10 +1,11 @@
 (() => {
   let visibility = "public";
-  const opts = document.querySelectorAll(".vis-opt");
-  opts.forEach((btn) => {
+  document.querySelectorAll(".vis-opt").forEach((btn) => {
     btn.addEventListener("click", () => {
       visibility = btn.dataset.vis;
-      opts.forEach((b) => b.classList.toggle("on", b === btn));
+      document
+        .querySelectorAll(".vis-opt")
+        .forEach((b) => b.classList.toggle("on", b === btn));
     });
   });
 
@@ -21,33 +22,30 @@
       now.getMinutes()
     ).padStart(2, "0")}`;
 
-    const article = document.createElement("article");
-    article.className =
-      "say me" + (visibility === "private" ? " private" : "");
-    article.innerHTML = `
-      <div class="who"><strong>我</strong><time></time></div>
+    const me = document.createElement("article");
+    me.className = "bubble me" + (visibility === "private" ? " private" : "");
+    me.innerHTML = `
+      <div class="meta"><strong>我</strong><time></time></div>
       <p></p>
+      <div class="vis"></div>
     `;
-    article.querySelector("time").textContent = time;
-    article.querySelector("p").textContent = text;
-    if (visibility === "private") {
-      const mark = document.createElement("div");
-      mark.className = "mark";
-      mark.textContent = "僅自己看";
-      article.appendChild(mark);
-    }
-    feed.appendChild(article);
+    me.querySelector("time").textContent = time;
+    me.querySelector("p").textContent = text;
+    const vis = me.querySelector(".vis");
+    vis.textContent = visibility === "private" ? "僅自己看" : "公開";
+    if (visibility === "private") vis.classList.add("private");
+    feed.appendChild(me);
 
     const sys = document.createElement("article");
-    sys.className = "say sys";
+    sys.className = "bubble";
     sys.innerHTML = `
-      <div class="who"><strong>系統</strong><time></time></div>
+      <div class="meta"><strong>系統</strong><time></time></div>
       <p></p>
     `;
     sys.querySelector("time").textContent = time;
     sys.querySelector("p").textContent =
       visibility === "private"
-        ? "上一則未進共用庫，只存在個人空間。"
+        ? "上一則未進共用庫，只存在申請人個人空間。"
         : "訊息已加入對話時間軸（公開）。";
     feed.appendChild(sys);
 
