@@ -10,6 +10,7 @@
 
 ## 場次
 
+- 2026-08-04 — 需求記憶：AB 表單＋可設定匯出＋JSON 完全轉移 — 標籤：SEED、Approval、ALR5、AB表單、匯出、JSON、偏好 — [sessions/2026-08-04-alr5-ab-export-json.md](sessions/2026-08-04-alr5-ab-export-json.md)
 - 2026-08-04 — ALR5 v0.2.5：Archive 旗標＋MVC — 標籤：SEED、Approval、ALR5、定案、MVC、Archive — [sessions/2026-08-04-alr5-v025-archive-mvc.md](sessions/2026-08-04-alr5-v025-archive-mvc.md)
 - 2026-08-04 — ALR5 v0.2.4：八題待決拍板 — 標籤：SEED、Approval、ALR5、定案 — [sessions/2026-08-04-alr5-v024-eight-answers.md](sessions/2026-08-04-alr5-v024-eight-answers.md)
 - 2026-08-04 — ALR5 v0.2.3：required_from_level=0 申請人階段 — 標籤：SEED、Approval、ALR5、定案 — [sessions/2026-08-04-alr5-v023-level0.md](sessions/2026-08-04-alr5-v023-level0.md)
@@ -57,6 +58,7 @@
 
 ## 主題
 
+- **ALR5：AB 表單、可設定匯出、JSON 完全轉移**— [topics/alr5-ab-export-json-transfer.md](topics/alr5-ab-export-json-transfer.md)
 - **怎麼跟 Agent 講 UI，少重複改**— [topics/agent-ui-briefing.md](topics/agent-ui-briefing.md)
 - **如何從 Markdown 讀懂 SEED 系統**— [topics/system-guide.md](topics/system-guide.md)
 - **簽核模板工作流（角色、權限、流程、通知）**— [topics/approval-workflow.md](topics/approval-workflow.md)

@@ -46,6 +46,19 @@ note: 口頭對談整理進本檔；以 diff 確認。尚未口頭確認的區�
 
 > 互通驗收看 **M＋C**；V 不強制同一畫面。
 
+### 1c. AB 表單／可設定匯出／JSON 完全轉移（定案方向）
+
+| 項目 | 定案 |
+|------|------|
+| **AB 表單** | **A＝表頭**（`header` 一筆）、**B＝明細**（`lines[]` 多列）；`form_schema.composition=AB`；**使用者設定**完成 |
+| **固定格式匯出** | 給其他公司／系統；用 **`export_profiles[]`** 設定格式與欄位對應；可多 profile；設定也是 JSON |
+| **完全轉移** | form／申請單／匯出設定／權限／流程皆可序列化搬遷 |
+| **自動補齊** | 他系統依 ALR5 JSON 規範，對**缺少的功能或欄位**用標準預設補齊；**未知欄保留** |
+| **設定優先** | 上述能力優先讓使用者自己設定完成，**不靠改程式** |
+| **JSON 要寫好** | `alr5-standard.json` 必須機讀：形狀、預設、checklist、decisions 齊全 |
+
+機器原文：`form_composition`／`export_profiles`／`json_completeness`（standard **0.2.6**）。
+
 ---
 
 ## 2. 角色與名單欄位
@@ -827,10 +840,15 @@ creator 開單／填單（可代填；requester 可為另一人）
 | form archive → items | 進行中 **一律 Cancel** |
 | 簽核後異動標記 | **`post_approval_amended`** 判斷；畫面**明顯小紅點** |
 | 互通架構 | **MVC 語意**：M＝可認證 JSON；C＝功能符合 checklist；V＝各端／AI 自訂畫面 |
+| AB 表單 | **A＝header、B＝lines**；使用者設定；JSON 可轉移 |
+| 固定格式匯出 | **`export_profiles[]`** 設定對應；與完整遷移包分開 |
+| JSON 自動補齊 | 依規範補缺欄／缺功能預設；未知欄保留 |
+| 設定優先 | AB／匯出等讓使用者自己設定完成，不靠改程式 |
 
 ## 10b. 仍待決
 
-（目前無。新問題再往這裡加。）
+- [ ] 明細是否支援列級簽核／列級 ACL，或一律整單簽核？
+- [ ] 匯出檔存放與重送策略（只留 log，還是存檔案）？
 
 ---
 
@@ -853,3 +871,4 @@ creator 開單／填單（可代填；requester 可為另一人）
 | 2026-08-04 | v0.2.3：補定 `required_from_level=0`＝申請人階段起必填（Submit 擋，後續亦必填） |
 | 2026-08-04 | v0.2.4：拍板 Archive≠Cancel、已簽格權限、多 owner、it_admin 補 owner、完整 export、form archive→Cancel、Copy 授權、紅點 |
 | 2026-08-04 | v0.2.5：Archive＝`system.archived` 與 status 無關；admin unarchive 復原；互通 MVC（M＝JSON／C＝功能／V＝自訂畫面） |
+| 2026-08-04 | v0.2.6：AB 表單、可設定 export_profiles、json_completeness 自動補齊；設定優先＋JSON 完全轉移 |

@@ -1,10 +1,10 @@
 {
   "standard_id": "ALR5",
-  "standard_version": "0.2.5",
+  "standard_version": "0.2.6",
   "lang": "zh-Hant",
   "title": "ALR5 簽核標準（功能／情境／JSON 互通）",
-  "purpose": "讓不同系統用同一套欄位與檢查清單交換申請單 JSON；畫面「ALR5功能」供人一眼看懂；本檔可整份貼給新 AI 實作同等互傳。",
-  "ai_prompt_prefix": "你是實作 ALR5 簽核互通的工程 Agent。請嚴格依 standard_version ALR5/0.2.5 與 json_contract／interop_checklist／decisions 實作。狀態、current_level、動作 id 不得自創別名。decisions 已定案不得違反。產出必須通過全部 required=true 檢查。",
+  "purpose": "讓不同系統用同一套欄位與檢查清單交換申請單 JSON；支援 AB 表單（表頭＋明細）、使用者可設定的固定格式匯出、以及依 JSON 規範自動補齊缺少功能／欄位；畫面「ALR5功能」供人一眼看懂；本檔可整份貼給新 AI 實作同等互傳。",
+  "ai_prompt_prefix": "你是實作 ALR5 簽核互通的工程 Agent。請嚴格依 standard_version ALR5/0.2.6 與 json_contract／interop_checklist／decisions／form_composition／export_profiles／json_completeness 實作。狀態、current_level、動作 id 不得自創別名。decisions 已定案不得違反。產出必須通過全部 required=true 檢查；缺欄／缺功能依 json_completeness 用標準預設自動補齊。",
   "status_model": {
     "field": "system.status",
     "values": [
@@ -619,6 +619,56 @@
         "system.status",
         "system.current_level"
       ]
+    },
+    {
+      "id": "ab_form",
+      "title": "AB 表單（表頭 A＋明細 B）",
+      "scenario": "採購／費用等：一張單有表頭，下面多列明細；使用者用設定完成，不必改程式。",
+      "rules": [
+        "A＝header（一筆）；B＝lines（多列）",
+        "form_schema.composition＝AB；header_fields／line_fields 分開定義",
+        "申請單 JSON：header＋lines[]，與 stages／system 並存",
+        "必填／ACL／required_from_level 可分別套在表頭欄與明細欄",
+        "設定可完全以 JSON 轉移"
+      ],
+      "json": [
+        "form_schema.composition",
+        "header_fields",
+        "line_fields",
+        "header",
+        "lines"
+      ]
+    },
+    {
+      "id": "configurable_export",
+      "title": "可設定的固定格式匯出",
+      "scenario": "要固定匯出成指定格式給其他公司或系統；對應與格式用設定完成。",
+      "rules": [
+        "owner／admin 設定 export_profiles[]（格式、編碼、欄位對應、觸發時機）",
+        "同一 form 多 profile",
+        "設定本身是 JSON，可完全轉移",
+        "與平台完整遷移包（d_export_full）分開：前者對外固定格式，後者整包搬家"
+      ],
+      "json": [
+        "form_schema.export_profiles[]",
+        "export_jobs[]",
+        "export_logs[]"
+      ]
+    },
+    {
+      "id": "json_autofill",
+      "title": "依規範自動補齊缺欄／缺功能",
+      "scenario": "對方系統 JSON 較舊或缺欄時，本端依 ALR5 規範補預設，再繼續跑。",
+      "rules": [
+        "缺選用欄→標準預設；未知欄→保留",
+        "缺必填且無法推導→標 incomplete，擋 Submit／Approve 等",
+        "目標：別的系統只要遵守 JSON 規範，就能自動補齊缺少功能或欄位"
+      ],
+      "json": [
+        "schema_version",
+        "json_completeness",
+        "defaults"
+      ]
     }
   ],
   "json_contract": {
@@ -645,7 +695,11 @@
       "post_approval_amended",
       "actor",
       "copied_from",
-      "archived"
+      "archived",
+      "header",
+      "lines",
+      "form_schema",
+      "export_profiles"
     ],
     "system_required_keys": [
       "status",
@@ -763,7 +817,9 @@
       },
       "logs": [],
       "notification_logs": [],
-      "post_approval_amended": false
+      "post_approval_amended": false,
+      "header": {},
+      "lines": []
     }
   },
   "interop_checklist": [
@@ -951,9 +1007,40 @@
       "id": "chk_mvc_interop",
       "required": false,
       "label": "互通驗收以 M（JSON 結構）＋C（功能符合 checklist）為準；V 不強制同一畫面"
+    },
+    {
+      "id": "chk_ab_form",
+      "required": false,
+      "label": "若 composition=AB：具 header／lines 與 header_fields／line_fields"
+    },
+    {
+      "id": "chk_export_profiles",
+      "required": false,
+      "label": "若有對外匯出：export_profiles 為 JSON 設定（欄位對應可轉移）"
+    },
+    {
+      "id": "chk_json_autofill",
+      "required": true,
+      "label": "接收端依 standard 對缺欄／缺功能自動補齊預設；未知欄保留"
+    },
+    {
+      "id": "chk_full_json_transfer",
+      "required": true,
+      "label": "form／item／匯出設定／權限／流程皆可序列化為 JSON 完全轉移"
     }
   ],
-  "open_questions": [],
+  "open_questions": [
+    {
+      "id": "q_ab_line_approve",
+      "priority": "low",
+      "question": "明細列是否支援列級簽核／列級 ACL，或一律整單簽核？"
+    },
+    {
+      "id": "q_export_file_store",
+      "priority": "low",
+      "question": "匯出檔存放與重送策略（只留 log、還是存檔案 blob）？"
+    }
+  ],
   "logic_risk_warnings": [
     {
       "id": "risk_double_complete",
@@ -1080,6 +1167,22 @@
     {
       "id": "d_mvc_interop",
       "decision": "互通採 MVC 語意：M＝可認證的 JSON；C＝功能符合 ALR5 checklist／decisions；V＝各端／AI 自訂畫面，不綁死 UI"
+    },
+    {
+      "id": "d_ab_form",
+      "decision": "支援 AB 表單：A＝表頭 header、B＝明細 lines；由使用者設定完成，JSON 可完全轉移"
+    },
+    {
+      "id": "d_configurable_export",
+      "decision": "對外固定格式匯出以 export_profiles 設定（多 profile、欄位對應）；設定本身是可轉移 JSON"
+    },
+    {
+      "id": "d_json_autofill",
+      "decision": "其他系統依 ALR5 JSON 規範自動補齊缺少功能／欄位（預設＋保留未知欄）；JSON 必須寫清楚可機讀"
+    },
+    {
+      "id": "d_user_config_first",
+      "decision": "AB 表單與匯出格式等優先用設定讓使用者自己完成，不靠改程式"
     }
   ],
   "resolved_questions": [
@@ -1174,6 +1277,18 @@
     {
       "id": "q_mvc_mapping",
       "answer": "是：M＝JSON 資料／結構認證；C＝功能是否符合 ALR5；V＝依需求與 AI 自訂畫面"
+    },
+    {
+      "id": "q_ab_form",
+      "answer": "要：A 表頭＋B 明細；設定完成；JSON 可轉移"
+    },
+    {
+      "id": "q_export_format_config",
+      "answer": "對外固定格式用可設定 export_profiles；與完整遷移包分開"
+    },
+    {
+      "id": "q_json_autofill",
+      "answer": "依 JSON 規範自動補齊缺欄／缺功能；standard 必須寫好機讀預設"
     }
   ],
   "field_schema": {
@@ -1250,7 +1365,8 @@
       "approver_comment": "stages[].approvers[].comment — 每關每位簽核人固定意見欄",
       "proxy_original_note": "stages[].approvers[].proxy_original_note — 代簽時備註原簽核者（系統欄）",
       "stage_fill_fields": "一般 fields[] + required_from_level + acl.editable_by 該關角色"
-    }
+    },
+    "ab_placement": "欄位可宣告 section=header|line；或分列於 header_fields／line_fields"
   },
   "architecture": {
     "pattern": "MVC（互通語意）",
@@ -1269,6 +1385,174 @@
       "meaning": "畫面長相依需求調整；AI 時代可由各端與 AI 自行設計 UI",
       "artifact": "不強制單一畫面；只要能正確讀寫同一套 JSON／動作語意即可互通"
     },
-    "note": "互通驗收看 M＋C；V 不綁死。"
+    "note": "互通驗收看 M＋C；V 不綁死。",
+    "transferability": {
+      "principle": "一切以可完全轉移的 JSON 為準：form 定義、申請單、匯出設定、權限、流程皆可序列化搬遷",
+      "auto_fill": "接收端依 ALR5 JSON 規範／本 standard，對缺少的功能或欄位用預設自動補齊，再與本地擴充合併",
+      "user_config": "AB 表單、匯出格式等優先用設定完成，不靠改程式"
+    }
+  },
+  "form_composition": {
+    "id": "AB_form",
+    "label": "AB 表單（表頭＋明細）",
+    "description": "A＝表頭（header，一張單一筆主檔）；B＝明細（detail／lines，多筆列）。由使用者在 form 設定完成，不必寫死程式。",
+    "parts": [
+      {
+        "id": "A",
+        "role": "header",
+        "json_key": "header",
+        "cardinality": "one",
+        "meaning": "表頭：單據主資料（一筆）",
+        "fields_ref": "form_schema.header_fields[]"
+      },
+      {
+        "id": "B",
+        "role": "detail",
+        "json_key": "lines",
+        "cardinality": "many",
+        "meaning": "明細：可多列（品項／費用列／子項等）",
+        "fields_ref": "form_schema.line_fields[]",
+        "min_rows": 0,
+        "max_rows": null
+      }
+    ],
+    "document_shape": {
+      "header": {
+        "object": "表頭欄位值"
+      },
+      "lines": [
+        {
+          "object": "每一列明細欄位值"
+        }
+      ],
+      "note": "與既有 creator／requester／stages／system 並存；業務資料放 header／lines"
+    },
+    "config_by": [
+      "owner"
+    ],
+    "example": {
+      "form_schema": {
+        "composition": "AB",
+        "header_fields": [
+          {
+            "name": "vendor",
+            "type": "text",
+            "label": "廠商",
+            "required_from_level": 0
+          }
+        ],
+        "line_fields": [
+          {
+            "name": "item_name",
+            "type": "text",
+            "label": "品名",
+            "required_from_level": 0
+          },
+          {
+            "name": "qty",
+            "type": "number",
+            "label": "數量",
+            "required_from_level": 0
+          },
+          {
+            "name": "amount",
+            "type": "number",
+            "label": "金額",
+            "required_from_level": 0
+          }
+        ]
+      },
+      "header": {
+        "vendor": "某某公司"
+      },
+      "lines": [
+        {
+          "item_name": "零件A",
+          "qty": 2,
+          "amount": 100
+        },
+        {
+          "item_name": "零件B",
+          "qty": 1,
+          "amount": 50
+        }
+      ]
+    }
+  },
+  "export_profiles": {
+    "id": "configurable_export",
+    "label": "固定格式匯出（使用者可設定）",
+    "description": "匯出給其他公司或系統的指定格式，由使用者／owner 用設定完成（對應欄位、檔名、分隔、編碼等），設定本身也是 JSON，可完全轉移。",
+    "who_configures": [
+      "owner",
+      "admin"
+    ],
+    "profile_shape": {
+      "id": "string",
+      "label": "string",
+      "target": "對方公司／系統代號",
+      "format": "csv | excel | xml | json | fixed_width | custom",
+      "encoding": "UTF-8 | Big5 | other",
+      "trigger": "manual | on_completed | on_approved_stage | schedule",
+      "include": [
+        "header",
+        "lines",
+        "system",
+        "stages",
+        "attachments_meta"
+      ],
+      "field_map": [
+        {
+          "source": "header.vendor 或 lines[].qty 或 system.doc_no",
+          "target": "對方欄位名／位置",
+          "transform": "optional: trim / date_format / lookup / const"
+        }
+      ],
+      "options": {
+        "delimiter": ",",
+        "header_row": true,
+        "line_mode": "one_row_per_line | flatten"
+      }
+    },
+    "rules": [
+      "匯出設定存成 JSON（export_profiles[]），可隨 form 一併轉移",
+      "同一 form 可有多個 profile（不同公司／系統）",
+      "欄位對應以 source→target 設定，不靠改 code",
+      "與「完整遷移 export」（form＋items＋附件）不同：本節是對外固定格式；遷移包見 d_export_full"
+    ],
+    "json": [
+      "form_schema.export_profiles[]",
+      "export_jobs[]",
+      "export_logs[]"
+    ]
+  },
+  "json_completeness": {
+    "id": "schema_autofill",
+    "label": "依 JSON 規範自動補齊",
+    "principle": "別的系統讀到 ALR5 JSON 時，若缺少功能或欄位，依本 standard／json_contract 的預設自動補齊，再套用本地擴充；不得因缺欄就拒絕整包（除非 required 且無法推導）。",
+    "rules": [
+      "接收端先以 schema_version／status_model_ref 對照本 standard",
+      "缺的選用欄（recommended_keys、可選 feature）→ 填入標準預設（空陣列、false、null、空 object）",
+      "缺的必填語意（status／current_level／doc_no 等）→ 若可從上下文推導則補；否則標 incomplete 並擋流程動作",
+      "未知欄位：保留（forward-compatible），不要丟棄",
+      "較新 standard 的新功能：舊資料補預設後仍可跑舊行為；新 UI／C 可選擇性啟用",
+      "AB 表單：若無 composition，預設視為單層 fields（相容舊單）；有 composition=AB 則要求 header／lines 形狀",
+      "匯出 profile：缺 transform 視為 identity；缺 options 用 format 預設"
+    ],
+    "defaults_ref": {
+      "cc": {
+        "people": [],
+        "groups": [],
+        "emails": []
+      },
+      "logs": [],
+      "notification_logs": [],
+      "post_approval_amended": false,
+      "system.archived": false,
+      "header": {},
+      "lines": [],
+      "export_profiles": [],
+      "stages[].approvers[].comment": ""
+    }
   }
 }
