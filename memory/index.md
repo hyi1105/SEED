@@ -10,6 +10,7 @@
 
 ## 場次
 
+- 2026-08-05 — 簽核階層：level 置左、預設 Approver、可改、notify、mail — 標籤：SEED、Approval、ALR5、簽核階層、stage_notify、mail、UI — [sessions/2026-08-05-alr5-step-notify-mail.md](sessions/2026-08-05-alr5-step-notify-mail.md)
 - 2026-08-05 — 內容欄位：中文說明、型別下拉、ACL／必填面板 — 標籤：SEED、Approval、ALR5、內容欄位、ACL、type、UI — [sessions/2026-08-05-alr5-content-field-acl.md](sessions/2026-08-05-alr5-content-field-acl.md)
 - 2026-08-05 — 簽核階層改水流＋英文欄位＋完整印名 — 標籤：SEED、Approval、ALR5、簽核階層、waterfall、UI — [sessions/2026-08-05-alr5-step-waterfall.md](sessions/2026-08-05-alr5-step-waterfall.md)
 - 2026-08-05 — 設計表單改淺色＋系統欄位回歸 ALR5 規格 — 標籤：SEED、Approval、ALR5、設計表單、淺色、系統欄位 — [sessions/2026-08-05-alr5-design-light-sysfields.md](sessions/2026-08-05-alr5-design-light-sysfields.md)
