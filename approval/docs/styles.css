@@ -1917,6 +1917,18 @@ table.inkan-table td {
   min-height: 44px;
   border-radius: 6px;
 }
+.flow-node.kind-field.flow-field-card {
+  min-width: auto;
+  max-width: 11.5rem;
+  min-height: auto;
+  padding: 8px 12px 10px;
+  border-radius: 999px;
+  background: #fbf6e4;
+  border-color: #c8b060;
+  box-shadow: none;
+  align-items: center;
+  text-align: center;
+}
 .flow-node.selected,
 .flow-node.link-from {
   outline: 2px solid #c45c26;
@@ -1932,6 +1944,11 @@ table.inkan-table td {
   font-weight: 700;
   text-align: center;
   line-height: 1.2;
+}
+.flow-node.flow-field-card .flow-node-label {
+  font-size: 13px;
+  font-weight: 800;
+  margin-bottom: 2px;
 }
 .flow-node-meta {
   font-size: 10px;
@@ -2066,46 +2083,34 @@ table.inkan-table td {
   padding: 8px 0 0;
   border-top: 1px dashed #e0d8c8;
 }
-.flow-node.flow-field-card {
-  min-width: 118px;
-  max-width: 150px;
-  min-height: auto;
-  padding: 8px 10px 6px;
-  border-radius: 8px;
-  align-items: stretch;
-  text-align: left;
-}
 .flow-node.flow-field-card.dash-open {
   outline: 2px solid #3d4a8f;
   outline-offset: 2px;
 }
-.flow-node-type {
-  font-size: 10px;
-  font-weight: 700;
-  color: #5a4a18;
-}
-.flow-node-default {
-  font-size: 10px;
-  color: #6e675c;
-  margin: 2px 0;
-}
 .flow-node-chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 3px;
-  margin-top: 4px;
+  gap: 4px;
+  justify-content: center;
+  margin-top: 2px;
 }
 .flow-node-chip {
-  font-size: 9px;
-  font-weight: 700;
-  padding: 2px 6px;
+  display: inline-flex;
+  align-items: center;
+  font-size: 10px;
+  font-weight: 650;
+  padding: 3px 8px;
   border-radius: 999px;
   background: #ebe4d6;
   color: #5a5348;
+  border: 1px solid #ddd4c4;
+  line-height: 1.2;
+  white-space: nowrap;
 }
 .flow-node-chip.on {
   background: #e8eef8;
   color: #2a3366;
+  border-color: #b8c8e8;
 }
 
 

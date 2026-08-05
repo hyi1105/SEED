@@ -3077,27 +3077,23 @@
         badge.className = "flow-node-badge";
         badge.textContent =
           n.kind === "person" ? "人" : n.kind === "field" ? "欄位" : "文件";
-        el.appendChild(badge);
         const lab = document.createElement("span");
         lab.className = "flow-node-label";
         lab.textContent = n.label;
-        el.appendChild(lab);
         if (n.kind === "field" && n.field_id) {
           const f = doc.fields?.[n.field_id];
           if (f) {
             el.classList.add("flow-field-card");
             if (openFieldId === n.field_id) el.classList.add("dash-open");
-            const typeBadge = document.createElement("span");
-            typeBadge.className = "flow-node-type";
-            typeBadge.textContent = fieldTypeLabel(f.type);
-            el.appendChild(typeBadge);
-            const defPrev = document.createElement("span");
-            defPrev.className = "flow-node-default";
-            defPrev.textContent = "default：" + fieldDefaultPreview(f);
-            el.appendChild(defPrev);
-            appendDropdownToggleChips(el, f);
-            appendFieldStatusChips(el, f);
+            el.appendChild(lab);
+            appendFlowFieldMetaChips(el, f);
+          } else {
+            el.appendChild(badge);
+            el.appendChild(lab);
           }
+        } else {
+          el.appendChild(badge);
+          el.appendChild(lab);
         }
 
         el.addEventListener("pointerdown", (e) => {
@@ -4377,31 +4373,31 @@
     return card;
   }
 
-  function appendDropdownToggleChips(host, f) {
-    if ((f.type || "text") !== "dropdown") return;
-    const chips = document.createElement("div");
-    chips.className = "flow-node-chips flow-node-dd-toggles";
-    [
-      { label: "可空白", on: !!f.allow_blank },
-      { label: "可手填", on: !!f.allow_manual },
-    ].forEach((t) => {
-      const c = document.createElement("span");
-      c.className = "flow-node-chip" + (t.on ? " on" : "");
-      c.textContent = t.label;
-      chips.appendChild(c);
-    });
-    host.appendChild(chips);
+  function appendFlowFieldMetaChip(chips, text, on) {
+    const c = document.createElement("span");
+    c.className = "flow-node-chip" + (on ? " on" : "");
+    c.textContent = text;
+    chips.appendChild(c);
   }
 
-  function appendFieldStatusChips(host, f) {
+  /** 流程圖欄位節點：除顯示名稱外，type／default／規則皆為橢圓燈號 */
+  function appendFlowFieldMetaChips(host, f) {
     const chips = document.createElement("div");
     chips.className = "flow-node-chips";
+    appendFlowFieldMetaChip(chips, fieldTypeLabel(f.type), true);
+    const defPrev = fieldDefaultPreview(f);
+    appendFlowFieldMetaChip(
+      chips,
+      "default：" + defPrev,
+      defPrev !== "—"
+    );
     getFieldRuleChipDefs(f).forEach((def) => {
-      const c = document.createElement("span");
-      c.className = "flow-node-chip" + (def.on() ? " on" : "");
-      c.textContent = def.label();
-      chips.appendChild(c);
+      appendFlowFieldMetaChip(chips, def.label(), def.on());
     });
+    if ((f.type || "text") === "dropdown") {
+      appendFlowFieldMetaChip(chips, "可空白", !!f.allow_blank);
+      appendFlowFieldMetaChip(chips, "可手填", !!f.allow_manual);
+    }
     host.appendChild(chips);
   }
 

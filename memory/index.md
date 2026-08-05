@@ -10,6 +10,7 @@
 
 ## 場次
 
+- 2026-08-05 — 流程圖欄位節點改橢圓燈號風格（同上方材料列） — 標籤：SEED、Approval、ALR5、流程圖、欄位、UI — [sessions/2026-08-05-alr5-field-node-pill-style.md](sessions/2026-08-05-alr5-field-node-pill-style.md)
 - 2026-08-05 — 修復流程圖欄位儀表板 type／可空白／可手填 — 標籤：SEED、Approval、ALR5、下拉、可空白、可手填、流程圖 — [sessions/2026-08-05-alr5-field-dropdown-fix.md](sessions/2026-08-05-alr5-field-dropdown-fix.md)
 - 2026-08-05 — 流程圖欄位儀表板：點方塊編 field／label／權限；JSON 跨平台 — 標籤：SEED、Approval、ALR5、流程圖、欄位儀表板、JSON — [sessions/2026-08-05-alr5-flow-field-dash.md](sessions/2026-08-05-alr5-flow-field-dash.md)
 - 2026-08-05 — 捨棄棋盤改自由流程說明圖（圓人／方欄位／箭頭） — 標籤：SEED、Approval、ALR5、Mail、流程圖、非技術可讀、UI — [sessions/2026-08-05-alr5-flow-diagram.md](sessions/2026-08-05-alr5-flow-diagram.md)
