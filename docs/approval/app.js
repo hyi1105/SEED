@@ -2088,20 +2088,75 @@
 
   /** 整單級／Submit 關（level 0）相關通知 */
   const MAIL_EVENTS_SUBMIT = [
-    { id: "notify_on_submit", label: "送出申請（Submit → cc）" },
-    { id: "notify_on_completed", label: "結案（FYI）" },
-    { id: "notify_on_cancel", label: "取消（Cancel）" },
-    { id: "notify_manual", label: "手動通知（Notify）" },
+    {
+      id: "notify_on_submit",
+      label: "送出申請（Submit → cc）",
+      short: "送出通知",
+      flow_role: "on_submit",
+    },
+    {
+      id: "notify_on_completed",
+      label: "結案（FYI）",
+      short: "結案 FYI",
+      flow_role: "on_complete",
+    },
+    {
+      id: "notify_on_cancel",
+      label: "取消（Cancel）",
+      short: "取消",
+      flow_role: "on_cancel",
+    },
+    {
+      id: "notify_manual",
+      label: "手動通知（Notify）",
+      short: "手動",
+      flow_role: "side",
+    },
   ];
   /** 簽核關（level ≥ 1）相關通知 */
   const MAIL_EVENTS_APPROVE = [
-    { id: "notify_need_approve", label: "輪到本關簽核（請簽）" },
-    { id: "notify_on_stage_pass", label: "本關通過 → stage_notify" },
-    { id: "notify_stage_peers", label: "本關通過／被拒（同關簽核人）" },
-    { id: "notify_on_reject", label: "本關拒件（Reject）" },
-    { id: "notify_on_return", label: "本關退回（Return）" },
-    { id: "notify_manual", label: "手動通知（Notify）" },
-    { id: "notify_overdue", label: "本關逾期" },
+    {
+      id: "notify_need_approve",
+      label: "輪到本關簽核（請簽）",
+      short: "請簽",
+      flow_role: "on_enter",
+    },
+    {
+      id: "notify_on_stage_pass",
+      label: "本關通過 → stage_notify",
+      short: "通過→知會",
+      flow_role: "on_pass",
+    },
+    {
+      id: "notify_stage_peers",
+      label: "本關通過／被拒（同關簽核人）",
+      short: "同關知會",
+      flow_role: "on_pass_peer",
+    },
+    {
+      id: "notify_on_reject",
+      label: "本關拒件（Reject）",
+      short: "拒件",
+      flow_role: "on_reject",
+    },
+    {
+      id: "notify_on_return",
+      label: "本關退回（Return）",
+      short: "退回",
+      flow_role: "on_return",
+    },
+    {
+      id: "notify_manual",
+      label: "手動通知（Notify）",
+      short: "手動",
+      flow_role: "side",
+    },
+    {
+      id: "notify_overdue",
+      label: "本關逾期",
+      short: "逾期",
+      flow_role: "side",
+    },
   ];
 
   function mailEventsForLevel(level) {
@@ -2135,91 +2190,289 @@
     return d.mail_templates;
   }
 
+  function mailTemplateConfigured(t) {
+    return !!(t && ((t.subject && t.subject.trim()) || (t.body && t.body.trim())));
+  }
+
   function summarizeStageMail(col) {
     ensureStageMail(col);
     const evs = mailEventsForLevel(col.level);
     let n = 0;
     evs.forEach((ev) => {
-      const t = col.mail[ev.id];
-      if (t && (t.subject || t.body)) n += 1;
+      if (mailTemplateConfigured(col.mail[ev.id])) n += 1;
     });
     return n ? `Mail ${n}` : "Mail";
+  }
+
+  function createMailEditor(col, ev, onChange) {
+    const t = col.mail[ev.id];
+    const box = document.createElement("div");
+    box.className = "mail-editor";
+    const head = document.createElement("div");
+    head.className = "mail-editor-head";
+    head.innerHTML = `<strong>${ev.short || ev.label}</strong><span class="muted-cell">${ev.id}</span>`;
+    box.appendChild(head);
+
+    const sub = document.createElement("input");
+    sub.className = "cell-input";
+    sub.placeholder = "主旨（可含 {{doc_no}}）";
+    sub.value = t.subject || "";
+    sub.disabled = !!t.locked;
+    sub.addEventListener("change", () => {
+      t.subject = sub.value;
+      persistDesign(doc.meta.form_id, doc);
+      if (onChange) onChange();
+    });
+    box.appendChild(sub);
+
+    const body = document.createElement("textarea");
+    body.className = "cell-input";
+    body.rows = 3;
+    body.placeholder = "內文";
+    body.value = t.body || "";
+    body.disabled = !!t.locked;
+    body.addEventListener("change", () => {
+      t.body = body.value;
+      persistDesign(doc.meta.form_id, doc);
+      if (onChange) onChange();
+    });
+    box.appendChild(body);
+
+    const lab = document.createElement("label");
+    lab.className = "acl-check";
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.checked = !!t.editable && !t.locked;
+    cb.addEventListener("change", () => {
+      t.editable = cb.checked;
+      t.locked = !cb.checked;
+      sub.disabled = !!t.locked;
+      body.disabled = !!t.locked;
+      persistDesign(doc.meta.form_id, doc);
+      if (onChange) onChange();
+    });
+    lab.appendChild(cb);
+    lab.appendChild(document.createTextNode(" 申請人／關卡可改此信範本"));
+    box.appendChild(lab);
+    return box;
+  }
+
+  function createMailFlowNode(ev, col, opts) {
+    const t = col.mail[ev.id];
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className =
+      "mail-flow-node" +
+      (mailTemplateConfigured(t) ? " configured" : "") +
+      (opts?.active ? " active" : "") +
+      (opts?.tone ? ` tone-${opts.tone}` : "");
+    btn.dataset.event = ev.id;
+    const title = document.createElement("div");
+    title.className = "mail-flow-node-title";
+    title.textContent = ev.short || ev.label;
+    const meta = document.createElement("div");
+    meta.className = "mail-flow-node-meta";
+    meta.textContent = mailTemplateConfigured(t) ? "已設定" : "未設定";
+    btn.appendChild(title);
+    btn.appendChild(meta);
+    btn.title = ev.label + "（" + ev.id + "）";
+    if (opts?.onClick) btn.addEventListener("click", opts.onClick);
+    return btn;
+  }
+
+  function createStateFlowNode(label, cls) {
+    const el = document.createElement("div");
+    el.className = "mail-flow-state" + (cls ? " " + cls : "");
+    el.textContent = label;
+    return el;
+  }
+
+  function createFlowArrow(dir) {
+    const el = document.createElement("div");
+    el.className = "mail-flow-arrow" + (dir ? " " + dir : "");
+    el.setAttribute("aria-hidden", "true");
+    el.textContent = dir === "down" ? "↓" : dir === "branch" ? "↳" : "→";
+    return el;
   }
 
   function createStageMailPanel(col) {
     ensureApprovalColumn(col);
     ensureStageMail(col);
     const panel = document.createElement("div");
-    panel.className = "field-rules stage-mail-panel";
+    panel.className = "field-rules stage-mail-panel mail-flow-panel";
+    const lv = Number(col.level);
+    const evById = Object.fromEntries(
+      mailEventsForLevel(lv).map((e) => [e.id, e])
+    );
 
     const tip = document.createElement("p");
     tip.className = "acl-tip";
     tip.textContent =
-      Number(col.level) === 0
-        ? "此關（Submit）可客製送出／結案／取消／手動通知信（ALR5 §7）。"
-        : `level ${col.level} 可客製請簽／通過／拒件／退回／逾期等通知信；stage_notify 收件見上方欄位。`;
+      "流程圖＝這封信在整單／本關的哪個狀態觸發。點信封節點編輯主旨與內文。";
     panel.appendChild(tip);
 
-    const table = document.createElement("table");
-    table.className = "mgmt-table stage-mail-table";
-    table.innerHTML =
-      "<thead><tr><th>event</th><th>subject</th><th>body</th><th>editable</th></tr></thead>";
-    const tb = document.createElement("tbody");
-    mailEventsForLevel(col.level).forEach((ev) => {
-      const t = col.mail[ev.id];
-      const tr = document.createElement("tr");
-      const tdEv = document.createElement("td");
-      tdEv.innerHTML = `<div>${ev.id}</div><div class="muted-cell">${ev.label}</div>`;
-      tr.appendChild(tdEv);
-
-      const tdSub = document.createElement("td");
-      const sub = document.createElement("input");
-      sub.className = "cell-input";
-      sub.placeholder = "主旨（可含 {{doc_no}}）";
-      sub.value = t.subject || "";
-      sub.disabled = !!t.locked;
-      sub.addEventListener("change", () => {
-        t.subject = sub.value;
-        persistDesign(doc.meta.form_id, doc);
-      });
-      tdSub.appendChild(sub);
-      tr.appendChild(tdSub);
-
-      const tdBody = document.createElement("td");
-      const body = document.createElement("textarea");
-      body.className = "cell-input";
-      body.rows = 2;
-      body.placeholder = "內文";
-      body.value = t.body || "";
-      body.disabled = !!t.locked;
-      body.addEventListener("change", () => {
-        t.body = body.value;
-        persistDesign(doc.meta.form_id, doc);
-      });
-      tdBody.appendChild(body);
-      tr.appendChild(tdBody);
-
-      const tdEd = document.createElement("td");
-      const lab = document.createElement("label");
-      lab.className = "acl-check";
-      const cb = document.createElement("input");
-      cb.type = "checkbox";
-      cb.checked = !!t.editable && !t.locked;
-      cb.addEventListener("change", () => {
-        t.editable = cb.checked;
-        t.locked = !cb.checked;
-        sub.disabled = !!t.locked;
-        body.disabled = !!t.locked;
-        persistDesign(doc.meta.form_id, doc);
-      });
-      lab.appendChild(cb);
-      lab.appendChild(document.createTextNode(" 可改"));
-      tdEd.appendChild(lab);
-      tr.appendChild(tdEd);
-      tb.appendChild(tr);
+    // 整單脈絡
+    const spine = document.createElement("div");
+    spine.className = "mail-flow-spine";
+    const cols = (doc.approval?.columns || [])
+      .slice()
+      .sort((a, b) => Number(a.level) - Number(b.level));
+    cols.forEach((c, i) => {
+      if (i) spine.appendChild(createFlowArrow("right"));
+      const n = document.createElement("div");
+      const isCur = c.id === col.id || Number(c.level) === lv;
+      n.className = "mail-flow-spine-step" + (isCur ? " current" : "");
+      n.textContent =
+        Number(c.level) === 0
+          ? "Submit"
+          : `L${c.level} ${c.label || ""}`.trim();
+      spine.appendChild(n);
     });
-    table.appendChild(tb);
-    panel.appendChild(table);
+    if (cols.length) {
+      spine.appendChild(createFlowArrow("right"));
+      spine.appendChild(createStateFlowNode("完成", "done"));
+    }
+    panel.appendChild(spine);
+
+    const flow = document.createElement("div");
+    flow.className = "mail-flow-chart";
+    const editorHost = document.createElement("div");
+    editorHost.className = "mail-flow-editor-host";
+    editorHost.hidden = true;
+    let activeEventId = null;
+
+    const openEditor = (ev) => {
+      if (activeEventId === ev.id) {
+        activeEventId = null;
+        editorHost.hidden = true;
+        editorHost.replaceChildren();
+        paintFlow();
+        return;
+      }
+      activeEventId = ev.id;
+      editorHost.hidden = false;
+      editorHost.replaceChildren();
+      editorHost.appendChild(
+        createMailEditor(col, ev, () => {
+          paintFlow();
+        })
+      );
+      paintFlow();
+    };
+
+    const paintFlow = () => {
+      flow.replaceChildren();
+      const mk = (id, tone) => {
+        const ev = evById[id];
+        if (!ev) return null;
+        return createMailFlowNode(ev, col, {
+          tone,
+          active: activeEventId === id,
+          onClick: () => openEditor(ev),
+        });
+      };
+
+      if (lv === 0) {
+        const row1 = document.createElement("div");
+        row1.className = "mail-flow-row";
+        row1.appendChild(createStateFlowNode("草稿／申請", "start"));
+        row1.appendChild(createFlowArrow("right"));
+        row1.appendChild(mk("notify_on_submit", "go") || createStateFlowNode("Submit"));
+        row1.appendChild(createFlowArrow("right"));
+        row1.appendChild(createStateFlowNode("進入簽核", "mid"));
+        flow.appendChild(row1);
+
+        const row2 = document.createElement("div");
+        row2.className = "mail-flow-row branches";
+        row2.appendChild(createFlowArrow("down"));
+        flow.appendChild(row2);
+
+        const ends = document.createElement("div");
+        ends.className = "mail-flow-branches";
+        const b1 = document.createElement("div");
+        b1.className = "mail-flow-branch";
+        b1.appendChild(createStateFlowNode("結案路徑", "ghost"));
+        b1.appendChild(createFlowArrow("down"));
+        b1.appendChild(mk("notify_on_completed", "ok"));
+        ends.appendChild(b1);
+        const b2 = document.createElement("div");
+        b2.className = "mail-flow-branch";
+        b2.appendChild(createStateFlowNode("取消路徑", "ghost"));
+        b2.appendChild(createFlowArrow("down"));
+        b2.appendChild(mk("notify_on_cancel", "bad"));
+        ends.appendChild(b2);
+        const b3 = document.createElement("div");
+        b3.className = "mail-flow-branch";
+        b3.appendChild(createStateFlowNode("隨時", "ghost"));
+        b3.appendChild(createFlowArrow("down"));
+        b3.appendChild(mk("notify_manual", "side"));
+        ends.appendChild(b3);
+        flow.appendChild(ends);
+      } else {
+        const row1 = document.createElement("div");
+        row1.className = "mail-flow-row";
+        row1.appendChild(createStateFlowNode(`上一關 → L${lv}`, "start"));
+        row1.appendChild(createFlowArrow("right"));
+        row1.appendChild(mk("notify_need_approve", "go"));
+        row1.appendChild(createFlowArrow("right"));
+        row1.appendChild(
+          createStateFlowNode(
+            `等待 ${col.label || "簽核"}`,
+            "mid current-stage"
+          )
+        );
+        flow.appendChild(row1);
+
+        const side = document.createElement("div");
+        side.className = "mail-flow-side";
+        side.appendChild(mk("notify_overdue", "warn"));
+        side.appendChild(mk("notify_manual", "side"));
+        flow.appendChild(side);
+
+        const split = document.createElement("div");
+        split.className = "mail-flow-row";
+        split.appendChild(createFlowArrow("down"));
+        flow.appendChild(split);
+
+        const branches = document.createElement("div");
+        branches.className = "mail-flow-branches";
+
+        const pass = document.createElement("div");
+        pass.className = "mail-flow-branch";
+        pass.appendChild(createStateFlowNode("同意／通過", "ghost"));
+        pass.appendChild(createFlowArrow("down"));
+        pass.appendChild(mk("notify_on_stage_pass", "ok"));
+        pass.appendChild(createFlowArrow("down"));
+        pass.appendChild(mk("notify_stage_peers", "ok"));
+        pass.appendChild(createFlowArrow("down"));
+        pass.appendChild(createStateFlowNode("下一關／完成", "done"));
+        branches.appendChild(pass);
+
+        const rej = document.createElement("div");
+        rej.className = "mail-flow-branch";
+        rej.appendChild(createStateFlowNode("Reject", "ghost"));
+        rej.appendChild(createFlowArrow("down"));
+        rej.appendChild(mk("notify_on_reject", "bad"));
+        rej.appendChild(createFlowArrow("down"));
+        rej.appendChild(createStateFlowNode("Denied", "bad-end"));
+        branches.appendChild(rej);
+
+        const ret = document.createElement("div");
+        ret.className = "mail-flow-branch";
+        ret.appendChild(createStateFlowNode("Return", "ghost"));
+        ret.appendChild(createFlowArrow("down"));
+        ret.appendChild(mk("notify_on_return", "warn"));
+        ret.appendChild(createFlowArrow("down"));
+        ret.appendChild(createStateFlowNode("退回前關／申請人", "mid"));
+        branches.appendChild(ret);
+
+        flow.appendChild(branches);
+      }
+    };
+
+    paintFlow();
+    panel.appendChild(flow);
+    panel.appendChild(editorHost);
     return panel;
   }
 
