@@ -1164,6 +1164,15 @@ table.inkan-table td {
   width: 3.5em;
   text-align: center;
 }
+.stage-mail-panel {
+  margin: 0;
+}
+.stage-mail-table {
+  margin-top: 4px;
+}
+.stage-mail-rules-row > td {
+  background: #f3efe6;
+}
 
 @media (max-width: 640px) {
   .a4 {

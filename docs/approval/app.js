@@ -1843,6 +1843,7 @@
     col.stage_notify = ensureStageNotify(col.stage_notify);
     if (!col.pass_rule) col.pass_rule = "all";
     if (!col.mail || typeof col.mail !== "object") col.mail = {};
+    ensureStageMail(col);
     const name = col.person.name || col.stamp.name || "";
     if (name) {
       col.person.name = name;
@@ -1877,40 +1878,141 @@
     return { people, emails, groups };
   }
 
-  const MAIL_EVENT_DEFS = [
+  /** 整單級／Submit 關（level 0）相關通知 */
+  const MAIL_EVENTS_SUBMIT = [
     { id: "notify_on_submit", label: "送出申請（Submit → cc）" },
-    { id: "notify_need_approve", label: "輪到簽核（請簽）" },
-    { id: "notify_on_stage_pass", label: "關卡通過（stage_notify）" },
-    { id: "notify_stage_peers", label: "本關通過／被拒（同關簽核人）" },
-    { id: "notify_on_reject", label: "拒件（Reject）" },
-    { id: "notify_on_return", label: "退回（Return）" },
-    { id: "notify_on_cancel", label: "取消（Cancel）" },
     { id: "notify_on_completed", label: "結案（FYI）" },
+    { id: "notify_on_cancel", label: "取消（Cancel）" },
     { id: "notify_manual", label: "手動通知（Notify）" },
-    { id: "notify_overdue", label: "逾期通知" },
+  ];
+  /** 簽核關（level ≥ 1）相關通知 */
+  const MAIL_EVENTS_APPROVE = [
+    { id: "notify_need_approve", label: "輪到本關簽核（請簽）" },
+    { id: "notify_on_stage_pass", label: "本關通過 → stage_notify" },
+    { id: "notify_stage_peers", label: "本關通過／被拒（同關簽核人）" },
+    { id: "notify_on_reject", label: "本關拒件（Reject）" },
+    { id: "notify_on_return", label: "本關退回（Return）" },
+    { id: "notify_manual", label: "手動通知（Notify）" },
+    { id: "notify_overdue", label: "本關逾期" },
   ];
 
-  function ensureMailTemplates(d) {
-    if (!Array.isArray(d.mail_templates)) d.mail_templates = [];
-    const byId = new Map(d.mail_templates.map((t) => [t.id, t]));
-    MAIL_EVENT_DEFS.forEach((ev) => {
-      if (!byId.has(ev.id)) {
-        d.mail_templates.push({
-          id: ev.id,
-          label: ev.label,
+  function mailEventsForLevel(level) {
+    return Number(level) === 0 ? MAIL_EVENTS_SUBMIT : MAIL_EVENTS_APPROVE;
+  }
+
+  function ensureStageMail(col) {
+    if (!col.mail || typeof col.mail !== "object") col.mail = {};
+    mailEventsForLevel(col.level).forEach((ev) => {
+      if (!col.mail[ev.id] || typeof col.mail[ev.id] !== "object") {
+        col.mail[ev.id] = {
           subject: "",
           body: "",
           editable: true,
           locked: false,
-        });
+        };
       } else {
-        const t = byId.get(ev.id);
-        if (!t.label) t.label = ev.label;
+        const t = col.mail[ev.id];
         if (t.editable == null) t.editable = true;
         if (t.locked == null) t.locked = false;
+        if (t.subject == null) t.subject = "";
+        if (t.body == null) t.body = "";
       }
     });
+    return col.mail;
+  }
+
+  function ensureMailTemplates(d) {
+    // 保留表單級陣列相容；實際編輯改在各簽核關 Rules
+    if (!Array.isArray(d.mail_templates)) d.mail_templates = [];
     return d.mail_templates;
+  }
+
+  function summarizeStageMail(col) {
+    ensureStageMail(col);
+    const evs = mailEventsForLevel(col.level);
+    let n = 0;
+    evs.forEach((ev) => {
+      const t = col.mail[ev.id];
+      if (t && (t.subject || t.body)) n += 1;
+    });
+    return n ? `Mail ${n}` : "Mail";
+  }
+
+  function createStageMailPanel(col) {
+    ensureApprovalColumn(col);
+    ensureStageMail(col);
+    const panel = document.createElement("div");
+    panel.className = "field-rules stage-mail-panel";
+
+    const tip = document.createElement("p");
+    tip.className = "acl-tip";
+    tip.textContent =
+      Number(col.level) === 0
+        ? "此關（Submit）可客製送出／結案／取消／手動通知信（ALR5 §7）。"
+        : `level ${col.level} 可客製請簽／通過／拒件／退回／逾期等通知信；stage_notify 收件見上方欄位。`;
+    panel.appendChild(tip);
+
+    const table = document.createElement("table");
+    table.className = "mgmt-table stage-mail-table";
+    table.innerHTML =
+      "<thead><tr><th>event</th><th>subject</th><th>body</th><th>editable</th></tr></thead>";
+    const tb = document.createElement("tbody");
+    mailEventsForLevel(col.level).forEach((ev) => {
+      const t = col.mail[ev.id];
+      const tr = document.createElement("tr");
+      const tdEv = document.createElement("td");
+      tdEv.innerHTML = `<div>${ev.id}</div><div class="muted-cell">${ev.label}</div>`;
+      tr.appendChild(tdEv);
+
+      const tdSub = document.createElement("td");
+      const sub = document.createElement("input");
+      sub.className = "cell-input";
+      sub.placeholder = "主旨（可含 {{doc_no}}）";
+      sub.value = t.subject || "";
+      sub.disabled = !!t.locked;
+      sub.addEventListener("change", () => {
+        t.subject = sub.value;
+        persistDocForForm(doc.meta.form_id, doc);
+      });
+      tdSub.appendChild(sub);
+      tr.appendChild(tdSub);
+
+      const tdBody = document.createElement("td");
+      const body = document.createElement("textarea");
+      body.className = "cell-input";
+      body.rows = 2;
+      body.placeholder = "內文";
+      body.value = t.body || "";
+      body.disabled = !!t.locked;
+      body.addEventListener("change", () => {
+        t.body = body.value;
+        persistDocForForm(doc.meta.form_id, doc);
+      });
+      tdBody.appendChild(body);
+      tr.appendChild(tdBody);
+
+      const tdEd = document.createElement("td");
+      const lab = document.createElement("label");
+      lab.className = "acl-check";
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.checked = !!t.editable && !t.locked;
+      cb.addEventListener("change", () => {
+        t.editable = cb.checked;
+        t.locked = !cb.checked;
+        sub.disabled = !!t.locked;
+        body.disabled = !!t.locked;
+        persistDocForForm(doc.meta.form_id, doc);
+      });
+      lab.appendChild(cb);
+      lab.appendChild(document.createTextNode(" 可改"));
+      tdEd.appendChild(lab);
+      tr.appendChild(tdEd);
+      tb.appendChild(tr);
+    });
+    table.appendChild(tb);
+    panel.appendChild(table);
+    return panel;
   }
 
   function renumberApprovalSteps(d) {
@@ -2696,7 +2798,7 @@
     const aNote = document.createElement("p");
     aNote.className = "sec-note";
     aNote.textContent =
-      "由上往下：level 0＝Submit，往下 1→2…。預設 Approver＝該關預設簽核人；「申請人可改」對應 ALR5 editable（未簽前 creator／requester 可 Change）。stage_notify＝該關同意往下時通知的人（逗號分隔；mail 含 @ 為 email；@群組）。";
+      "由上往下：level 0＝Submit，往下 1→2…。預設 Approver＝該關預設簽核人；「申請人可改」＝editable。stage_notify＝關卡通過通知名單。點「Mail」客製該關各狀況通知信（同內容欄位 Rules）。";
     aSec.appendChild(aNote);
 
     const sysToggleLab = document.createElement("label");
@@ -2718,19 +2820,30 @@
 
     const rebuildStageTable = () => {
       aHr.replaceChildren();
-      const headers = ["level", "Display name", "default Approver", "editable", "stage_notify", ""];
+      const headers = [
+        "level",
+        "Display name",
+        "default Approver",
+        "editable",
+        "stage_notify",
+        "rules",
+        "",
+      ];
       if (showSysCols) headers.splice(1, 0, "step_id", "role");
       headers.forEach((h) => {
         const th = document.createElement("th");
         th.textContent = h;
         if (h === "editable") th.title = "申請人可否改此關簽核人（ALR5 editable）";
         if (h === "stage_notify") th.title = "關卡通過通知名單";
+        if (h === "rules") th.title = "此關通知信客製（Mail）";
         aHr.appendChild(th);
       });
       atb.replaceChildren();
+      const colSpan = headers.length;
       (doc.approval?.columns || []).forEach((col) => {
         ensureApprovalColumn(col);
         const tr = document.createElement("tr");
+        tr.className = "stage-row";
         const lv = Number(col.level);
 
         const tdLv = document.createElement("td");
@@ -2821,7 +2934,7 @@
         const tdNotify = document.createElement("td");
         if (lv === 0) {
           tdNotify.className = "muted-cell";
-          tdNotify.textContent = "（用表單 cc／通知信）";
+          tdNotify.textContent = "（cc 見 Mail）";
         } else {
           const inp = document.createElement("input");
           inp.className = "cell-input";
@@ -2834,6 +2947,14 @@
           tdNotify.appendChild(inp);
         }
         tr.appendChild(tdNotify);
+
+        const tdRules = document.createElement("td");
+        const rulesBtn = document.createElement("button");
+        rulesBtn.type = "button";
+        rulesBtn.className = "table-btn";
+        rulesBtn.textContent = summarizeStageMail(col);
+        tdRules.appendChild(rulesBtn);
+        tr.appendChild(tdRules);
 
         const tdAct = document.createElement("td");
         if (lv > 0) {
@@ -2857,6 +2978,21 @@
         }
         tr.appendChild(tdAct);
         atb.appendChild(tr);
+
+        const trMail = document.createElement("tr");
+        trMail.className = "stage-mail-rules-row content-field-rules-row";
+        trMail.hidden = true;
+        const tdPanel = document.createElement("td");
+        tdPanel.colSpan = colSpan;
+        tdPanel.appendChild(createStageMailPanel(col));
+        trMail.appendChild(tdPanel);
+        atb.appendChild(trMail);
+
+        rulesBtn.addEventListener("click", () => {
+          trMail.hidden = !trMail.hidden;
+          rulesBtn.classList.toggle("primary", !trMail.hidden);
+          rulesBtn.textContent = summarizeStageMail(col);
+        });
       });
     };
     rebuildStageTable();
@@ -2911,79 +3047,10 @@
     aSec.appendChild(aActions);
     wrap.appendChild(aSec);
 
-    // 通知信範本（各狀況 mail）
-    ensureMailTemplates(doc);
-    const mTable = document.createElement("table");
-    mTable.className = "mgmt-table";
-    mTable.innerHTML =
-      "<thead><tr><th>event</th><th>subject</th><th>body</th><th>editable</th></tr></thead>";
-    const mtbMail = document.createElement("tbody");
-    doc.mail_templates.forEach((t) => {
-      const tr = document.createElement("tr");
-      const tdEv = document.createElement("td");
-      tdEv.innerHTML = `<div>${t.id}</div><div class="muted-cell">${t.label || ""}</div>`;
-      tr.appendChild(tdEv);
-
-      const tdSub = document.createElement("td");
-      const sub = document.createElement("input");
-      sub.className = "cell-input";
-      sub.placeholder = "主旨（可含 {{doc_no}} 等）";
-      sub.value = t.subject || "";
-      sub.disabled = !!t.locked;
-      sub.addEventListener("change", () => {
-        t.subject = sub.value;
-        persistDocForForm(doc.meta.form_id, doc);
-      });
-      tdSub.appendChild(sub);
-      tr.appendChild(tdSub);
-
-      const tdBody = document.createElement("td");
-      const body = document.createElement("textarea");
-      body.className = "cell-input";
-      body.rows = 2;
-      body.placeholder = "內文";
-      body.value = t.body || "";
-      body.disabled = !!t.locked;
-      body.addEventListener("change", () => {
-        t.body = body.value;
-        persistDocForForm(doc.meta.form_id, doc);
-      });
-      tdBody.appendChild(body);
-      tr.appendChild(tdBody);
-
-      const tdEd = document.createElement("td");
-      const lab = document.createElement("label");
-      lab.className = "acl-check";
-      const cb = document.createElement("input");
-      cb.type = "checkbox";
-      cb.checked = !!t.editable && !t.locked;
-      cb.title = "Admin 可鎖定；勾選＝允許之後再改範本";
-      cb.addEventListener("change", () => {
-        t.editable = cb.checked;
-        t.locked = !cb.checked;
-        sub.disabled = !!t.locked;
-        body.disabled = !!t.locked;
-        persistDocForForm(doc.meta.form_id, doc);
-      });
-      lab.appendChild(cb);
-      lab.appendChild(document.createTextNode(" 可改範本"));
-      tdEd.appendChild(lab);
-      tr.appendChild(tdEd);
-      mtbMail.appendChild(tr);
-    });
-    mTable.appendChild(mtbMail);
-    const mSec = sectionBlock("通知信（各狀況）", mTable);
-    const mNote = document.createElement("p");
-    mNote.className = "sec-note";
-    mNote.textContent =
-      "依 ALR5 §7：Submit／請簽／關卡通過／拒件／退回／取消／結案／手動／逾期等皆可客製主旨與內文；「可改範本」對應 Admin 是否鎖定。";
-    mSec.insertBefore(mNote, mTable);
-    wrap.appendChild(mSec);
-
     const saveNote = document.createElement("p");
     saveNote.className = "list-tip";
     saveNote.textContent =
-      "變更即寫入本機（設計 PoC）。系統欄位與 form_id／版本請到 JSON／ALR5 分頁查看。";
+      "變更即寫入本機（設計 PoC）。各關通知信請點該列「Mail／Rules」；系統欄位見 JSON／ALR5 分頁。";
     wrap.appendChild(saveNote);
     stage.appendChild(wrap);
   }
