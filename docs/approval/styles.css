@@ -1455,11 +1455,62 @@ table.inkan-table td {
 }
 .mail-board-palette {
   display: grid;
-  gap: 6px;
-  padding: 8px 10px;
+  gap: 10px;
+  padding: 10px 12px;
   border-radius: 12px;
   border: 1px dashed #cfc6b6;
   background: #f7f2e8;
+}
+.mail-board-how {
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: #e8eef8;
+  border: 1px solid #c5d0e8;
+  font-size: 12px;
+  color: #2a3366;
+  line-height: 1.5;
+}
+.mail-board-how ol {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+.mail-board-how li {
+  margin: 0.15rem 0;
+}
+.mail-board-pick-hint {
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: #3d4a8f;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+}
+.mail-board-pick-hint.on {
+  display: block;
+}
+.mail-board-mat-group {
+  display: grid;
+  gap: 4px;
+  padding: 8px;
+  border-radius: 10px;
+  background: #fffdf8;
+  border: 1px solid #e4dccf;
+}
+.mail-board-mat-title {
+  font-size: 11px;
+  font-weight: 800;
+  color: #5a5348;
+}
+.mail-board-mat-group.attr-person {
+  border-color: #b8c8a8;
+}
+.mail-board-mat-group.attr-action,
+.mail-board-mat-group.attr-mail {
+  border-color: #a8b8d0;
+}
+.mail-board-mat-group.attr-field {
+  border-color: #d0c090;
 }
 .mail-board-palette-label {
   font-size: 11px;
@@ -1471,6 +1522,47 @@ table.inkan-table td {
   flex-wrap: wrap;
   gap: 6px;
   align-items: center;
+}
+.mail-board-cell-ph {
+  width: 100%;
+  min-height: 0;
+  font-size: 10px;
+  color: #3d4a8f;
+  font-weight: 700;
+  text-align: center;
+  pointer-events: none;
+}
+.mail-board-cell.place-target {
+  background: rgba(61, 74, 143, 0.06);
+}
+.mail-board-cell.place-target .mail-board-cell-ph {
+  min-height: 1.1rem;
+}
+.mail-pill-badge {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  opacity: 0.75;
+  margin-bottom: 1px;
+}
+.mail-pill.selected,
+.mail-flow-node.selected {
+  outline: 2px solid #c45c26;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px rgba(196, 92, 38, 0.2);
+}
+.mail-pill.tone-person,
+.mail-pill.attr-person {
+  border-color: #8aaa78;
+  background: #f2f8ec;
+  color: #2f4a22;
+}
+.mail-pill.tone-field,
+.mail-pill.attr-field {
+  border-color: #c8b060;
+  background: #fbf6e4;
+  color: #5a4a18;
 }
 .mail-board-trash.drop-ready {
   outline: 2px solid #a33;

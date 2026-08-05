@@ -10,6 +10,7 @@
 
 ## 場次
 
+- 2026-08-05 — 棋盤三種屬性物件化：人員／動作+寄信／欄位、點選放置 — 標籤：SEED、Approval、ALR5、Mail、棋盤、三種屬性、物件化、UI — [sessions/2026-08-05-alr5-board-three-attrs.md](sessions/2026-08-05-alr5-board-three-attrs.md)
 - 2026-08-05 — Mail 棋盤儀表板：樂高材料可拖、左右階段上下參與者 — 標籤：SEED、Approval、ALR5、Mail、棋盤、樂高、儀表板、UI — [sessions/2026-08-05-alr5-mail-board-lego.md](sessions/2026-08-05-alr5-mail-board-lego.md)
 - 2026-08-05 — 下拉選項庫：業務表單 ↔ 帳號級 B 清單連動 — 標籤：SEED、Approval、ALR5、下拉、選項庫、AB連動、UI — [sessions/2026-08-05-alr5-dropdown-ab-lists.md](sessions/2026-08-05-alr5-dropdown-ab-lists.md)
 - 2026-08-05 — 欄位列壓縮：燈號取代規則、垃圾桶、下拉可空白／手填 — 標籤：SEED、Approval、ALR5、內容欄位、UI — [sessions/2026-08-05-alr5-field-row-compact.md](sessions/2026-08-05-alr5-field-row-compact.md)
