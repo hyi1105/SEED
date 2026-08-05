@@ -1907,8 +1907,135 @@ table.inkan-table td {
 .flow-node:active { cursor: grabbing; }
 .flow-node.kind-person {
   width: 92px;
-  height: 92px;
+  min-width: 92px;
+  min-height: 92px;
+  height: auto;
   border-radius: 999px;
+  background: #f2f8ec;
+  border-color: #8aaa78;
+  padding-bottom: 6px;
+}
+.flow-node.kind-action {
+  min-width: 72px;
+  max-width: 10rem;
+  min-height: 36px;
+  border-radius: 999px;
+  background: #f3f6fc;
+  border-color: #3d4a8f;
+  color: #2a3366;
+  font-weight: 800;
+  font-size: 11px;
+  z-index: 3;
+}
+.flow-node.flow-dimmed,
+.flow-edge-label-wrap.flow-dimmed,
+.flow-edge-line.flow-dimmed {
+  opacity: 0.35;
+  filter: grayscale(0.9);
+}
+.flow-scope {
+  position: absolute;
+  z-index: 1;
+  border: 2px dashed #c8b060;
+  border-radius: 14px;
+  background: rgba(251, 246, 228, 0.45);
+  pointer-events: auto;
+  cursor: grab;
+}
+.flow-scope.selected {
+  border-color: #c45c26;
+  background: rgba(251, 246, 228, 0.65);
+}
+.flow-scope-label {
+  position: absolute;
+  top: 6px;
+  left: 10px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #5a4a18;
+}
+.flow-person-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  justify-content: center;
+  margin-top: 4px;
+  max-width: 88px;
+}
+.flow-person-tool {
+  appearance: none;
+  border: 1px solid #8aaa78;
+  background: #fff;
+  border-radius: 999px;
+  padding: 2px 6px;
+  font-size: 9px;
+  font-weight: 700;
+  font-family: var(--font);
+  cursor: pointer;
+  color: #2a4a18;
+}
+.flow-canvas-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.flow-role-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0 10px;
+}
+.flow-role-bar-lab {
+  font-size: 12px;
+  font-weight: 700;
+  color: #5a5348;
+}
+.design-scopes {
+  display: grid;
+  gap: 16px;
+}
+.design-scope-block {
+  border: 1px solid #e0d8c8;
+  border-radius: 12px;
+  padding: 12px;
+  background: #fffdf8;
+}
+.design-scope-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.design-scope-head h3 {
+  margin: 0;
+  flex: 1 1 auto;
+}
+.scope-appr-input {
+  min-width: 10rem;
+  max-width: 14rem;
+}
+.design-flow-editor-dock {
+  margin-top: 16px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid #e0d8c8;
+  background: #fff;
+}
+.design-flow-editor-dock h3 {
+  margin: 0 0 8px;
+  font-size: 14px;
+}
+.flow-action-impact {
+  margin-top: 8px;
+  font-size: 12px;
+}
+.flow-impact-list {
+  margin: 4px 0 0;
+  padding-left: 1.2rem;
+  color: #5a5348;
 }
 .flow-node.kind-field,
 .flow-node.kind-doc {
