@@ -279,6 +279,46 @@ html, body {
   background: #2a3a4a;
   color: #a8c4e0;
 }
+.q-head {
+  margin-bottom: 4px;
+}
+.q-id {
+  font-size: 11px;
+  color: #9ab;
+  margin-right: 4px;
+}
+.q-rec {
+  margin: 4px 0 6px;
+  color: #c8e6c0;
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+.q-opts {
+  margin: 0 0 10px;
+  padding-left: 1.1em;
+  color: #b8b8b8;
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+.q-opts li {
+  margin-bottom: 6px;
+}
+.q-scenario,
+.q-scenario-only {
+  margin-top: 2px;
+  color: #8a9aaa;
+  font-size: 12px;
+}
+.risk-list {
+  margin: 0;
+  padding-left: 1.2em;
+  color: #d8d8d8;
+  font-size: 13px;
+  line-height: 1.55;
+}
+.risk-list > li {
+  margin-bottom: 14px;
+}
 
 /* —— A4 紙 —— */
 .a4 {

@@ -914,21 +914,58 @@ creator 開單／填單（可代填；requester 可為另一人）
 | 發布／退回 | 漸進 SOP 可自動化；rollback＝改回舊 form_version |
 | JSON 升級 | `schema_migration` 升到最新結構（≠ form_version） |
 
-## 10b. 仍待決
+## 10b. 仍待決（建議＋情境，供你選）
 
-- [ ] 明細是否支援列級簽核／列級 ACL，或一律整單簽核？
-- [ ] 匯出檔存放與重送策略（只留 log，還是存檔案）？
-- [ ] 跨單：畫面如何選他單／顯示認證鏈？
-- [ ] 多張事件單回寫同一主檔欄位時，衝突以誰為準？
-- [ ] 預建池誰批次產生？held 逾時多久自動釋放？
-- [ ] 明細超級多：lines 全內嵌，還是分片／外掛？單單上限？
-- [ ] 大量匯入檢核是否非同步？失敗列如何修？
-- [ ] 公證節點：自建、外部 TSA／律師機構、或聯盟多簽？
-- [ ] 第三方備份鑰匙解鎖條件（本人／法院令／n-of-m）？
-- [ ] 哪些附件／欄位預設強制加密？
-- [ ] 測試用 formal 環境資料是否與正式隔離？
-- [ ] 進行中 item 遇新 form 版：鎖定開單版，還是允許中途升？
-- [ ] 自動 SOP 通過門檻？
+> 下列 **尚未寫入 `decisions`**。每題有建議選項；你回「選 B」或改選即可定案。  
+> 機器原文：`alr5-standard.json` → `open_questions`／`logic_risk_warnings`（**0.3.1**）。
+
+### 欄位／邏輯未決
+
+| id | 建議 | 題目（摘要） |
+|----|------|--------------|
+| q_ab_line_approve | **B** | 明細：預設整單簽；進階才開列級 |
+| q_export_file_store | **B** | 匯出存 blob＋log（可重送同一檔） |
+| q_cross_link_ui | **B** | 搜尋選他單＋單號狀態燈鏈 |
+| q_effect_conflict | **A** | 回寫衝突：業務日期最大＋可手動 |
+| q_preallocate_who_generates | **B** | Owner 規則＋排程產池＋admin 可補 |
+| q_hold_timeout | **B** | held 可設，預設 30 分 |
+| q_lines_storage | **B** | 小單內嵌、大單 lines_ref＋硬上限 |
+| q_import_async | **B** | 小同步／大非同步；失敗列可修 |
+| q_notary_provider | **B** | 自建 notary＋可插外部 TSA |
+| q_key_escrow_policy | **C** | n-of-m 為主＋公文例外 |
+| q_encrypt_which_fields | **B** | 敏感欄／標記附件預設加密 |
+| q_env_isolation_data | **A** | 測試 formal 與正式完全隔離 |
+| q_item_midflight_upgrade | **A** | 進行中鎖定開單 form_version |
+| q_auto_sop_gates | **B** | 錯誤率＋樣本數＋人工核准 |
+
+每題完整選項與情境見標準 JSON／網頁「ALR5功能」；規格口語摘要：
+
+1. **列級簽核** — A 永不做／**B 預設整單＋進階選配**／C 第一版就做列級  
+2. **匯出存放** — A 只 log 重跑／**B 存 blob 可重送**／C 永久存  
+3. **跨單 UI** — A 只填單號／**B 搜尋＋狀態燈鏈**／C 圖形拓樸  
+4. **回寫衝突** — **A 業務日最大＋手動**／B 最後完成時間／C 一律手動  
+5. **預建池** — A 僅手動／**B 規則＋排程＋可補**／C 僅排程  
+6. **held 逾時** — A 15 分固定／**B 可設預設 30 分**／C 到當日結束  
+7. **明細儲存** — A 全內嵌無上限／**B 內嵌＋分片＋上限**／C 一律外掛  
+8. **大量匯入** — A 同步整批退／**B 大小分流＋失敗可修**／C 非同步僅報告  
+9. **公證** — A 僅自建／**B 自建＋外部可插**／C 一開始聯盟多簽  
+10. **備份鑰匙** — A 僅本人／B 僅法院令／**C n-of-m＋公文例外**  
+11. **強制加密** — A 全附件／**B 敏感預設**／C 全自選  
+12. **環境資料** — **A 獨立租戶**／B 同庫前綴／C 可讀正式  
+13. **中途升版** — **A 鎖開單版**／B 自動升最新／C 相容才升  
+14. **SOP 門檻** — A 全自動綠燈／**B 錯率＋樣本＋核准**／C 僅人工  
+
+### 實作易錯／邏輯風險（建議規則，供你選）
+
+| id | 建議 | 摘要 |
+|----|------|------|
+| risk_double_complete | **A** | 原子 advance；completed 通知冪等一次 |
+| risk_proxy_vs_change | **A** | 手動 Change 優先；結束代理不覆蓋已 Change |
+| risk_return_notify_storm | **A** | 預設精簡收件＋選配全通知＋去重 |
+| risk_level_status_desync | **A** | status／level 成對寫入（實作規範） |
+| risk_delegate_loop | **A** | 拒環狀＋深度上限 |
+| risk_required_from_level | **A** | 依 level 門檻時機檢核（與定案一致） |
+| risk_return_resign_chain | **A** | 後續關標記 voided，保留歷史 |
 
 ---
 
@@ -936,6 +973,7 @@ creator 開單／填單（可代填；requester 可為另一人）
 
 | 日期 | 變更 |
 |------|------|
+| 2026-08-05 | §10b：未決／風險附建議選項與情境（standard 0.3.1；待拍板） |
 | 2026-08-04 | 建立檔案骨架，等待口頭整理 |
 | 2026-08-04 | 角色／名單：creator、requester、cc、cc_system、approvers、stage_notifies、fyi、fyi_system；同意／不同意用語建議 |
 | 2026-08-04 | 權限角色：admin 完全控制＋版本；super_user 結案後專欄；audit 唯讀；單據可見性；簽核後異動明顯標記（`post_approval_amended`） |
