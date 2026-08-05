@@ -447,8 +447,8 @@ table.inkan-table td {
   padding-bottom: 8px;
 }
 .inkan-stamp {
-  width: 52px;
-  height: 52px;
+  width: 64px;
+  height: 64px;
   margin: 0 auto 4px;
   border-radius: 50%;
   border: 2.5px solid #c43c2c;
@@ -456,6 +456,7 @@ table.inkan-table td {
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 4px;
   background:
     radial-gradient(circle at 32% 30%, rgba(255,255,255,0.28), transparent 42%),
     rgba(196, 60, 44, 0.07);
@@ -470,9 +471,12 @@ table.inkan-table td {
 }
 .inkan-name {
   font-family: "Noto Serif TC", "PMingLiU", "Songti TC", serif;
-  font-size: 18px;
+  font-size: 11px;
   font-weight: 700;
-  line-height: 1;
+  line-height: 1.15;
+  text-align: center;
+  word-break: break-all;
+  max-width: 100%;
 }
 .inkan-approve {
   font-family: var(--font);

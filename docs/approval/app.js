@@ -45,7 +45,7 @@
       "creator": "王小明",
       "location": "",
       "lang": "zh-Hant",
-      "note": "ALR5：設計表單淺色；系統欄位依規格 creator／requester／approver_n…；內容欄位可增刪；step_N 可刪。"
+      "note": "ALR5：設計淺色；系統欄位依規格；簽核水流 step_0→…；stamp_name 完整姓名。"
     },
     "actor": {
       "id": "u_wang",
@@ -301,33 +301,16 @@
       "title": "簽核",
       "columns": [
         {
-          "id": "step_3",
-          "label": "協理",
-          "level": 3,
-          "role": "approver_3",
+          "id": "step_0",
+          "label": "Submit",
+          "level": 0,
+          "role": "requester",
           "person": {
-            "id": "u_yen",
-            "name": "嚴協理"
+            "id": "u_wang",
+            "name": "王小明"
           },
           "stamp": {
-            "name": "嚴",
-            "mark": null,
-            "time": null,
-            "comment": "",
-            "pending": true
-          }
-        },
-        {
-          "id": "step_2",
-          "label": "課長",
-          "level": 2,
-          "role": "approver_2",
-          "person": {
-            "id": "u_lin",
-            "name": "林課長"
-          },
-          "stamp": {
-            "name": "林",
+            "name": "王小明",
             "mark": null,
             "time": null,
             "comment": "",
@@ -344,7 +327,7 @@
             "name": "陳美玲"
           },
           "stamp": {
-            "name": "陳",
+            "name": "陳美玲",
             "mark": null,
             "time": null,
             "comment": "",
@@ -352,16 +335,33 @@
           }
         },
         {
-          "id": "step_0",
-          "label": "申請",
-          "level": 0,
-          "role": "requester",
+          "id": "step_2",
+          "label": "課長",
+          "level": 2,
+          "role": "approver_2",
           "person": {
-            "id": "u_wang",
-            "name": "王小明"
+            "id": "u_lin",
+            "name": "林課長"
           },
           "stamp": {
-            "name": "王",
+            "name": "林課長",
+            "mark": null,
+            "time": null,
+            "comment": "",
+            "pending": true
+          }
+        },
+        {
+          "id": "step_3",
+          "label": "協理",
+          "level": 3,
+          "role": "approver_3",
+          "person": {
+            "id": "u_yen",
+            "name": "嚴協理"
+          },
+          "stamp": {
+            "name": "嚴協理",
             "mark": null,
             "time": null,
             "comment": "",
@@ -752,7 +752,7 @@
     col.stamp.time = nowStamp();
     if (comment != null) col.stamp.comment = comment;
     if (!col.stamp.name && col.person?.name) {
-      col.stamp.name = String(col.person.name).slice(0, 1);
+      col.stamp.name = String(col.person.name);
     }
   }
 
@@ -1789,13 +1789,30 @@
     steps.forEach((c, i) => {
       c.level = i + 1;
       c.id = `step_${i + 1}`;
+      if (c.role && /^approver_\d+$/.test(c.role)) {
+        c.role = `approver_${i + 1}`;
+      }
+      // 印名：完整姓名（單字舊資料升級）
+      if (c.person?.name) {
+        if (!c.stamp) c.stamp = {};
+        const sn = c.stamp.name || "";
+        if (!sn || sn.length <= 1) c.stamp.name = c.person.name;
+      }
     });
     if (applyCol) {
       applyCol.level = 0;
       applyCol.id = "step_0";
+      if (!applyCol.label || applyCol.label === "申請") applyCol.label = "Submit";
+      if (applyCol.person?.name) {
+        if (!applyCol.stamp) applyCol.stamp = {};
+        const sn = applyCol.stamp.name || "";
+        if (!sn || sn.length <= 1) applyCol.stamp.name = applyCol.person.name;
+      }
     }
-    const ordered = [...steps].sort((a, b) => Number(b.level) - Number(a.level));
+    // 水流順序：step_0 → step_1 → …（上往下／左往右）
+    const ordered = [];
     if (applyCol) ordered.push(applyCol);
+    ordered.push(...steps);
     d.approval.columns = ordered;
     (d.roles || []).forEach((r) => {
       if (!r.stamp_id) return;
@@ -2055,12 +2072,12 @@
     const metaTable = document.createElement("table");
     metaTable.className = "mgmt-table edit-table";
     metaTable.innerHTML =
-      "<thead><tr><th>設定</th><th>值</th></tr></thead>";
+      "<thead><tr><th>field</th><th>value</th></tr></thead>";
     const mtb = document.createElement("tbody");
     const metaFields = [
-      ["title", "名稱", false],
-      ["creator", "建立者", false],
-      ["location", "所屬位置（暫未）", true],
+      ["title", "title", false],
+      ["creator", "creator", false],
+      ["location", "location (TBD)", true],
     ];
     metaFields.forEach(([key, label, ro]) => {
       const tr = document.createElement("tr");
@@ -2071,7 +2088,7 @@
       inp.className = "cell-input";
       inp.value =
         key === "location"
-          ? doc.meta?.location || "（尚未設計）"
+          ? doc.meta?.location || "(not designed)"
           : doc.meta?.[key] ?? "";
       inp.disabled = !!ro;
       inp.addEventListener("change", () => {
@@ -2086,13 +2103,13 @@
       mtb.appendChild(tr);
     });
     metaTable.appendChild(mtb);
-    wrap.appendChild(sectionBlock("基本", metaTable));
+    wrap.appendChild(sectionBlock("Basic", metaTable));
 
     // 系統內建欄位
     const sysTable = document.createElement("table");
     sysTable.className = "mgmt-table";
     sysTable.innerHTML =
-      "<thead><tr><th>欄位 id</th><th>名稱</th><th>說明</th></tr></thead>";
+      "<thead><tr><th>field_id</th><th>label</th><th>note</th></tr></thead>";
     const stb = document.createElement("tbody");
     SYSTEM_FIELD_DEFS.forEach((def) => {
       const tr = document.createElement("tr");
@@ -2113,11 +2130,11 @@
       });
     });
     sysTable.appendChild(stb);
-    const sysSec = sectionBlock("系統欄位（ALR5 規格）", sysTable);
+    const sysSec = sectionBlock("System fields (ALR5)", sysTable);
     const sysNote = document.createElement("p");
     sysNote.className = "sec-note";
     sysNote.textContent =
-      "依 ALR5簽核系統.md：creator／requester／cc／cc_system／approvers[]／stage_notifies[]／fyi／fyi_system 與 system.*；Owner 不可當內容欄增刪。扁平寫法可用 approver_n／stage_notify_n。";
+      "Per ALR5簽核系統.md：creator／requester／cc／cc_system／approvers[]／stage_notifies[]／fyi／fyi_system and system.*；Owner cannot add/remove as content fields. Flat ids: approver_n／stage_notify_n.";
     sysSec.insertBefore(sysNote, sysTable);
     const badge = document.createElement("span");
     badge.className = "badge-sys";
@@ -2129,7 +2146,7 @@
     const fTable = document.createElement("table");
     fTable.className = "mgmt-table";
     fTable.innerHTML =
-      "<thead><tr><th>欄位 id</th><th>顯示名稱</th><th>型別</th><th>預設值</th><th></th></tr></thead>";
+      "<thead><tr><th>field_id</th><th>label</th><th>type</th><th>default</th><th></th></tr></thead>";
     const ftb = document.createElement("tbody");
     Object.keys(doc.fields || {}).forEach((fid) => {
       const f = doc.fields[fid];
@@ -2162,9 +2179,9 @@
       const del = document.createElement("button");
       del.type = "button";
       del.className = "table-btn danger";
-      del.textContent = "刪除";
+      del.textContent = "Delete";
       del.addEventListener("click", () => {
-        if (!confirm(`刪除內容欄位「${fid}」？`)) return;
+        if (!confirm(`Delete content field 「${fid}」？`)) return;
         delete doc.fields[fid];
         (doc.body?.paragraphs || []).forEach((para) => {
           para.parts = (para.parts || []).filter(
@@ -2179,19 +2196,19 @@
       ftb.appendChild(tr);
     });
     fTable.appendChild(ftb);
-    const fSec = sectionBlock("簽核內容欄位（可新增／刪除）", fTable);
+    const fSec = sectionBlock("Content fields (add/remove)", fTable);
     const fNote = document.createElement("p");
     fNote.className = "sec-note";
     fNote.textContent =
-      "申請人、假別、起始日、天數、代理人等畫面填寫欄；與系統簽核欄位分開。";
+      "Business fill-in fields (applicant, leave type, dates…); separate from system approval fields.";
     fSec.insertBefore(fNote, fTable);
     const addField = document.createElement("button");
     addField.type = "button";
     addField.className = "table-btn";
-    addField.textContent = "＋ 新增內容欄位";
+    addField.textContent = "+ Add content field";
     addField.addEventListener("click", () => {
       const id = prompt(
-        "新欄位 id（英文／底線）",
+        "field_id (snake_case)",
         "field_" + (Object.keys(doc.fields || {}).length + 1)
       );
       if (!id || (doc.fields && doc.fields[id])) {
@@ -2209,20 +2226,24 @@
     fSec.appendChild(fActions);
     wrap.appendChild(fSec);
 
-    // 簽核階層 step_N
+    // 簽核階層：水流 step_0 → step_1 → …
     const aTable = document.createElement("table");
     aTable.className = "mgmt-table";
     aTable.innerHTML =
-      "<thead><tr><th>關 id</th><th>顯示</th><th>level</th><th>角色</th><th>印名</th><th></th></tr></thead>";
+      "<thead><tr><th>step_id</th><th>label</th><th>level</th><th>role</th><th>stamp_name</th><th></th></tr></thead>";
     const atb = document.createElement("tbody");
     (doc.approval?.columns || []).forEach((col) => {
       const tr = document.createElement("tr");
+      const stampName =
+        col.stamp?.name && String(col.stamp.name).length > 1
+          ? col.stamp.name
+          : col.person?.name || col.stamp?.name || "";
       const specs = [
         [col.id, true, null],
         [col.label || "", false, "label"],
         [col.level ?? "", true, "level"],
         [col.role || "", false, "role"],
-        [col.stamp?.name || "", false, "stamp.name"],
+        [stampName, false, "stamp.name"],
       ];
       specs.forEach(([val, ro, prop]) => {
         const td = document.createElement("td");
@@ -2231,10 +2252,15 @@
           const inp = document.createElement("input");
           inp.className = "cell-input";
           inp.value = String(val);
+          if (prop === "label") inp.title = "UI 顯示名稱（印章表頭）";
+          if (prop === "role") inp.title = "權限角色 id（requester／approver_n）";
+          if (prop === "stamp.name") inp.title = "印章完整姓名";
           inp.addEventListener("change", () => {
             if (prop === "stamp.name") {
               if (!col.stamp) col.stamp = {};
               col.stamp.name = inp.value;
+              if (!col.person) col.person = { id: "", name: "" };
+              col.person.name = inp.value;
             } else {
               col[prop] = inp.value;
             }
@@ -2249,9 +2275,9 @@
         const del = document.createElement("button");
         del.type = "button";
         del.className = "table-btn danger";
-        del.textContent = "刪除";
+        del.textContent = "Delete";
         del.addEventListener("click", () => {
-          if (!confirm(`刪除簽核關 ${col.id}（${col.label || ""}）？`)) return;
+          if (!confirm(`Delete ${col.id}（${col.label || ""}）？`)) return;
           doc.approval.columns = (doc.approval.columns || []).filter(
             (c) => c.id !== col.id
           );
@@ -2262,22 +2288,22 @@
         tdDel.appendChild(del);
       } else {
         tdDel.className = "muted-cell";
-        tdDel.textContent = "申請關";
+        tdDel.textContent = "fixed";
       }
       tr.appendChild(tdDel);
       atb.appendChild(tr);
     });
     aTable.appendChild(atb);
-    const aSec = sectionBlock("簽核階層（step_1…可刪）", aTable);
+    const aSec = sectionBlock("Approval steps（waterfall）", aTable);
     const aNote = document.createElement("p");
     aNote.className = "sec-note";
     aNote.textContent =
-      "簽核人 id 固定為 step_1、step_2…；刪除後自動重編。step_0 為申請關。";
+      "水流：step_0（Submit）在最上，往下 step_1→step_2…。label＝畫面顯示名；role＝權限角色 id（非顯示字）；stamp_name＝印章完整姓名。刪 step≥1 後自動重編。";
     aSec.insertBefore(aNote, aTable);
     const addCol = document.createElement("button");
     addCol.type = "button";
     addCol.className = "table-btn";
-    addCol.textContent = "＋ 新增簽核關";
+    addCol.textContent = "+ Add step";
     addCol.addEventListener("click", () => {
       if (!doc.approval) doc.approval = { title: "簽核", columns: [] };
       if (!doc.approval.columns) doc.approval.columns = [];
@@ -2286,14 +2312,21 @@
           0,
           ...doc.approval.columns.map((c) => Number(c.level) || 0)
         ) + 1;
-      const label = prompt("關顯示名稱", `簽核 ${nextLv}`) || `簽核 ${nextLv}`;
-      doc.approval.columns.unshift({
+      const label = prompt("label（顯示名稱）", `Approver ${nextLv}`) || `Approver ${nextLv}`;
+      const fullName = prompt("stamp_name（完整姓名）", label) || label;
+      doc.approval.columns.push({
         id: `step_${nextLv}`,
         label,
         level: nextLv,
         role: `approver_${nextLv}`,
-        person: { id: "", name: "" },
-        stamp: { name: "印", mark: null, time: null, comment: "", pending: true },
+        person: { id: "", name: fullName },
+        stamp: {
+          name: fullName,
+          mark: null,
+          time: null,
+          comment: "",
+          pending: true,
+        },
       });
       renumberApprovalSteps(doc);
       persistDocForForm(doc.meta.form_id, doc);
@@ -2443,7 +2476,7 @@
     let base = loadStored();
     if (!base) {
       try {
-        const res = await fetch("./document.json?v=design1", {
+        const res = await fetch("./document.json?v=design2", {
           cache: "no-store",
         });
         if (res.ok) base = await res.json();
@@ -2452,7 +2485,7 @@
       }
     }
     try {
-      const sr = await fetch("./alr5-standard.json?v=design1", {
+      const sr = await fetch("./alr5-standard.json?v=design2", {
         cache: "no-store",
       });
       if (sr.ok) alr5Standard = await sr.json();
@@ -2460,7 +2493,7 @@
       /* offline */
     }
     try {
-      const mr = await fetch("./ALR5標準互通.md?v=design1", {
+      const mr = await fetch("./ALR5標準互通.md?v=design2", {
         cache: "no-store",
       });
       if (mr.ok) alr5Markdown = await mr.text();
