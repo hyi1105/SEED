@@ -2633,10 +2633,9 @@
     const tip = document.createElement("p");
     tip.className = "acl-tip";
     tip.innerHTML =
-      "<strong>流程說明圖</strong>（給非技術背景也能看）：" +
-      "<b>圓形＝人</b>、" +
-      "<b>方塊＝要填的欄位／文件</b>、" +
-      "<b>箭頭＝做什麼或寄什麼信</b>。像跟廠商談專案時畫的那張流程。";
+      "<strong>流程說明圖</strong>（直觀操作；<b>背後只是 JSON</b>，可跨平台）：" +
+      "<b>圓＝人</b>、<b>方＝欄位</b>（點開編 label／type／default／必填／權限）、" +
+      "<b>箭頭＝動作或寄信</b>。";
     panel.appendChild(tip);
 
     const how = document.createElement("div");
@@ -2646,7 +2645,8 @@
       "<li><b>加人／欄位</b>：點下方材料 → 再點圖空白處放下</li>" +
       "<li><b>加箭頭（動作／寄信）</b>：點動作或寄信材料 → 先點起點圓／方 → 再點終點</li>" +
       "<li><b>移動</b>：按住圓或方塊拖動；線會跟著走</li>" +
-      "<li><b>編輯信</b>：點箭頭上的寄信標籤兩次；<b>刪除</b>：點選物件後按「丟棄」</li>" +
+      "<li><b>編輯欄位</b>：點方塊 → 下方儀表板（field／label／type／default／狀態）</li>" +
+      "<li><b>編輯信</b>：點箭頭上的寄信標籤兩次；<b>刪除</b>：點選後按「丟棄」</li>" +
       "</ol>";
     panel.appendChild(how);
 
@@ -2677,7 +2677,9 @@
         pickHint.hidden = false;
         pickHint.classList.add("on");
         pickHint.textContent =
-          "已選物件 → 可丟棄刪除；寄信標籤再點一次可編信件";
+          openFieldId
+            ? "欄位儀表板已開啟 → 再點方塊可關閉"
+            : "已選物件 → 可丟棄刪除；點欄位方塊開儀表板；寄信標籤再點編信";
       } else {
         pickHint.hidden = true;
         pickHint.classList.remove("on");
@@ -2689,6 +2691,7 @@
       selectedMat = null;
       linkFromId = null;
       selectedId = null;
+      closeFieldEditor();
       updateHint();
     };
 
@@ -2705,6 +2708,43 @@
     const editorHost = document.createElement("div");
     editorHost.className = "mail-flow-editor-host";
     editorHost.hidden = true;
+    const fieldEditorHost = document.createElement("div");
+    fieldEditorHost.className = "flow-field-editor-host";
+    fieldEditorHost.hidden = true;
+    let openFieldId = null;
+
+    const closeFieldEditor = () => {
+      openFieldId = null;
+      fieldEditorHost.hidden = true;
+      fieldEditorHost.replaceChildren();
+    };
+
+    const openFieldEditor = (fid) => {
+      if (!fid || !doc.fields?.[fid]) return;
+      if (openFieldId === fid) {
+        closeFieldEditor();
+        paintCanvas();
+        return;
+      }
+      openFieldId = fid;
+      activeEventId = null;
+      editorHost.hidden = true;
+      editorHost.replaceChildren();
+      const f = ensureContentField(doc.fields[fid]);
+      fieldEditorHost.hidden = false;
+      fieldEditorHost.replaceChildren();
+      fieldEditorHost.appendChild(
+        createFlowFieldDashboard(fid, f, () => {
+          const node = flowBoardStorage(col).nodes.find(
+            (x) => x.field_id === fid
+          );
+          if (node) node.label = f.label || fid;
+          persist();
+          paintCanvas();
+        })
+      );
+      paintCanvas();
+    };
 
     const openEditor = (ev) => {
       if (activeEventId === ev.id) {
@@ -2714,6 +2754,7 @@
         paintCanvas();
         return;
       }
+      closeFieldEditor();
       activeEventId = ev.id;
       ensureStageMail(col);
       if (!col.mail[ev.id]) {
@@ -3038,11 +3079,19 @@
         el.appendChild(lab);
         if (n.kind === "field" && n.field_id) {
           const f = doc.fields?.[n.field_id];
-          const meta = document.createElement("span");
-          meta.className = "flow-node-meta";
-          meta.textContent =
-            (f?.type || "") + (f?.required ? "・必填" : "");
-          el.appendChild(meta);
+          if (f) {
+            el.classList.add("flow-field-card");
+            if (openFieldId === n.field_id) el.classList.add("dash-open");
+            const typeBadge = document.createElement("span");
+            typeBadge.className = "flow-node-type";
+            typeBadge.textContent = fieldTypeLabel(f.type);
+            el.appendChild(typeBadge);
+            const defPrev = document.createElement("span");
+            defPrev.className = "flow-node-default";
+            defPrev.textContent = "default：" + fieldDefaultPreview(f);
+            el.appendChild(defPrev);
+            appendFieldStatusChips(el, f);
+          }
         }
 
         el.addEventListener("pointerdown", (e) => {
@@ -3116,10 +3165,18 @@
             // placing on canvas blank preferred; ignore node click
             return;
           }
+          if (n.kind === "field" && n.field_id) {
+            selectedId = "n:" + n.id;
+            openFieldEditor(n.field_id);
+            updateHint();
+            return;
+          }
           if (selectedId === "n:" + n.id) {
             selectedId = null;
+            closeFieldEditor();
           } else {
             selectedId = "n:" + n.id;
+            closeFieldEditor();
           }
           updateHint();
           paintCanvas();
@@ -3292,6 +3349,7 @@
     panel.appendChild(palette);
     panel.appendChild(canvasWrap);
     panel.appendChild(editorHost);
+    panel.appendChild(fieldEditorHost);
     return panel;
   }
 
@@ -4191,6 +4249,134 @@
         );
       },
     };
+  }
+
+  function fieldTypeLabel(type) {
+    const hit = CONTENT_FIELD_TYPES.find((t) => t.id === type);
+    return hit ? hit.label : type || "文字";
+  }
+
+  function fieldDefaultPreview(f) {
+    if (!f) return "—";
+    const v = f.value;
+    if (v == null || v === "") return "—";
+    const s = String(v);
+    return s.length > 14 ? s.slice(0, 13) + "…" : s;
+  }
+
+  /** 流程圖上點欄位方塊 → 儀表板（與內容欄位列同款；資料在 fields JSON） */
+  function createFlowFieldDashboard(fid, f, onChange) {
+    ensureContentField(f);
+    const card = document.createElement("div");
+    card.className = "flow-field-dash";
+
+    const note = document.createElement("p");
+    note.className = "flow-json-note";
+    note.textContent =
+      "跨平台：欄位定義在 form JSON 的 fields." +
+      fid +
+      "；流程圖 node 只存 field_id 與位置（mail_board.nodes）。";
+    card.appendChild(note);
+
+    const head = document.createElement("div");
+    head.className = "flow-field-dash-head";
+    const title = document.createElement("h4");
+    title.textContent = f.label || fid;
+    head.appendChild(title);
+    const id = document.createElement("span");
+    id.className = "flow-field-dash-id";
+    id.textContent = "field · " + fid;
+    head.appendChild(id);
+    card.appendChild(head);
+
+    const grid = document.createElement("div");
+    grid.className = "flow-field-dash-grid";
+
+    const mkCell = (lab, el) => {
+      const box = document.createElement("div");
+      box.className = "flow-field-dash-cell";
+      const l = document.createElement("div");
+      l.className = "flow-field-dash-lab";
+      l.textContent = lab;
+      box.appendChild(l);
+      box.appendChild(el);
+      return box;
+    };
+
+    const labInp = document.createElement("input");
+    labInp.className = "cell-input";
+    labInp.value = f.label || "";
+    labInp.addEventListener("change", () => {
+      f.label = labInp.value;
+      persistContentField();
+      if (onChange) onChange();
+    });
+    grid.appendChild(mkCell("label", labInp));
+
+    const typeWrap = document.createElement("div");
+    typeWrap.appendChild(
+      createTypeSelect(f, () => {
+        if (onChange) onChange();
+      })
+    );
+    grid.appendChild(mkCell("type", typeWrap));
+
+    const defWrap = document.createElement("div");
+    defWrap.className = "flow-field-dash-default";
+    defWrap.appendChild(
+      createDefaultControl(f, () => {
+        if (onChange) onChange();
+      })
+    );
+    grid.appendChild(mkCell("default", defWrap));
+
+    card.appendChild(grid);
+
+    const statusRow = document.createElement("div");
+    statusRow.className = "flow-field-dash-status";
+    const statusLab = document.createElement("div");
+    statusLab.className = "flow-field-dash-lab";
+    statusLab.textContent = "狀態";
+    statusRow.appendChild(statusLab);
+
+    const detailHost = document.createElement("div");
+    detailHost.className = "flow-field-dash-detail";
+    let openKey = null;
+    const chipsApi = createFieldRuleChips(f, {
+      activeKey: null,
+      onSelect: (key, wasActive) => {
+        if (wasActive || openKey === key) {
+          openKey = null;
+          detailHost.replaceChildren();
+          detailHost.hidden = true;
+          chipsApi.setActive(null);
+          return;
+        }
+        openKey = key;
+        detailHost.hidden = false;
+        chipsApi.setActive(key);
+        chipsApi.openDetail(key, detailHost, () => {
+          if (onChange) onChange();
+        });
+      },
+    });
+    statusRow.appendChild(chipsApi.el);
+    card.appendChild(statusRow);
+    card.appendChild(detailHost);
+
+    return card;
+  }
+
+  function appendFieldStatusChips(host, f) {
+    const chips = document.createElement("div");
+    chips.className = "flow-node-chips";
+    getFieldRuleChipDefs(f).forEach((def) => {
+      const c = document.createElement("span");
+      c.className = "flow-node-chip" + (def.on() ? " on" : "");
+      c.textContent = def.label();
+      chips.appendChild(c);
+    });
+    host.appendChild(chips);
   }
 
   function createFieldRulesPanel(fid, f, opts = {}) {
@@ -5101,7 +5287,7 @@
   async function boot() {
     let seedDesign = null;
     try {
-      const res = await fetch("./document.json?v=design18", {
+      const res = await fetch("./document.json?v=design19", {
         cache: "no-store",
       });
       if (res.ok) seedDesign = await res.json();
@@ -5109,7 +5295,7 @@
       /* offline */
     }
     try {
-      const sr = await fetch("./alr5-standard.json?v=design18", {
+      const sr = await fetch("./alr5-standard.json?v=design19", {
         cache: "no-store",
       });
       if (sr.ok) alr5Standard = await sr.json();
@@ -5117,7 +5303,7 @@
       /* offline */
     }
     try {
-      const mr = await fetch("./ALR5標準互通.md?v=design18", {
+      const mr = await fetch("./ALR5標準互通.md?v=design19", {
         cache: "no-store",
       });
       if (mr.ok) alr5Markdown = await mr.text();

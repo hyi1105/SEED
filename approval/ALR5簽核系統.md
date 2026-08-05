@@ -607,7 +607,8 @@ creator 開單／填單（可代填；requester 可為另一人）
 | **圖形** | **圓形＝人**；**方塊＝欄位／文件**；**箭頭＝動作或寄信** |
 | **怎麼編** | 點材料放到圖上；動作／寄信＝先點起點再點終點；圓／方可拖動 |
 | **三種屬性** | 人員、動作（含寄信）、輸入欄位 — 全部物件化 |
-| **資料** | `approval.columns[].mail_board`（`schema: 3`＝nodes + edges） |
+| **資料** | `approval.columns[].mail_board`（`schema: 3`＝nodes + edges）；欄位定義在 `fields.<field_id>`（**同一 form JSON**，可跨平台） |
+| **欄位儀表板** | 點流程圖方塊 → 編 field／label／type／default／必填／權限（與內容欄位列同款） |
 
 ### 4.9 流程外：指派代理人（代簽核）
 
