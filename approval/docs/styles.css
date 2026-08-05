@@ -1206,20 +1206,43 @@ table.inkan-table td {
   gap: 6px;
 }
 .dash-chip {
+  appearance: none;
   display: inline-flex;
   align-items: center;
-  padding: 4px 8px;
+  padding: 6px 12px;
   border-radius: 999px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 650;
+  font-family: var(--font);
   background: #ebe4d6;
   color: #5a5348;
   border: 1px solid #ddd4c4;
+  cursor: pointer;
+  line-height: 1.2;
 }
 .dash-chip.on {
   background: #e8eef8;
   color: #2a3366;
   border-color: #c5d0e8;
+}
+.dash-chip.active {
+  outline: 2px solid #3d4a8f;
+  outline-offset: 1px;
+  background: #fff;
+  color: #1a1814;
+}
+.dash-detail {
+  margin-top: 4px;
+  padding: 12px;
+  border: 1px solid #e0d8c8;
+  border-radius: 10px;
+  background: #fffdf8;
+}
+.dash-detail-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1a1814;
+  margin-bottom: 8px;
 }
 .dash-section {
   border: 1px solid #e0d8c8;

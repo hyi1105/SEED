@@ -2551,28 +2551,6 @@
     return `${labels.slice(0, 2).join("、")}＋${labels.length - 2}`;
   }
 
-  function createDashSection(title, metaText, buildBody, openByDefault) {
-    const det = document.createElement("details");
-    det.className = "dash-section";
-    if (openByDefault) det.open = true;
-    const sum = document.createElement("summary");
-    sum.className = "dash-summary";
-    const t = document.createElement("span");
-    t.className = "dash-summary-title";
-    t.textContent = title;
-    const m = document.createElement("span");
-    m.className = "dash-summary-meta";
-    m.textContent = metaText || "尚未設定";
-    sum.appendChild(t);
-    sum.appendChild(m);
-    det.appendChild(sum);
-    const body = document.createElement("div");
-    body.className = "dash-section-body";
-    buildBody(body, m);
-    det.appendChild(body);
-    return det;
-  }
-
   function createRoleChecks(f, aclKey, onChange) {
     const row = document.createElement("div");
     row.className = "acl-checks";
@@ -2606,6 +2584,75 @@
     return box;
   }
 
+  function buildRequiredEditor(f, onChange) {
+    const grid = document.createElement("div");
+    grid.className = "field-rules-grid";
+
+    const reqLab = document.createElement("label");
+    reqLab.className = "field-rule-item";
+    const reqCb = document.createElement("input");
+    reqCb.type = "checkbox";
+    reqCb.checked = !!f.required;
+    reqCb.addEventListener("change", () => {
+      f.required = reqCb.checked;
+      persistContentField();
+      onChange();
+    });
+    reqLab.appendChild(reqCb);
+    reqLab.appendChild(document.createTextNode(" 送出前必填（required）"));
+    grid.appendChild(reqLab);
+
+    const rflWrap = document.createElement("label");
+    rflWrap.className = "field-rule-item";
+    rflWrap.appendChild(document.createTextNode("自第幾關起必填 "));
+    const rfl = document.createElement("select");
+    rfl.className = "cell-input cell-input-sm";
+    const maxLv = Math.max(
+      0,
+      ...(doc.approval?.columns || []).map((c) => Number(c.level) || 0)
+    );
+    const rflOpts = [
+      ["", "— 不依關卡"],
+      ["0", "0（申請／Submit 起）"],
+    ];
+    for (let i = 1; i <= Math.max(maxLv, 3); i++) {
+      rflOpts.push([String(i), `${i}（該關 Approve 前起）`]);
+    }
+    rflOpts.forEach(([v, lab]) => {
+      const o = document.createElement("option");
+      o.value = v;
+      o.textContent = lab;
+      rfl.appendChild(o);
+    });
+    rfl.value =
+      f.required_from_level == null || f.required_from_level === ""
+        ? ""
+        : String(f.required_from_level);
+    rfl.addEventListener("change", () => {
+      f.required_from_level = rfl.value === "" ? null : Number(rfl.value);
+      persistContentField();
+      onChange();
+    });
+    rflWrap.appendChild(rfl);
+    grid.appendChild(rflWrap);
+
+    const rwWrap = document.createElement("label");
+    rwWrap.className = "field-rule-item field-rule-wide";
+    rwWrap.appendChild(document.createTextNode("條件必填 "));
+    const rw = document.createElement("input");
+    rw.className = "cell-input";
+    rw.placeholder = "例：leave_type=病假";
+    rw.value = f.required_when != null ? String(f.required_when) : "";
+    rw.addEventListener("change", () => {
+      f.required_when = rw.value.trim() || null;
+      persistContentField();
+      onChange();
+    });
+    rwWrap.appendChild(rw);
+    grid.appendChild(rwWrap);
+    return grid;
+  }
+
   function createFieldRulesPanel(fid, f) {
     ensureContentField(f);
     const panel = document.createElement("div");
@@ -2613,145 +2660,110 @@
 
     const head = document.createElement("div");
     head.className = "dash-head";
-    const headTitle = document.createElement("div");
-    headTitle.className = "dash-head-title";
-    headTitle.textContent = "欄位規則儀表板";
     const headHint = document.createElement("div");
     headHint.className = "dash-head-hint";
-    headHint.textContent = "點區塊展開細部；預設收合。";
-    head.appendChild(headTitle);
+    headHint.textContent = "燈號＝狀態；點燈號才開細部。再點一次關閉。";
     head.appendChild(headHint);
     panel.appendChild(head);
 
     const chips = document.createElement("div");
     chips.className = "dash-chips";
+    const detail = document.createElement("div");
+    detail.className = "dash-detail";
+    detail.hidden = true;
+    let activeKey = null;
+
+    const chipDefs = [
+      {
+        key: "required",
+        title: "必填",
+        label: () => {
+          const bits = [];
+          if (f.required) bits.push("必填");
+          else bits.push("非必填");
+          if (f.required_from_level != null && f.required_from_level !== "")
+            bits.push(`L≥${f.required_from_level}`);
+          if (f.required_when) bits.push("條件");
+          return bits.join("·");
+        },
+        on: () =>
+          !!(
+            f.required ||
+            (f.required_from_level != null && f.required_from_level !== "") ||
+            f.required_when
+          ),
+        build: (onChange) => buildRequiredEditor(f, onChange),
+      },
+      {
+        key: "visible_to",
+        title: "可見",
+        label: () => {
+          const n = (f.acl?.visible_to?.roles || []).length;
+          return n ? `可見 ${n}` : "可見不限";
+        },
+        on: () => (f.acl?.visible_to?.roles || []).length > 0,
+        build: (onChange) => createRoleChecks(f, "visible_to", onChange),
+      },
+      {
+        key: "editable_by",
+        title: "可編",
+        label: () => {
+          const n = (f.acl?.editable_by?.roles || []).length;
+          return n ? `可編 ${n}` : "可編不限";
+        },
+        on: () => (f.acl?.editable_by?.roles || []).length > 0,
+        build: (onChange) => createRoleChecks(f, "editable_by", onChange),
+      },
+      {
+        key: "hidden_from",
+        title: "隱藏",
+        label: () => {
+          const n = (f.acl?.hidden_from?.roles || []).length;
+          return n ? `隱藏 ${n}` : "無隱藏";
+        },
+        on: () => (f.acl?.hidden_from?.roles || []).length > 0,
+        build: (onChange) => createRoleChecks(f, "hidden_from", onChange),
+      },
+    ];
+
     const refreshChips = () => {
       chips.replaceChildren();
-      const add = (text, on) => {
-        const c = document.createElement("span");
-        c.className = "dash-chip" + (on ? " on" : "");
-        c.textContent = text;
-        chips.appendChild(c);
-      };
-      add(f.required ? "必填" : "非必填", !!f.required);
-      if (f.required_from_level != null && f.required_from_level !== "") {
-        add(`L≥${f.required_from_level}`, true);
-      } else {
-        add("無關卡門檻", false);
-      }
-      add(
-        f.required_when ? "有條件" : "無條件",
-        !!f.required_when
-      );
-      const v = (f.acl?.visible_to?.roles || []).length;
-      const e = (f.acl?.editable_by?.roles || []).length;
-      const h = (f.acl?.hidden_from?.roles || []).length;
-      add(v ? `可見 ${v}` : "可見不限", !!v);
-      add(e ? `可編 ${e}` : "可編不限", !!e);
-      add(h ? `隱藏 ${h}` : "無隱藏", !!h);
+      chipDefs.forEach((def) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className =
+          "dash-chip" +
+          (def.on() ? " on" : "") +
+          (activeKey === def.key ? " active" : "");
+        btn.textContent = def.label();
+        btn.title = "點擊設定：" + def.title;
+        btn.addEventListener("click", () => {
+          if (activeKey === def.key) {
+            activeKey = null;
+            detail.hidden = true;
+            detail.replaceChildren();
+          } else {
+            activeKey = def.key;
+            detail.hidden = false;
+            detail.replaceChildren();
+            const title = document.createElement("div");
+            title.className = "dash-detail-title";
+            title.textContent = def.title;
+            detail.appendChild(title);
+            detail.appendChild(
+              def.build(() => {
+                refreshChips();
+              })
+            );
+          }
+          refreshChips();
+        });
+        chips.appendChild(btn);
+      });
     };
     refreshChips();
     panel.appendChild(chips);
-
-    const reqMeta = () => {
-      const bits = [];
-      if (f.required) bits.push("必填");
-      if (f.required_from_level != null && f.required_from_level !== "")
-        bits.push(`自 L${f.required_from_level}`);
-      if (f.required_when) bits.push("條件");
-      return bits.length ? bits.join(" · ") : "未強制";
-    };
-
-    panel.appendChild(
-      createDashSection("必填設定", reqMeta(), (body, metaEl) => {
-        const grid = document.createElement("div");
-        grid.className = "field-rules-grid";
-
-        const reqLab = document.createElement("label");
-        reqLab.className = "field-rule-item";
-        const reqCb = document.createElement("input");
-        reqCb.type = "checkbox";
-        reqCb.checked = !!f.required;
-        reqCb.addEventListener("change", () => {
-          f.required = reqCb.checked;
-          persistContentField();
-          metaEl.textContent = reqMeta();
-          refreshChips();
-        });
-        reqLab.appendChild(reqCb);
-        reqLab.appendChild(document.createTextNode(" 送出前必填（required）"));
-        grid.appendChild(reqLab);
-
-        const rflWrap = document.createElement("label");
-        rflWrap.className = "field-rule-item";
-        rflWrap.appendChild(document.createTextNode("自第幾關起必填 "));
-        const rfl = document.createElement("select");
-        rfl.className = "cell-input cell-input-sm";
-        const maxLv = Math.max(
-          0,
-          ...(doc.approval?.columns || []).map((c) => Number(c.level) || 0)
-        );
-        const rflOpts = [
-          ["", "— 不依關卡"],
-          ["0", "0（申請／Submit 起）"],
-        ];
-        for (let i = 1; i <= Math.max(maxLv, 3); i++) {
-          rflOpts.push([String(i), `${i}（該關 Approve 前起）`]);
-        }
-        rflOpts.forEach(([v, lab]) => {
-          const o = document.createElement("option");
-          o.value = v;
-          o.textContent = lab;
-          rfl.appendChild(o);
-        });
-        rfl.value =
-          f.required_from_level == null || f.required_from_level === ""
-            ? ""
-            : String(f.required_from_level);
-        rfl.addEventListener("change", () => {
-          f.required_from_level = rfl.value === "" ? null : Number(rfl.value);
-          persistContentField();
-          metaEl.textContent = reqMeta();
-          refreshChips();
-        });
-        rflWrap.appendChild(rfl);
-        grid.appendChild(rflWrap);
-
-        const rwWrap = document.createElement("label");
-        rwWrap.className = "field-rule-item field-rule-wide";
-        rwWrap.appendChild(document.createTextNode("條件必填 "));
-        const rw = document.createElement("input");
-        rw.className = "cell-input";
-        rw.placeholder = "例：leave_type=病假";
-        rw.value = f.required_when != null ? String(f.required_when) : "";
-        rw.addEventListener("change", () => {
-          f.required_when = rw.value.trim() || null;
-          persistContentField();
-          metaEl.textContent = reqMeta();
-          refreshChips();
-        });
-        rwWrap.appendChild(rw);
-        grid.appendChild(rwWrap);
-        body.appendChild(grid);
-      })
-    );
-
-    [
-      ["visible_to", "誰可以看"],
-      ["editable_by", "誰可以編"],
-      ["hidden_from", "誰隱藏"],
-    ].forEach(([key, title]) => {
-      panel.appendChild(
-        createDashSection(title, aclRolesSummary(f, key), (body, metaEl) => {
-          body.appendChild(
-            createRoleChecks(f, key, () => {
-              metaEl.textContent = aclRolesSummary(f, key);
-              refreshChips();
-            })
-          );
-        })
-      );
-    });
+    panel.appendChild(detail);
 
     const foot = document.createElement("p");
     foot.className = "acl-tip";
@@ -3522,7 +3534,7 @@
   async function boot() {
     let seedDesign = null;
     try {
-      const res = await fetch("./document.json?v=design10", {
+      const res = await fetch("./document.json?v=design11", {
         cache: "no-store",
       });
       if (res.ok) seedDesign = await res.json();
@@ -3530,7 +3542,7 @@
       /* offline */
     }
     try {
-      const sr = await fetch("./alr5-standard.json?v=design10", {
+      const sr = await fetch("./alr5-standard.json?v=design11", {
         cache: "no-store",
       });
       if (sr.ok) alr5Standard = await sr.json();
@@ -3538,7 +3550,7 @@
       /* offline */
     }
     try {
-      const mr = await fetch("./ALR5標準互通.md?v=design10", {
+      const mr = await fetch("./ALR5標準互通.md?v=design11", {
         cache: "no-store",
       });
       if (mr.ok) alr5Markdown = await mr.text();
