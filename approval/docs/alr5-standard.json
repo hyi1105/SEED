@@ -1,10 +1,10 @@
 {
   "standard_id": "ALR5",
-  "standard_version": "0.3.0",
+  "standard_version": "0.3.1",
   "lang": "zh-Hant",
   "title": "ALR5 簽核標準（功能／情境／JSON 互通）",
   "purpose": "ALR5 作為跨公司可承載平台：各系統交付於此，以可轉移 JSON 處理與互通；期許具備類似律師／法院的跨組織公證效力，以及檔案加密（手上鑰匙或第三方備份鑰匙才能解密）；支援簽核、AB、匯出匯入、跨單關聯、開單模式等；本檔可整份貼給新 AI 實作；每個 form 可指定要跑的版本；可用「正式環境」名義做測試試跑，再漸進發布／退回；JSON 改版須能升級成最新結構。",
-  "ai_prompt_prefix": "你是實作 ALR5 簽核互通的工程 Agent。請嚴格依 standard_version ALR5/0.3.0 與 json_contract／decisions／form_versioning／environments／publish_sop／schema_migration 等實作。狀態、current_level、動作 id 不得自創別名。decisions 已定案不得違反。缺欄／缺功能依 json_completeness 補齊；JSON 改版須可 schema_migration 升級到最新結構。",
+  "ai_prompt_prefix": "你是實作 ALR5 簽核互通的工程 Agent。請嚴格依 standard_version ALR5/0.3.1 與 json_contract／decisions／form_versioning／environments／publish_sop／schema_migration 等實作。狀態、current_level、動作 id 不得自創別名。decisions 已定案不得違反。缺欄／缺功能依 json_completeness 補齊；JSON 改版須可 schema_migration 升級到最新結構。",
   "status_model": {
     "field": "system.status",
     "values": [
@@ -1243,102 +1243,481 @@
     {
       "id": "q_ab_line_approve",
       "priority": "low",
-      "question": "明細列是否支援列級簽核／列級 ACL，或一律整單簽核？"
+      "question": "明細列是否支援列級簽核／列級 ACL，或一律整單簽核？",
+      "recommendation": "B",
+      "recommendation_text": "預設一律整單簽核；列級簽核／ACL 列為進階選配（form 開關），第一版不做。",
+      "options": [
+        {
+          "id": "A",
+          "label": "一律整單簽核（永不做列級）",
+          "scenario": "費用報銷：整張一起過課長；明細只是金額拆行，不需要每行各簽。"
+        },
+        {
+          "id": "B",
+          "label": "預設整單；進階可開列級（建議）",
+          "scenario": "一般表單整單簽；少數「多供應商／多專案」表單才開 line_approval。"
+        },
+        {
+          "id": "C",
+          "label": "第一版就做列級簽核＋列級 ACL",
+          "scenario": "採購明細每行不同簽核主管；複雜度高、易與整單 status 打架。"
+        }
+      ]
     },
     {
       "id": "q_export_file_store",
       "priority": "low",
-      "question": "匯出檔存放與重送策略（只留 log、還是存檔案 blob）？"
+      "question": "匯出檔存放與重送策略（只留 log、還是存檔案 blob）？",
+      "recommendation": "B",
+      "recommendation_text": "預設存匯出結果 blob（可重下／重送）＋完整 log；可設 TTL 自動清。",
+      "options": [
+        {
+          "id": "A",
+          "label": "只留 log，不存檔；重送＝重跑匯出",
+          "scenario": "檔很小、重算便宜；省儲存，但「當初實際送出的檔」無法取證。"
+        },
+        {
+          "id": "B",
+          "label": "存 blob＋log，可重下／重送同一檔（建議）",
+          "scenario": "對外部系統重送必須與當日檔一致；稽核要證明「送出內容」。"
+        },
+        {
+          "id": "C",
+          "label": "一律存永久；永不自動刪",
+          "scenario": "強合規產業；成本高，需配保留政策與加密。"
+        }
+      ]
     },
     {
       "id": "q_cross_link_ui",
       "priority": "medium",
-      "question": "跨單關聯在畫面上如何選他單／顯示認證鏈（單號＋狀態燈）？"
+      "question": "跨單關聯在畫面上如何選他單／顯示認證鏈（單號＋狀態燈）？",
+      "recommendation": "B",
+      "recommendation_text": "開單／Submit 前用搜尋選他單；單內顯示認證鏈（單號＋狀態燈＋可點開）。",
+      "options": [
+        {
+          "id": "A",
+          "label": "只填單號文字，不做搜尋／鏈圖",
+          "scenario": "PoC 最快；容易填錯單號、難看出整條合格證明鏈。"
+        },
+        {
+          "id": "B",
+          "label": "搜尋挑選＋單內狀態燈鏈（建議）",
+          "scenario": "校正單要掛儀器主檔：搜尋儀器→選單→畫面上 A→B 燈號（綠完成／黃進行／紅不過）。"
+        },
+        {
+          "id": "C",
+          "label": "完整圖形拓樸（可拖曳關聯）",
+          "scenario": "多單複雜網；強大但學習成本高，可第二期。"
+        }
+      ]
     },
     {
       "id": "q_effect_conflict",
       "priority": "medium",
-      "question": "多張 B 回寫同一 A 欄位時，以最後完成／最大日期／手動為準？"
+      "question": "多張 B 回寫同一 A 欄位時，以最後完成／最大日期／手動為準？",
+      "recommendation": "A",
+      "recommendation_text": "預設以「業務日期最大」為準（非完成時間）；並列出衝突供手動覆寫。",
+      "options": [
+        {
+          "id": "A",
+          "label": "以業務日期最大為準＋可手動覆寫（建議）",
+          "scenario": "兩次校正：較晚的「下次校正日」應蓋過較早的；若資料填錯可 admin 手動改並留版。"
+        },
+        {
+          "id": "B",
+          "label": "以最後完成（completed_at）為準",
+          "scenario": "補登舊校正卻後完成：會誤蓋正確較新日期——風險高。"
+        },
+        {
+          "id": "C",
+          "label": "一律手動確認才回寫",
+          "scenario": "最安全但操作重；適合高風險主檔欄位。"
+        }
+      ]
     },
     {
       "id": "q_preallocate_who_generates",
       "priority": "low",
-      "question": "預建池由誰／何時批次產生（排程、owner、admin）？"
+      "question": "預建池由誰／何時批次產生（排程、owner、admin）？",
+      "recommendation": "B",
+      "recommendation_text": "Owner 設規則；系統排程依規則產池；admin／it_admin 可手動補產。",
+      "options": [
+        {
+          "id": "A",
+          "label": "僅 owner 手動按「產池」",
+          "scenario": "小量名額；忘了產就沒位可搶。"
+        },
+        {
+          "id": "B",
+          "label": "Owner 設規則＋排程產＋admin 可補（建議）",
+          "scenario": "每月倉位／時段：月初排程產生；臨時加場由 admin 補一批。"
+        },
+        {
+          "id": "C",
+          "label": "僅平台排程，禁止手動",
+          "scenario": "規則極穩的環境；彈性差。"
+        }
+      ]
     },
     {
       "id": "q_hold_timeout",
       "priority": "low",
-      "question": "搶位 held 逾時多久自動 released？"
+      "question": "搶位 held 逾時多久自動 released？",
+      "recommendation": "B",
+      "recommendation_text": "表單可設；預設 30 分鐘；逾時自動 released 並通知持有者。",
+      "options": [
+        {
+          "id": "A",
+          "label": "固定 15 分鐘",
+          "scenario": "搶手時段、要快填完；填長表單容易被放掉。"
+        },
+        {
+          "id": "B",
+          "label": "表單可設，預設 30 分鐘（建議）",
+          "scenario": "一般申請夠填；尖峰活動可改 10 分鐘。"
+        },
+        {
+          "id": "C",
+          "label": "固定到當日結束才釋放",
+          "scenario": "名額被占整天；不公平。"
+        }
+      ]
     },
     {
       "id": "q_lines_storage",
       "priority": "medium",
-      "question": "明細超級多時：lines 全內嵌，還是分片／外掛 lines_ref？單單上限？"
+      "question": "明細超級多時：lines 全內嵌，還是分片／外掛 lines_ref？單單上限？",
+      "recommendation": "B",
+      "recommendation_text": "小單內嵌；超過門檻（建議 200 列或 256KB）改 lines_ref 分片；硬上限可設（如 5000）。",
+      "options": [
+        {
+          "id": "A",
+          "label": "一律全內嵌，不設上限",
+          "scenario": "JSON 巨大、列表／傳輸慢；易拖垮互通。"
+        },
+        {
+          "id": "B",
+          "label": "小單內嵌、大單 lines_ref＋硬上限（建議）",
+          "scenario": "退貨 50 列內嵌；進出口 3000 列外掛分片，單頭仍可快速開。"
+        },
+        {
+          "id": "C",
+          "label": "一律外掛 lines_ref",
+          "scenario": "實作一致但小單也多一次讀取。"
+        }
+      ]
     },
     {
       "id": "q_import_async",
       "priority": "low",
-      "question": "大量匯入檢核是否一律非同步？失敗列 UI 如何修？"
+      "question": "大量匯入檢核是否一律非同步？失敗列 UI 如何修？",
+      "recommendation": "B",
+      "recommendation_text": "小檔同步、大檔非同步；失敗列下載錯誤檔／畫面上逐列修後重送失敗集。",
+      "options": [
+        {
+          "id": "A",
+          "label": "一律同步；失敗就整批退回",
+          "scenario": "100 列還好；1 萬列會 timeout，且一列錯整批重來很痛。"
+        },
+        {
+          "id": "B",
+          "label": "依大小：小同步／大非同步；失敗列可修（建議）",
+          "scenario": "匯入發票：成功列先入；失敗列標紅可改或下載 CSV 修完再匯失敗集。"
+        },
+        {
+          "id": "C",
+          "label": "一律非同步；只能下載錯誤報告、不可在 UI 改",
+          "scenario": "實作單純；使用者要來回檔案較麻煩。"
+        }
+      ]
     },
     {
       "id": "q_notary_provider",
       "priority": "medium",
-      "question": "公證節點：自建 notary、接外部 TSA／律師機構、或聯盟多簽？"
+      "question": "公證節點：自建 notary、接外部 TSA／律師機構、或聯盟多簽？",
+      "recommendation": "B",
+      "recommendation_text": "第一期自建 notary（可驗證）＋可接外部 TSA；跨公司再走聯盟多簽。",
+      "options": [
+        {
+          "id": "A",
+          "label": "僅自建 notary",
+          "scenario": "內部稽核夠用；對外法律效力弱。"
+        },
+        {
+          "id": "B",
+          "label": "自建＋可插外部 TSA／機構（建議）",
+          "scenario": "日常自建；合約／跨境單再掛 TSA 時間戳。"
+        },
+        {
+          "id": "C",
+          "label": "一開始就聯盟多簽必選",
+          "scenario": "跨公司最強；治理與成本最高，可第二期。"
+        }
+      ]
     },
     {
       "id": "q_key_escrow_policy",
       "priority": "medium",
-      "question": "第三方備份鑰匙的解鎖條件（本人申請／法院令／n-of-m）？"
+      "question": "第三方備份鑰匙的解鎖條件（本人申請／法院令／n-of-m）？",
+      "recommendation": "C",
+      "recommendation_text": "預設 n-of-m（如 2-of-3：本人＋法務＋it_admin）；緊急可走法院令／公司核准流程並全程稽核。",
+      "options": [
+        {
+          "id": "A",
+          "label": "僅本人申請即可解鎖",
+          "scenario": "便利；離職／冒用風險高。"
+        },
+        {
+          "id": "B",
+          "label": "僅法院令／正式公文",
+          "scenario": "最嚴；日常救災太慢。"
+        },
+        {
+          "id": "C",
+          "label": "n-of-m 為主＋公文例外（建議）",
+          "scenario": "員工忘鑰：本人＋主管／法務共簽解鎖；爭議案走法院令。"
+        }
+      ]
     },
     {
       "id": "q_encrypt_which_fields",
       "priority": "low",
-      "question": "預設哪些附件／欄位強制加密？"
+      "question": "預設哪些附件／欄位強制加密？",
+      "recommendation": "B",
+      "recommendation_text": "預設：身分證／帳號密鑰類欄位＋標記為 sensitive 的附件；其餘由表單 owner 勾選。",
+      "options": [
+        {
+          "id": "A",
+          "label": "全部附件強制加密",
+          "scenario": "最安全；效能與搜尋／預覽成本高。"
+        },
+        {
+          "id": "B",
+          "label": "敏感欄位／標記附件預設加密（建議）",
+          "scenario": "薪資附件、個資欄加密；一般說明 PDF 可不加密以便預覽。"
+        },
+        {
+          "id": "C",
+          "label": "預設不加密，全由 owner 自選",
+          "scenario": "彈性大；容易漏設。"
+        }
+      ]
     },
     {
       "id": "q_env_isolation_data",
       "priority": "medium",
-      "question": "測試用 formal 環境的資料是否與正式資料隔離（獨立租戶／前綴）？"
+      "question": "測試用 formal 環境的資料是否與正式資料隔離（獨立租戶／前綴）？",
+      "recommendation": "A",
+      "recommendation_text": "必須隔離：獨立租戶（或至少獨立資料前綴＋禁止跨寫）；測試不可碰正式 item。",
+      "options": [
+        {
+          "id": "A",
+          "label": "獨立租戶／庫完全隔離（建議）",
+          "scenario": "用「像正式」的環境練發布；誤操作也不打到真單。"
+        },
+        {
+          "id": "B",
+          "label": "同庫、doc_no／id 加 TEST_ 前綴",
+          "scenario": "省資源；篩選漏掉就污染正式報表。"
+        },
+        {
+          "id": "C",
+          "label": "可讀正式、不可寫（混合）",
+          "scenario": "方便對照真資料；仍有個資外洩風險，需額外控管。"
+        }
+      ]
     },
     {
       "id": "q_item_midflight_upgrade",
       "priority": "medium",
-      "question": "進行中的 item 遇 form 新版本：鎖定開單版，還是允許中途升 form_version？"
+      "question": "進行中的 item 遇 form 新版本：鎖定開單版，還是允許中途升 form_version？",
+      "recommendation": "A",
+      "recommendation_text": "預設鎖定開單時 form_version；新單才用新版。例外：owner／admin 明確「遷移升版」並留版。",
+      "options": [
+        {
+          "id": "A",
+          "label": "鎖定開單版；新單才用新版（建議）",
+          "scenario": "簽到一半欄位／關卡被改會混亂；報表也難比。"
+        },
+        {
+          "id": "B",
+          "label": "允許中途自動升到最新 form_version",
+          "scenario": "修了必填規則希望舊單也套用；可能讓已填內容突然變不合規。"
+        },
+        {
+          "id": "C",
+          "label": "僅允許「相容升版」（加欄不加關）自動升",
+          "scenario": "折衷；需嚴格定義相容，實作複雜。"
+        }
+      ]
     },
     {
       "id": "q_auto_sop_gates",
       "priority": "low",
-      "question": "自動 SOP 的通過門檻（錯誤率、簽核樣本數、人工核准）？"
+      "question": "自動 SOP 的通過門檻（錯誤率、簽核樣本數、人工核准）？",
+      "recommendation": "B",
+      "recommendation_text": "預設：試跑錯誤率＝0 阻擋項＋至少 N 筆簽核樣本（建議 5）＋負責人人工核准才能進下一環境。",
+      "options": [
+        {
+          "id": "A",
+          "label": "全自動：檢查全綠就發布",
+          "scenario": "CI 友好；缺真實簽核樣本可能漏情境。"
+        },
+        {
+          "id": "B",
+          "label": "錯誤率門檻＋樣本數＋人工核准（建議）",
+          "scenario": "canary 前：0 阻擋錯、≥5 筆走完流程、owner 按核准。"
+        },
+        {
+          "id": "C",
+          "label": "僅人工核准，無量化門檻",
+          "scenario": "彈性；難複製、難稽核「為何過」。"
+        }
+      ]
     }
   ],
   "logic_risk_warnings": [
     {
       "id": "risk_double_complete",
-      "warning": "空關跳過＋any 平行若實作不當，可能重複觸發 completed 通知或跳過仍有人的關。"
+      "warning": "空關跳過＋any 平行若實作不當，可能重複觸發 completed 通知或跳過仍有人的關。",
+      "recommendation": "關卡推進用單一「advance」交易：先算本關是否滿足（all／any／空關），再原子更新 level／status；completed 通知只在 status 首次變 completed 時發一次（冪等鍵）。",
+      "scenarios": [
+        "any 關兩人同時按同意 → 只能一人贏得推進，另一人得到「已通過」而非再發完成信。",
+        "連續空關 2、3 → 一次推進跳到下一有人關，不要每跳一關都當 completed。"
+      ],
+      "choose": [
+        {
+          "id": "A",
+          "label": "採納上述原子 advance＋冪等完成通知（建議）"
+        },
+        {
+          "id": "B",
+          "label": "每跳一關都發 stage 通知，completed 另計（需嚴格去重）"
+        }
+      ]
     },
     {
       "id": "risk_proxy_vs_change",
-      "warning": "代理改派與單上 Change 同時發生時，以誰為準？結束代理後是否覆蓋使用者手動 Change？"
+      "warning": "代理改派與單上 Change 同時發生時，以誰為準？結束代理後是否覆蓋使用者手動 Change？",
+      "recommendation": "單上明確 Change／指派優先於「流程外代理預設」；結束代理時：若該關曾被手動 Change，不自動改回原代理人規則，只影響尚未手動改過的關。",
+      "scenarios": [
+        "代理生效中，申請人把未簽關改成同事 C → 以 C 為準。",
+        "代理結束：未手動改過的關恢復原簽核者；已 Change 的關維持 C。"
+      ],
+      "choose": [
+        {
+          "id": "A",
+          "label": "手動 Change 優先；結束代理不覆蓋已 Change（建議）"
+        },
+        {
+          "id": "B",
+          "label": "代理規則永遠覆蓋單上 Change"
+        },
+        {
+          "id": "C",
+          "label": "結束代理時一律恢復原簽核者（含已 Change）"
+        }
+      ]
     },
     {
       "id": "risk_return_notify_storm",
-      "warning": "Return／Reject／Cancel 若通知「所有曾收件者」可能造成通知風暴；需 Admin 策略與去重。"
+      "warning": "Return／Reject／Cancel 若通知「所有曾收件者」可能造成通知風暴；需 Admin 策略與去重。",
+      "recommendation": "預設只通知：目前關簽核人＋creator／requester＋該動作相關 stage_notify；「曾收件者全通知」改為表單／admin 選配，並依人＋單＋事件去重。",
+      "scenarios": [
+        "退回：通知申請人與當關即可，不必再吵已過關的所有人。",
+        "拒件：通知申請人＋曾參與簽核者（可選），同人同日合併一封。"
+      ],
+      "choose": [
+        {
+          "id": "A",
+          "label": "預設精簡收件＋選配全通知＋去重（建議）"
+        },
+        {
+          "id": "B",
+          "label": "一律通知所有曾收件者"
+        },
+        {
+          "id": "C",
+          "label": "一律只通知 creator／requester"
+        }
+      ]
     },
     {
       "id": "risk_level_status_desync",
-      "warning": "status 與 current_level 必須成對更新，否則列表篩選會錯（例如 status=in_process 但 level=9999）。"
+      "warning": "status 與 current_level 必須成對更新，否則列表篩選會錯（例如 status=in_process 但 level=9999）。",
+      "recommendation": "寫入 API 只允許成對 mutation（set_status_level）；禁止只改其一。列表以成對規則校驗，違規列標紅並可修。",
+      "scenarios": [
+        "完成：必須 status=completed 且 level=9999 同交易。",
+        "拒件：status=denied 且 level=-2 同交易。"
+      ],
+      "choose": [
+        {
+          "id": "A",
+          "label": "強制成對 API／校驗（建議，視為實作規範）"
+        },
+        {
+          "id": "B",
+          "label": "允許暫時不一致，靠排程修復"
+        }
+      ]
     },
     {
       "id": "risk_delegate_loop",
-      "warning": "層層委派需防環狀委派（A→B→A）。"
+      "warning": "層層委派需防環狀委派（A→B→A）。",
+      "recommendation": "委派前檢查委派鏈，若目標已在鏈上則拒絕；最大深度上限（建議 5）。",
+      "scenarios": [
+        "A 委 B、B 再委 A → 第二次拒絕並提示環狀。",
+        "A→B→C→D… 超過深度 → 拒絕並要求改派。"
+      ],
+      "choose": [
+        {
+          "id": "A",
+          "label": "拒環＋深度上限（建議）"
+        },
+        {
+          "id": "B",
+          "label": "只拒直接互委（A↔B），允許多層長鏈"
+        }
+      ]
     },
     {
       "id": "risk_required_from_level",
-      "warning": "勿把 required_from_level≥1 實作成 Submit 就擋；＝0 才應在申請人 Submit 擋。空 current_level 對門檻 0 應視為申請人階段。"
+      "warning": "勿把 required_from_level≥1 實作成 Submit 就擋；＝0 才應在申請人 Submit 擋。空 current_level 對門檻 0 應視為申請人階段。",
+      "recommendation": "檢核時機：當「即將進入的／當前動作所在 level」≥ required_from_level 才擋。Submit（level 0）只擋門檻 ≤0；空 level 視為申請人階段（等同 0）。",
+      "scenarios": [
+        "金額說明 required_from_level=2：申請人可先送出；到 level 2 同意前才必填。",
+        "主旨 required_from_level=0：Submit 時沒填就擋。"
+      ],
+      "choose": [
+        {
+          "id": "A",
+          "label": "依 level 門檻時機檢核（建議，與既有定案一致）"
+        },
+        {
+          "id": "B",
+          "label": "Submit 時擋所有 required（含 ≥1）——不建議"
+        }
+      ]
     },
     {
       "id": "risk_return_resign_chain",
-      "warning": "Return 作廢後續關時，印章／logs／通知要一致清除或標記作廢，避免報表以為仍已簽。"
+      "warning": "Return 作廢後續關時，印章／logs／通知要一致清除或標記作廢，避免報表以為仍已簽。",
+      "recommendation": "Return 時：後續關印章標 voided（保留歷史）＋logs 留 return 事件；報表預設不算已簽；通知用「作廢／退回」而非再當通過。",
+      "scenarios": [
+        "已簽到 level 3，退回 level 1：2、3 關印記作廢可見但計數為未簽。",
+        "重走 level 2：新印章疊在 voided 之上，log 可追溯。"
+      ],
+      "choose": [
+        {
+          "id": "A",
+          "label": "標記 voided 保留歷史（建議）"
+        },
+        {
+          "id": "B",
+          "label": "直接清除後續印章（較難稽核）"
+        }
+      ]
     }
   ],
   "decisions": [
@@ -2356,5 +2735,7 @@
         "wrap_envelope"
       ]
     }
-  }
+  },
+  "updated": "2026-08-05",
+  "decision_pack_note": "open_questions／logic_risk_warnings 附 recommendation＋options／scenarios；尚未寫入 decisions 前僅為建議，供拍板選擇。"
 }

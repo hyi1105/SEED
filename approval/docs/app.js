@@ -1783,12 +1783,56 @@
 
     const qSec = document.createElement("section");
     qSec.className = "guide-sec";
-    qSec.innerHTML = "<h2>請你拍板（欄位／邏輯未決）</h2>";
+    qSec.innerHTML =
+      "<h2>請你拍板（欄位／邏輯未決）</h2><p class=\"guide-note\">每題附建議與情境；回覆「題號選 B」即可定案。尚未寫入 decisions。</p>";
     const ql = document.createElement("ol");
     ql.className = "q-list";
     (s.open_questions || []).forEach((q) => {
       const li = document.createElement("li");
-      li.innerHTML = `<span class="sev sev-${q.severity}">${q.severity}</span> ${q.question}`;
+      const pri = q.priority || "medium";
+      const head = document.createElement("div");
+      head.className = "q-head";
+      head.innerHTML =
+        '<span class="sev sev-' +
+        pri +
+        '">' +
+        pri +
+        '</span> <code class="q-id">' +
+        (q.id || "") +
+        "</code> " +
+        (q.question || "");
+      li.appendChild(head);
+      if (q.recommendation_text || q.recommendation) {
+        const rec = document.createElement("p");
+        rec.className = "q-rec";
+        rec.textContent =
+          "建議 " +
+          (q.recommendation || "") +
+          (q.recommendation_text ? "：" + q.recommendation_text : "");
+        li.appendChild(rec);
+      }
+      if (Array.isArray(q.options) && q.options.length) {
+        const ul = document.createElement("ul");
+        ul.className = "q-opts";
+        q.options.forEach((opt) => {
+          const o = document.createElement("li");
+          const mark = opt.id === q.recommendation ? " ← 建議" : "";
+          o.innerHTML =
+            "<strong>" +
+            (opt.id || "") +
+            "</strong> " +
+            (opt.label || "") +
+            mark;
+          if (opt.scenario) {
+            const sc = document.createElement("div");
+            sc.className = "q-scenario";
+            sc.textContent = "情境：" + opt.scenario;
+            o.appendChild(sc);
+          }
+          ul.appendChild(o);
+        });
+        li.appendChild(ul);
+      }
       ql.appendChild(li);
     });
     qSec.appendChild(ql);
@@ -1796,11 +1840,45 @@
 
     const riskSec = document.createElement("section");
     riskSec.className = "guide-sec";
-    riskSec.innerHTML = "<h2>實作易錯／邏輯風險</h2>";
+    riskSec.innerHTML =
+      "<h2>實作易錯／邏輯風險</h2><p class=\"guide-note\">建議規則可選；與定案衝突時以 decisions 為準。</p>";
     const rl = document.createElement("ul");
+    rl.className = "risk-list";
     (s.logic_risk_warnings || []).forEach((w) => {
       const li = document.createElement("li");
-      li.textContent = w.warning;
+      const head = document.createElement("div");
+      head.className = "q-head";
+      head.innerHTML =
+        '<code class="q-id">' + (w.id || "") + "</code> " + (w.warning || "");
+      li.appendChild(head);
+      if (w.recommendation) {
+        const rec = document.createElement("p");
+        rec.className = "q-rec";
+        rec.textContent = "建議規則：" + w.recommendation;
+        li.appendChild(rec);
+      }
+      if (Array.isArray(w.scenarios) && w.scenarios.length) {
+        const ul = document.createElement("ul");
+        ul.className = "q-opts";
+        w.scenarios.forEach((sc) => {
+          const o = document.createElement("li");
+          o.className = "q-scenario-only";
+          o.textContent = "情境：" + sc;
+          ul.appendChild(o);
+        });
+        li.appendChild(ul);
+      }
+      if (Array.isArray(w.choose) && w.choose.length) {
+        const ul = document.createElement("ul");
+        ul.className = "q-opts";
+        w.choose.forEach((opt) => {
+          const o = document.createElement("li");
+          o.innerHTML =
+            "<strong>" + (opt.id || "") + "</strong> " + (opt.label || "");
+          ul.appendChild(o);
+        });
+        li.appendChild(ul);
+      }
       rl.appendChild(li);
     });
     riskSec.appendChild(rl);
@@ -3304,7 +3382,7 @@
   async function boot() {
     let seedDesign = null;
     try {
-      const res = await fetch("./document.json?v=design6", {
+      const res = await fetch("./document.json?v=design7", {
         cache: "no-store",
       });
       if (res.ok) seedDesign = await res.json();
@@ -3312,7 +3390,7 @@
       /* offline */
     }
     try {
-      const sr = await fetch("./alr5-standard.json?v=design6", {
+      const sr = await fetch("./alr5-standard.json?v=design7", {
         cache: "no-store",
       });
       if (sr.ok) alr5Standard = await sr.json();
@@ -3320,7 +3398,7 @@
       /* offline */
     }
     try {
-      const mr = await fetch("./ALR5標準互通.md?v=design6", {
+      const mr = await fetch("./ALR5標準互通.md?v=design7", {
         cache: "no-store",
       });
       if (mr.ok) alr5Markdown = await mr.text();
