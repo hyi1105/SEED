@@ -10,6 +10,7 @@
 
 ## 場次
 
+- 2026-08-05 — 欄位規則改純燈號（點開細部） — 標籤：SEED、Approval、ALR5、Rules、燈號、UI — [sessions/2026-08-05-alr5-field-rules-dash.md](sessions/2026-08-05-alr5-field-rules-dash.md)
 - 2026-08-05 — 欄位規則改儀表板（點開細部） — 標籤：SEED、Approval、ALR5、Rules、ACL、儀表板、UI — [sessions/2026-08-05-alr5-field-rules-dash.md](sessions/2026-08-05-alr5-field-rules-dash.md)
 - 2026-08-05 — 設計表單手機版改卡片布局 — 標籤：SEED、Approval、ALR5、設計表單、手機、UI — [sessions/2026-08-05-alr5-design-mobile.md](sessions/2026-08-05-alr5-design-mobile.md)
 - 2026-08-05 — 未決／風險附建議與情境供拍板 — 標籤：SEED、Approval、ALR5、拍板、未決、風險、建議 — [sessions/2026-08-05-alr5-open-q-recommend.md](sessions/2026-08-05-alr5-open-q-recommend.md)
