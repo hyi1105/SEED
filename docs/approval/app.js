@@ -64,7 +64,7 @@
       "creator": "王小明",
       "location": "",
       "lang": "zh-Hant",
-      "note": "ALR5：內容欄位 type 下拉＋ACL／必填面板；系統欄位對 Owner 隱藏。"
+      "note": "ALR5：簽核階層 level 置左；預設 Approver／申請人可改／stage_notify；通知信範本。"
     },
     "actor": {
       "id": "u_wang",
@@ -324,6 +324,7 @@
           "label": "Submit",
           "level": 0,
           "role": "requester",
+          "editable": false,
           "person": {
             "id": "u_wang",
             "name": "王小明"
@@ -334,13 +335,16 @@
             "time": null,
             "comment": "",
             "pending": true
-          }
+          },
+          "stage_notify": { "people": [], "groups": [], "emails": [] },
+          "pass_rule": "all"
         },
         {
           "id": "step_1",
           "label": "代理人",
           "level": 1,
           "role": "approver_1",
+          "editable": true,
           "person": {
             "id": "u_chen",
             "name": "陳美玲"
@@ -351,13 +355,16 @@
             "time": null,
             "comment": "",
             "pending": true
-          }
+          },
+          "stage_notify": { "people": [], "groups": [], "emails": [] },
+          "pass_rule": "all"
         },
         {
           "id": "step_2",
           "label": "課長",
           "level": 2,
           "role": "approver_2",
+          "editable": true,
           "person": {
             "id": "u_lin",
             "name": "林課長"
@@ -368,13 +375,16 @@
             "time": null,
             "comment": "",
             "pending": true
-          }
+          },
+          "stage_notify": { "people": [], "groups": [], "emails": [] },
+          "pass_rule": "all"
         },
         {
           "id": "step_3",
           "label": "協理",
           "level": 3,
           "role": "approver_3",
+          "editable": false,
           "person": {
             "id": "u_yen",
             "name": "嚴協理"
@@ -385,7 +395,9 @@
             "time": null,
             "comment": "",
             "pending": true
-          }
+          },
+          "stage_notify": { "people": [], "groups": [], "emails": [] },
+          "pass_rule": "all"
         }
       ]
     },
@@ -398,7 +410,8 @@
       "status": "draft",
       "archived": false
     },
-    "logs": []
+    "logs": [],
+    "mail_templates": []
   };
 
   let doc = null;
@@ -1813,8 +1826,95 @@
     return d;
   }
 
+  function ensureStageNotify(raw) {
+    const n = raw && typeof raw === "object" ? raw : {};
+    return {
+      people: Array.isArray(n.people) ? n.people.slice() : [],
+      groups: Array.isArray(n.groups) ? n.groups.slice() : [],
+      emails: Array.isArray(n.emails) ? n.emails.slice() : [],
+    };
+  }
+
+  function ensureApprovalColumn(col) {
+    if (!col || typeof col !== "object") return col;
+    if (!col.person) col.person = { id: "", name: "" };
+    if (!col.stamp) col.stamp = {};
+    if (col.editable == null) col.editable = true;
+    col.stage_notify = ensureStageNotify(col.stage_notify);
+    if (!col.pass_rule) col.pass_rule = "all";
+    if (!col.mail || typeof col.mail !== "object") col.mail = {};
+    const name = col.person.name || col.stamp.name || "";
+    if (name) {
+      col.person.name = name;
+      if (!col.stamp.name || String(col.stamp.name).length <= 1) {
+        col.stamp.name = name;
+      }
+    }
+    return col;
+  }
+
+  function formatNotifyList(sn) {
+    const parts = [];
+    (sn.people || []).forEach((p) => parts.push(p));
+    (sn.emails || []).forEach((e) => parts.push(e));
+    (sn.groups || []).forEach((g) => parts.push("@" + g));
+    return parts.join(", ");
+  }
+
+  function parseNotifyList(text) {
+    const people = [];
+    const emails = [];
+    const groups = [];
+    String(text || "")
+      .split(/[,;\n]/)
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .forEach((tok) => {
+        if (tok.startsWith("@")) groups.push(tok.slice(1));
+        else if (tok.includes("@")) emails.push(tok);
+        else people.push(tok);
+      });
+    return { people, emails, groups };
+  }
+
+  const MAIL_EVENT_DEFS = [
+    { id: "notify_on_submit", label: "送出申請（Submit → cc）" },
+    { id: "notify_need_approve", label: "輪到簽核（請簽）" },
+    { id: "notify_on_stage_pass", label: "關卡通過（stage_notify）" },
+    { id: "notify_stage_peers", label: "本關通過／被拒（同關簽核人）" },
+    { id: "notify_on_reject", label: "拒件（Reject）" },
+    { id: "notify_on_return", label: "退回（Return）" },
+    { id: "notify_on_cancel", label: "取消（Cancel）" },
+    { id: "notify_on_completed", label: "結案（FYI）" },
+    { id: "notify_manual", label: "手動通知（Notify）" },
+    { id: "notify_overdue", label: "逾期通知" },
+  ];
+
+  function ensureMailTemplates(d) {
+    if (!Array.isArray(d.mail_templates)) d.mail_templates = [];
+    const byId = new Map(d.mail_templates.map((t) => [t.id, t]));
+    MAIL_EVENT_DEFS.forEach((ev) => {
+      if (!byId.has(ev.id)) {
+        d.mail_templates.push({
+          id: ev.id,
+          label: ev.label,
+          subject: "",
+          body: "",
+          editable: true,
+          locked: false,
+        });
+      } else {
+        const t = byId.get(ev.id);
+        if (!t.label) t.label = ev.label;
+        if (t.editable == null) t.editable = true;
+        if (t.locked == null) t.locked = false;
+      }
+    });
+    return d.mail_templates;
+  }
+
   function renumberApprovalSteps(d) {
-    const cols = d.approval?.columns || [];
+    const cols = (d.approval?.columns || []).map(ensureApprovalColumn);
     const applyCol = cols.find((c) => Number(c.level) === 0);
     const steps = cols
       .filter((c) => Number(c.level) > 0)
@@ -1825,7 +1925,6 @@
       if (c.role && /^approver_\d+$/.test(c.role)) {
         c.role = `approver_${i + 1}`;
       }
-      // 印名：完整姓名（單字舊資料升級）
       if (c.person?.name) {
         if (!c.stamp) c.stamp = {};
         const sn = c.stamp.name || "";
@@ -1836,13 +1935,14 @@
       applyCol.level = 0;
       applyCol.id = "step_0";
       if (!applyCol.label || applyCol.label === "申請") applyCol.label = "Submit";
+      applyCol.role = applyCol.role || "requester";
       if (applyCol.person?.name) {
         if (!applyCol.stamp) applyCol.stamp = {};
         const sn = applyCol.stamp.name || "";
         if (!sn || sn.length <= 1) applyCol.stamp.name = applyCol.person.name;
       }
     }
-    // 水流順序：step_0 → step_1 → …（上往下／左往右）
+    // 水流順序：step_0 → step_1 → …
     const ordered = [];
     if (applyCol) ordered.push(applyCol);
     ordered.push(...steps);
@@ -2586,80 +2686,186 @@
     fSec.appendChild(fActions);
     wrap.appendChild(fSec);
 
-    // 簽核階層：水流 step_0 → step_1 → …
-    const aTable = document.createElement("table");
-    aTable.className = "mgmt-table";
-    aTable.innerHTML =
-      "<thead><tr><th>step_id</th><th>label</th><th>level</th><th>role</th><th>stamp_name</th><th></th></tr></thead>";
-    const atb = document.createElement("tbody");
-    (doc.approval?.columns || []).forEach((col) => {
-      const tr = document.createElement("tr");
-      const stampName =
-        col.stamp?.name && String(col.stamp.name).length > 1
-          ? col.stamp.name
-          : col.person?.name || col.stamp?.name || "";
-      const specs = [
-        [col.id, true, null],
-        [col.label || "", false, "label"],
-        [col.level ?? "", true, "level"],
-        [col.role || "", false, "role"],
-        [stampName, false, "stamp.name"],
-      ];
-      specs.forEach(([val, ro, prop]) => {
-        const td = document.createElement("td");
-        if (ro) td.textContent = String(val);
-        else {
-          const inp = document.createElement("input");
-          inp.className = "cell-input";
-          inp.value = String(val);
-          if (prop === "label") inp.title = "UI 顯示名稱（印章表頭）";
-          if (prop === "role") inp.title = "權限角色 id（requester／approver_n）";
-          if (prop === "stamp.name") inp.title = "印章完整姓名";
-          inp.addEventListener("change", () => {
-            if (prop === "stamp.name") {
-              if (!col.stamp) col.stamp = {};
-              col.stamp.name = inp.value;
-              if (!col.person) col.person = { id: "", name: "" };
-              col.person.name = inp.value;
-            } else {
-              col[prop] = inp.value;
-            }
-            persistDocForForm(doc.meta.form_id, doc);
-          });
-          td.appendChild(inp);
-        }
-        tr.appendChild(td);
-      });
-      const tdDel = document.createElement("td");
-      if (Number(col.level) > 0) {
-        const del = document.createElement("button");
-        del.type = "button";
-        del.className = "table-btn danger";
-        del.textContent = "刪除";
-        del.addEventListener("click", () => {
-          if (!confirm(`刪除 ${col.id}（${col.label || ""}）？`)) return;
-          doc.approval.columns = (doc.approval.columns || []).filter(
-            (c) => c.id !== col.id
-          );
-          renumberApprovalSteps(doc);
-          persistDocForForm(doc.meta.form_id, doc);
-          renderDesignEdit();
-        });
-        tdDel.appendChild(del);
-      } else {
-        tdDel.className = "muted-cell";
-        tdDel.textContent = "fixed";
-      }
-      tr.appendChild(tdDel);
-      atb.appendChild(tr);
-    });
-    aTable.appendChild(atb);
-    const aSec = sectionBlock("簽核階層（水流）", aTable);
+    // 簽核階層
+    let showSysCols = false;
+    const aSec = document.createElement("section");
+    aSec.className = "design-section";
+    const aH = document.createElement("h3");
+    aH.textContent = "簽核階層";
+    aSec.appendChild(aH);
     const aNote = document.createElement("p");
     aNote.className = "sec-note";
     aNote.textContent =
-      "水流：step_0（Submit）在最上，往下 step_1→step_2…。label＝畫面顯示名；role＝權限角色 id；stamp_name＝印章完整姓名。刪 step≥1 後自動重編。";
-    aSec.insertBefore(aNote, aTable);
+      "由上往下：level 0＝Submit，往下 1→2…。預設 Approver＝該關預設簽核人；「申請人可改」對應 ALR5 editable（未簽前 creator／requester 可 Change）。stage_notify＝該關同意往下時通知的人（逗號分隔；mail 含 @ 為 email；@群組）。";
+    aSec.appendChild(aNote);
+
+    const sysToggleLab = document.createElement("label");
+    sysToggleLab.className = "sys-col-toggle";
+    const sysToggle = document.createElement("input");
+    sysToggle.type = "checkbox";
+    sysToggleLab.appendChild(sysToggle);
+    sysToggleLab.appendChild(document.createTextNode(" 顯示系統欄（step_id／role）"));
+    aSec.appendChild(sysToggleLab);
+
+    const aTable = document.createElement("table");
+    aTable.className = "mgmt-table stage-table";
+    const aThead = document.createElement("thead");
+    const aHr = document.createElement("tr");
+    aThead.appendChild(aHr);
+    aTable.appendChild(aThead);
+    const atb = document.createElement("tbody");
+    aTable.appendChild(atb);
+
+    const rebuildStageTable = () => {
+      aHr.replaceChildren();
+      const headers = ["level", "Display name", "default Approver", "editable", "stage_notify", ""];
+      if (showSysCols) headers.splice(1, 0, "step_id", "role");
+      headers.forEach((h) => {
+        const th = document.createElement("th");
+        th.textContent = h;
+        if (h === "editable") th.title = "申請人可否改此關簽核人（ALR5 editable）";
+        if (h === "stage_notify") th.title = "關卡通過通知名單";
+        aHr.appendChild(th);
+      });
+      atb.replaceChildren();
+      (doc.approval?.columns || []).forEach((col) => {
+        ensureApprovalColumn(col);
+        const tr = document.createElement("tr");
+        const lv = Number(col.level);
+
+        const tdLv = document.createElement("td");
+        tdLv.className = "level-cell";
+        tdLv.textContent = String(col.level ?? "");
+        tr.appendChild(tdLv);
+
+        if (showSysCols) {
+          const tdSid = document.createElement("td");
+          tdSid.className = "muted-cell";
+          tdSid.textContent = col.id || "";
+          tr.appendChild(tdSid);
+          const tdRole = document.createElement("td");
+          tdRole.className = "muted-cell";
+          tdRole.textContent = col.role || "";
+          tr.appendChild(tdRole);
+        }
+
+        const tdName = document.createElement("td");
+        const nameInp = document.createElement("input");
+        nameInp.className = "cell-input";
+        nameInp.value = col.label || "";
+        nameInp.placeholder = "Display name";
+        nameInp.addEventListener("change", () => {
+          col.label = nameInp.value;
+          persistDocForForm(doc.meta.form_id, doc);
+        });
+        tdName.appendChild(nameInp);
+        tr.appendChild(tdName);
+
+        const tdAppr = document.createElement("td");
+        if (lv === 0) {
+          tdAppr.className = "muted-cell";
+          tdAppr.textContent = "（Submit）";
+        } else {
+          const sel = document.createElement("select");
+          sel.className = "cell-input";
+          const blank = document.createElement("option");
+          blank.value = "";
+          blank.textContent = "（預設 Approver）";
+          sel.appendChild(blank);
+          knownPeopleOptions().forEach((opt) => {
+            const o = document.createElement("option");
+            o.value = opt.value;
+            o.textContent = opt.label;
+            sel.appendChild(o);
+          });
+          const cur = col.person?.name || col.stamp?.name || "";
+          if (cur && !Array.from(sel.options).some((o) => o.value === cur)) {
+            const o = document.createElement("option");
+            o.value = cur;
+            o.textContent = cur;
+            sel.appendChild(o);
+          }
+          sel.value = cur;
+          sel.addEventListener("change", () => {
+            if (!col.person) col.person = { id: "", name: "" };
+            col.person.name = sel.value;
+            if (!col.stamp) col.stamp = {};
+            col.stamp.name = sel.value;
+            persistDocForForm(doc.meta.form_id, doc);
+          });
+          tdAppr.appendChild(sel);
+        }
+        tr.appendChild(tdAppr);
+
+        const tdEdit = document.createElement("td");
+        if (lv === 0) {
+          tdEdit.className = "muted-cell";
+          tdEdit.textContent = "—";
+        } else {
+          const lab = document.createElement("label");
+          lab.className = "acl-check";
+          const cb = document.createElement("input");
+          cb.type = "checkbox";
+          cb.checked = !!col.editable;
+          cb.title = "勾選＝申請人／建立者可改未簽核人；取消＝僅 admin 可換";
+          cb.addEventListener("change", () => {
+            col.editable = cb.checked;
+            persistDocForForm(doc.meta.form_id, doc);
+          });
+          lab.appendChild(cb);
+          lab.appendChild(document.createTextNode(" 申請人可改"));
+          tdEdit.appendChild(lab);
+        }
+        tr.appendChild(tdEdit);
+
+        const tdNotify = document.createElement("td");
+        if (lv === 0) {
+          tdNotify.className = "muted-cell";
+          tdNotify.textContent = "（用表單 cc／通知信）";
+        } else {
+          const inp = document.createElement("input");
+          inp.className = "cell-input";
+          inp.placeholder = "人名, mail@x.com, @群組";
+          inp.value = formatNotifyList(col.stage_notify);
+          inp.addEventListener("change", () => {
+            col.stage_notify = parseNotifyList(inp.value);
+            persistDocForForm(doc.meta.form_id, doc);
+          });
+          tdNotify.appendChild(inp);
+        }
+        tr.appendChild(tdNotify);
+
+        const tdAct = document.createElement("td");
+        if (lv > 0) {
+          const del = document.createElement("button");
+          del.type = "button";
+          del.className = "table-btn danger";
+          del.textContent = "刪除";
+          del.addEventListener("click", () => {
+            if (!confirm(`刪除 level ${col.level}（${col.label || ""}）？`)) return;
+            doc.approval.columns = (doc.approval.columns || []).filter(
+              (c) => c.id !== col.id
+            );
+            renumberApprovalSteps(doc);
+            persistDocForForm(doc.meta.form_id, doc);
+            renderDesignEdit();
+          });
+          tdAct.appendChild(del);
+        } else {
+          tdAct.className = "muted-cell";
+          tdAct.textContent = "fixed";
+        }
+        tr.appendChild(tdAct);
+        atb.appendChild(tr);
+      });
+    };
+    rebuildStageTable();
+    sysToggle.addEventListener("change", () => {
+      showSysCols = sysToggle.checked;
+      rebuildStageTable();
+    });
+    aSec.appendChild(aTable);
+
     const addCol = document.createElement("button");
     addCol.type = "button";
     addCol.className = "table-btn";
@@ -2672,22 +2878,29 @@
           0,
           ...doc.approval.columns.map((c) => Number(c.level) || 0)
         ) + 1;
-      const label = prompt("顯示名稱（label）", `簽核 ${nextLv}`) || `簽核 ${nextLv}`;
-      const fullName = prompt("印章完整姓名（stamp_name）", label) || label;
-      doc.approval.columns.push({
-        id: `step_${nextLv}`,
-        label,
-        level: nextLv,
-        role: `approver_${nextLv}`,
-        person: { id: "", name: fullName },
-        stamp: {
-          name: fullName,
-          mark: null,
-          time: null,
-          comment: "",
-          pending: true,
-        },
-      });
+      const label =
+        prompt("Display name", `簽核 ${nextLv}`) || `簽核 ${nextLv}`;
+      const fullName =
+        prompt("預設 Approver（完整姓名）", "") || "";
+      doc.approval.columns.push(
+        ensureApprovalColumn({
+          id: `step_${nextLv}`,
+          label,
+          level: nextLv,
+          role: `approver_${nextLv}`,
+          editable: true,
+          person: { id: "", name: fullName },
+          stamp: {
+            name: fullName,
+            mark: null,
+            time: null,
+            comment: "",
+            pending: true,
+          },
+          stage_notify: { people: [], groups: [], emails: [] },
+          pass_rule: "all",
+        })
+      );
       renumberApprovalSteps(doc);
       persistDocForForm(doc.meta.form_id, doc);
       renderDesignEdit();
@@ -2697,6 +2910,75 @@
     aActions.appendChild(addCol);
     aSec.appendChild(aActions);
     wrap.appendChild(aSec);
+
+    // 通知信範本（各狀況 mail）
+    ensureMailTemplates(doc);
+    const mTable = document.createElement("table");
+    mTable.className = "mgmt-table";
+    mTable.innerHTML =
+      "<thead><tr><th>event</th><th>subject</th><th>body</th><th>editable</th></tr></thead>";
+    const mtbMail = document.createElement("tbody");
+    doc.mail_templates.forEach((t) => {
+      const tr = document.createElement("tr");
+      const tdEv = document.createElement("td");
+      tdEv.innerHTML = `<div>${t.id}</div><div class="muted-cell">${t.label || ""}</div>`;
+      tr.appendChild(tdEv);
+
+      const tdSub = document.createElement("td");
+      const sub = document.createElement("input");
+      sub.className = "cell-input";
+      sub.placeholder = "主旨（可含 {{doc_no}} 等）";
+      sub.value = t.subject || "";
+      sub.disabled = !!t.locked;
+      sub.addEventListener("change", () => {
+        t.subject = sub.value;
+        persistDocForForm(doc.meta.form_id, doc);
+      });
+      tdSub.appendChild(sub);
+      tr.appendChild(tdSub);
+
+      const tdBody = document.createElement("td");
+      const body = document.createElement("textarea");
+      body.className = "cell-input";
+      body.rows = 2;
+      body.placeholder = "內文";
+      body.value = t.body || "";
+      body.disabled = !!t.locked;
+      body.addEventListener("change", () => {
+        t.body = body.value;
+        persistDocForForm(doc.meta.form_id, doc);
+      });
+      tdBody.appendChild(body);
+      tr.appendChild(tdBody);
+
+      const tdEd = document.createElement("td");
+      const lab = document.createElement("label");
+      lab.className = "acl-check";
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.checked = !!t.editable && !t.locked;
+      cb.title = "Admin 可鎖定；勾選＝允許之後再改範本";
+      cb.addEventListener("change", () => {
+        t.editable = cb.checked;
+        t.locked = !cb.checked;
+        sub.disabled = !!t.locked;
+        body.disabled = !!t.locked;
+        persistDocForForm(doc.meta.form_id, doc);
+      });
+      lab.appendChild(cb);
+      lab.appendChild(document.createTextNode(" 可改範本"));
+      tdEd.appendChild(lab);
+      tr.appendChild(tdEd);
+      mtbMail.appendChild(tr);
+    });
+    mTable.appendChild(mtbMail);
+    const mSec = sectionBlock("通知信（各狀況）", mTable);
+    const mNote = document.createElement("p");
+    mNote.className = "sec-note";
+    mNote.textContent =
+      "依 ALR5 §7：Submit／請簽／關卡通過／拒件／退回／取消／結案／手動／逾期等皆可客製主旨與內文；「可改範本」對應 Admin 是否鎖定。";
+    mSec.insertBefore(mNote, mTable);
+    wrap.appendChild(mSec);
 
     const saveNote = document.createElement("p");
     saveNote.className = "list-tip";
@@ -2801,7 +3083,9 @@
     if (!d.roles) d.roles = base.roles;
     if (!d.system) d.system = base.system;
     if (!Array.isArray(d.logs)) d.logs = [];
+    ensureMailTemplates(d);
     migrateStepIds(d);
+    (d.approval?.columns || []).forEach(ensureApprovalColumn);
     // 升級舊快取：補 comment 欄
     (d.approval?.columns || []).forEach((c) => {
       if (!c.stamp) c.stamp = {};

@@ -8,7 +8,7 @@
     "creator": "王小明",
     "location": "",
     "lang": "zh-Hant",
-    "note": "ALR5：內容欄位 type 下拉＋ACL／必填面板；系統欄位對 Owner 隱藏。"
+    "note": "ALR5：簽核階層 level 置左；預設 Approver／申請人可改／stage_notify；通知信範本。"
   },
   "actor": {
     "id": "u_wang",
@@ -348,7 +348,14 @@
           "time": null,
           "comment": "",
           "pending": true
-        }
+        },
+        "editable": false,
+        "stage_notify": {
+          "people": [],
+          "groups": [],
+          "emails": []
+        },
+        "pass_rule": "all"
       },
       {
         "id": "step_1",
@@ -365,7 +372,14 @@
           "time": null,
           "comment": "",
           "pending": true
-        }
+        },
+        "editable": true,
+        "stage_notify": {
+          "people": [],
+          "groups": [],
+          "emails": []
+        },
+        "pass_rule": "all"
       },
       {
         "id": "step_2",
@@ -382,7 +396,14 @@
           "time": null,
           "comment": "",
           "pending": true
-        }
+        },
+        "editable": true,
+        "stage_notify": {
+          "people": [],
+          "groups": [],
+          "emails": []
+        },
+        "pass_rule": "all"
       },
       {
         "id": "step_3",
@@ -399,7 +420,14 @@
           "time": null,
           "comment": "",
           "pending": true
-        }
+        },
+        "editable": false,
+        "stage_notify": {
+          "people": [],
+          "groups": [],
+          "emails": []
+        },
+        "pass_rule": "all"
       }
     ]
   },
@@ -412,5 +440,6 @@
     "status": "draft",
     "archived": false
   },
-  "logs": []
+  "logs": [],
+  "mail_templates": []
 }
