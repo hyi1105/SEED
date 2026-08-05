@@ -2712,7 +2712,10 @@
       tb.appendChild(tr);
     });
     table.appendChild(tb);
-    wrap.appendChild(table);
+    const scroll = document.createElement("div");
+    scroll.className = "table-scroll";
+    scroll.appendChild(table);
+    wrap.appendChild(scroll);
     stage.appendChild(wrap);
   }
 
@@ -2785,7 +2788,10 @@
       tb.appendChild(tr);
     });
     table.appendChild(tb);
-    wrap.appendChild(table);
+    const scroll = document.createElement("div");
+    scroll.className = "table-scroll";
+    scroll.appendChild(table);
+    wrap.appendChild(scroll);
     const tip = document.createElement("p");
     tip.className = "list-tip";
     tip.textContent =
@@ -2868,10 +2874,13 @@
       tr.className = "content-field-row";
 
       const tdId = document.createElement("td");
+      tdId.dataset.label = "field_id";
+      tdId.className = "field-id-cell";
       tdId.textContent = fid;
       tr.appendChild(tdId);
 
       const tdLabel = document.createElement("td");
+      tdLabel.dataset.label = "label";
       const labInp = document.createElement("input");
       labInp.className = "cell-input";
       labInp.value = f.label || "";
@@ -2883,6 +2892,7 @@
       tr.appendChild(tdLabel);
 
       const tdType = document.createElement("td");
+      tdType.dataset.label = "type";
       tdType.appendChild(
         createTypeSelect(f, () => {
           rebuildContent();
@@ -2891,10 +2901,12 @@
       tr.appendChild(tdType);
 
       const tdDef = document.createElement("td");
+      tdDef.dataset.label = "default";
       tdDef.appendChild(createDefaultControl(f, rebuildContent));
       tr.appendChild(tdDef);
 
       const tdRules = document.createElement("td");
+      tdRules.dataset.label = "rules";
       const rulesBtn = document.createElement("button");
       rulesBtn.type = "button";
       rulesBtn.className = "table-btn";
@@ -2915,6 +2927,8 @@
       tr.appendChild(tdRules);
 
       const tdDel = document.createElement("td");
+      tdDel.dataset.label = "actions";
+      tdDel.className = "row-actions-cell";
       const del = document.createElement("button");
       del.type = "button";
       del.className = "table-btn danger";
@@ -2939,6 +2953,7 @@
       trRules.hidden = true;
       const tdPanel = document.createElement("td");
       tdPanel.colSpan = 6;
+      tdPanel.dataset.label = "rules panel";
       tdPanel.appendChild(createFieldRulesPanel(fid, f));
       trRules.appendChild(tdPanel);
       ftb.appendChild(trRules);
@@ -2955,7 +2970,8 @@
     fNote.className = "sec-note";
     fNote.textContent =
       "申請畫面填寫用（申請人、假別、日期…）。點「權限／必填」設定誰可看／可編、階段必填（依 ALR5）。系統簽核欄位不在此顯示。";
-    fSec.insertBefore(fNote, fTable);
+    const fScroll = fSec.querySelector(".table-scroll");
+    fSec.insertBefore(fNote, fScroll || fTable);
     const addField = document.createElement("button");
     addField.type = "button";
     addField.className = "table-btn";
@@ -3045,21 +3061,25 @@
 
         const tdLv = document.createElement("td");
         tdLv.className = "level-cell";
+        tdLv.dataset.label = "level";
         tdLv.textContent = String(col.level ?? "");
         tr.appendChild(tdLv);
 
         if (showSysCols) {
           const tdSid = document.createElement("td");
           tdSid.className = "muted-cell";
+          tdSid.dataset.label = "step_id";
           tdSid.textContent = col.id || "";
           tr.appendChild(tdSid);
           const tdRole = document.createElement("td");
           tdRole.className = "muted-cell";
+          tdRole.dataset.label = "role";
           tdRole.textContent = col.role || "";
           tr.appendChild(tdRole);
         }
 
         const tdName = document.createElement("td");
+        tdName.dataset.label = "Display name";
         const nameInp = document.createElement("input");
         nameInp.className = "cell-input";
         nameInp.value = col.label || "";
@@ -3072,6 +3092,7 @@
         tr.appendChild(tdName);
 
         const tdAppr = document.createElement("td");
+        tdAppr.dataset.label = "default Approver";
         if (lv === 0) {
           tdAppr.className = "muted-cell";
           tdAppr.textContent = "（Submit）";
@@ -3108,6 +3129,7 @@
         tr.appendChild(tdAppr);
 
         const tdEdit = document.createElement("td");
+        tdEdit.dataset.label = "editable";
         if (lv === 0) {
           tdEdit.className = "muted-cell";
           tdEdit.textContent = "—";
@@ -3129,6 +3151,7 @@
         tr.appendChild(tdEdit);
 
         const tdNotify = document.createElement("td");
+        tdNotify.dataset.label = "stage_notify";
         if (lv === 0) {
           tdNotify.className = "muted-cell";
           tdNotify.textContent = "（cc 見 Mail）";
@@ -3146,6 +3169,7 @@
         tr.appendChild(tdNotify);
 
         const tdRules = document.createElement("td");
+        tdRules.dataset.label = "Mail";
         const rulesBtn = document.createElement("button");
         rulesBtn.type = "button";
         rulesBtn.className = "table-btn";
@@ -3154,6 +3178,8 @@
         tr.appendChild(tdRules);
 
         const tdAct = document.createElement("td");
+        tdAct.dataset.label = "actions";
+        tdAct.className = "row-actions-cell";
         if (lv > 0) {
           const del = document.createElement("button");
           del.type = "button";
@@ -3170,7 +3196,7 @@
           });
           tdAct.appendChild(del);
         } else {
-          tdAct.className = "muted-cell";
+          tdAct.className = "muted-cell row-actions-cell";
           tdAct.textContent = "fixed";
         }
         tr.appendChild(tdAct);
@@ -3181,6 +3207,7 @@
         trMail.hidden = true;
         const tdPanel = document.createElement("td");
         tdPanel.colSpan = colSpan;
+        tdPanel.dataset.label = "Mail panel";
         tdPanel.appendChild(createStageMailPanel(col));
         trMail.appendChild(tdPanel);
         atb.appendChild(trMail);
@@ -3197,7 +3224,12 @@
       showSysCols = sysToggle.checked;
       rebuildStageTable();
     });
-    aSec.appendChild(aTable);
+    aSec.appendChild((() => {
+      const sc = document.createElement("div");
+      sc.className = "table-scroll";
+      sc.appendChild(aTable);
+      return sc;
+    })());
 
     const addCol = document.createElement("button");
     addCol.type = "button";
@@ -3258,7 +3290,14 @@
     const h = document.createElement("h3");
     h.textContent = title;
     sec.appendChild(h);
-    sec.appendChild(node);
+    if (node && node.tagName === "TABLE") {
+      const wrap = document.createElement("div");
+      wrap.className = "table-scroll";
+      wrap.appendChild(node);
+      sec.appendChild(wrap);
+    } else {
+      sec.appendChild(node);
+    }
     return sec;
   }
 
@@ -3382,7 +3421,7 @@
   async function boot() {
     let seedDesign = null;
     try {
-      const res = await fetch("./document.json?v=design7", {
+      const res = await fetch("./document.json?v=design8", {
         cache: "no-store",
       });
       if (res.ok) seedDesign = await res.json();
@@ -3390,7 +3429,7 @@
       /* offline */
     }
     try {
-      const sr = await fetch("./alr5-standard.json?v=design7", {
+      const sr = await fetch("./alr5-standard.json?v=design8", {
         cache: "no-store",
       });
       if (sr.ok) alr5Standard = await sr.json();
@@ -3398,7 +3437,7 @@
       /* offline */
     }
     try {
-      const mr = await fetch("./ALR5標準互通.md?v=design7", {
+      const mr = await fetch("./ALR5標準互通.md?v=design8", {
         cache: "no-store",
       });
       if (mr.ok) alr5Markdown = await mr.text();
