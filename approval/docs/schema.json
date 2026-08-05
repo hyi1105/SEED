@@ -7,7 +7,7 @@
   "layout": {
     "style": "a4_from_json",
     "renderer": "json_only",
-    "views": ["form", "json"]
+    "views": ["apply", "design", "alr5"]
   },
   "logging": {
     "on_button": true,

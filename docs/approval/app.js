@@ -1,9 +1,12 @@
 (() => {
   /**
-   * API 時代：document JSON 是唯一真相。
-   * 畫面只渲染；按鈕會寫入 logs（時間／操作者／開啟時 vs 儲存後／GitHub 紅綠 diff）。
+   * 設計檔與申請單為兩套獨立 JSON。
+   * 申請＝複製當下表單設計 → 新申請單再填寫；畫面只渲染。
    */
-  const STORAGE_KEY = "approval.document.v5";
+  const LEGACY_DOC_KEY = "approval.document.v5";
+  const DESIGN_PREFIX = "approval.form.design.v1:";
+  const DOC_PREFIX = "approval.doc.v1:";
+  const DOCS_INDEX_KEY = "approval.docs.index.v1";
   const FORMS_KEY = "approval.forms.catalog.v2";
   const NAV_KEY = "approval.nav.v1";
   const MIN_CH = 2;
@@ -64,7 +67,8 @@
       "creator": "王小明",
       "location": "",
       "lang": "zh-Hant",
-      "note": "ALR5：簽核階層 level 置左；預設 Approver／申請人可改／stage_notify；通知信範本。"
+      "kind": "form_design",
+      "note": "ALR5：表單設計檔（與申請單 JSON 獨立）；申請時複製當下設計再填寫。"
     },
     "actor": {
       "id": "u_wang",
@@ -127,10 +131,6 @@
         {
           "id": "design",
           "label": "設計表單"
-        },
-        {
-          "id": "json",
-          "label": "JSON"
         },
         {
           "id": "alr5",
@@ -416,32 +416,30 @@
 
   let doc = null;
   let view = "form";
-  let jsonDirty = false;
   /** 本次開啟／上次按鈕後的快照（對應 log.opened） */
   let openedSnapshot = null;
   let openLogId = null;
   let alr5Standard = null;
   let alr5Markdown = "";
   let formsCatalog = [];
+  let docsIndex = [];
   let appNav = {
     tab: "apply",
     applyLayer: "list",
     designLayer: "list",
     editingFormId: null,
+    editingDocId: null,
   };
   const CHECK_KEY = "alr5.interop.checks.v1";
 
   const els = {
     tabs: document.getElementById("view-tabs"),
     form: document.getElementById("view-form"),
-    json: document.getElementById("view-json"),
     alr5: document.getElementById("view-alr5"),
     guideBody: document.getElementById("guide-body"),
     interopBadge: document.getElementById("interop-badge"),
     btnCopyAi: document.getElementById("btn-copy-ai"),
     btnCopyJson: document.getElementById("btn-copy-json"),
-    editor: document.getElementById("json-editor"),
-    msg: document.getElementById("json-msg"),
   };
 
   const mirror = document.createElement("span");
@@ -459,24 +457,198 @@
     return JSON.parse(JSON.stringify(x));
   }
 
-  function persist() {
+  function designStorageKey(formId) {
+    return DESIGN_PREFIX + (formId || "default");
+  }
+
+  function applicationStorageKey(docId) {
+    return DOC_PREFIX + (docId || "default");
+  }
+
+  function persistDesign(formId, d) {
+    if (!d) return;
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(doc));
-      const fid = doc?.meta?.form_id;
-      if (fid) localStorage.setItem(docStorageKey(fid), JSON.stringify(doc));
+      if (!d.meta) d.meta = {};
+      d.meta.kind = "form_design";
+      const id = formId || d.meta.form_id;
+      if (!id) return;
+      d.meta.form_id = id;
+      localStorage.setItem(designStorageKey(id), JSON.stringify(d));
     } catch {
       /* ignore */
     }
   }
 
-  function loadStored() {
+  function loadDesign(formId) {
+    if (!formId) return null;
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return null;
-      return JSON.parse(raw);
+      let raw = localStorage.getItem(designStorageKey(formId));
+      if (raw) return JSON.parse(raw);
+      // 遷移：舊版共用 key 當設計檔
+      raw = localStorage.getItem(LEGACY_DOC_KEY + ":" + formId);
+      if (raw) {
+        const d = JSON.parse(raw);
+        if (!d.meta) d.meta = {};
+        d.meta.kind = "form_design";
+        d.meta.form_id = formId;
+        persistDesign(formId, d);
+        return d;
+      }
+      raw = localStorage.getItem(LEGACY_DOC_KEY);
+      if (raw) {
+        const d = JSON.parse(raw);
+        if (d?.meta?.form_id === formId) {
+          if (!d.meta) d.meta = {};
+          d.meta.kind = "form_design";
+          persistDesign(formId, d);
+          return d;
+        }
+      }
     } catch {
-      return null;
+      /* ignore */
     }
+    return null;
+  }
+
+  function loadDocsIndex() {
+    try {
+      const raw = localStorage.getItem(DOCS_INDEX_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch {
+      /* ignore */
+    }
+    return [];
+  }
+
+  function persistDocsIndex() {
+    try {
+      localStorage.setItem(DOCS_INDEX_KEY, JSON.stringify(docsIndex));
+    } catch {
+      /* ignore */
+    }
+  }
+
+  function upsertDocsIndex(d) {
+    const docId = d?.meta?.doc_id;
+    if (!docId) return;
+    const row = {
+      doc_id: docId,
+      form_id: d.meta.form_id || "",
+      title: d.meta.title || "",
+      status: d.system?.status || "draft",
+      doc_no: d.system?.doc_no || "",
+      updated_at: nowStamp(),
+    };
+    const i = docsIndex.findIndex((x) => x.doc_id === docId);
+    if (i >= 0) docsIndex[i] = { ...docsIndex[i], ...row };
+    else docsIndex.unshift(row);
+    persistDocsIndex();
+  }
+
+  function persistApplication(d) {
+    if (!d?.meta?.doc_id) return;
+    try {
+      d.meta.kind = "application";
+      localStorage.setItem(applicationStorageKey(d.meta.doc_id), JSON.stringify(d));
+      upsertDocsIndex(d);
+    } catch {
+      /* ignore */
+    }
+  }
+
+  function loadApplication(docId) {
+    if (!docId) return null;
+    try {
+      const raw = localStorage.getItem(applicationStorageKey(docId));
+      if (raw) return JSON.parse(raw);
+    } catch {
+      /* ignore */
+    }
+    return null;
+  }
+
+  function persist() {
+    if (!doc) return;
+    const kind = doc.meta?.kind;
+    if (
+      kind === "application" ||
+      (appNav.tab === "apply" && appNav.applyLayer === "doc")
+    ) {
+      if (!doc.meta.doc_id) {
+        doc.meta.doc_id =
+          "doc_" +
+          (typeof crypto !== "undefined" && crypto.randomUUID
+            ? crypto.randomUUID().replace(/-/g, "").slice(0, 12)
+            : Date.now().toString(36));
+      }
+      persistApplication(doc);
+      return;
+    }
+    if (kind === "form_design" || appNav.tab === "design") {
+      persistDesign(doc.meta?.form_id, doc);
+    }
+  }
+
+  function newDocId() {
+    if (typeof crypto !== "undefined" && crypto.randomUUID) {
+      return "doc_" + crypto.randomUUID().replace(/-/g, "").slice(0, 12);
+    }
+    return "doc_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  }
+
+  /** 申請時：深拷貝當下表單設計 → 獨立申請單 */
+  function cloneDesignToApplication(design) {
+    const d = clone(design);
+    const now = new Date();
+    const docId = newDocId();
+    const formId = design.meta?.form_id || "";
+    d.meta = {
+      ...d.meta,
+      kind: "application",
+      doc_id: docId,
+      form_id: formId,
+      source_form_id: formId,
+      source_form_version: design.meta?.form_version || "",
+      copied_at: now.toISOString(),
+      note: "自表單設計複製的申請單",
+    };
+    d.system = {
+      doc_no: null,
+      doc_version: 1,
+      current_level: 0,
+      submitted_at: null,
+      completed_at: null,
+      status: "draft",
+      archived: false,
+    };
+    (d.approval?.columns || []).forEach((c) => {
+      if (!c.stamp) c.stamp = {};
+      c.stamp.pending = true;
+      c.stamp.mark = null;
+      c.stamp.time = null;
+      c.stamp.comment = "";
+    });
+    d.logs = [
+      {
+        id: "log_create_" + Date.now(),
+        at: nowStamp(now),
+        actor: d.actor?.name || "demo.user",
+        action: "create",
+        detail: "從表單設計複製申請單：" + (d.meta.title || formId),
+        opened: null,
+        changes: [],
+      },
+    ];
+    d.system.doc_no = makeDocNo(
+      d.fields?.applicant?.value,
+      now,
+      1,
+      d.meta?.system_name
+    );
+    return ensureDocShape(d);
   }
 
   function pad(n, len = 2) {
@@ -740,7 +912,6 @@
     const onChange = () => {
       setFieldValue(name, el.value);
       fitBlank(el);
-      syncJsonEditorIfVisible();
     };
     el.addEventListener("input", onChange);
     el.addEventListener("change", onChange);
@@ -905,7 +1076,6 @@
     });
     persist();
     renderForm();
-    syncJsonEditorIfVisible();
   }
 
   function applyManualRole(roleId) {
@@ -919,7 +1089,6 @@
     });
     persist();
     renderForm();
-    syncJsonEditorIfVisible();
   }
 
   function canActOnColumn(col) {
@@ -994,7 +1163,6 @@
 
     persist();
     renderForm();
-    syncJsonEditorIfVisible();
   }
 
   function renderDebugBar() {
@@ -1309,7 +1477,6 @@
     appendLog(actionDef);
     persist();
     renderForm();
-    syncJsonEditorIfVisible();
   }
 
   function renderDiffLine(change) {
@@ -1438,6 +1605,7 @@
     article.appendChild(
       renderBackBar("選擇表單", () => {
         appNav.applyLayer = "list";
+        appNav.editingDocId = null;
         persistNav();
         renderApp();
       })
@@ -1492,43 +1660,6 @@
 
   function prettyJson() {
     return JSON.stringify(doc, null, 2);
-  }
-
-  function syncJsonEditorIfVisible() {
-    if (view !== "json" || jsonDirty) return;
-    els.editor.value = prettyJson();
-  }
-
-  function showJsonMsg(text, isErr) {
-    if (!text) {
-      els.msg.hidden = true;
-      els.msg.textContent = "";
-      return;
-    }
-    els.msg.hidden = false;
-    els.msg.textContent = text;
-    els.msg.classList.toggle("err", !!isErr);
-  }
-
-  function applyJsonFromEditor() {
-    try {
-      const parsed = JSON.parse(els.editor.value);
-      if (!parsed || typeof parsed !== "object") {
-        throw new Error("根節點必須是物件");
-      }
-      doc = ensureDocShape(parsed);
-      jsonDirty = false;
-      resetOpenedSnapshot();
-      persist();
-      renderForm();
-      els.editor.value = prettyJson();
-      showJsonMsg("已套用到畫面", false);
-      setTimeout(() => showJsonMsg(""), 1600);
-      return true;
-    } catch (e) {
-      showJsonMsg(`JSON 無法解析：${e.message}`, true);
-      return false;
-    }
   }
 
   function loadChecks() {
@@ -1709,7 +1840,6 @@
     return [
       { id: "apply", label: "申請" },
       { id: "design", label: "設計表單" },
-      { id: "json", label: "JSON" },
       { id: "alr5", label: "ALR5功能" },
     ];
   }
@@ -1972,7 +2102,7 @@
       sub.disabled = !!t.locked;
       sub.addEventListener("change", () => {
         t.subject = sub.value;
-        persistDocForForm(doc.meta.form_id, doc);
+        persistDesign(doc.meta.form_id, doc);
       });
       tdSub.appendChild(sub);
       tr.appendChild(tdSub);
@@ -1986,7 +2116,7 @@
       body.disabled = !!t.locked;
       body.addEventListener("change", () => {
         t.body = body.value;
-        persistDocForForm(doc.meta.form_id, doc);
+        persistDesign(doc.meta.form_id, doc);
       });
       tdBody.appendChild(body);
       tr.appendChild(tdBody);
@@ -2002,7 +2132,7 @@
         t.locked = !cb.checked;
         sub.disabled = !!t.locked;
         body.disabled = !!t.locked;
-        persistDocForForm(doc.meta.form_id, doc);
+        persistDesign(doc.meta.form_id, doc);
       });
       lab.appendChild(cb);
       lab.appendChild(document.createTextNode(" 可改"));
@@ -2057,30 +2187,11 @@
     return d;
   }
 
-  function docStorageKey(formId) {
-    return STORAGE_KEY + ":" + (formId || "default");
-  }
-
-  function loadDocForForm(formId) {
-    try {
-      const raw = localStorage.getItem(docStorageKey(formId));
-      if (raw) return JSON.parse(raw);
-    } catch {}
-    return null;
-  }
-
-  function persistDocForForm(formId, d) {
-    try {
-      localStorage.setItem(docStorageKey(formId), JSON.stringify(d));
-      // also keep legacy key for JSON tab convenience
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(d));
-    } catch {}
-  }
-
   function makeBlankForm(formId, title, creator) {
     const d = clone(EMBEDDED_DOC);
     d.meta = {
       ...d.meta,
+      kind: "form_design",
       form_id: formId,
       title: title || formId,
       creator: creator || d.meta.creator || "—",
@@ -2109,34 +2220,37 @@
     return ensureDocShape(d);
   }
 
-  function openApplyForm(formId) {
-    let d = loadDocForForm(formId);
-    if (!d) {
-      if (formId === (EMBEDDED_DOC.meta?.form_id || "leave_request_v1")) {
-        d = clone(EMBEDDED_DOC);
-      } else {
-        const meta = formsCatalog.find((x) => x.form_id === formId);
-        d = makeBlankForm(formId, meta?.title);
-      }
+  function ensureDesignForForm(formId) {
+    let d = loadDesign(formId);
+    if (d) return ensureDocShape(d);
+    if (formId === (EMBEDDED_DOC.meta?.form_id || "leave_request_v1")) {
+      d = clone(EMBEDDED_DOC);
+      d.meta = { ...d.meta, kind: "form_design", form_id: formId };
+    } else {
+      const meta = formsCatalog.find((x) => x.form_id === formId);
+      d = makeBlankForm(formId, meta?.title, meta?.creator);
     }
-    doc = ensureDocShape(d);
-    if (!doc.meta.form_version) doc.meta.form_version = "1.0.0";
-    upsertCatalogEntry(doc);
-    persistDocForForm(formId, doc);
+    d = ensureDocShape(d);
+    persistDesign(formId, d);
+    return d;
+  }
+
+  function openApplyForm(formId) {
+    const design = ensureDesignForForm(formId);
+    upsertCatalogEntry(design);
+    doc = cloneDesignToApplication(design);
+    persistApplication(doc);
     resetOpenedSnapshot();
     appNav.tab = "apply";
     appNav.applyLayer = "doc";
+    appNav.editingDocId = doc.meta.doc_id;
     persistNav();
     renderApp();
   }
 
   function openDesignForm(formId) {
-    let d = loadDocForForm(formId);
-    if (!d) {
-      const meta = formsCatalog.find((x) => x.form_id === formId);
-      d = makeBlankForm(formId, meta?.title);
-    }
-    doc = ensureDocShape(d);
+    const d = ensureDesignForForm(formId);
+    doc = d;
     upsertCatalogEntry(doc);
     appNav.tab = "design";
     appNav.designLayer = "edit";
@@ -2199,7 +2313,7 @@
   }
 
   function persistContentField() {
-    persistDocForForm(doc.meta.form_id, doc);
+    persistDesign(doc.meta.form_id, doc);
   }
 
   function createTypeSelect(f, onTypeChange) {
@@ -2496,6 +2610,11 @@
     h.className = "list-title";
     h.textContent = "選擇要申請的表單";
     wrap.appendChild(h);
+    const tipTop = document.createElement("p");
+    tipTop.className = "list-tip";
+    tipTop.textContent =
+      "點「申請」會複製當下表單設計成獨立申請單再填寫；之後改設計不會改到已開出的單。";
+    wrap.appendChild(tipTop);
     const table = document.createElement("table");
     table.className = "mgmt-table";
     table.innerHTML =
@@ -2551,7 +2670,7 @@
       }
       const creator = prompt("建立者", "王小明") || "王小明";
       const d = makeBlankForm(id, title, creator);
-      persistDocForForm(id, d);
+      persistDesign(id, d);
       formsCatalog.push(
         normalizeCatalogRow({
           form_id: id,
@@ -2592,7 +2711,7 @@
     const tip = document.createElement("p");
     tip.className = "list-tip";
     tip.textContent =
-      "列表以名稱、建立者為主；所屬位置之後再設計。點進去用表格調整系統欄位／內容欄位／簽核關。";
+      "列表以名稱、建立者為主；所屬位置之後再設計。變更寫入表單設計檔，與已開出的申請單互不覆蓋。";
     wrap.appendChild(tip);
     stage.appendChild(wrap);
   }
@@ -2643,7 +2762,7 @@
         if (!doc.meta) doc.meta = {};
         doc.meta[key] = inp.value;
         upsertCatalogEntry(doc);
-        persistDocForForm(doc.meta.form_id, doc);
+        persistDesign(doc.meta.form_id, doc);
       });
       td.appendChild(inp);
       tr.appendChild(th);
@@ -2653,7 +2772,7 @@
     metaTable.appendChild(mtb);
     wrap.appendChild(sectionBlock("基本資料", metaTable));
 
-    // 系統欄位：對 Owner 隱藏（規格仍在 JSON／ALR5 分頁）
+    // 系統欄位：對 Owner 隱藏（規格見 ALR5 分頁／標準）
 
     // 內容欄位
     const fTable = document.createElement("table");
@@ -2869,7 +2988,7 @@
         nameInp.placeholder = "Display name";
         nameInp.addEventListener("change", () => {
           col.label = nameInp.value;
-          persistDocForForm(doc.meta.form_id, doc);
+          persistDesign(doc.meta.form_id, doc);
         });
         tdName.appendChild(nameInp);
         tr.appendChild(tdName);
@@ -2904,7 +3023,7 @@
             col.person.name = sel.value;
             if (!col.stamp) col.stamp = {};
             col.stamp.name = sel.value;
-            persistDocForForm(doc.meta.form_id, doc);
+            persistDesign(doc.meta.form_id, doc);
           });
           tdAppr.appendChild(sel);
         }
@@ -2923,7 +3042,7 @@
           cb.title = "勾選＝申請人／建立者可改未簽核人；取消＝僅 admin 可換";
           cb.addEventListener("change", () => {
             col.editable = cb.checked;
-            persistDocForForm(doc.meta.form_id, doc);
+            persistDesign(doc.meta.form_id, doc);
           });
           lab.appendChild(cb);
           lab.appendChild(document.createTextNode(" 申請人可改"));
@@ -2942,7 +3061,7 @@
           inp.value = formatNotifyList(col.stage_notify);
           inp.addEventListener("change", () => {
             col.stage_notify = parseNotifyList(inp.value);
-            persistDocForForm(doc.meta.form_id, doc);
+            persistDesign(doc.meta.form_id, doc);
           });
           tdNotify.appendChild(inp);
         }
@@ -2968,7 +3087,7 @@
               (c) => c.id !== col.id
             );
             renumberApprovalSteps(doc);
-            persistDocForForm(doc.meta.form_id, doc);
+            persistDesign(doc.meta.form_id, doc);
             renderDesignEdit();
           });
           tdAct.appendChild(del);
@@ -3038,7 +3157,7 @@
         })
       );
       renumberApprovalSteps(doc);
-      persistDocForForm(doc.meta.form_id, doc);
+      persistDesign(doc.meta.form_id, doc);
       renderDesignEdit();
     });
     const aActions = document.createElement("div");
@@ -3050,7 +3169,7 @@
     const saveNote = document.createElement("p");
     saveNote.className = "list-tip";
     saveNote.textContent =
-      "變更即寫入本機（設計 PoC）。各關通知信請點該列「Mail／Rules」；系統欄位見 JSON／ALR5 分頁。";
+      "變更即寫入本機設計檔（與申請單 JSON 分開）。各關通知信請點該列「Mail／Rules」；系統欄位見 ALR5 分頁。";
     wrap.appendChild(saveNote);
     stage.appendChild(wrap);
   }
@@ -3069,7 +3188,6 @@
     const tab = appNav.tab || "apply";
     view = tab === "apply" || tab === "design" ? "form" : tab;
     els.form.hidden = !(tab === "apply" || tab === "design");
-    els.json.hidden = tab !== "json";
     if (els.alr5) els.alr5.hidden = tab !== "alr5";
     renderTabs();
     if (tab === "apply") {
@@ -3078,26 +3196,25 @@
     } else if (tab === "design") {
       if (appNav.designLayer === "edit") renderDesignEdit();
       else renderDesignList();
-    } else if (tab === "json") {
-      jsonDirty = false;
-      els.editor.value = prettyJson();
-      showJsonMsg("");
     } else if (tab === "alr5") {
       renderAlr5Guide();
     }
   }
 
   function switchView(next) {
-    if ((view === "json" || appNav.tab === "json") && next !== "json" && jsonDirty) {
-      if (!applyJsonFromEditor()) return;
-    }
     if (next === "apply") {
       appNav.tab = "apply";
       appNav.applyLayer = "list";
+      appNav.editingDocId = null;
     } else if (next === "design") {
       appNav.tab = "design";
       appNav.designLayer = "list";
     } else if (next === "form") {
+      appNav.tab = "apply";
+      appNav.applyLayer = "list";
+      appNav.editingDocId = null;
+    } else if (next === "json") {
+      // 舊導覽：JSON 分頁已移除
       appNav.tab = "apply";
       appNav.applyLayer = "list";
     } else {
@@ -3126,18 +3243,12 @@
     });
   }
 
-  els.editor.addEventListener("input", () => {
-    jsonDirty = true;
-    showJsonMsg("已修改（切回申請單畫面時會套用）", false);
-  });
-
-  els.editor.addEventListener("blur", () => {
-    if (jsonDirty) applyJsonFromEditor();
-  });
-
   function ensureDocShape(d) {
     const base = clone(EMBEDDED_DOC);
     if (!d.meta) d.meta = base.meta;
+    if (!d.meta.kind) {
+      d.meta.kind = d.meta.doc_id ? "application" : "form_design";
+    }
     if (!d.ui) d.ui = base.ui;
     else d.ui = { ...base.ui, ...d.ui };
     d.ui.views = ensureViews();
@@ -3176,32 +3287,32 @@
         ensureContentField(d.fields[fid]);
       }
     });
-    if (!d.system.doc_no || !/\.\d+$/.test(d.system.doc_no)) {
-      d.system.doc_version = d.system.doc_version || 1;
-      d.system.doc_no = makeDocNo(
-        d.fields?.applicant?.value,
-        new Date("2026-08-04T09:40:00"),
-        d.system.doc_version,
-        d.meta?.system_name
-      );
+    if (d.meta.kind === "application") {
+      if (!d.system.doc_no || !/\.\d+$/.test(d.system.doc_no)) {
+        d.system.doc_version = d.system.doc_version || 1;
+        d.system.doc_no = makeDocNo(
+          d.fields?.applicant?.value,
+          new Date(),
+          d.system.doc_version,
+          d.meta?.system_name
+        );
+      }
     }
     return d;
   }
 
   async function boot() {
-    let base = loadStored();
-    if (!base) {
-      try {
-        const res = await fetch("./document.json?v=design2", {
-          cache: "no-store",
-        });
-        if (res.ok) base = await res.json();
-      } catch {
-        /* offline */
-      }
+    let seedDesign = null;
+    try {
+      const res = await fetch("./document.json?v=design6", {
+        cache: "no-store",
+      });
+      if (res.ok) seedDesign = await res.json();
+    } catch {
+      /* offline */
     }
     try {
-      const sr = await fetch("./alr5-standard.json?v=design2", {
+      const sr = await fetch("./alr5-standard.json?v=design6", {
         cache: "no-store",
       });
       if (sr.ok) alr5Standard = await sr.json();
@@ -3209,7 +3320,7 @@
       /* offline */
     }
     try {
-      const mr = await fetch("./ALR5標準互通.md?v=design2", {
+      const mr = await fetch("./ALR5標準互通.md?v=design6", {
         cache: "no-store",
       });
       if (mr.ok) alr5Markdown = await mr.text();
@@ -3218,35 +3329,62 @@
     }
 
     loadNav();
-    formsCatalog = loadFormsCatalog() || defaultCatalogFromDoc(base || EMBEDDED_DOC);
+    docsIndex = loadDocsIndex();
+    const catalogSeed = seedDesign || EMBEDDED_DOC;
+    formsCatalog = loadFormsCatalog() || defaultCatalogFromDoc(catalogSeed);
     persistFormsCatalog();
 
-    doc = ensureDocShape(base ? clone(base) : clone(EMBEDDED_DOC));
-    if (!doc.meta.form_version) doc.meta.form_version = "1.0.0";
-    upsertCatalogEntry(doc);
-    persist();
-    resetOpenedSnapshot();
-    document.documentElement.lang = doc.meta?.lang || "zh-Hant";
-    document.title = `Approval｜${doc.meta?.title || ""}`;
-    if (!appNav.tab || appNav.tab === "form") appNav.tab = "apply";
+    // 為目錄內每個 form 確保有設計檔（不與申請單共用）
+    formsCatalog.forEach((f) => {
+      if (!loadDesign(f.form_id)) {
+        let d;
+        if (f.form_id === (catalogSeed.meta?.form_id || "leave_request_v1") && seedDesign) {
+          d = clone(seedDesign);
+          d.meta = { ...d.meta, kind: "form_design", form_id: f.form_id };
+        } else if (f.form_id === (EMBEDDED_DOC.meta?.form_id || "leave_request_v1")) {
+          d = clone(EMBEDDED_DOC);
+          d.meta = { ...d.meta, kind: "form_design", form_id: f.form_id };
+        } else {
+          d = makeBlankForm(f.form_id, f.title, f.creator);
+        }
+        persistDesign(f.form_id, ensureDocShape(d));
+      }
+    });
+
+    document.documentElement.lang = "zh-Hant";
+    document.title = "Approval｜ALR5";
+    if (!appNav.tab || appNav.tab === "form" || appNav.tab === "json") {
+      appNav.tab = "apply";
+    }
     if (appNav.tab === "apply") appNav.applyLayer = appNav.applyLayer || "list";
+
     if (appNav.tab === "design" && appNav.designLayer === "edit" && appNav.editingFormId) {
-      const d = loadDocForForm(appNav.editingFormId);
+      const d = loadDesign(appNav.editingFormId);
       if (d) {
         doc = ensureDocShape(d);
         resetOpenedSnapshot();
       } else {
         appNav.designLayer = "list";
+        doc = ensureDocShape(clone(EMBEDDED_DOC));
       }
-    }
-    if (appNav.tab === "apply" && appNav.applyLayer === "doc") {
-      const fid = doc?.meta?.form_id;
-      const d = fid ? loadDocForForm(fid) : null;
+    } else if (appNav.tab === "apply" && appNav.applyLayer === "doc" && appNav.editingDocId) {
+      const d = loadApplication(appNav.editingDocId);
       if (d) {
         doc = ensureDocShape(d);
         resetOpenedSnapshot();
+      } else {
+        appNav.applyLayer = "list";
+        appNav.editingDocId = null;
+        doc = ensureDocShape(clone(EMBEDDED_DOC));
       }
+    } else {
+      // 列表層：記憶體中先放一份設計（不當申請單寫入）
+      const firstId = formsCatalog[0]?.form_id;
+      doc = ensureDocShape(
+        firstId ? ensureDesignForForm(firstId) : clone(EMBEDDED_DOC)
+      );
     }
+
     persistNav();
     renderApp();
   }
