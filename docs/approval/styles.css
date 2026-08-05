@@ -1415,7 +1415,7 @@ table.inkan-table td {
   background: #f3efe6;
 }
 
-/* Mail 流程圖 */
+/* Mail 流程圖／棋盤儀表板 */
 .mail-flow-panel {
   display: grid;
   gap: 12px;
@@ -1432,7 +1432,7 @@ table.inkan-table td {
 }
 .mail-flow-spine-step {
   padding: 6px 10px;
-  border-radius: 8px;
+  border-radius: 999px;
   background: #fffdf8;
   border: 1px solid #d2caba;
   font-size: 12px;
@@ -1452,6 +1452,135 @@ table.inkan-table td {
   border: 1px solid #e0d8c8;
   border-radius: 12px;
   background: #fffdf8;
+}
+.mail-board-palette {
+  display: grid;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px dashed #cfc6b6;
+  background: #f7f2e8;
+}
+.mail-board-palette-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #6e675c;
+}
+.mail-board-palette-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.mail-board-trash.drop-ready {
+  outline: 2px solid #a33;
+  outline-offset: 2px;
+}
+.mail-board-chart {
+  display: grid;
+  grid-template-columns: minmax(5.5rem, 7.5rem) repeat(calc(var(--mail-cols, 6) - 1), minmax(6.5rem, 1fr));
+  gap: 0;
+  overflow: auto;
+  border: 1px solid #d8cfbf;
+  border-radius: 14px;
+  background:
+    linear-gradient(90deg, rgba(210, 202, 186, 0.35) 1px, transparent 1px) 0 0 / 100% 100%,
+    linear-gradient(rgba(210, 202, 186, 0.35) 1px, transparent 1px) 0 0 / 100% 100%,
+    #faf6ee;
+  background-size:
+    calc(100% / var(--mail-cols, 6)) 100%,
+    100% calc(100% / var(--mail-rows, 5)),
+    auto;
+}
+.mail-board-corner {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 6px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #6e675c;
+  background: #efe8dc;
+  border-right: 1px solid #d8cfbf;
+  border-bottom: 1px solid #d8cfbf;
+}
+.mail-board-axis {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 6px;
+  border-bottom: 1px solid #e4dccf;
+  border-right: 1px solid #e4dccf;
+  background: rgba(239, 232, 220, 0.75);
+}
+.mail-board-axis.actor {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  justify-content: flex-start;
+  background: #efe8dc;
+}
+.mail-board-cell {
+  min-height: 4.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  align-content: flex-start;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 6px;
+  border-right: 1px solid rgba(216, 207, 191, 0.7);
+  border-bottom: 1px solid rgba(216, 207, 191, 0.7);
+}
+.mail-board-cell.drop-ready {
+  background: rgba(61, 74, 143, 0.1);
+  outline: 2px dashed #3d4a8f;
+  outline-offset: -2px;
+}
+.mail-pill {
+  appearance: none;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 4.8rem;
+  max-width: 8.5rem;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid #c5bba8;
+  background: #fff;
+  font-family: var(--font);
+  cursor: grab;
+  text-align: center;
+  line-height: 1.2;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04);
+}
+.mail-pill:active {
+  cursor: grabbing;
+}
+.mail-pill.dragging {
+  opacity: 0.55;
+}
+.mail-pill.kind-arrow {
+  min-width: 2.4rem;
+  padding: 4px 10px;
+  font-weight: 800;
+  color: #5a5348;
+  background: #f3efe6;
+}
+.mail-pill.kind-flag {
+  border-style: dashed;
+  background: transparent;
+  color: #6e675c;
+  font-weight: 650;
+}
+.mail-pill.kind-state,
+.mail-pill.kind-mail {
+  font-weight: 700;
 }
 .mail-flow-row {
   display: flex;
@@ -1496,8 +1625,8 @@ table.inkan-table td {
   line-height: 1;
 }
 .mail-flow-state {
-  padding: 6px 10px;
-  border-radius: 8px;
+  padding: 6px 12px;
+  border-radius: 999px;
   background: #ebe4d6;
   color: #3a342c;
   font-size: 11px;
@@ -1527,17 +1656,18 @@ table.inkan-table td {
   color: #6e675c;
   font-weight: 600;
 }
-.mail-flow-node {
+.mail-flow-node,
+.mail-pill.kind-mail {
   appearance: none;
-  min-width: 6.5rem;
+  min-width: 5.5rem;
   max-width: 9rem;
-  padding: 8px 10px;
-  border-radius: 12px;
+  padding: 7px 12px;
+  border-radius: 999px;
   border: 1px solid #c5bba8;
   background: #fff;
   font-family: var(--font);
-  cursor: pointer;
-  text-align: left;
+  cursor: grab;
+  text-align: center;
   box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04);
 }
 .mail-flow-node-title {
@@ -1550,33 +1680,60 @@ table.inkan-table td {
   font-size: 10px;
   color: #8a8276;
 }
-.mail-flow-node.configured .mail-flow-node-meta {
+.mail-flow-node.configured .mail-flow-node-meta,
+.mail-pill.configured .mail-flow-node-meta {
   color: #2a5a2a;
   font-weight: 650;
 }
-.mail-flow-node.active {
+.mail-flow-node.active,
+.mail-pill.active {
   outline: 2px solid #3d4a8f;
   outline-offset: 1px;
 }
-.mail-flow-node.tone-go {
+.mail-flow-node.tone-go,
+.mail-pill.tone-go {
   border-color: #9ab0d0;
   background: #f3f6fc;
+  color: #2a3366;
 }
-.mail-flow-node.tone-ok {
+.mail-flow-node.tone-ok,
+.mail-pill.tone-ok,
+.mail-pill.tone-done {
   border-color: #9cbc9c;
   background: #f3faf3;
+  color: #2a5a2a;
 }
-.mail-flow-node.tone-bad {
+.mail-flow-node.tone-bad,
+.mail-pill.tone-bad {
   border-color: #d0a0a0;
   background: #fcf3f3;
+  color: #7a2424;
 }
-.mail-flow-node.tone-warn {
+.mail-flow-node.tone-warn,
+.mail-pill.tone-warn {
   border-color: #d0c090;
   background: #fbf7ea;
 }
-.mail-flow-node.tone-side {
+.mail-flow-node.tone-side,
+.mail-pill.tone-side {
   border-color: #c0b8c8;
   background: #f7f4fb;
+  color: #4a3a66;
+}
+.mail-pill.tone-start,
+.mail-pill.tone-mid {
+  border-color: #9ab0d0;
+  background: #e8eef8;
+  color: #2a3366;
+}
+.mail-pill.tone-arrow {
+  border-color: #c5bba8;
+  background: #f3efe6;
+}
+.mail-pill.tone-ghost {
+  border-style: dashed;
+  background: transparent;
+  color: #6e675c;
 }
 .mail-flow-editor-host {
   padding: 12px;
@@ -1595,6 +1752,22 @@ table.inkan-table td {
   gap: 8px;
   font-size: 13px;
   color: #1a1814;
+}
+
+@media (max-width: 720px) {
+  .mail-board-chart {
+    grid-template-columns: minmax(4.5rem, 5.5rem) repeat(calc(var(--mail-cols, 6) - 1), minmax(5.8rem, 7.5rem));
+  }
+  .mail-board-cell {
+    min-height: 3.8rem;
+    padding: 6px 4px;
+  }
+  .mail-pill,
+  .mail-flow-node {
+    min-width: 4.2rem;
+    max-width: 7rem;
+    padding: 5px 8px;
+  }
 }
 
 @media (max-width: 640px) {
