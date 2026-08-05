@@ -8,7 +8,7 @@
     "creator": "王小明",
     "location": "",
     "lang": "zh-Hant",
-    "note": "ALR5：列表暗色＋名稱／建立者；設計拆系統欄位／內容欄位；簽核關 step_N 可刪。"
+    "note": "ALR5：設計表單淺色；系統欄位依規格 creator／requester／approver_n…；內容欄位可增刪；step_N 可刪。"
   },
   "actor": {
     "id": "u_wang",
@@ -30,7 +30,7 @@
       { "id": "alr5", "label": "ALR5功能" }
     ],
     "sys_fields_aria": "系統欄位（報表用）",
-    "sys_hint": "測試：上方可手動切角色與 current_level；切到 level 2 會自動核准 level 1。印章下方為動作按鈕；系統欄位含 Creator／Requester／Approval_n_*；狀態只顯示不可點。",
+    "sys_hint": "測試：上方可手動切角色與 current_level；切到 level 2 會自動核准 level 1。印章下方為動作按鈕；系統欄位依 ALR5（creator／requester／approver_n…）；狀態只顯示不可點。",
     "empty_mark": "—",
     "pending_stamp_label": "尚未蓋印",
     "actions_title": "操作",

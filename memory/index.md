@@ -10,6 +10,7 @@
 
 ## 場次
 
+- 2026-08-05 — 設計表單改淺色＋系統欄位回歸 ALR5 規格 — 標籤：SEED、Approval、ALR5、設計表單、淺色、系統欄位 — [sessions/2026-08-05-alr5-design-light-sysfields.md](sessions/2026-08-05-alr5-design-light-sysfields.md)
 - 2026-08-04 — ALR5 列表對比＋系統／內容欄位拆分 — 標籤：SEED、Approval、ALR5、列表、系統欄位、step、UI — [sessions/2026-08-04-alr5-list-sys-fields.md](sessions/2026-08-04-alr5-list-sys-fields.md)
 - 2026-08-04 — ALR5 兩層導覽＋申請畫面三處修正 — 標籤：SEED、Approval、ALR5、兩層導覽、設計表單、UI — [sessions/2026-08-04-alr5-two-layer-nav.md](sessions/2026-08-04-alr5-two-layer-nav.md)
 - 2026-08-04 — Form 版本／環境試跑／發布 SOP／JSON 升級 — 標籤：SEED、Approval、ALR5、版本、環境、發布、遷移、偏好 — [sessions/2026-08-04-alr5-env-versioning.md](sessions/2026-08-04-alr5-env-versioning.md)

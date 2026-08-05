@@ -8,23 +8,31 @@
   const NAV_KEY = "approval.nav.v1";
   const MIN_CH = 2;
 
-  /** 系統內建欄位（簽核／報表用；Owner 不可當內容欄增刪） */
+  /**
+   * 系統內建欄位（依 approval/ALR5簽核系統.md §2.1／system 模型）
+   * Owner 不可當內容欄增刪。
+   */
   const SYSTEM_FIELD_DEFS = [
-    { id: "Creator", label: "建立者", note: "表單／文件建立者" },
-    { id: "Requester", label: "申請人", note: "提出申請的人" },
-    { id: "Status", label: "狀態", note: "New／Draft／In Process…" },
-    { id: "CC", label: "副本", note: "副本收件" },
-    { id: "FYI", label: "知會", note: "知會對象" },
-    { id: "current_level", label: "目前關卡", note: "0／1…／9999／-1／-2" },
-    { id: "current_approver", label: "目前簽核人", note: "當前應操作者" },
+    { id: "creator", label: "建立者", note: "填單人；可代填（§2.1）" },
+    { id: "requester", label: "需求人", note: "真正有需求的人" },
+    { id: "cc", label: "副本", note: "送出後通知；可編" },
+    { id: "cc_system", label: "系統副本", note: "Admin 預設；不可編" },
+    { id: "approvers[]", label: "簽核人", note: "或 approver_1…；對應 step_n" },
+    { id: "stage_notifies[]", label: "關卡通過通知", note: "或 stage_notify_1…；該關同意往下時" },
+    { id: "fyi", label: "結案知會", note: "整張完成後；可編" },
+    { id: "fyi_system", label: "系統結案知會", note: "Admin 預設；不可編" },
+    { id: "system.status", label: "狀態", note: "new／draft／in_process…" },
+    { id: "system.current_level", label: "目前關卡", note: "空／0／1…／9999／-1／-2" },
+    { id: "system.doc_no", label: "單號", note: "含 .N 版本後綴" },
+    { id: "current_approver", label: "當階簽核者", note: "current_level 對應關上輪到的人" },
+    { id: "system.archived", label: "封存", note: "軟刪除旗標；非 status" },
   ];
+  /** 隨 step_n（n≥1）展開的扁平 id（規格允許 approver_n／stage_notify_n） */
   const SYSTEM_STEP_FIELD_TMPL = [
-    { suffix: "Name", label: "簽核人姓名" },
-    { suffix: "Date", label: "簽核時間" },
-    { suffix: "Status", label: "簽核結果" },
-    { suffix: "Comment", label: "簽核意見" },
-    { suffix: "Comment_sys", label: "系統意見" },
-    { suffix: "Mail", label: "通知信箱", prefix: "Notify" },
+    { id: "approver_{n}", label: "簽核人（第 {n} 關）" },
+    { id: "stage_notify_{n}", label: "關卡通過通知（第 {n} 關）" },
+    { id: "approver_{n}.comment", label: "簽核意見（第 {n} 關）" },
+    { id: "approver_{n}.proxy_original_note", label: "代簽備註（第 {n} 關）" },
   ];
 
   const EMBEDDED_DOC = {
@@ -37,7 +45,7 @@
       "creator": "王小明",
       "location": "",
       "lang": "zh-Hant",
-      "note": "ALR5：列表暗色＋名稱／建立者；設計拆系統欄位／內容欄位；簽核關 step_N 可刪。"
+      "note": "ALR5：設計表單淺色；系統欄位依規格 creator／requester／approver_n…；內容欄位可增刪；step_N 可刪。"
     },
     "actor": {
       "id": "u_wang",
@@ -111,7 +119,7 @@
         }
       ],
       "sys_fields_aria": "系統欄位（報表用）",
-      "sys_hint": "測試：上方可手動切角色與 current_level；切到 level 2 會自動核准 level 1。印章下方為動作按鈕；系統欄位含 Creator／Requester／Approval_n_*；狀態只顯示不可點。",
+      "sys_hint": "測試：上方可手動切角色與 current_level；切到 level 2 會自動核准 level 1。印章下方為動作按鈕；系統欄位依 ALR5（creator／requester／approver_n…）；狀態只顯示不可點。",
       "empty_mark": "—",
       "pending_stamp_label": "尚未蓋印",
       "actions_title": "操作",
@@ -1119,12 +1127,13 @@
     const st = statusOf(doc.system?.status);
     const actorName = doc.actor?.name || "";
     const rows = [
-      ["Creator", doc.meta?.creator || ""],
-      ["Requester", fieldValue("applicant") || actorName],
-      ["Status", st?.label || doc.system?.status],
-      ["current_level", doc.system?.current_level],
+      ["creator", doc.meta?.creator || ""],
+      ["requester", fieldValue("applicant") || actorName],
+      ["system.status", st?.label || doc.system?.status],
+      ["system.current_level", doc.system?.current_level],
       ["current_approver", actorName],
-      ["doc_no", doc.system?.doc_no],
+      ["system.doc_no", doc.system?.doc_no],
+      ["system.archived", doc.system?.archived ? "true" : "false"],
       ["submitted_at", doc.system?.submitted_at],
       ["completed_at", doc.system?.completed_at],
     ];
@@ -1134,13 +1143,16 @@
       .sort((a, b) => Number(a.level) - Number(b.level))
       .forEach((col) => {
         const n = Number(col.level);
-        rows.push([`Approval_${n}_Name`, col.person?.name || col.stamp?.name || ""]);
-        rows.push([`Approval_${n}_Date`, col.stamp?.time || ""]);
+        rows.push([`approver_${n}`, col.person?.name || ""]);
         rows.push([
-          `Approval_${n}_Status`,
+          `approver_${n}.comment`,
+          col.stamp?.comment || "",
+        ]);
+        rows.push([
+          `approver_${n}.mark`,
           col.stamp?.pending ? "pending" : col.stamp?.mark || "",
         ]);
-        rows.push([`Approval_${n}_Comment`, col.stamp?.comment || ""]);
+        rows.push([`approver_${n}.time`, col.stamp?.time || ""]);
       });
     rows.forEach(([k, v]) => {
       const row = document.createElement("div");
@@ -1946,7 +1958,7 @@
     const stage = els.form;
     stage.replaceChildren();
     const wrap = document.createElement("div");
-    wrap.className = "list-stage";
+    wrap.className = "list-stage list-stage-light";
     const head = document.createElement("div");
     head.className = "list-head";
     const h = document.createElement("h2");
@@ -2026,7 +2038,7 @@
     const stage = els.form;
     stage.replaceChildren();
     const wrap = document.createElement("div");
-    wrap.className = "list-stage design-edit";
+    wrap.className = "list-stage list-stage-light design-edit";
     wrap.appendChild(
       renderBackBar("表單列表", () => {
         appNav.designLayer = "list";
@@ -2093,21 +2105,19 @@
       .sort((a, b) => a - b);
     stepLevels.forEach((n) => {
       SYSTEM_STEP_FIELD_TMPL.forEach((t) => {
-        const fieldId =
-          t.prefix === "Notify"
-            ? `Notify_${n}_Mail`
-            : `Approval_${n}_${t.suffix}`;
+        const fieldId = t.id.replaceAll("{n}", String(n));
+        const label = t.label.replaceAll("{n}", String(n));
         const tr = document.createElement("tr");
-        tr.innerHTML = `<td>${fieldId}</td><td>第 ${n} 關／${t.label}</td><td class="muted-cell">對應 step_${n}</td>`;
+        tr.innerHTML = `<td>${fieldId}</td><td>${label}</td><td class="muted-cell">對應 step_${n}（ALR5 §2.1）</td>`;
         stb.appendChild(tr);
       });
     });
     sysTable.appendChild(stb);
-    const sysSec = sectionBlock("系統欄位（內建／簽核相關）", sysTable);
+    const sysSec = sectionBlock("系統欄位（ALR5 規格）", sysTable);
     const sysNote = document.createElement("p");
     sysNote.className = "sec-note";
     sysNote.textContent =
-      "系統欄位由簽核流程產生，Owner 不能當內容欄增刪；Approval_n_*／Notify_n_Mail 隨簽核關增減。";
+      "依 ALR5簽核系統.md：creator／requester／cc／cc_system／approvers[]／stage_notifies[]／fyi／fyi_system 與 system.*；Owner 不可當內容欄增刪。扁平寫法可用 approver_n／stage_notify_n。";
     sysSec.insertBefore(sysNote, sysTable);
     const badge = document.createElement("span");
     badge.className = "badge-sys";
@@ -2433,7 +2443,7 @@
     let base = loadStored();
     if (!base) {
       try {
-        const res = await fetch("./document.json?v=list1", {
+        const res = await fetch("./document.json?v=design1", {
           cache: "no-store",
         });
         if (res.ok) base = await res.json();
@@ -2442,7 +2452,7 @@
       }
     }
     try {
-      const sr = await fetch("./alr5-standard.json?v=list1", {
+      const sr = await fetch("./alr5-standard.json?v=design1", {
         cache: "no-store",
       });
       if (sr.ok) alr5Standard = await sr.json();
@@ -2450,7 +2460,7 @@
       /* offline */
     }
     try {
-      const mr = await fetch("./ALR5標準互通.md?v=list1", {
+      const mr = await fetch("./ALR5標準互通.md?v=design1", {
         cache: "no-store",
       });
       if (mr.ok) alr5Markdown = await mr.text();

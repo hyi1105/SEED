@@ -809,7 +809,7 @@ table.inkan-table td {
   border: 1px solid #aceebb;
 }
 
-/* 兩層導覽：列表／設計表單（暗色，對齊上方 tabs） */
+/* 兩層導覽：申請列表（暗底上可讀）／設計表單（淺色紙面） */
 .list-stage {
   padding: 12px 4px 28px;
   font-family: var(--font);
@@ -983,6 +983,86 @@ table.inkan-table td {
   background: #181818;
   margin-left: 6px;
   vertical-align: middle;
+}
+
+/* 設計表單一二層：淺色紙面（易讀） */
+.list-stage-light {
+  color: #1a1814;
+  background: #f7f3ea;
+  border: 1px solid #d2caba;
+  border-radius: 10px;
+  padding: 16px 16px 28px;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.12);
+}
+.list-stage-light .list-title {
+  color: #1a1814;
+}
+.list-stage-light .list-tip,
+.list-stage-light .sec-note,
+.list-stage-light .muted-cell {
+  color: #6e675c;
+}
+.list-stage-light .layer-back-btn {
+  color: #3d4a8f;
+}
+.list-stage-light .layer-back-btn:hover {
+  color: #2a3366;
+}
+.list-stage-light .mgmt-table {
+  background: #fffdf8;
+  border: 1px solid #d2caba;
+  color: #1a1814;
+}
+.list-stage-light .mgmt-table th,
+.list-stage-light .mgmt-table td {
+  border-color: #e0d8c8;
+  color: #1a1814;
+}
+.list-stage-light .mgmt-table thead th {
+  background: #efe8d8;
+  color: #3a342c;
+}
+.list-stage-light .mgmt-table tbody tr:hover td {
+  background: #f3efe6;
+}
+.list-stage-light .mgmt-table.edit-table th {
+  background: #f3efe6;
+  color: #5a5348;
+}
+.list-stage-light .cell-input {
+  background: #fff;
+  border-color: #c8c0b0;
+  color: #1a1814;
+}
+.list-stage-light .cell-input:disabled {
+  background: #f3efe6;
+  color: #8a8274;
+}
+.list-stage-light .cell-input:focus {
+  border-color: #3d4a8f;
+}
+.list-stage-light .table-btn {
+  border-color: #5a5348;
+  background: #fffdf8;
+  color: #1a1814;
+}
+.list-stage-light .table-btn.primary {
+  background: #1a1814;
+  border-color: #1a1814;
+  color: #fffdf8;
+}
+.list-stage-light .table-btn.danger {
+  border-color: #a33d3d;
+  color: #7a2424;
+  background: #fff5f5;
+}
+.list-stage-light .design-section h3 {
+  color: #1a1814;
+}
+.list-stage-light .badge-sys {
+  border-color: #c8c0b0;
+  color: #3d4a8f;
+  background: #efe8d8;
 }
 
 @media (max-width: 640px) {
