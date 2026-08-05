@@ -22,6 +22,10 @@ status: active
 
 - 問題畫面（使用者手機）：內容欄位 field_id／label 被壓成直排字元；default／rules 錯位
 
+## 修正（第二次）
+- 原因：列表用的 `min-width: 28rem` 也套到設計編輯表，撐破螢幕→內容偏左、右側大片黑
+- 改為 `:not(.design-edit)` 才套 28rem；設計表 `display:block`＋`max-width:100%`；`?v=design9`
+
 ## 待續
 
 - 申請 A4 在極窄螢幕再調

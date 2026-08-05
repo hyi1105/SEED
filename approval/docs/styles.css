@@ -1281,6 +1281,10 @@ table.inkan-table td {
 
   .design-edit .content-fields-table,
   .design-edit .stage-table {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0 !important;
     border: 0;
     background: transparent;
     overflow: visible;
@@ -1292,10 +1296,14 @@ table.inkan-table td {
   .design-edit .content-fields-table tbody,
   .design-edit .stage-table tbody {
     display: block;
+    width: 100%;
   }
   .design-edit .content-field-row,
   .design-edit .stage-row {
     display: block;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
     margin: 0 0 12px;
     padding: 12px 12px 8px;
     background: #fffdf8;
@@ -1305,10 +1313,12 @@ table.inkan-table td {
   .design-edit .content-field-row td,
   .design-edit .stage-row td {
     display: grid;
-    grid-template-columns: 6.2rem minmax(0, 1fr);
+    grid-template-columns: 5.5rem minmax(0, 1fr);
     gap: 8px;
     align-items: center;
     width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
     border: 0;
     border-bottom: 1px solid #efe8dc;
     padding: 8px 0;
@@ -1343,12 +1353,15 @@ table.inkan-table td {
   .design-edit .row-actions-cell {
     padding-top: 10px;
   }
-  .design-edit .row-actions-cell .table-btn {
+  .design-edit .row-actions-cell .table-btn,
+  .design-edit .content-field-row .table-btn,
+  .design-edit .stage-row .table-btn {
     width: 100%;
   }
   .design-edit .content-field-rules-row,
   .design-edit .stage-mail-rules-row {
     display: block;
+    width: 100%;
     margin: -6px 0 14px;
     padding: 0;
     border: 0;
@@ -1358,6 +1371,8 @@ table.inkan-table td {
   .design-edit .stage-mail-rules-row > td {
     display: block;
     width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
     border: 1px solid #e0d8c8;
     border-radius: 10px;
     padding: 12px;
@@ -1369,11 +1384,36 @@ table.inkan-table td {
     content: none;
   }
   .design-edit .table-scroll {
-    overflow: visible;
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100%;
+  }
+  .design-edit .stage-mail-table {
+    display: block;
+    width: 100%;
+    min-width: 0 !important;
+  }
+  .design-edit .stage-mail-table thead {
+    display: none;
+  }
+  .design-edit .stage-mail-table tbody,
+  .design-edit .stage-mail-table tr {
+    display: block;
+    width: 100%;
+  }
+  .design-edit .stage-mail-table td {
+    display: block;
+    width: 100%;
+    border: 0;
+    border-bottom: 1px solid #e8e0d0;
+    padding: 6px 0;
   }
 
   .design-edit .edit-table {
     display: block;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0 !important;
     border: 0;
     background: transparent;
   }
@@ -1383,6 +1423,7 @@ table.inkan-table td {
   .design-edit .edit-table tbody,
   .design-edit .edit-table tr {
     display: block;
+    width: 100%;
   }
   .design-edit .edit-table tr {
     margin-bottom: 10px;
@@ -1390,6 +1431,7 @@ table.inkan-table td {
     background: #fffdf8;
     border: 1px solid #e0d8c8;
     border-radius: 10px;
+    box-sizing: border-box;
   }
   .design-edit .edit-table th,
   .design-edit .edit-table td {
@@ -1405,13 +1447,31 @@ table.inkan-table td {
     width: auto;
   }
 
-  .list-stage .table-scroll .mgmt-table,
-  .list-stage-light .table-scroll .mgmt-table {
+  /* 僅表單／申請「列表」橫滑；設計編輯頁不要套 28rem */
+  .list-stage:not(.design-edit) .table-scroll .mgmt-table,
+  .list-stage-light:not(.design-edit) .table-scroll .mgmt-table {
     min-width: 28rem;
   }
-  .list-stage .table-scroll,
-  .list-stage-light .table-scroll {
+  .list-stage:not(.design-edit) .table-scroll,
+  .list-stage-light:not(.design-edit) .table-scroll {
     border-radius: 8px;
+  }
+  .design-edit {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: clip;
+    box-sizing: border-box;
+  }
+  .design-edit .design-section,
+  .design-edit .list-title,
+  .design-edit .sec-note,
+  .design-edit .list-tip,
+  .design-edit .table-actions {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+  .stage {
+    overflow-x: hidden;
   }
 
   .guide-toolbar {
