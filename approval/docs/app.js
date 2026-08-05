@@ -4892,7 +4892,7 @@
     const aNote = document.createElement("p");
     aNote.className = "sec-note";
     aNote.textContent =
-      "由上往下：level 0＝Submit，往下 1→2…。預設 Approver＝該關預設簽核人；「申請人可改」＝editable。stage_notify＝關卡通過通知名單。點「Mail」開棋盤儀表板：左右階段、上下參與者；橢圓按鈕可拖拉。";
+      "由上往下：level 0＝Submit，往下 1→2…。點「Mail」開棋盤：三種屬性（人員／動作+寄信／欄位）全部按鈕化；點材料再點格子放置。";
     aSec.appendChild(aNote);
 
     const sysToggleLab = document.createElement("label");
