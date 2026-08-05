@@ -8,7 +8,7 @@
     "creator": "王小明",
     "location": "",
     "lang": "zh-Hant",
-    "note": "ALR5：設計表單淺色；系統欄位依規格 creator／requester／approver_n…；內容欄位可增刪；step_N 可刪。"
+    "note": "ALR5：設計淺色；系統欄位依規格；簽核水流 step_0→…；stamp_name 完整姓名。"
   },
   "actor": {
     "id": "u_wang",
@@ -16,18 +16,70 @@
     "role": "requester"
   },
   "roles": [
-    { "id": "requester", "label": "申請人／需求人", "person": { "id": "u_wang", "name": "王小明" }, "stamp_id": "step_0" },
-    { "id": "approver_1", "label": "代理人（level 1）", "person": { "id": "u_chen", "name": "陳美玲" }, "stamp_id": "step_1" },
-    { "id": "approver_2", "label": "課長（level 2）", "person": { "id": "u_lin", "name": "林課長" }, "stamp_id": "step_2" },
-    { "id": "approver_3", "label": "協理（level 3）", "person": { "id": "u_yen", "name": "嚴協理" }, "stamp_id": "step_3" },
-    { "id": "admin", "label": "Admin", "person": { "id": "u_admin", "name": "系統管理員" }, "stamp_id": null }
+    {
+      "id": "requester",
+      "label": "申請人／需求人",
+      "person": {
+        "id": "u_wang",
+        "name": "王小明"
+      },
+      "stamp_id": "step_0"
+    },
+    {
+      "id": "approver_1",
+      "label": "代理人（level 1）",
+      "person": {
+        "id": "u_chen",
+        "name": "陳美玲"
+      },
+      "stamp_id": "step_1"
+    },
+    {
+      "id": "approver_2",
+      "label": "課長（level 2）",
+      "person": {
+        "id": "u_lin",
+        "name": "林課長"
+      },
+      "stamp_id": "step_2"
+    },
+    {
+      "id": "approver_3",
+      "label": "協理（level 3）",
+      "person": {
+        "id": "u_yen",
+        "name": "嚴協理"
+      },
+      "stamp_id": "step_3"
+    },
+    {
+      "id": "admin",
+      "label": "Admin",
+      "person": {
+        "id": "u_admin",
+        "name": "系統管理員"
+      },
+      "stamp_id": null
+    }
   ],
   "ui": {
     "views": [
-      { "id": "apply", "label": "申請" },
-      { "id": "design", "label": "設計表單" },
-      { "id": "json", "label": "JSON" },
-      { "id": "alr5", "label": "ALR5功能" }
+      {
+        "id": "apply",
+        "label": "申請"
+      },
+      {
+        "id": "design",
+        "label": "設計表單"
+      },
+      {
+        "id": "json",
+        "label": "JSON"
+      },
+      {
+        "id": "alr5",
+        "label": "ALR5功能"
+      }
     ],
     "sys_fields_aria": "系統欄位（報表用）",
     "sys_hint": "測試：上方可手動切角色與 current_level；切到 level 2 會自動核准 level 1。印章下方為動作按鈕；系統欄位依 ALR5（creator／requester／approver_n…）；狀態只顯示不可點。",
@@ -44,50 +96,166 @@
     "comment_placeholder": "（無意見）"
   },
   "actions": [
-    { "id": "submit", "label": "送出", "kind": "submit" },
-    { "id": "cycle_status", "label": "切換狀態", "kind": "cycle_status", "bound_to": "status_pill" }
+    {
+      "id": "submit",
+      "label": "送出",
+      "kind": "submit"
+    },
+    {
+      "id": "cycle_status",
+      "label": "切換狀態",
+      "kind": "cycle_status",
+      "bound_to": "status_pill"
+    }
   ],
   "statuses": [
-    { "id": "new", "label": "New", "tip": "新申請", "level": null, "submitted_at": null, "completed_at": null },
-    { "id": "draft", "label": "Draft", "tip": "被暫存過了", "level": 0, "submitted_at": null, "completed_at": null },
-    { "id": "in_process", "label": "In Process", "tip": "已經送出等待簽核", "level": 1, "submitted_at": null, "completed_at": null },
-    { "id": "completed", "label": "Completed", "tip": "全部簽核過", "level": 9999, "submitted_at": null, "completed_at": null },
-    { "id": "denied", "label": "Denied", "tip": "有人拒絕了", "level": -2, "submitted_at": null, "completed_at": null },
-    { "id": "cancelled", "label": "Cancelled", "tip": "已取消", "level": -1, "submitted_at": null, "completed_at": null }
+    {
+      "id": "new",
+      "label": "New",
+      "tip": "新申請",
+      "level": null,
+      "submitted_at": null,
+      "completed_at": null
+    },
+    {
+      "id": "draft",
+      "label": "Draft",
+      "tip": "被暫存過了",
+      "level": 0,
+      "submitted_at": null,
+      "completed_at": null
+    },
+    {
+      "id": "in_process",
+      "label": "In Process",
+      "tip": "已經送出等待簽核",
+      "level": 1,
+      "submitted_at": null,
+      "completed_at": null
+    },
+    {
+      "id": "completed",
+      "label": "Completed",
+      "tip": "全部簽核過",
+      "level": 9999,
+      "submitted_at": null,
+      "completed_at": null
+    },
+    {
+      "id": "denied",
+      "label": "Denied",
+      "tip": "有人拒絕了",
+      "level": -2,
+      "submitted_at": null,
+      "completed_at": null
+    },
+    {
+      "id": "cancelled",
+      "label": "Cancelled",
+      "tip": "已取消",
+      "level": -1,
+      "submitted_at": null,
+      "completed_at": null
+    }
   ],
   "fields": {
-    "applicant": { "kind": "content", "type": "text", "label": "申請人", "value": "王小明" },
+    "applicant": {
+      "kind": "content",
+      "type": "text",
+      "label": "申請人",
+      "value": "王小明"
+    },
     "leave_type": {
       "kind": "content",
       "type": "dropdown",
       "label": "假別",
       "value": "事假",
       "options": [
-        { "value": "特休", "label": "特休" },
-        { "value": "事假", "label": "事假" },
-        { "value": "病假", "label": "病假" },
-        { "value": "其他", "label": "其他" }
+        {
+          "value": "特休",
+          "label": "特休"
+        },
+        {
+          "value": "事假",
+          "label": "事假"
+        },
+        {
+          "value": "病假",
+          "label": "病假"
+        },
+        {
+          "value": "其他",
+          "label": "其他"
+        }
       ]
     },
-    "leave_date": { "kind": "content", "type": "text", "label": "起始日", "value": "明天" },
-    "days": { "kind": "content", "type": "number", "label": "天數", "value": "1" },
-    "agent": { "kind": "content", "type": "text", "label": "代理人", "value": "陳美玲" }
+    "leave_date": {
+      "kind": "content",
+      "type": "text",
+      "label": "起始日",
+      "value": "明天"
+    },
+    "days": {
+      "kind": "content",
+      "type": "number",
+      "label": "天數",
+      "value": "1"
+    },
+    "agent": {
+      "kind": "content",
+      "type": "text",
+      "label": "代理人",
+      "value": "陳美玲"
+    }
   },
   "body": {
     "paragraphs": [
       {
         "parts": [
-          { "t": "text", "v": "申請人" },
-          { "t": "field", "name": "applicant" },
-          { "t": "text", "v": "因" },
-          { "t": "field", "name": "leave_type" },
-          { "t": "text", "v": "，自" },
-          { "t": "field", "name": "leave_date" },
-          { "t": "text", "v": "起請假" },
-          { "t": "field", "name": "days" },
-          { "t": "text", "v": "天，代理人為" },
-          { "t": "field", "name": "agent" },
-          { "t": "text", "v": "。" }
+          {
+            "t": "text",
+            "v": "申請人"
+          },
+          {
+            "t": "field",
+            "name": "applicant"
+          },
+          {
+            "t": "text",
+            "v": "因"
+          },
+          {
+            "t": "field",
+            "name": "leave_type"
+          },
+          {
+            "t": "text",
+            "v": "，自"
+          },
+          {
+            "t": "field",
+            "name": "leave_date"
+          },
+          {
+            "t": "text",
+            "v": "起請假"
+          },
+          {
+            "t": "field",
+            "name": "days"
+          },
+          {
+            "t": "text",
+            "v": "天，代理人為"
+          },
+          {
+            "t": "field",
+            "name": "agent"
+          },
+          {
+            "t": "text",
+            "v": "。"
+          }
         ]
       }
     ]
@@ -96,36 +264,72 @@
     "title": "簽核",
     "columns": [
       {
-        "id": "step_3",
-        "label": "協理",
-        "level": 3,
-        "role": "approver_3",
-        "person": { "id": "u_yen", "name": "嚴協理" },
-        "stamp": { "name": "嚴", "mark": null, "time": null, "comment": "", "pending": true }
-      },
-      {
-        "id": "step_2",
-        "label": "課長",
-        "level": 2,
-        "role": "approver_2",
-        "person": { "id": "u_lin", "name": "林課長" },
-        "stamp": { "name": "林", "mark": null, "time": null, "comment": "", "pending": true }
+        "id": "step_0",
+        "label": "Submit",
+        "level": 0,
+        "role": "requester",
+        "person": {
+          "id": "u_wang",
+          "name": "王小明"
+        },
+        "stamp": {
+          "name": "王小明",
+          "mark": null,
+          "time": null,
+          "comment": "",
+          "pending": true
+        }
       },
       {
         "id": "step_1",
         "label": "代理人",
         "level": 1,
         "role": "approver_1",
-        "person": { "id": "u_chen", "name": "陳美玲" },
-        "stamp": { "name": "陳", "mark": null, "time": null, "comment": "", "pending": true }
+        "person": {
+          "id": "u_chen",
+          "name": "陳美玲"
+        },
+        "stamp": {
+          "name": "陳美玲",
+          "mark": null,
+          "time": null,
+          "comment": "",
+          "pending": true
+        }
       },
       {
-        "id": "step_0",
-        "label": "申請",
-        "level": 0,
-        "role": "requester",
-        "person": { "id": "u_wang", "name": "王小明" },
-        "stamp": { "name": "王", "mark": null, "time": null, "comment": "", "pending": true }
+        "id": "step_2",
+        "label": "課長",
+        "level": 2,
+        "role": "approver_2",
+        "person": {
+          "id": "u_lin",
+          "name": "林課長"
+        },
+        "stamp": {
+          "name": "林課長",
+          "mark": null,
+          "time": null,
+          "comment": "",
+          "pending": true
+        }
+      },
+      {
+        "id": "step_3",
+        "label": "協理",
+        "level": 3,
+        "role": "approver_3",
+        "person": {
+          "id": "u_yen",
+          "name": "嚴協理"
+        },
+        "stamp": {
+          "name": "嚴協理",
+          "mark": null,
+          "time": null,
+          "comment": "",
+          "pending": true
+        }
       }
     ]
   },
