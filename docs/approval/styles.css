@@ -1297,6 +1297,95 @@ table.inkan-table td {
   background: transparent;
 }
 
+/* 權限板：不能看／只能看／可編輯 */
+.acl-board {
+  display: grid;
+  gap: 10px;
+}
+.acl-board-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+@media (min-width: 720px) {
+  .acl-board-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+.acl-zone {
+  border: 1px dashed #d2caba;
+  border-radius: 10px;
+  background: #faf6ee;
+  padding: 8px;
+  min-height: 4.5rem;
+  transition: border-color 0.12s ease, background 0.12s ease;
+}
+.acl-zone.drag-over {
+  border-color: #3d4a8f;
+  background: #eef2fb;
+}
+.acl-zone-hidden {
+  background: #f8ecec;
+  border-color: #e0b8b8;
+}
+.acl-zone-read {
+  background: #eef3f8;
+  border-color: #b8c8dc;
+}
+.acl-zone-write {
+  background: #eaf4ea;
+  border-color: #b5d0b5;
+}
+.acl-zone-head {
+  margin-bottom: 6px;
+}
+.acl-zone-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #1a1814;
+}
+.acl-zone-hint {
+  font-size: 10px;
+  color: #8a8276;
+}
+.acl-zone-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 2rem;
+}
+.acl-zone-empty {
+  font-size: 11px;
+  color: #a09888;
+  padding: 4px 2px;
+}
+.acl-role-pill {
+  appearance: none;
+  border: 1px solid #cfc6b6;
+  background: #fff;
+  color: #1a1814;
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-family: var(--font);
+  font-weight: 600;
+  cursor: grab;
+  touch-action: manipulation;
+}
+.acl-role-pill.selected {
+  outline: 2px solid #3d4a8f;
+  outline-offset: 1px;
+  background: #e8eef8;
+}
+.acl-role-pill.dragging {
+  opacity: 0.55;
+}
+.acl-move-bar {
+  font-size: 11px;
+  color: #6e675c;
+  line-height: 1.4;
+}
+
 .blank-multiline {
   min-width: 8em;
   vertical-align: top;
