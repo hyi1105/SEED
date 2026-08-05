@@ -10,6 +10,7 @@
 
 ## 場次
 
+- 2026-08-05 — 修復流程圖欄位儀表板 type／可空白／可手填 — 標籤：SEED、Approval、ALR5、下拉、可空白、可手填、流程圖 — [sessions/2026-08-05-alr5-field-dropdown-fix.md](sessions/2026-08-05-alr5-field-dropdown-fix.md)
 - 2026-08-05 — 流程圖欄位儀表板：點方塊編 field／label／權限；JSON 跨平台 — 標籤：SEED、Approval、ALR5、流程圖、欄位儀表板、JSON — [sessions/2026-08-05-alr5-flow-field-dash.md](sessions/2026-08-05-alr5-flow-field-dash.md)
 - 2026-08-05 — 捨棄棋盤改自由流程說明圖（圓人／方欄位／箭頭） — 標籤：SEED、Approval、ALR5、Mail、流程圖、非技術可讀、UI — [sessions/2026-08-05-alr5-flow-diagram.md](sessions/2026-08-05-alr5-flow-diagram.md)
 - 2026-08-05 — 棋盤三種屬性物件化：人員／動作+寄信／欄位、點選放置 — 標籤：SEED、Approval、ALR5、Mail、棋盤、三種屬性、物件化、UI — [sessions/2026-08-05-alr5-board-three-attrs.md](sessions/2026-08-05-alr5-board-three-attrs.md)

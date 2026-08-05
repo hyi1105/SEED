@@ -2719,6 +2719,22 @@
       fieldEditorHost.replaceChildren();
     };
 
+    const mountFieldDash = (fid) => {
+      const f = ensureContentField(doc.fields[fid]);
+      fieldEditorHost.replaceChildren();
+      fieldEditorHost.appendChild(
+        createFlowFieldDashboard(fid, f, () => {
+          const node = flowBoardStorage(col).nodes.find(
+            (x) => x.field_id === fid
+          );
+          if (node) node.label = f.label || fid;
+          persist();
+          mountFieldDash(fid);
+          paintCanvas();
+        })
+      );
+    };
+
     const openFieldEditor = (fid) => {
       if (!fid || !doc.fields?.[fid]) return;
       if (openFieldId === fid) {
@@ -2730,19 +2746,8 @@
       activeEventId = null;
       editorHost.hidden = true;
       editorHost.replaceChildren();
-      const f = ensureContentField(doc.fields[fid]);
       fieldEditorHost.hidden = false;
-      fieldEditorHost.replaceChildren();
-      fieldEditorHost.appendChild(
-        createFlowFieldDashboard(fid, f, () => {
-          const node = flowBoardStorage(col).nodes.find(
-            (x) => x.field_id === fid
-          );
-          if (node) node.label = f.label || fid;
-          persist();
-          paintCanvas();
-        })
-      );
+      mountFieldDash(fid);
       paintCanvas();
     };
 
@@ -3090,6 +3095,7 @@
             defPrev.className = "flow-node-default";
             defPrev.textContent = "default：" + fieldDefaultPreview(f);
             el.appendChild(defPrev);
+            appendDropdownToggleChips(el, f);
             appendFieldStatusChips(el, f);
           }
         }
@@ -3539,6 +3545,10 @@
       f.kind = "content";
       if (f.type === "number" && f.value != null && f.value !== "" && Number.isNaN(Number(f.value))) {
         f.value = "";
+      }
+      if (f.type === "dropdown") {
+        if (f.allow_blank == null) f.allow_blank = true;
+        if (f.allow_manual == null) f.allow_manual = false;
       }
       if (f.type === "person" && !normalizeOptions(f.options).length) {
         /* options optional; picker uses known people */
@@ -4365,6 +4375,22 @@
     card.appendChild(detailHost);
 
     return card;
+  }
+
+  function appendDropdownToggleChips(host, f) {
+    if ((f.type || "text") !== "dropdown") return;
+    const chips = document.createElement("div");
+    chips.className = "flow-node-chips flow-node-dd-toggles";
+    [
+      { label: "可空白", on: !!f.allow_blank },
+      { label: "可手填", on: !!f.allow_manual },
+    ].forEach((t) => {
+      const c = document.createElement("span");
+      c.className = "flow-node-chip" + (t.on ? " on" : "");
+      c.textContent = t.label;
+      chips.appendChild(c);
+    });
+    host.appendChild(chips);
   }
 
   function appendFieldStatusChips(host, f) {
@@ -5287,7 +5313,7 @@
   async function boot() {
     let seedDesign = null;
     try {
-      const res = await fetch("./document.json?v=design19", {
+      const res = await fetch("./document.json?v=design20", {
         cache: "no-store",
       });
       if (res.ok) seedDesign = await res.json();
@@ -5295,7 +5321,7 @@
       /* offline */
     }
     try {
-      const sr = await fetch("./alr5-standard.json?v=design19", {
+      const sr = await fetch("./alr5-standard.json?v=design20", {
         cache: "no-store",
       });
       if (sr.ok) alr5Standard = await sr.json();
@@ -5303,7 +5329,7 @@
       /* offline */
     }
     try {
-      const mr = await fetch("./ALR5標準互通.md?v=design19", {
+      const mr = await fetch("./ALR5標準互通.md?v=design20", {
         cache: "no-store",
       });
       if (mr.ok) alr5Markdown = await mr.text();
