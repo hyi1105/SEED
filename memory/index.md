@@ -10,6 +10,7 @@
 
 ## 場次
 
+- 2026-08-05 — 表單設計／申請單拆獨立 JSON＋拿掉 JSON 分頁 — 標籤：SEED、Approval、ALR5、表單設計、申請單、JSON、UI — [sessions/2026-08-05-alr5-form-vs-doc-json.md](sessions/2026-08-05-alr5-form-vs-doc-json.md)
 - 2026-08-05 — 簽核階層：每關 Mail／Rules 展開 — 標籤：SEED、Approval、ALR5、簽核階層、Mail、Rules、UI — [sessions/2026-08-05-alr5-stage-mail-rules.md](sessions/2026-08-05-alr5-stage-mail-rules.md)
 - 2026-08-05 — 簽核階層：level 置左、預設 Approver、可改、notify、mail — 標籤：SEED、Approval、ALR5、簽核階層、stage_notify、mail、UI — [sessions/2026-08-05-alr5-step-notify-mail.md](sessions/2026-08-05-alr5-step-notify-mail.md)
 - 2026-08-05 — 內容欄位：中文說明、型別下拉、ACL／必填面板 — 標籤：SEED、Approval、ALR5、內容欄位、ACL、type、UI — [sessions/2026-08-05-alr5-content-field-acl.md](sessions/2026-08-05-alr5-content-field-acl.md)

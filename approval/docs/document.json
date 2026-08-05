@@ -8,7 +8,8 @@
     "creator": "王小明",
     "location": "",
     "lang": "zh-Hant",
-    "note": "ALR5：簽核階層 level 置左；預設 Approver／申請人可改／stage_notify；通知信範本。"
+    "kind": "form_design",
+    "note": "ALR5：表單設計檔（與申請單 JSON 獨立）；申請時複製當下設計再填寫。"
   },
   "actor": {
     "id": "u_wang",
@@ -71,10 +72,6 @@
       {
         "id": "design",
         "label": "設計表單"
-      },
-      {
-        "id": "json",
-        "label": "JSON"
       },
       {
         "id": "alr5",

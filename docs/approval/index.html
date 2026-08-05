@@ -4,17 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Approval</title>
-  <link rel="stylesheet" href="./styles.css?v=design5" />
+  <link rel="stylesheet" href="./styles.css?v=design6" />
 </head>
 <body>
-  <!-- 畫面殼：不含申請單文案；全部由 document JSON／ALR5 標準渲染 -->
+  <!-- 畫面殼：設計檔與申請單為獨立 JSON；畫面只渲染 -->
   <div class="app-shell">
     <nav class="view-tabs" id="view-tabs" aria-label="view"></nav>
     <div class="stage" id="view-form" hidden></div>
-    <div class="json-stage" id="view-json" hidden>
-      <textarea class="json-editor" id="json-editor" spellcheck="false" aria-label="JSON"></textarea>
-      <p class="json-msg" id="json-msg" hidden></p>
-    </div>
     <div class="guide-stage" id="view-alr5" hidden>
       <div class="guide-toolbar">
         <button type="button" class="guide-btn" id="btn-copy-ai">複製給 AI（標準互通全文）</button>
@@ -24,6 +20,6 @@
       <div class="guide-body" id="guide-body"></div>
     </div>
   </div>
-  <script src="./app.js?v=design5"></script>
+  <script src="./app.js?v=design6"></script>
 </body>
 </html>

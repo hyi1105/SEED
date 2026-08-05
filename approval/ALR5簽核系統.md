@@ -40,11 +40,20 @@ note: 口頭對談整理進本檔；以 diff 確認。尚未口頭確認的區�
 
 | 層 | 對應 | 說明 |
 |----|------|------|
-| **M（Model）** | 申請單／表單 **JSON** | 同一套結構認證後，可傳給其他平台 |
+| **M（Model）** | **表單設計 JSON**＋**申請單 JSON**（兩套獨立） | 結構可互通；申請時複製當下設計再填寫 |
 | **C（Controller）** | **功能**是否符合 ALR5 | `interop_checklist`／`decisions`；動作、level、權限、檢核 |
 | **V（View）** | **畫面** | 依需求調整；AI 時代可由各人與 AI 自訂長相，**不綁死 UI** |
 
 > 互通驗收看 **M＋C**；V 不強制同一畫面。
+
+### 1b-2. 表單設計 vs 申請單（獨立 JSON）
+
+| 項目 | 定案 |
+|------|------|
+| **表單設計（form design）** | Owner 編輯的範本；`meta.kind = form_design`；本機 key：`approval.form.design.v1:<form_id>` |
+| **申請單（application／item）** | 實際填寫與簽核的一筆；`meta.kind = application`；本機 key：`approval.doc.v1:<doc_id>` |
+| **開單** | 按「申請」時**深拷貝當下設計** → 新 `doc_id`／單號／draft；之後改設計**不回溯**已開單 |
+| **UI** | 上方不再共用單一「JSON」分頁當整包編輯；設計與申請各自持久化 |
 
 ### 1c. AB 表單／可設定匯出／JSON 完全轉移（定案方向）
 
