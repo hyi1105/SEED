@@ -2430,86 +2430,20 @@
   }
 
   function createMailFlowNode(ev, col, opts) {
-    const t = col.mail[ev.id];
+    // 相容：流程圖改畫在 canvas；此函式僅供寄信標籤按鈕
+    const t = col.mail?.[ev.id];
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className =
-      "mail-pill mail-flow-node attr-action kind-mail" +
+      "flow-edge-label kind-mail" +
       (mailTemplateConfigured(t) ? " configured" : "") +
       (opts?.active ? " active" : "") +
-      (opts?.tone ? ` tone-${opts.tone}` : "") +
       (opts?.selected ? " selected" : "");
-    btn.dataset.event = ev.id;
-    btn.dataset.kind = "mail";
-    btn.dataset.attr = "action";
-    const badge = document.createElement("span");
-    badge.className = "mail-pill-badge";
-    badge.textContent = "寄信";
-    btn.appendChild(badge);
-    const title = document.createElement("div");
-    title.className = "mail-flow-node-title";
-    title.textContent = ev.short || ev.label;
-    const meta = document.createElement("div");
-    meta.className = "mail-flow-node-meta";
-    meta.textContent = mailTemplateConfigured(t) ? "已設定" : "未設定";
-    btn.appendChild(title);
-    btn.appendChild(meta);
-    btn.title = ev.label + "（" + ev.id + "）";
+    btn.textContent =
+      (ev.short || ev.label || "寄信") +
+      (mailTemplateConfigured(t) ? "" : "（未設定）");
+    btn.title = (ev.label || ev.id) + " — 點兩次編輯信件";
     if (opts?.onClick) btn.addEventListener("click", opts.onClick);
-    return btn;
-  }
-
-  function createBoardPill(opts) {
-    const btn = document.createElement("button");
-    btn.type = "button";
-    const kind = opts.kind || "action";
-    const attr =
-      opts.attr ||
-      (kind === "mail"
-        ? "action"
-        : kind === "field"
-          ? "field"
-          : kind === "person"
-            ? "person"
-            : "action");
-    btn.className =
-      "mail-pill attr-" +
-      attr +
-      " kind-" +
-      kind +
-      (opts.tone ? " tone-" + opts.tone : "") +
-      (opts.active ? " active" : "") +
-      (opts.configured ? " configured" : "") +
-      (opts.selected ? " selected" : "");
-    btn.dataset.kind = kind;
-    btn.dataset.attr = attr;
-    if (opts.eventId) btn.dataset.event = opts.eventId;
-    if (opts.pieceId) btn.dataset.pieceId = opts.pieceId;
-    if (opts.fieldId) btn.dataset.fieldId = opts.fieldId;
-    if (opts.roleId) btn.dataset.roleId = opts.roleId;
-    const badge = document.createElement("span");
-    badge.className = "mail-pill-badge";
-    badge.textContent =
-      attr === "person"
-        ? "人員"
-        : attr === "field"
-          ? "欄位"
-          : kind === "mail"
-            ? "寄信"
-            : "動作";
-    btn.appendChild(badge);
-    const title = document.createElement("div");
-    title.className = "mail-flow-node-title";
-    title.textContent = opts.label || "";
-    btn.appendChild(title);
-    if (opts.meta) {
-      const meta = document.createElement("div");
-      meta.className = "mail-flow-node-meta";
-      meta.textContent = opts.meta;
-      btn.appendChild(meta);
-    }
-    if (opts.title) btn.title = opts.title;
-    if (opts.onClick) btn.addEventListener("click", opts.onClick);
     return btn;
   }
 
@@ -2524,10 +2458,6 @@
         label: f.label || id,
         type: f.type || "text",
         required: !!f.required,
-        required_from_level:
-          f.required_from_level == null || f.required_from_level === ""
-            ? null
-            : Number(f.required_from_level),
       });
     });
     return out;
@@ -2542,317 +2472,130 @@
     return "go";
   }
 
-  function newPieceId() {
+  function newFlowId(prefix) {
     return (
-      "p_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5)
+      (prefix || "n") +
+      "_" +
+      Date.now().toString(36) +
+      Math.random().toString(36).slice(2, 5)
     );
   }
 
-  function pieceFromMaterial(mat, stage, actor) {
-    return {
-      id: newPieceId(),
-      attr: mat.attr,
-      kind: mat.kind,
-      label: mat.label,
-      event_id: mat.event_id || null,
-      field_id: mat.field_id || null,
-      role_id: mat.role_id || null,
-      tone: mat.tone || null,
-      stage,
-      actor,
-    };
-  }
-
-  function mailBoardStorage(col) {
-    if (!col.mail_board || col.mail_board.schema !== 2) {
-      col.mail_board = defaultMailBoard(col);
+  function flowBoardStorage(col) {
+    if (!col.mail_board || col.mail_board.schema !== 3) {
+      col.mail_board = defaultFlowBoard(col);
     } else {
-      if (!Array.isArray(col.mail_board.stages)) {
-        col.mail_board.stages = defaultMailBoard(col).stages;
-      }
-      if (!Array.isArray(col.mail_board.actors)) {
-        col.mail_board.actors = defaultMailBoard(col).actors;
-      }
-      if (!Array.isArray(col.mail_board.pieces)) {
-        col.mail_board.pieces = defaultMailBoard(col).pieces;
-      }
+      if (!Array.isArray(col.mail_board.nodes)) col.mail_board.nodes = [];
+      if (!Array.isArray(col.mail_board.edges)) col.mail_board.edges = [];
     }
     return col.mail_board;
   }
 
-  function defaultMailBoard(col) {
+  function defaultFlowBoard(col) {
     const lv = Number(col.level);
     const fields = contentFieldList();
-    const fieldPieces = fields.map((f) => ({
-      id: "fld_" + f.id,
-      attr: "field",
-      kind: "field",
-      label: f.label,
-      field_id: f.id,
-      tone: "field",
-      stage: lv === 0 ? "submit" : "wait",
-      actor: lv === 0 ? "requester" : "approver",
-    }));
 
     if (lv === 0) {
-      return {
-        schema: 2,
-        stages: [
-          { id: "draft", label: "草稿" },
-          { id: "submit", label: "送出" },
-          { id: "process", label: "簽核中" },
-          { id: "done", label: "結案" },
-          { id: "cancel", label: "取消" },
-        ],
-        actors: [
-          { id: "requester", label: "Requester" },
-          { id: "cc", label: "CC" },
-          { id: "fyi", label: "FYI" },
-          { id: "lane", label: "流程" },
-        ],
-        pieces: [
-          {
-            id: "p_req",
-            attr: "person",
-            kind: "person",
-            role_id: "requester",
-            label: "Requester",
-            tone: "person",
-            stage: "draft",
-            actor: "requester",
-          },
-          {
-            id: "a_submit",
-            attr: "action",
-            kind: "action",
-            label: "Submit",
-            tone: "go",
-            stage: "submit",
-            actor: "requester",
-          },
-          {
-            id: "m_submit",
-            attr: "action",
-            kind: "mail",
-            event_id: "notify_on_submit",
-            label: "送出通知",
-            tone: "go",
-            stage: "submit",
-            actor: "cc",
-          },
-          {
-            id: "p_cc",
-            attr: "person",
-            kind: "person",
-            role_id: "cc",
-            label: "CC",
-            tone: "person",
-            stage: "submit",
-            actor: "cc",
-          },
-          {
-            id: "a_enter",
-            attr: "action",
-            kind: "action",
-            label: "進入簽核",
-            tone: "mid",
-            stage: "process",
-            actor: "lane",
-          },
-          {
-            id: "p_fyi",
-            attr: "person",
-            kind: "person",
-            role_id: "fyi",
-            label: "FYI",
-            tone: "person",
-            stage: "done",
-            actor: "fyi",
-          },
-          {
-            id: "m_done",
-            attr: "action",
-            kind: "mail",
-            event_id: "notify_on_completed",
-            label: "結案 FYI",
-            tone: "ok",
-            stage: "done",
-            actor: "fyi",
-          },
-          {
-            id: "a_cancel",
-            attr: "action",
-            kind: "action",
-            label: "Cancel",
-            tone: "bad",
-            stage: "cancel",
-            actor: "requester",
-          },
-          {
-            id: "m_cancel",
-            attr: "action",
-            kind: "mail",
-            event_id: "notify_on_cancel",
-            label: "取消",
-            tone: "bad",
-            stage: "cancel",
-            actor: "requester",
-          },
-          {
-            id: "m_manual",
-            attr: "action",
-            kind: "mail",
-            event_id: "notify_manual",
-            label: "手動 Notify",
-            tone: "side",
-            stage: "process",
-            actor: "lane",
-          },
-          ...fieldPieces,
-        ],
-      };
+      const nodes = [
+        { id: "n_req", kind: "person", role_id: "requester", label: "申請人", x: 280, y: 160 },
+        { id: "n_cc", kind: "person", role_id: "cc", label: "副本 CC", x: 520, y: 80 },
+        { id: "n_appr", kind: "person", role_id: "approver", label: "簽核人", x: 520, y: 220 },
+        { id: "n_fyi", kind: "person", role_id: "fyi", label: "結案知會 FYI", x: 280, y: 320 },
+        { id: "n_sys", kind: "doc", label: "系統／歸檔", x: 60, y: 320 },
+      ];
+      fields.slice(0, 5).forEach((f, i) => {
+        nodes.push({
+          id: "n_f_" + f.id,
+          kind: "field",
+          field_id: f.id,
+          label: f.label,
+          x: 40,
+          y: 40 + i * 56,
+        });
+      });
+      const edges = [
+        { id: "e1", from: "n_req", to: "n_cc", kind: "mail", event_id: "notify_on_submit", label: "送出通知" },
+        { id: "e2", from: "n_req", to: "n_appr", kind: "action", label: "Submit 送出" },
+        { id: "e3", from: "n_req", to: "n_fyi", kind: "mail", event_id: "notify_on_completed", label: "結案 FYI" },
+        { id: "e4", from: "n_req", to: "n_sys", kind: "mail", event_id: "notify_on_cancel", label: "取消" },
+        { id: "e5", from: "n_req", to: "n_cc", kind: "mail", event_id: "notify_manual", label: "手動通知" },
+      ];
+      fields.slice(0, 5).forEach((f, i) => {
+        edges.push({
+          id: "ef_" + f.id,
+          from: "n_f_" + f.id,
+          to: "n_req",
+          kind: "action",
+          label: "填寫",
+        });
+      });
+      return { schema: 3, nodes, edges, custom_mail_events: [] };
     }
 
     const label = col.label || `L${lv}`;
-    return {
-      schema: 2,
-      stages: [
-        { id: "enter", label: "進入" },
-        { id: "wait", label: "等待" },
-        { id: "pass", label: "Approve" },
-        { id: "reject", label: "Reject" },
-        { id: "return", label: "Return" },
-      ],
-      actors: [
-        { id: "approver", label: "Approver" },
-        { id: "notify", label: "stage_notify" },
-        { id: "requester", label: "Requester" },
-        { id: "side", label: "CC／隨時" },
-      ],
-      pieces: [
-        {
-          id: "p_appr",
-          attr: "person",
-          kind: "person",
-          role_id: "approver",
-          label: "Approver・" + label,
-          tone: "person",
-          stage: "wait",
-          actor: "approver",
-        },
-        {
-          id: "a_approve",
-          attr: "action",
-          kind: "action",
-          label: "Approve",
-          tone: "ok",
-          stage: "pass",
-          actor: "approver",
-        },
-        {
-          id: "m_need",
-          attr: "action",
-          kind: "mail",
-          event_id: "notify_need_approve",
-          label: "請簽",
-          tone: "go",
-          stage: "enter",
-          actor: "approver",
-        },
-        {
-          id: "m_pass",
-          attr: "action",
-          kind: "mail",
-          event_id: "notify_on_stage_pass",
-          label: "通過→知會",
-          tone: "ok",
-          stage: "pass",
-          actor: "notify",
-        },
-        {
-          id: "a_reject",
-          attr: "action",
-          kind: "action",
-          label: "Reject",
-          tone: "bad",
-          stage: "reject",
-          actor: "approver",
-        },
-        {
-          id: "m_rej",
-          attr: "action",
-          kind: "mail",
-          event_id: "notify_on_reject",
-          label: "拒件信",
-          tone: "bad",
-          stage: "reject",
-          actor: "requester",
-        },
-        {
-          id: "a_return",
-          attr: "action",
-          kind: "action",
-          label: "Return",
-          tone: "warn",
-          stage: "return",
-          actor: "approver",
-        },
-        {
-          id: "m_ret",
-          attr: "action",
-          kind: "mail",
-          event_id: "notify_on_return",
-          label: "退回信",
-          tone: "warn",
-          stage: "return",
-          actor: "requester",
-        },
-        {
-          id: "m_manual",
-          attr: "action",
-          kind: "mail",
-          event_id: "notify_manual",
-          label: "手動 Notify",
-          tone: "side",
-          stage: "wait",
-          actor: "side",
-        },
-        {
-          id: "m_overdue",
-          attr: "action",
-          kind: "mail",
-          event_id: "notify_overdue",
-          label: "逾期",
-          tone: "warn",
-          stage: "wait",
-          actor: "side",
-        },
-        ...fieldPieces,
-      ],
-    };
+    const nodes = [
+      { id: "n_appr", kind: "person", role_id: "approver", label: "簽核人・" + label, x: 300, y: 160 },
+      { id: "n_req", kind: "person", role_id: "requester", label: "申請人", x: 80, y: 280 },
+      { id: "n_notify", kind: "person", role_id: "stage_notify", label: "關卡知會", x: 520, y: 80 },
+      { id: "n_next", kind: "person", role_id: "next", label: "下一關／完成", x: 520, y: 260 },
+    ];
+    fields.slice(0, 4).forEach((f, i) => {
+      nodes.push({
+        id: "n_f_" + f.id,
+        kind: "field",
+        field_id: f.id,
+        label: f.label,
+        x: 40,
+        y: 40 + i * 56,
+      });
+    });
+    const edges = [
+      { id: "e1", from: "n_notify", to: "n_appr", kind: "mail", event_id: "notify_need_approve", label: "請簽" },
+      { id: "e2", from: "n_appr", to: "n_next", kind: "action", label: "Approve 同意" },
+      { id: "e3", from: "n_appr", to: "n_notify", kind: "mail", event_id: "notify_on_stage_pass", label: "通過→知會" },
+      { id: "e4", from: "n_appr", to: "n_req", kind: "action", label: "Reject 拒件" },
+      { id: "e5", from: "n_appr", to: "n_req", kind: "mail", event_id: "notify_on_reject", label: "拒件信" },
+      { id: "e6", from: "n_appr", to: "n_req", kind: "action", label: "Return 退回" },
+      { id: "e7", from: "n_appr", to: "n_req", kind: "mail", event_id: "notify_on_return", label: "退回信" },
+      { id: "e8", from: "n_appr", to: "n_notify", kind: "mail", event_id: "notify_manual", label: "手動通知" },
+      { id: "e9", from: "n_appr", to: "n_appr", kind: "mail", event_id: "notify_overdue", label: "逾期" },
+    ];
+    fields.slice(0, 4).forEach((f) => {
+      edges.push({
+        id: "ef_" + f.id,
+        from: "n_f_" + f.id,
+        to: "n_appr",
+        kind: "action",
+        label: "本關填寫",
+      });
+    });
+    return { schema: 3, nodes, edges, custom_mail_events: [] };
   }
 
   function boardPersonMaterials() {
     return [
-      { attr: "person", kind: "person", role_id: "requester", label: "Requester", tone: "person" },
-      { attr: "person", kind: "person", role_id: "approver", label: "Approver", tone: "person" },
-      { attr: "person", kind: "person", role_id: "cc", label: "CC", tone: "person" },
-      { attr: "person", kind: "person", role_id: "fyi", label: "FYI", tone: "person" },
-      { attr: "person", kind: "person", role_id: "creator", label: "Creator", tone: "person" },
-      { attr: "person", kind: "person", role_id: "admin", label: "Admin", tone: "person" },
+      { attr: "person", kind: "person", role_id: "requester", label: "申請人" },
+      { attr: "person", kind: "person", role_id: "approver", label: "簽核人" },
+      { attr: "person", kind: "person", role_id: "cc", label: "副本 CC" },
+      { attr: "person", kind: "person", role_id: "fyi", label: "結案知會 FYI" },
+      { attr: "person", kind: "person", role_id: "creator", label: "建立者" },
+      { attr: "person", kind: "person", role_id: "admin", label: "管理員" },
     ];
   }
 
   function boardActionMaterials() {
     return [
-      { attr: "action", kind: "action", label: "Submit", tone: "go" },
-      { attr: "action", kind: "action", label: "Approve", tone: "ok" },
-      { attr: "action", kind: "action", label: "Reject", tone: "bad" },
-      { attr: "action", kind: "action", label: "Return", tone: "warn" },
-      { attr: "action", kind: "action", label: "Cancel", tone: "bad" },
-      { attr: "action", kind: "action", label: "Change", tone: "side" },
-      { attr: "action", kind: "action", label: "Notify", tone: "side" },
-      { attr: "action", kind: "action", label: "Save", tone: "mid" },
+      { attr: "action", kind: "action", label: "Submit 送出" },
+      { attr: "action", kind: "action", label: "Approve 同意" },
+      { attr: "action", kind: "action", label: "Reject 拒件" },
+      { attr: "action", kind: "action", label: "Return 退回" },
+      { attr: "action", kind: "action", label: "Cancel 取消" },
+      { attr: "action", kind: "action", label: "Change 換人" },
+      { attr: "action", kind: "action", label: "Notify 通知" },
+      { attr: "action", kind: "action", label: "填寫" },
+      { attr: "action", kind: "action", label: "分文／交辦" },
+      { attr: "action", kind: "action", label: "會辦" },
+      { attr: "action", kind: "action", label: "送歸檔" },
     ];
   }
 
@@ -2862,7 +2605,6 @@
       kind: "mail",
       event_id: ev.id,
       label: ev.short || ev.label,
-      tone: mailToneForEvent(ev),
     }));
   }
 
@@ -2872,7 +2614,6 @@
       kind: "field",
       field_id: f.id,
       label: f.label,
-      tone: "field",
       meta: f.type + (f.required ? "・必填" : ""),
     }));
   }
@@ -2880,10 +2621,10 @@
   function createStageMailPanel(col) {
     ensureApprovalColumn(col);
     ensureStageMail(col);
-    mailBoardStorage(col);
+    flowBoardStorage(col);
     const panel = document.createElement("div");
     panel.className =
-      "field-rules stage-mail-panel mail-flow-panel mail-board-panel";
+      "field-rules stage-mail-panel mail-flow-panel flow-diagram-panel";
     const lv = Number(col.level);
     const evById = Object.fromEntries(
       mailEventsForLevel(lv).map((e) => [e.id, e])
@@ -2892,17 +2633,20 @@
     const tip = document.createElement("p");
     tip.className = "acl-tip";
     tip.innerHTML =
-      "<strong>三種屬性（全部按鈕化）</strong>：①人員（Requester／Approver／FYI／CC…）②動作（Submit／Approve／Reject…）＋寄信 ③輸入欄位（此階段要填哪些）。";
+      "<strong>流程說明圖</strong>（給非技術背景也能看）：" +
+      "<b>圓形＝人</b>、" +
+      "<b>方塊＝要填的欄位／文件</b>、" +
+      "<b>箭頭＝做什麼或寄什麼信</b>。像跟廠商談專案時畫的那張流程。";
     panel.appendChild(tip);
 
     const how = document.createElement("div");
     how.className = "mail-board-how";
     how.innerHTML =
       "<ol>" +
-      "<li><b>點材料</b>（下方橢圓會亮起＝已選）</li>" +
-      "<li><b>再點棋盤格子</b>→ 放上去（左右＝階段、上下＝角色列）</li>" +
-      "<li>移動：點棋盤上的物件 → 再點別的格子；刪除：選取後點「丟棄」</li>" +
-      "<li>也可按住拖曳；點兩下「寄信」物件可編主旨／內文</li>" +
+      "<li><b>加人／欄位</b>：點下方材料 → 再點圖空白處放下</li>" +
+      "<li><b>加箭頭（動作／寄信）</b>：點動作或寄信材料 → 先點起點圓／方 → 再點終點</li>" +
+      "<li><b>移動</b>：按住圓或方塊拖動；線會跟著走</li>" +
+      "<li><b>編輯信</b>：點箭頭上的寄信標籤兩次；<b>刪除</b>：點選物件後按「丟棄」</li>" +
       "</ol>";
     panel.appendChild(how);
 
@@ -2911,79 +2655,29 @@
     pickHint.hidden = true;
     panel.appendChild(pickHint);
 
-    const spine = document.createElement("div");
-    spine.className = "mail-flow-spine";
-    const cols = (doc.approval?.columns || [])
-      .slice()
-      .sort((a, b) => Number(a.level) - Number(b.level));
-    cols.forEach((c, i) => {
-      if (i) {
-        spine.appendChild(
-          createBoardPill({
-            attr: "action",
-            kind: "action",
-            label: "→",
-            tone: "arrow",
-          })
-        );
-      }
-      const isCur = c.id === col.id || Number(c.level) === lv;
-      spine.appendChild(
-        createBoardPill({
-          attr: "action",
-          kind: "action",
-          label:
-            Number(c.level) === 0
-              ? "Submit"
-              : `L${c.level} ${c.label || ""}`.trim(),
-          tone: isCur ? "mid" : "start",
-          active: isCur,
-        })
-      );
-    });
-    if (cols.length) {
-      spine.appendChild(
-        createBoardPill({
-          attr: "action",
-          kind: "action",
-          label: "→",
-          tone: "arrow",
-        })
-      );
-      spine.appendChild(
-        createBoardPill({
-          attr: "action",
-          kind: "action",
-          label: "完成",
-          tone: "done",
-        })
-      );
-    }
-    panel.appendChild(spine);
-
     let selectedMat = null;
-    let selectedPieceId = null;
+    let linkFromId = null;
+    let selectedId = null; // node or edge id with prefix n: / e:
     let activeEventId = null;
-    let suppressClick = false;
+    let dragging = null;
 
-    const updatePickHint = () => {
-      if (selectedMat) {
+    const updateHint = () => {
+      if (selectedMat && (selectedMat.kind === "action" || selectedMat.kind === "mail")) {
         pickHint.hidden = false;
-        pickHint.textContent =
-          "已選材料：「" +
-          selectedMat.label +
-          "」→ 請點棋盤格子放置（再點同一材料可取消）";
         pickHint.classList.add("on");
-      } else if (selectedPieceId) {
-        const p = mailBoardStorage(col).pieces.find(
-          (x) => x.id === selectedPieceId
-        );
+        pickHint.textContent = linkFromId
+          ? "已選起點 → 請再點終點（人或欄位）完成「" + selectedMat.label + "」"
+          : "已選「" + selectedMat.label + "」→ 請先點起點，再點終點";
+      } else if (selectedMat) {
         pickHint.hidden = false;
-        pickHint.textContent =
-          "已選棋盤物件：「" +
-          (p?.label || selectedPieceId) +
-          "」→ 點別的格子移動，或點「丟棄」刪除；寄信再點一次可編輯";
         pickHint.classList.add("on");
+        pickHint.textContent =
+          "已選「" + selectedMat.label + "」→ 請點圖上空白處放下";
+      } else if (selectedId) {
+        pickHint.hidden = false;
+        pickHint.classList.add("on");
+        pickHint.textContent =
+          "已選物件 → 可丟棄刪除；寄信標籤再點一次可編信件";
       } else {
         pickHint.hidden = true;
         pickHint.classList.remove("on");
@@ -2991,66 +2685,33 @@
       }
     };
 
-    const clearSelection = () => {
+    const clearSel = () => {
       selectedMat = null;
-      selectedPieceId = null;
-      updatePickHint();
+      linkFromId = null;
+      selectedId = null;
+      updateHint();
     };
 
-    const placeMaterial = (mat, stage, actor) => {
-      const b = mailBoardStorage(col);
-      b.pieces.push(pieceFromMaterial(mat, stage, actor));
-      persistDesign(doc.meta.form_id, doc);
-      clearSelection();
-      paintAll();
-    };
-
-    const movePiece = (pieceId, stage, actor) => {
-      const b = mailBoardStorage(col);
-      const piece = b.pieces.find((p) => p.id === pieceId);
-      if (!piece) return;
-      piece.stage = stage;
-      piece.actor = actor;
-      persistDesign(doc.meta.form_id, doc);
-      clearSelection();
-      paintAll();
-    };
-
-    const deletePiece = (pieceId) => {
-      const b = mailBoardStorage(col);
-      b.pieces = b.pieces.filter((p) => p.id !== pieceId);
-      persistDesign(doc.meta.form_id, doc);
-      clearSelection();
-      paintAll();
-    };
-
-    const palette = document.createElement("div");
-    palette.className = "mail-board-palette";
-    const boardEl = document.createElement("div");
-    boardEl.className = "mail-board-chart";
-    const editorHost = document.createElement("div");
-    editorHost.className = "mail-flow-editor-host";
-    editorHost.hidden = true;
+    const persist = () => persistDesign(doc.meta.form_id, doc);
 
     const resolveEvent = (eventId) => {
       if (evById[eventId]) return evById[eventId];
-      const customs = mailBoardStorage(col).custom_mail_events || [];
+      const customs = flowBoardStorage(col).custom_mail_events || [];
       const c = customs.find((x) => x.id === eventId);
       if (c) return c;
-      return {
-        id: eventId,
-        label: eventId,
-        short: eventId,
-        flow_role: "side",
-      };
+      return { id: eventId, label: eventId, short: eventId, flow_role: "side" };
     };
+
+    const editorHost = document.createElement("div");
+    editorHost.className = "mail-flow-editor-host";
+    editorHost.hidden = true;
 
     const openEditor = (ev) => {
       if (activeEventId === ev.id) {
         activeEventId = null;
         editorHost.hidden = true;
         editorHost.replaceChildren();
-        paintBoard();
+        paintCanvas();
         return;
       }
       activeEventId = ev.id;
@@ -3066,70 +2727,59 @@
       editorHost.hidden = false;
       editorHost.replaceChildren();
       editorHost.appendChild(
-        createMailEditor(col, ev, () => {
-          paintBoard();
-        })
+        createMailEditor(col, ev, () => paintCanvas())
       );
-      paintBoard();
+      paintCanvas();
     };
 
-    const onCellActivate = (stage, actor) => {
-      if (selectedMat) {
-        placeMaterial(selectedMat, stage, actor);
-        return;
-      }
-      if (selectedPieceId) {
-        movePiece(selectedPieceId, stage, actor);
-      }
-    };
+    const palette = document.createElement("div");
+    palette.className = "mail-board-palette";
+    const canvasWrap = document.createElement("div");
+    canvasWrap.className = "flow-canvas-wrap";
+    const canvas = document.createElement("div");
+    canvas.className = "flow-canvas";
+    canvasWrap.appendChild(canvas);
 
-    const sameMat = (a, b) =>
-      a &&
-      b &&
-      a.label === b.label &&
-      a.kind === b.kind &&
-      a.event_id === b.event_id &&
-      a.field_id === b.field_id &&
-      a.role_id === b.role_id;
+    const nodeEl = (id) => canvas.querySelector('[data-node-id="' + id + '"]');
 
     const paintPalette = () => {
       palette.replaceChildren();
       const head = document.createElement("div");
       head.className = "mail-board-palette-label";
-      head.textContent = "樂高材料（點一下選取，再點棋盤；或按住拖）";
+      head.textContent = "材料（圓＝人、方＝欄位、箭頭＝動作／寄信）";
       palette.appendChild(head);
 
       const groups = [
         {
           key: "person",
-          title: "① 人員屬性",
+          title: "① 人員（圓形）",
           mats: boardPersonMaterials(),
           addLabel: "＋新增人員",
           onAdd: () => {
-            const name = prompt("人員角色名稱（例：部長、代理人）", "");
+            const name = prompt("人員名稱（例：單位登記桌、承辦人）", "");
             if (!name) return;
             selectedMat = {
               attr: "person",
               kind: "person",
               role_id: "custom_" + Date.now().toString(36),
               label: name.trim(),
-              tone: "person",
             };
-            selectedPieceId = null;
-            updatePickHint();
+            linkFromId = null;
+            selectedId = null;
+            updateHint();
             paintAll();
           },
         },
         {
           key: "action",
-          title: "② 動作屬性",
+          title: "② 動作（箭頭）",
           mats: boardActionMaterials(),
           addLabel: null,
           onAdd: null,
         },
         {
           key: "mail",
-          title: "②′ 寄信（屬動作）",
+          title: "②′ 寄信（箭頭上的信）",
           mats: boardMailMaterials(col),
           addLabel: "＋新增寄信",
           onAdd: () => {
@@ -3146,58 +2796,58 @@
               editable: true,
               locked: false,
             };
-            mailBoardStorage(col);
-            if (!Array.isArray(col.mail_board.custom_mail_events)) {
-              col.mail_board.custom_mail_events = [];
-            }
-            col.mail_board.custom_mail_events.push({
+            const b = flowBoardStorage(col);
+            if (!Array.isArray(b.custom_mail_events)) b.custom_mail_events = [];
+            b.custom_mail_events.push({
               id,
               label: short.trim(),
               short: short.trim(),
               flow_role: "side",
             });
-            persistDesign(doc.meta.form_id, doc);
+            persist();
             selectedMat = {
               attr: "action",
               kind: "mail",
               event_id: id,
               label: short.trim(),
-              tone: "side",
             };
-            selectedPieceId = null;
-            updatePickHint();
+            linkFromId = null;
+            selectedId = null;
+            updateHint();
             paintAll();
           },
         },
         {
           key: "field",
-          title: "③ 輸入欄位屬性",
-          mats: boardFieldMaterials(),
-          addLabel: "＋選欄位放入材料",
+          title: "③ 輸入欄位／文件（方塊）",
+          mats: [
+            ...boardFieldMaterials(),
+            { attr: "field", kind: "doc", label: "來文／發文", meta: "文件" },
+            { attr: "field", kind: "doc", label: "歸檔", meta: "文件" },
+          ],
+          addLabel: "＋選欄位",
           onAdd: () => {
             const list = contentFieldList();
             if (!list.length) {
-              alert("尚無內容欄位，請先在「內容欄位」新增。");
+              alert("尚無內容欄位，請先在上方「內容欄位」新增。");
               return;
             }
             const names = list
               .map((f, i) => `${i + 1}. ${f.label}（${f.id}）`)
               .join("\n");
-            const ans = prompt("輸入欄位編號放到材料選取：\n" + names, "1");
+            const ans = prompt("輸入欄位編號：\n" + names, "1");
             if (!ans) return;
-            const idx = Number(ans) - 1;
-            if (!list[idx]) return;
-            const f = list[idx];
+            const f = list[Number(ans) - 1];
+            if (!f) return;
             selectedMat = {
               attr: "field",
               kind: "field",
               field_id: f.id,
               label: f.label,
-              tone: "field",
-              meta: f.type,
             };
-            selectedPieceId = null;
-            updatePickHint();
+            linkFromId = null;
+            selectedId = null;
+            updateHint();
             paintAll();
           },
         },
@@ -3213,47 +2863,33 @@
         const row = document.createElement("div");
         row.className = "mail-board-palette-row";
         g.mats.forEach((mat) => {
-          const isSel = sameMat(selectedMat, mat);
-          const pill = createBoardPill({
-            attr: mat.attr,
-            kind: mat.kind,
-            label: mat.label,
-            tone: mat.tone,
-            eventId: mat.event_id,
-            fieldId: mat.field_id,
-            roleId: mat.role_id,
-            meta: mat.meta || "點我選取",
-            selected: !!isSel,
-            title: "點選後再點棋盤格子放置",
-          });
-          pill.draggable = true;
-          pill.classList.add("mail-pill-drag");
-          pill.addEventListener("click", (e) => {
-            e.preventDefault();
-            if (sameMat(selectedMat, mat)) {
-              clearSelection();
+          const isSel =
+            selectedMat &&
+            selectedMat.kind === mat.kind &&
+            selectedMat.label === mat.label &&
+            selectedMat.event_id === mat.event_id &&
+            selectedMat.field_id === mat.field_id &&
+            selectedMat.role_id === mat.role_id;
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className =
+            "flow-mat-btn kind-" +
+            mat.kind +
+            (isSel ? " selected" : "");
+          btn.textContent = mat.label;
+          btn.title = mat.meta || "點選後放到圖上";
+          btn.addEventListener("click", () => {
+            if (isSel) {
+              clearSel();
             } else {
               selectedMat = { ...mat };
-              selectedPieceId = null;
-              updatePickHint();
+              linkFromId = null;
+              selectedId = null;
+              updateHint();
             }
             paintAll();
           });
-          pill.addEventListener("dragstart", (e) => {
-            e.dataTransfer.setData(
-              "application/x-mail-mat",
-              JSON.stringify(mat)
-            );
-            e.dataTransfer.effectAllowed = "copy";
-            pill.classList.add("dragging");
-            selectedMat = { ...mat };
-            selectedPieceId = null;
-            updatePickHint();
-          });
-          pill.addEventListener("dragend", () => {
-            pill.classList.remove("dragging");
-          });
-          row.appendChild(pill);
+          row.appendChild(btn);
         });
         if (g.onAdd) {
           const addBtn = document.createElement("button");
@@ -3269,230 +2905,392 @@
 
       const tools = document.createElement("div");
       tools.className = "mail-board-palette-row tools";
-      const trash = createBoardPill({
-        attr: "action",
-        kind: "action",
-        label: "丟棄",
-        tone: "bad",
-        meta: "刪除選取物件",
-        title: "點此刪除已選棋盤物件，或把物件拖進來",
-      });
-      trash.classList.add("mail-board-trash");
+      const trash = document.createElement("button");
+      trash.type = "button";
+      trash.className = "table-btn danger-ish";
+      trash.textContent = "丟棄選取";
       trash.addEventListener("click", () => {
-        if (selectedPieceId) deletePiece(selectedPieceId);
-      });
-      trash.addEventListener("dragover", (e) => {
-        e.preventDefault();
-        trash.classList.add("drop-ready");
-      });
-      trash.addEventListener("dragleave", () =>
-        trash.classList.remove("drop-ready")
-      );
-      trash.addEventListener("drop", (e) => {
-        e.preventDefault();
-        trash.classList.remove("drop-ready");
-        const pieceId = e.dataTransfer.getData("application/x-mail-piece");
-        if (pieceId) deletePiece(pieceId);
+        if (!selectedId) return;
+        const b = flowBoardStorage(col);
+        if (selectedId.startsWith("n:")) {
+          const nid = selectedId.slice(2);
+          b.nodes = b.nodes.filter((n) => n.id !== nid);
+          b.edges = b.edges.filter((e) => e.from !== nid && e.to !== nid);
+        } else if (selectedId.startsWith("e:")) {
+          const eid = selectedId.slice(2);
+          b.edges = b.edges.filter((e) => e.id !== eid);
+        }
+        persist();
+        clearSel();
+        paintAll();
       });
       tools.appendChild(trash);
       const reset = document.createElement("button");
       reset.type = "button";
       reset.className = "table-btn";
-      reset.textContent = "重設預設棋盤";
+      reset.textContent = "重設預設流程圖";
       reset.addEventListener("click", () => {
-        col.mail_board = defaultMailBoard(col);
-        persistDesign(doc.meta.form_id, doc);
-        clearSelection();
+        col.mail_board = defaultFlowBoard(col);
+        persist();
+        clearSel();
         paintAll();
       });
       tools.appendChild(reset);
       palette.appendChild(tools);
     };
 
-    const paintBoard = () => {
-      const b = mailBoardStorage(col);
-      boardEl.replaceChildren();
-      boardEl.style.setProperty("--mail-cols", String(b.stages.length + 1));
-      boardEl.style.setProperty("--mail-rows", String(b.actors.length + 1));
-      if (selectedMat || selectedPieceId) boardEl.classList.add("placing");
-      else boardEl.classList.remove("placing");
+    const anchorPoint = (node, other) => {
+      const el = nodeEl(node.id);
+      const w = el ? el.offsetWidth : node.kind === "person" ? 88 : 110;
+      const h = el ? el.offsetHeight : node.kind === "person" ? 88 : 44;
+      const cx = node.x + w / 2;
+      const cy = node.y + h / 2;
+      if (!other) return { x: cx, y: cy, w, h };
+      const ox = other.x + (nodeEl(other.id)?.offsetWidth || 88) / 2;
+      const oy = other.y + (nodeEl(other.id)?.offsetHeight || 44) / 2;
+      const dx = ox - cx;
+      const dy = oy - cy;
+      if (node.kind === "person") {
+        const r = Math.min(w, h) / 2;
+        const len = Math.sqrt(dx * dx + dy * dy) || 1;
+        return { x: cx + (dx / len) * r, y: cy + (dy / len) * r, w, h };
+      }
+      const absDx = Math.abs(dx);
+      const absDy = Math.abs(dy);
+      if (absDx / (w / 2) > absDy / (h / 2)) {
+        return {
+          x: cx + Math.sign(dx) * (w / 2),
+          y: cy + (dy * (w / 2)) / (absDx || 1),
+          w,
+          h,
+        };
+      }
+      return {
+        x: cx + (dx * (h / 2)) / (absDy || 1),
+        y: cy + Math.sign(dy) * (h / 2),
+        w,
+        h,
+      };
+    };
 
-      const corner = document.createElement("div");
-      corner.className = "mail-board-corner";
-      corner.textContent = "角色＼階段";
-      boardEl.appendChild(corner);
+    const paintCanvas = () => {
+      const b = flowBoardStorage(col);
+      canvas.replaceChildren();
+      canvas.style.minHeight = "420px";
 
-      b.stages.forEach((st) => {
-        const h = document.createElement("div");
-        h.className = "mail-board-axis stage";
-        h.appendChild(
-          createBoardPill({
-            attr: "action",
-            kind: "action",
-            label: st.label,
-            tone: "start",
-          })
-        );
-        boardEl.appendChild(h);
+      // size canvas to fit nodes
+      let maxX = 640;
+      let maxY = 380;
+      b.nodes.forEach((n) => {
+        maxX = Math.max(maxX, n.x + 160);
+        maxY = Math.max(maxY, n.y + 120);
       });
+      canvas.style.width = maxX + "px";
+      canvas.style.height = maxY + "px";
 
-      b.actors.forEach((actor) => {
-        const rowH = document.createElement("div");
-        rowH.className = "mail-board-axis actor";
-        rowH.appendChild(
-          createBoardPill({
-            attr: "person",
-            kind: "person",
-            label: actor.label,
-            tone: "person",
-          })
-        );
-        boardEl.appendChild(rowH);
+      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svg.setAttribute("class", "flow-edges");
+      svg.setAttribute("width", String(maxX));
+      svg.setAttribute("height", String(maxY));
+      const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+      const marker = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "marker"
+      );
+      marker.setAttribute("id", "flow-arrow");
+      marker.setAttribute("viewBox", "0 0 10 10");
+      marker.setAttribute("refX", "9");
+      marker.setAttribute("refY", "5");
+      marker.setAttribute("markerWidth", "7");
+      marker.setAttribute("markerHeight", "7");
+      marker.setAttribute("orient", "auto-start-reverse");
+      const tipPath = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "path"
+      );
+      tipPath.setAttribute("d", "M 0 0 L 10 5 L 0 10 z");
+      tipPath.setAttribute("fill", "#3a342c");
+      marker.appendChild(tipPath);
+      defs.appendChild(marker);
+      svg.appendChild(defs);
+      canvas.appendChild(svg);
 
-        b.stages.forEach((st) => {
-          const cell = document.createElement("div");
-          cell.className =
-            "mail-board-cell" +
-            (selectedMat || selectedPieceId ? " place-target" : "");
-          cell.dataset.stage = st.id;
-          cell.dataset.actor = actor.id;
-          const ph = document.createElement("div");
-          ph.className = "mail-board-cell-ph";
-          ph.textContent =
-            selectedMat || selectedPieceId ? "點此放置" : "";
-          cell.appendChild(ph);
+      // nodes first (for measuring), then edges redrawn after
+      b.nodes.forEach((n) => {
+        const el = document.createElement("button");
+        el.type = "button";
+        el.className =
+          "flow-node kind-" +
+          n.kind +
+          (selectedId === "n:" + n.id ? " selected" : "") +
+          (linkFromId === n.id ? " link-from" : "");
+        el.dataset.nodeId = n.id;
+        el.style.left = n.x + "px";
+        el.style.top = n.y + "px";
+        const badge = document.createElement("span");
+        badge.className = "flow-node-badge";
+        badge.textContent =
+          n.kind === "person" ? "人" : n.kind === "field" ? "欄位" : "文件";
+        el.appendChild(badge);
+        const lab = document.createElement("span");
+        lab.className = "flow-node-label";
+        lab.textContent = n.label;
+        el.appendChild(lab);
+        if (n.kind === "field" && n.field_id) {
+          const f = doc.fields?.[n.field_id];
+          const meta = document.createElement("span");
+          meta.className = "flow-node-meta";
+          meta.textContent =
+            (f?.type || "") + (f?.required ? "・必填" : "");
+          el.appendChild(meta);
+        }
 
-          cell.addEventListener("click", (e) => {
-            if (e.target.closest(".mail-pill")) return;
-            onCellActivate(st.id, actor.id);
-          });
-          cell.addEventListener("dragover", (e) => {
-            e.preventDefault();
-            cell.classList.add("drop-ready");
-          });
-          cell.addEventListener("dragleave", () =>
-            cell.classList.remove("drop-ready")
-          );
-          cell.addEventListener("drop", (e) => {
-            e.preventDefault();
-            cell.classList.remove("drop-ready");
-            const pieceId = e.dataTransfer.getData("application/x-mail-piece");
-            const matRaw = e.dataTransfer.getData("application/x-mail-mat");
-            if (pieceId) {
-              movePiece(pieceId, st.id, actor.id);
+        el.addEventListener("pointerdown", (e) => {
+          if (e.button !== 0) return;
+          if (selectedMat && (selectedMat.kind === "action" || selectedMat.kind === "mail")) {
+            return; // linking handled on click
+          }
+          dragging = {
+            id: n.id,
+            ox: e.clientX,
+            oy: e.clientY,
+            sx: n.x,
+            sy: n.y,
+            moved: false,
+          };
+          el.setPointerCapture(e.pointerId);
+        });
+        el.addEventListener("pointermove", (e) => {
+          if (!dragging || dragging.id !== n.id) return;
+          const dx = e.clientX - dragging.ox;
+          const dy = e.clientY - dragging.oy;
+          if (Math.abs(dx) + Math.abs(dy) > 4) dragging.moved = true;
+          n.x = Math.max(8, dragging.sx + dx);
+          n.y = Math.max(8, dragging.sy + dy);
+          el.style.left = n.x + "px";
+          el.style.top = n.y + "px";
+          drawEdges();
+        });
+        el.addEventListener("pointerup", (e) => {
+          if (dragging && dragging.id === n.id) {
+            if (dragging.moved) {
+              persist();
+              dragging = null;
+              paintCanvas();
               return;
             }
-            if (matRaw) {
-              try {
-                placeMaterial(JSON.parse(matRaw), st.id, actor.id);
-              } catch {
-                /* ignore */
-              }
+            dragging = null;
+          }
+          // click logic
+          if (selectedMat && (selectedMat.kind === "action" || selectedMat.kind === "mail")) {
+            if (!linkFromId) {
+              linkFromId = n.id;
+              updateHint();
+              paintCanvas();
+              return;
             }
-          });
-
-          b.pieces
-            .filter((p) => p.stage === st.id && p.actor === actor.id)
-            .forEach((piece) => {
-              let pill;
-              const isSel = selectedPieceId === piece.id;
-              if (piece.kind === "mail" && piece.event_id) {
-                const ev = resolveEvent(piece.event_id);
-                pill = createMailFlowNode(ev, col, {
-                  tone: piece.tone,
-                  active: activeEventId === ev.id,
-                  selected: isSel,
-                  onClick: () => {
-                    if (suppressClick) return;
-                    if (selectedMat) {
-                      placeMaterial(selectedMat, st.id, actor.id);
-                      return;
-                    }
-                    if (selectedPieceId === piece.id) {
-                      openEditor(ev);
-                      clearSelection();
-                      paintAll();
-                      return;
-                    }
-                    selectedPieceId = piece.id;
-                    selectedMat = null;
-                    updatePickHint();
-                    paintAll();
-                  },
-                });
-              } else {
-                const f =
-                  piece.kind === "field" && piece.field_id
-                    ? doc.fields?.[piece.field_id]
-                    : null;
-                pill = createBoardPill({
-                  attr: piece.attr || piece.kind,
-                  kind: piece.kind,
-                  label: piece.label || f?.label || piece.field_id || "",
-                  tone: piece.tone,
-                  pieceId: piece.id,
-                  fieldId: piece.field_id,
-                  roleId: piece.role_id,
-                  meta:
-                    piece.kind === "field"
-                      ? (f?.type || "欄位") + (f?.required ? "・必填" : "")
-                      : piece.attr === "person"
-                        ? "人員"
-                        : "動作",
-                  selected: isSel,
-                  title: "點選後可移動／丟棄",
-                  onClick: () => {
-                    if (suppressClick) return;
-                    if (selectedMat) {
-                      placeMaterial(selectedMat, st.id, actor.id);
-                      return;
-                    }
-                    if (selectedPieceId === piece.id) {
-                      clearSelection();
-                      paintAll();
-                      return;
-                    }
-                    selectedPieceId = piece.id;
-                    selectedMat = null;
-                    updatePickHint();
-                    paintAll();
-                  },
-                });
-              }
-              pill.draggable = true;
-              pill.classList.add("mail-pill-drag");
-              pill.dataset.pieceId = piece.id;
-              pill.addEventListener("dragstart", (e) => {
-                suppressClick = true;
-                e.dataTransfer.setData("application/x-mail-piece", piece.id);
-                e.dataTransfer.effectAllowed = "move";
-                pill.classList.add("dragging");
-                selectedPieceId = piece.id;
-                selectedMat = null;
-                updatePickHint();
-              });
-              pill.addEventListener("dragend", () => {
-                pill.classList.remove("dragging");
-                setTimeout(() => {
-                  suppressClick = false;
-                }, 0);
-              });
-              cell.appendChild(pill);
-            });
-          boardEl.appendChild(cell);
+            if (linkFromId === n.id) {
+              linkFromId = null;
+              updateHint();
+              paintCanvas();
+              return;
+            }
+            const edge = {
+              id: newFlowId("e"),
+              from: linkFromId,
+              to: n.id,
+              kind: selectedMat.kind,
+              label: selectedMat.label,
+              event_id: selectedMat.event_id || null,
+            };
+            b.edges.push(edge);
+            persist();
+            selectedMat = null;
+            linkFromId = null;
+            selectedId = "e:" + edge.id;
+            updateHint();
+            paintAll();
+            return;
+          }
+          if (selectedMat && (selectedMat.kind === "person" || selectedMat.kind === "field" || selectedMat.kind === "doc")) {
+            // placing on canvas blank preferred; ignore node click
+            return;
+          }
+          if (selectedId === "n:" + n.id) {
+            selectedId = null;
+          } else {
+            selectedId = "n:" + n.id;
+          }
+          updateHint();
+          paintCanvas();
         });
+
+        canvas.appendChild(el);
       });
+
+      const drawEdges = () => {
+        // clear lines except defs
+        while (svg.childNodes.length > 1) svg.removeChild(svg.lastChild);
+        // remove old labels
+        canvas.querySelectorAll(".flow-edge-label-wrap").forEach((x) => x.remove());
+
+        const byId = Object.fromEntries(b.nodes.map((n) => [n.id, n]));
+        // curve offset for parallel edges between same pair
+        const pairCount = {};
+        b.edges.forEach((e) => {
+          const key = e.from + "->" + e.to;
+          pairCount[key] = (pairCount[key] || 0) + 1;
+        });
+        const pairSeen = {};
+
+        b.edges.forEach((e) => {
+          const a = byId[e.from];
+          const c = byId[e.to];
+          if (!a || !c) return;
+          const key = e.from + "->" + e.to;
+          const idx = pairSeen[key] || 0;
+          pairSeen[key] = idx + 1;
+          const total = pairCount[key] || 1;
+          const bend =
+            total === 1 ? (e.from === e.to ? 40 : 0) : (idx - (total - 1) / 2) * 28;
+
+          let p1;
+          let p2;
+          if (e.from === e.to) {
+            const cx = a.x + 44;
+            const cy = a.y + 44;
+            p1 = { x: cx + 30, y: cy - 20 };
+            p2 = { x: cx + 30, y: cy + 20 };
+            const path = document.createElementNS(
+              "http://www.w3.org/2000/svg",
+              "path"
+            );
+            path.setAttribute(
+              "d",
+              `M ${p1.x} ${p1.y} C ${cx + 90} ${cy - 70}, ${cx + 90} ${cy + 70}, ${p2.x} ${p2.y}`
+            );
+            path.setAttribute("class", "flow-edge-line kind-" + e.kind);
+            path.setAttribute("marker-end", "url(#flow-arrow)");
+            svg.appendChild(path);
+            placeEdgeLabel(e, cx + 78, cy);
+            return;
+          }
+
+          p1 = anchorPoint(a, c);
+          p2 = anchorPoint(c, a);
+          const mx = (p1.x + p2.x) / 2;
+          const my = (p1.y + p2.y) / 2;
+          // perpendicular offset
+          const dx = p2.x - p1.x;
+          const dy = p2.y - p1.y;
+          const len = Math.sqrt(dx * dx + dy * dy) || 1;
+          const ox = (-dy / len) * bend;
+          const oy = (dx / len) * bend;
+          const cx = mx + ox;
+          const cy = my + oy;
+          const path = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "path"
+          );
+          path.setAttribute(
+            "d",
+            `M ${p1.x} ${p1.y} Q ${cx} ${cy} ${p2.x} ${p2.y}`
+          );
+          path.setAttribute("class", "flow-edge-line kind-" + e.kind);
+          path.setAttribute("marker-end", "url(#flow-arrow)");
+          if (selectedId === "e:" + e.id) path.classList.add("selected");
+          svg.appendChild(path);
+          placeEdgeLabel(e, cx, cy);
+        });
+      };
+
+      const placeEdgeLabel = (e, x, y) => {
+        const wrap = document.createElement("div");
+        wrap.className =
+          "flow-edge-label-wrap" +
+          (selectedId === "e:" + e.id ? " selected" : "");
+        wrap.style.left = x + "px";
+        wrap.style.top = y + "px";
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className =
+          "flow-edge-label kind-" +
+          e.kind +
+          (e.kind === "mail" &&
+          mailTemplateConfigured(col.mail?.[e.event_id])
+            ? " configured"
+            : "");
+        if (e.kind === "mail") {
+          const ev = resolveEvent(e.event_id);
+          const configured = mailTemplateConfigured(col.mail?.[e.event_id]);
+          btn.textContent =
+            (e.label || ev.short || "寄信") + (configured ? "" : "（未設定）");
+        } else {
+          btn.textContent = e.label || "動作";
+        }
+        btn.addEventListener("click", (ev) => {
+          ev.stopPropagation();
+          if (selectedId === "e:" + e.id) {
+            if (e.kind === "mail" && e.event_id) {
+              openEditor(resolveEvent(e.event_id));
+            }
+            return;
+          }
+          selectedId = "e:" + e.id;
+          selectedMat = null;
+          linkFromId = null;
+          updateHint();
+          paintCanvas();
+        });
+        wrap.appendChild(btn);
+        canvas.appendChild(wrap);
+      };
+
+      drawEdges();
     };
+
+    canvas.addEventListener("pointerdown", (e) => {
+      const isBlank =
+        e.target === canvas ||
+        (e.target.classList && e.target.classList.contains("flow-edges")) ||
+        e.target.tagName === "svg" ||
+        e.target.tagName === "path";
+      if (!isBlank) return;
+      if (
+        selectedMat &&
+        (selectedMat.kind === "person" ||
+          selectedMat.kind === "field" ||
+          selectedMat.kind === "doc")
+      ) {
+        e.preventDefault();
+        const rect = canvas.getBoundingClientRect();
+        const x = Math.max(8, e.clientX - rect.left - 40);
+        const y = Math.max(8, e.clientY - rect.top - 20);
+        const b = flowBoardStorage(col);
+        b.nodes.push({
+          id: newFlowId("n"),
+          kind: selectedMat.kind,
+          label: selectedMat.label,
+          role_id: selectedMat.role_id || null,
+          field_id: selectedMat.field_id || null,
+          x,
+          y,
+        });
+        persist();
+        clearSel();
+        paintAll();
+      }
+    });
 
     const paintAll = () => {
       paintPalette();
-      paintBoard();
-      updatePickHint();
+      paintCanvas();
+      updateHint();
     };
 
     paintAll();
     panel.appendChild(palette);
-    panel.appendChild(boardEl);
+    panel.appendChild(canvasWrap);
     panel.appendChild(editorHost);
     return panel;
   }
@@ -4892,7 +4690,7 @@
     const aNote = document.createElement("p");
     aNote.className = "sec-note";
     aNote.textContent =
-      "由上往下：level 0＝Submit，往下 1→2…。點「Mail」開棋盤：三種屬性（人員／動作+寄信／欄位）全部按鈕化；點材料再點格子放置。";
+      "由上往下：level 0＝Submit，往下 1→2…。點「Mail」開流程說明圖：圓＝人、方＝欄位、箭頭＝動作／寄信（非技術背景也能看懂）。";
     aSec.appendChild(aNote);
 
     const sysToggleLab = document.createElement("label");
@@ -5303,7 +5101,7 @@
   async function boot() {
     let seedDesign = null;
     try {
-      const res = await fetch("./document.json?v=design17", {
+      const res = await fetch("./document.json?v=design18", {
         cache: "no-store",
       });
       if (res.ok) seedDesign = await res.json();
@@ -5311,7 +5109,7 @@
       /* offline */
     }
     try {
-      const sr = await fetch("./alr5-standard.json?v=design17", {
+      const sr = await fetch("./alr5-standard.json?v=design18", {
         cache: "no-store",
       });
       if (sr.ok) alr5Standard = await sr.json();
@@ -5319,7 +5117,7 @@
       /* offline */
     }
     try {
-      const mr = await fetch("./ALR5標準互通.md?v=design17", {
+      const mr = await fetch("./ALR5標準互通.md?v=design18", {
         cache: "no-store",
       });
       if (mr.ok) alr5Markdown = await mr.text();

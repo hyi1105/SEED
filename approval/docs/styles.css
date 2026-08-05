@@ -1837,6 +1837,7 @@ table.inkan-table td {
   display: grid;
   gap: 8px;
 }
+
 .mail-editor-head {
   display: flex;
   flex-wrap: wrap;
@@ -1845,6 +1846,170 @@ table.inkan-table td {
   font-size: 13px;
   color: #1a1814;
 }
+
+/* 自由流程圖（捨棄棋盤） */
+.flow-diagram-panel .mail-board-how {
+  background: #e7f3ea;
+  border-color: #b7d4bf;
+  color: #24402c;
+}
+.flow-canvas-wrap {
+  overflow: auto;
+  border: 1px solid #c5d6c8;
+  border-radius: 14px;
+  background: #e8f2ea;
+  max-height: min(70vh, 560px);
+}
+.flow-canvas {
+  position: relative;
+  min-width: 100%;
+  background:
+    radial-gradient(circle at 1px 1px, rgba(60, 90, 70, 0.12) 1px, transparent 0) 0 0 / 18px 18px,
+    #e8f2ea;
+}
+.flow-edges {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+.flow-edge-line {
+  fill: none;
+  stroke: #3a342c;
+  stroke-width: 1.6;
+}
+.flow-edge-line.kind-mail {
+  stroke: #3d4a8f;
+  stroke-dasharray: 5 3;
+}
+.flow-edge-line.selected {
+  stroke: #c45c26;
+  stroke-width: 2.2;
+}
+.flow-node {
+  position: absolute;
+  z-index: 2;
+  appearance: none;
+  border: 1.5px solid #1a1814;
+  background: #fff;
+  font-family: var(--font);
+  cursor: grab;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 8px 10px;
+  box-shadow: 0 1px 0 rgba(0,0,0,0.04);
+  touch-action: none;
+  color: #1a1814;
+}
+.flow-node:active { cursor: grabbing; }
+.flow-node.kind-person {
+  width: 92px;
+  height: 92px;
+  border-radius: 999px;
+}
+.flow-node.kind-field,
+.flow-node.kind-doc {
+  min-width: 108px;
+  max-width: 140px;
+  min-height: 44px;
+  border-radius: 6px;
+}
+.flow-node.selected,
+.flow-node.link-from {
+  outline: 2px solid #c45c26;
+  outline-offset: 2px;
+}
+.flow-node-badge {
+  font-size: 9px;
+  font-weight: 800;
+  opacity: 0.7;
+}
+.flow-node-label {
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+  line-height: 1.2;
+}
+.flow-node-meta {
+  font-size: 10px;
+  color: #6e675c;
+}
+.flow-edge-label-wrap {
+  position: absolute;
+  z-index: 3;
+  transform: translate(-50%, -50%);
+}
+.flow-edge-label {
+  appearance: none;
+  border: 1px solid #1a1814;
+  background: #fff;
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: var(--font);
+  cursor: pointer;
+  white-space: nowrap;
+  max-width: 11rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.flow-edge-label.kind-mail {
+  border-color: #3d4a8f;
+  color: #2a3366;
+  background: #f3f6fc;
+}
+.flow-edge-label.kind-action {
+  background: #fffdf8;
+}
+.flow-edge-label.configured {
+  border-color: #2a5a2a;
+  color: #2a5a2a;
+}
+.flow-edge-label-wrap.selected .flow-edge-label {
+  outline: 2px solid #c45c26;
+  outline-offset: 1px;
+}
+.flow-mat-btn {
+  appearance: none;
+  border: 1px solid #c5bba8;
+  background: #fff;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: var(--font);
+  cursor: pointer;
+  color: #1a1814;
+}
+.flow-mat-btn.kind-person {
+  border-radius: 999px;
+  background: #f2f8ec;
+  border-color: #8aaa78;
+}
+.flow-mat-btn.kind-field,
+.flow-mat-btn.kind-doc {
+  border-radius: 6px;
+  background: #fbf6e4;
+  border-color: #c8b060;
+}
+.flow-mat-btn.kind-action,
+.flow-mat-btn.kind-mail {
+  background: #f3f6fc;
+  border-color: #9ab0d0;
+}
+.flow-mat-btn.selected {
+  outline: 2px solid #c45c26;
+  outline-offset: 2px;
+}
+.table-btn.danger-ish {
+  border-color: #d0a0a0;
+  color: #7a2424;
+}
+
 
 @media (max-width: 720px) {
   .mail-board-chart {
