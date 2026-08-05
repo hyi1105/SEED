@@ -10,6 +10,7 @@
 
 ## 場次
 
+- 2026-08-05 — 欄位權限合一板（拖拉區塊） — 標籤：SEED、Approval、ALR5、ACL、權限板、UI — [sessions/2026-08-05-alr5-acl-board.md](sessions/2026-08-05-alr5-acl-board.md)
 - 2026-08-05 — 欄位規則改純燈號（點開細部） — 標籤：SEED、Approval、ALR5、Rules、燈號、UI — [sessions/2026-08-05-alr5-field-rules-dash.md](sessions/2026-08-05-alr5-field-rules-dash.md)
 - 2026-08-05 — 欄位規則改儀表板（點開細部） — 標籤：SEED、Approval、ALR5、Rules、ACL、儀表板、UI — [sessions/2026-08-05-alr5-field-rules-dash.md](sessions/2026-08-05-alr5-field-rules-dash.md)
 - 2026-08-05 — 設計表單手機版改卡片布局 — 標籤：SEED、Approval、ALR5、設計表單、手機、UI — [sessions/2026-08-05-alr5-design-mobile.md](sessions/2026-08-05-alr5-design-mobile.md)

@@ -2540,48 +2540,183 @@
     return wrap;
   }
 
-  function aclRolesSummary(f, aclKey) {
+  /** 單一權限光譜：default／hidden／read／write（互斥）→ 寫回 ALR5 三陣列 */
+  function readRoleAccessMap(f) {
     ensureContentField(f);
-    const roles = f.acl?.[aclKey]?.roles || [];
-    if (!roles.length) return "不限制";
-    const labels = aclRoleOptions()
-      .filter((r) => roles.includes(r.id))
-      .map((r) => r.label);
-    if (labels.length <= 2) return labels.join("、");
-    return `${labels.slice(0, 2).join("、")}＋${labels.length - 2}`;
+    const map = {};
+    const hide = new Set(f.acl.hidden_from.roles || []);
+    const edit = new Set(f.acl.editable_by.roles || []);
+    const view = new Set(f.acl.visible_to.roles || []);
+    aclRoleOptions().forEach((r) => {
+      if (hide.has(r.id)) map[r.id] = "hidden";
+      else if (edit.has(r.id)) map[r.id] = "write";
+      else if (view.has(r.id)) map[r.id] = "read";
+      else map[r.id] = "default";
+    });
+    return map;
   }
 
-  function createRoleChecks(f, aclKey, onChange) {
-    const row = document.createElement("div");
-    row.className = "acl-checks";
+  function writeRoleAccessMap(f, map) {
     ensureContentField(f);
-    const selected = new Set(f.acl[aclKey].roles || []);
-    aclRoleOptions().forEach((r) => {
-      const wrap = document.createElement("label");
-      wrap.className = "acl-check";
-      const cb = document.createElement("input");
-      cb.type = "checkbox";
-      cb.checked = selected.has(r.id);
-      cb.addEventListener("change", () => {
-        const set = new Set(f.acl[aclKey].roles || []);
-        if (cb.checked) set.add(r.id);
-        else set.delete(r.id);
-        f.acl[aclKey].roles = Array.from(set);
-        persistContentField();
-        if (onChange) onChange();
-      });
-      wrap.appendChild(cb);
-      wrap.appendChild(document.createTextNode(r.label));
-      row.appendChild(wrap);
+    const hidden = [];
+    const read = [];
+    const write = [];
+    Object.keys(map).forEach((id) => {
+      const lv = map[id];
+      if (lv === "hidden") hidden.push(id);
+      else if (lv === "read") read.push(id);
+      else if (lv === "write") write.push(id);
     });
-    const tip = document.createElement("div");
+    f.acl.hidden_from.roles = hidden;
+    f.acl.visible_to.roles = read;
+    f.acl.editable_by.roles = write;
+    persistContentField();
+  }
+
+  function aclAccessSummary(f) {
+    const map = readRoleAccessMap(f);
+    let h = 0;
+    let r = 0;
+    let w = 0;
+    Object.values(map).forEach((lv) => {
+      if (lv === "hidden") h += 1;
+      else if (lv === "read") r += 1;
+      else if (lv === "write") w += 1;
+    });
+    if (!h && !r && !w) return "權限 預設";
+    const bits = [];
+    if (w) bits.push(`編${w}`);
+    if (r) bits.push(`看${r}`);
+    if (h) bits.push(`藏${h}`);
+    return "權限 " + bits.join("·");
+  }
+
+  function createAclAccessBoard(f, onChange) {
+    const wrap = document.createElement("div");
+    wrap.className = "acl-board";
+    const tip = document.createElement("p");
     tip.className = "acl-tip";
-    tip.textContent = "空白＝不額外限制（沿用表單預設可見／可編）";
-    const box = document.createElement("div");
-    box.className = "acl-group acl-group-plain";
-    box.appendChild(row);
-    box.appendChild(tip);
-    return box;
+    tip.textContent =
+      "同一件事：不能看／只能看／可編輯。拖拉角色到區塊；手機可點角色再選區塊。未指定＝沿用表單預設。";
+    wrap.appendChild(tip);
+
+    const zones = [
+      { id: "default", title: "未指定（預設）", hint: "不額外限制" },
+      { id: "hidden", title: "不能看", hint: "hidden_from" },
+      { id: "read", title: "只能看", hint: "可見唯讀" },
+      { id: "write", title: "可編輯", hint: "可見且可改" },
+    ];
+
+    let map = readRoleAccessMap(f);
+    let selectedRole = null;
+    const board = document.createElement("div");
+    board.className = "acl-board-grid";
+
+    const paint = () => {
+      board.replaceChildren();
+      zones.forEach((z) => {
+        const col = document.createElement("div");
+        col.className = "acl-zone" + (z.id !== "default" ? ` acl-zone-${z.id}` : "");
+        col.dataset.zone = z.id;
+
+        const head = document.createElement("div");
+        head.className = "acl-zone-head";
+        const ht = document.createElement("div");
+        ht.className = "acl-zone-title";
+        ht.textContent = z.title;
+        const hh = document.createElement("div");
+        hh.className = "acl-zone-hint";
+        hh.textContent = z.hint;
+        head.appendChild(ht);
+        head.appendChild(hh);
+        col.appendChild(head);
+
+        const list = document.createElement("div");
+        list.className = "acl-zone-list";
+        list.dataset.zone = z.id;
+
+        aclRoleOptions()
+          .filter((r) => map[r.id] === z.id)
+          .forEach((r) => {
+            const pill = document.createElement("button");
+            pill.type = "button";
+            pill.className =
+              "acl-role-pill" + (selectedRole === r.id ? " selected" : "");
+            pill.draggable = true;
+            pill.textContent = r.label;
+            pill.dataset.role = r.id;
+            pill.addEventListener("dragstart", (ev) => {
+              ev.dataTransfer.setData("text/plain", r.id);
+              ev.dataTransfer.effectAllowed = "move";
+              pill.classList.add("dragging");
+            });
+            pill.addEventListener("dragend", () => {
+              pill.classList.remove("dragging");
+            });
+            pill.addEventListener("click", (ev) => {
+              ev.preventDefault();
+              if (selectedRole === r.id) {
+                selectedRole = null;
+              } else {
+                selectedRole = r.id;
+              }
+              paint();
+            });
+            list.appendChild(pill);
+          });
+
+        if (!list.childElementCount) {
+          const empty = document.createElement("div");
+          empty.className = "acl-zone-empty";
+          empty.textContent = "（空）";
+          list.appendChild(empty);
+        }
+
+        const allowDrop = (ev) => {
+          ev.preventDefault();
+          col.classList.add("drag-over");
+        };
+        col.addEventListener("dragover", allowDrop);
+        col.addEventListener("dragenter", allowDrop);
+        col.addEventListener("dragleave", () => col.classList.remove("drag-over"));
+        col.addEventListener("drop", (ev) => {
+          ev.preventDefault();
+          col.classList.remove("drag-over");
+          const roleId = ev.dataTransfer.getData("text/plain");
+          if (!roleId) return;
+          map[roleId] = z.id;
+          selectedRole = null;
+          writeRoleAccessMap(f, map);
+          map = readRoleAccessMap(f);
+          if (onChange) onChange();
+          paint();
+        });
+
+        // 手機：已選角色時，點區塊即移入
+        col.addEventListener("click", (ev) => {
+          if (!selectedRole) return;
+          if (ev.target.closest(".acl-role-pill")) return;
+          map[selectedRole] = z.id;
+          selectedRole = null;
+          writeRoleAccessMap(f, map);
+          map = readRoleAccessMap(f);
+          if (onChange) onChange();
+          paint();
+        });
+
+        col.appendChild(list);
+        board.appendChild(col);
+      });
+    };
+
+    paint();
+    wrap.appendChild(board);
+
+    const moveBar = document.createElement("div");
+    moveBar.className = "acl-move-bar";
+    moveBar.textContent = "手機：先點角色，再點目標區塊即可移動。";
+    wrap.appendChild(moveBar);
+    return wrap;
   }
 
   function buildRequiredEditor(f, onChange) {
@@ -2695,34 +2830,11 @@
         build: (onChange) => buildRequiredEditor(f, onChange),
       },
       {
-        key: "visible_to",
-        title: "可見",
-        label: () => {
-          const n = (f.acl?.visible_to?.roles || []).length;
-          return n ? `可見 ${n}` : "可見不限";
-        },
-        on: () => (f.acl?.visible_to?.roles || []).length > 0,
-        build: (onChange) => createRoleChecks(f, "visible_to", onChange),
-      },
-      {
-        key: "editable_by",
-        title: "可編",
-        label: () => {
-          const n = (f.acl?.editable_by?.roles || []).length;
-          return n ? `可編 ${n}` : "可編不限";
-        },
-        on: () => (f.acl?.editable_by?.roles || []).length > 0,
-        build: (onChange) => createRoleChecks(f, "editable_by", onChange),
-      },
-      {
-        key: "hidden_from",
-        title: "隱藏",
-        label: () => {
-          const n = (f.acl?.hidden_from?.roles || []).length;
-          return n ? `隱藏 ${n}` : "無隱藏";
-        },
-        on: () => (f.acl?.hidden_from?.roles || []).length > 0,
-        build: (onChange) => createRoleChecks(f, "hidden_from", onChange),
+        key: "access",
+        title: "權限（不能看／只能看／可編輯）",
+        label: () => aclAccessSummary(f),
+        on: () => aclAccessSummary(f) !== "權限 預設",
+        build: (onChange) => createAclAccessBoard(f, onChange),
       },
     ];
 
@@ -2768,7 +2880,7 @@
     const foot = document.createElement("p");
     foot.className = "acl-tip";
     foot.textContent =
-      "依 ALR5 §3.3b。空白 ACL＝不額外限制。SAVE 草稿不擋必填。";
+      "依 ALR5 §3.3b。權限板會寫入 visible_to／editable_by／hidden_from。SAVE 草稿不擋必填。";
     panel.appendChild(foot);
     return panel;
   }
@@ -3027,12 +3139,8 @@
         if (f.required_from_level != null && f.required_from_level !== "")
           bits.push(`L≥${f.required_from_level}`);
         if (f.required_when) bits.push("條件");
-        const v = (f.acl?.visible_to?.roles || []).length;
-        const e = (f.acl?.editable_by?.roles || []).length;
-        const h = (f.acl?.hidden_from?.roles || []).length;
-        if (v) bits.push(`看${v}`);
-        if (e) bits.push(`編${e}`);
-        if (h) bits.push(`藏${h}`);
+        const acc = aclAccessSummary(f);
+        if (acc !== "權限 預設") bits.push(acc.replace(/^權限\s*/, ""));
         rulesBtn.textContent = bits.length ? bits.join("·") : "規則";
       };
       summarizeRules();
