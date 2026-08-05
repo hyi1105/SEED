@@ -42,3 +42,10 @@
 ## 內容欄位（可增刪）
 
 申請畫面填寫用，例如：申請人、假別、起始日、天數、代理人（`fields.*.kind = content`）。
+
+設計 UI（Owner）：type 下拉；default 隨型別；`rules` 面板寫入：
+
+- `required`／`required_when`／`required_from_level`
+- `acl.visible_to`／`acl.editable_by`／`acl.hidden_from`（PoC 先做 roles）
+
+系統欄位區對 Owner **隱藏**（仍見於 JSON／ALR5 分頁）。

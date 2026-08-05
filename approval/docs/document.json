@@ -8,7 +8,7 @@
     "creator": "王小明",
     "location": "",
     "lang": "zh-Hant",
-    "note": "ALR5：設計淺色；系統欄位依規格；簽核水流 step_0→…；stamp_name 完整姓名。"
+    "note": "ALR5：內容欄位 type 下拉＋ACL／必填面板；系統欄位對 Owner 隱藏。"
   },
   "actor": {
     "id": "u_wang",
@@ -163,7 +163,21 @@
       "kind": "content",
       "type": "text",
       "label": "申請人",
-      "value": "王小明"
+      "value": "王小明",
+      "required": true,
+      "required_from_level": 0,
+      "required_when": null,
+      "acl": {
+        "visible_to": {
+          "roles": []
+        },
+        "editable_by": {
+          "roles": []
+        },
+        "hidden_from": {
+          "roles": []
+        }
+      }
     },
     "leave_type": {
       "kind": "content",
@@ -187,25 +201,81 @@
           "value": "其他",
           "label": "其他"
         }
-      ]
+      ],
+      "required": false,
+      "required_from_level": null,
+      "required_when": null,
+      "acl": {
+        "visible_to": {
+          "roles": []
+        },
+        "editable_by": {
+          "roles": []
+        },
+        "hidden_from": {
+          "roles": []
+        }
+      }
     },
     "leave_date": {
       "kind": "content",
-      "type": "text",
+      "type": "date",
       "label": "起始日",
-      "value": "明天"
+      "value": "2026-08-05",
+      "required": false,
+      "required_from_level": null,
+      "required_when": null,
+      "acl": {
+        "visible_to": {
+          "roles": []
+        },
+        "editable_by": {
+          "roles": []
+        },
+        "hidden_from": {
+          "roles": []
+        }
+      }
     },
     "days": {
       "kind": "content",
       "type": "number",
       "label": "天數",
-      "value": "1"
+      "value": "1",
+      "required": false,
+      "required_from_level": null,
+      "required_when": null,
+      "acl": {
+        "visible_to": {
+          "roles": []
+        },
+        "editable_by": {
+          "roles": []
+        },
+        "hidden_from": {
+          "roles": []
+        }
+      }
     },
     "agent": {
       "kind": "content",
-      "type": "text",
+      "type": "person",
       "label": "代理人",
-      "value": "陳美玲"
+      "value": "陳美玲",
+      "required": false,
+      "required_from_level": null,
+      "required_when": null,
+      "acl": {
+        "visible_to": {
+          "roles": []
+        },
+        "editable_by": {
+          "roles": []
+        },
+        "hidden_from": {
+          "roles": []
+        }
+      }
     }
   },
   "body": {
