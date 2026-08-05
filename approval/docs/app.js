@@ -35,6 +35,25 @@
     { id: "approver_{n}.proxy_original_note", label: "代簽備註（第 {n} 關）" },
   ];
 
+  const CONTENT_FIELD_TYPES = [
+    { id: "text", label: "文字" },
+    { id: "number", label: "數字" },
+    { id: "date", label: "日期" },
+    { id: "dropdown", label: "下拉" },
+    { id: "person", label: "人員" },
+    { id: "multiline", label: "多行文字" },
+  ];
+
+  const ACL_ROLE_BASE = [
+    { id: "creator", label: "建立者" },
+    { id: "requester", label: "需求人" },
+    { id: "current_approver", label: "當階簽核者" },
+    { id: "admin", label: "單據管理員" },
+    { id: "super_user", label: "進階經辦" },
+    { id: "audit", label: "稽核" },
+    { id: "owner", label: "表單擁有者" },
+  ];
+
   const EMBEDDED_DOC = {
     "schema_version": "1.2",
     "meta": {
@@ -45,7 +64,7 @@
       "creator": "王小明",
       "location": "",
       "lang": "zh-Hant",
-      "note": "ALR5：設計淺色；系統欄位依規格；簽核水流 step_0→…；stamp_name 完整姓名。"
+      "note": "ALR5：內容欄位 type 下拉＋ACL／必填面板；系統欄位對 Owner 隱藏。"
     },
     "actor": {
       "id": "u_wang",
@@ -228,9 +247,9 @@
       },
       "leave_date": {
         "kind": "content",
-        "type": "text",
+        "type": "date",
         "label": "起始日",
-        "value": "明天"
+        "value": "2026-08-05"
       },
       "days": {
         "kind": "content",
@@ -240,7 +259,7 @@
       },
       "agent": {
         "kind": "content",
-        "type": "text",
+        "type": "person",
         "label": "代理人",
         "value": "陳美玲"
       }
@@ -654,16 +673,18 @@
     const type = def.type || "text";
     let el;
 
-    if (type === "dropdown") {
+    if (type === "dropdown" || type === "person") {
       el = document.createElement("select");
       el.className = "blank blank-select";
-      const opts = normalizeOptions(def.options);
+      let opts = normalizeOptions(def.options);
+      if (type === "person" && !opts.length) {
+        opts = knownPeopleOptions();
+      }
       if (!opts.length) {
-        // 防呆：仍無選項時至少顯示目前值
         const fallback = def.value != null ? String(def.value) : "";
         if (fallback) opts.push({ value: fallback, label: fallback });
       }
-      def.options = opts;
+      if (type === "dropdown") def.options = opts;
       opts.forEach((opt) => {
         const o = document.createElement("option");
         o.value = opt.value;
@@ -679,11 +700,23 @@
       }
       el.value = cur || opts[0]?.value || "";
       if (def.value !== el.value) def.value = el.value;
+    } else if (type === "multiline") {
+      el = document.createElement("textarea");
+      el.className = "blank blank-multiline";
+      el.rows = 2;
+      el.value = def.value != null ? String(def.value) : "";
     } else {
       el = document.createElement("input");
       el.className = "blank";
-      el.type = "text";
-      el.inputMode = type === "number" ? "decimal" : "text";
+      if (type === "date") {
+        el.type = "date";
+      } else if (type === "number") {
+        el.type = "number";
+        el.inputMode = "decimal";
+        el.step = "any";
+      } else {
+        el.type = "text";
+      }
       el.value = def.value != null ? String(def.value) : "";
       el.size = MIN_CH;
     }
@@ -1922,6 +1955,319 @@
     return bar;
   }
 
+  function knownPeopleOptions() {
+    const map = new Map();
+    (doc.roles || []).forEach((r) => {
+      const name = r.person?.name;
+      if (name) map.set(name, { value: name, label: name });
+    });
+    (doc.approval?.columns || []).forEach((c) => {
+      const name = c.person?.name || c.stamp?.name;
+      if (name && String(name).length > 1) map.set(name, { value: name, label: name });
+    });
+    return Array.from(map.values());
+  }
+
+  function aclRoleOptions() {
+    const list = ACL_ROLE_BASE.slice();
+    (doc.approval?.columns || []).forEach((c) => {
+      const lv = Number(c.level);
+      if (lv > 0) {
+        const id = `approver_${lv}`;
+        if (!list.some((x) => x.id === id)) {
+          list.push({ id, label: `簽核人 level ${lv}` });
+        }
+      }
+    });
+    return list;
+  }
+
+  function ensureContentField(f) {
+    if (!f || typeof f !== "object") return f;
+    f.kind = "content";
+    if (f.required == null) f.required = false;
+    if (f.required_from_level === undefined) f.required_from_level = null;
+    if (f.required_when === undefined) f.required_when = null;
+    if (!f.acl || typeof f.acl !== "object") f.acl = {};
+    ["visible_to", "editable_by", "hidden_from"].forEach((k) => {
+      if (!f.acl[k] || typeof f.acl[k] !== "object") f.acl[k] = {};
+      if (!Array.isArray(f.acl[k].roles)) f.acl[k].roles = [];
+    });
+    return f;
+  }
+
+  function persistContentField() {
+    persistDocForForm(doc.meta.form_id, doc);
+  }
+
+  function createTypeSelect(f, onTypeChange) {
+    const sel = document.createElement("select");
+    sel.className = "cell-input";
+    CONTENT_FIELD_TYPES.forEach((t) => {
+      const o = document.createElement("option");
+      o.value = t.id;
+      o.textContent = t.label;
+      if ((f.type || "text") === t.id) o.selected = true;
+      sel.appendChild(o);
+    });
+    sel.addEventListener("change", () => {
+      f.type = sel.value;
+      f.kind = "content";
+      if (f.type === "number" && f.value != null && f.value !== "" && Number.isNaN(Number(f.value))) {
+        f.value = "";
+      }
+      if (f.type === "person" && !normalizeOptions(f.options).length) {
+        /* options optional; picker uses known people */
+      }
+      persistContentField();
+      onTypeChange();
+    });
+    return sel;
+  }
+
+  function createDefaultControl(f, onRebuild) {
+    const type = f.type || "text";
+    const wrap = document.createElement("div");
+    wrap.className = "default-cell";
+
+    const bind = (el) => {
+      const save = () => {
+        f.value = el.value;
+        f.kind = "content";
+        persistContentField();
+      };
+      el.addEventListener("change", save);
+      el.addEventListener("input", () => {
+        if (type === "number") {
+          // 僅允許數字／小數／負號
+          const cleaned = el.value.replace(/[^\d.\-]/g, "");
+          if (cleaned !== el.value) el.value = cleaned;
+        }
+        f.value = el.value;
+      });
+    };
+
+    if (type === "dropdown") {
+      const sel = document.createElement("select");
+      sel.className = "cell-input";
+      const opts = normalizeOptions(f.options);
+      if (!opts.length) {
+        ["選項A", "選項B"].forEach((v) => opts.push({ value: v, label: v }));
+        f.options = opts;
+      }
+      opts.forEach((opt) => {
+        const o = document.createElement("option");
+        o.value = opt.value;
+        o.textContent = opt.label;
+        sel.appendChild(o);
+      });
+      sel.value = f.value != null ? String(f.value) : opts[0]?.value || "";
+      bind(sel);
+      wrap.appendChild(sel);
+      const editOpts = document.createElement("button");
+      editOpts.type = "button";
+      editOpts.className = "table-btn";
+      editOpts.textContent = "選項";
+      editOpts.title = "編輯下拉選項（逗號分隔）";
+      editOpts.addEventListener("click", () => {
+        const cur = normalizeOptions(f.options)
+          .map((o) => o.label)
+          .join(",");
+        const next = prompt("下拉選項（逗號分隔）", cur);
+        if (next == null) return;
+        f.options = next
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean)
+          .map((s) => ({ value: s, label: s }));
+        if (!f.options.some((o) => o.value === f.value)) {
+          f.value = f.options[0]?.value || "";
+        }
+        persistContentField();
+        onRebuild();
+      });
+      wrap.appendChild(editOpts);
+    } else if (type === "person") {
+      const sel = document.createElement("select");
+      sel.className = "cell-input";
+      const blank = document.createElement("option");
+      blank.value = "";
+      blank.textContent = "（選擇人員）";
+      sel.appendChild(blank);
+      knownPeopleOptions().forEach((opt) => {
+        const o = document.createElement("option");
+        o.value = opt.value;
+        o.textContent = opt.label;
+        sel.appendChild(o);
+      });
+      const cur = f.value != null ? String(f.value) : "";
+      if (cur && !Array.from(sel.options).some((o) => o.value === cur)) {
+        const o = document.createElement("option");
+        o.value = cur;
+        o.textContent = cur;
+        sel.appendChild(o);
+      }
+      sel.value = cur;
+      bind(sel);
+      wrap.appendChild(sel);
+    } else if (type === "date") {
+      const inp = document.createElement("input");
+      inp.className = "cell-input";
+      inp.type = "date";
+      inp.value = /^\d{4}-\d{2}-\d{2}$/.test(String(f.value || ""))
+        ? String(f.value)
+        : "";
+      bind(inp);
+      wrap.appendChild(inp);
+    } else if (type === "number") {
+      const inp = document.createElement("input");
+      inp.className = "cell-input";
+      inp.type = "number";
+      inp.step = "any";
+      inp.inputMode = "decimal";
+      inp.value = f.value != null ? String(f.value) : "";
+      bind(inp);
+      wrap.appendChild(inp);
+    } else if (type === "multiline") {
+      const ta = document.createElement("textarea");
+      ta.className = "cell-input";
+      ta.rows = 2;
+      ta.value = f.value != null ? String(f.value) : "";
+      bind(ta);
+      wrap.appendChild(ta);
+    } else {
+      const inp = document.createElement("input");
+      inp.className = "cell-input";
+      inp.type = "text";
+      inp.value = f.value != null ? String(f.value) : "";
+      bind(inp);
+      wrap.appendChild(inp);
+    }
+    return wrap;
+  }
+
+  function createRoleChecks(f, aclKey, title) {
+    const box = document.createElement("div");
+    box.className = "acl-group";
+    const lab = document.createElement("div");
+    lab.className = "acl-group-title";
+    lab.textContent = title;
+    box.appendChild(lab);
+    const row = document.createElement("div");
+    row.className = "acl-checks";
+    ensureContentField(f);
+    const selected = new Set(f.acl[aclKey].roles || []);
+    aclRoleOptions().forEach((r) => {
+      const id = `acl_${aclKey}_${r.id}_${Math.random().toString(36).slice(2, 6)}`;
+      const wrap = document.createElement("label");
+      wrap.className = "acl-check";
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.id = id;
+      cb.checked = selected.has(r.id);
+      cb.addEventListener("change", () => {
+        const set = new Set(f.acl[aclKey].roles || []);
+        if (cb.checked) set.add(r.id);
+        else set.delete(r.id);
+        f.acl[aclKey].roles = Array.from(set);
+        persistContentField();
+      });
+      wrap.appendChild(cb);
+      wrap.appendChild(document.createTextNode(r.label));
+      row.appendChild(wrap);
+    });
+    box.appendChild(row);
+    const tip = document.createElement("div");
+    tip.className = "acl-tip";
+    tip.textContent = "空白＝不額外限制（沿用表單預設可見／可編）";
+    box.appendChild(tip);
+    return box;
+  }
+
+  function createFieldRulesPanel(fid, f) {
+    ensureContentField(f);
+    const panel = document.createElement("div");
+    panel.className = "field-rules";
+
+    const grid = document.createElement("div");
+    grid.className = "field-rules-grid";
+
+    // required
+    const reqLab = document.createElement("label");
+    reqLab.className = "field-rule-item";
+    const reqCb = document.createElement("input");
+    reqCb.type = "checkbox";
+    reqCb.checked = !!f.required;
+    reqCb.addEventListener("change", () => {
+      f.required = reqCb.checked;
+      persistContentField();
+    });
+    reqLab.appendChild(reqCb);
+    reqLab.appendChild(document.createTextNode(" 送出前必填（required）"));
+    grid.appendChild(reqLab);
+
+    // required_from_level
+    const rflWrap = document.createElement("label");
+    rflWrap.className = "field-rule-item";
+    rflWrap.appendChild(document.createTextNode("自第幾關起必填 "));
+    const rfl = document.createElement("select");
+    rfl.className = "cell-input cell-input-sm";
+    const maxLv = Math.max(
+      0,
+      ...(doc.approval?.columns || []).map((c) => Number(c.level) || 0)
+    );
+    const rflOpts = [
+      ["", "— 不依關卡"],
+      ["0", "0（申請／Submit 起）"],
+    ];
+    for (let i = 1; i <= Math.max(maxLv, 3); i++) {
+      rflOpts.push([String(i), `${i}（該關 Approve 前起）`]);
+    }
+    rflOpts.forEach(([v, lab]) => {
+      const o = document.createElement("option");
+      o.value = v;
+      o.textContent = lab;
+      rfl.appendChild(o);
+    });
+    rfl.value =
+      f.required_from_level == null || f.required_from_level === ""
+        ? ""
+        : String(f.required_from_level);
+    rfl.addEventListener("change", () => {
+      f.required_from_level = rfl.value === "" ? null : Number(rfl.value);
+      persistContentField();
+    });
+    rflWrap.appendChild(rfl);
+    grid.appendChild(rflWrap);
+
+    // required_when
+    const rwWrap = document.createElement("label");
+    rwWrap.className = "field-rule-item field-rule-wide";
+    rwWrap.appendChild(document.createTextNode("條件必填 "));
+    const rw = document.createElement("input");
+    rw.className = "cell-input";
+    rw.placeholder = "例：leave_type=病假";
+    rw.value = f.required_when != null ? String(f.required_when) : "";
+    rw.addEventListener("change", () => {
+      f.required_when = rw.value.trim() || null;
+      persistContentField();
+    });
+    rwWrap.appendChild(rw);
+    grid.appendChild(rwWrap);
+
+    panel.appendChild(grid);
+    panel.appendChild(createRoleChecks(f, "visible_to", "誰可以看（visible_to）"));
+    panel.appendChild(createRoleChecks(f, "editable_by", "誰可以編（editable_by＝其餘可見則唯讀）"));
+    panel.appendChild(createRoleChecks(f, "hidden_from", "誰隱藏（hidden_from）"));
+
+    const foot = document.createElement("p");
+    foot.className = "acl-tip";
+    foot.textContent =
+      "依 ALR5 §3.3b：required／required_when／required_from_level；ACL 用角色／人員／群組（PoC 先做角色）。SAVE 草稿不擋必填。";
+    panel.appendChild(foot);
+    return panel;
+  }
+
   function appendListCols(tr, f) {
     const loc =
       f.location && String(f.location).trim()
@@ -2068,7 +2414,7 @@
     h.textContent = "編輯設定：" + (doc.meta?.title || doc.meta?.form_id || "");
     wrap.appendChild(h);
 
-    // meta：使用者在意名稱／建立者
+    // 基本（表頭英文；說明中文）
     const metaTable = document.createElement("table");
     metaTable.className = "mgmt-table edit-table";
     metaTable.innerHTML =
@@ -2077,7 +2423,7 @@
     const metaFields = [
       ["title", "title", false],
       ["creator", "creator", false],
-      ["location", "location (TBD)", true],
+      ["location", "location", true],
     ];
     metaFields.forEach(([key, label, ro]) => {
       const tr = document.createElement("tr");
@@ -2088,7 +2434,7 @@
       inp.className = "cell-input";
       inp.value =
         key === "location"
-          ? doc.meta?.location || "(not designed)"
+          ? doc.meta?.location || "（尚未設計）"
           : doc.meta?.[key] ?? "";
       inp.disabled = !!ro;
       inp.addEventListener("change", () => {
@@ -2103,112 +2449,121 @@
       mtb.appendChild(tr);
     });
     metaTable.appendChild(mtb);
-    wrap.appendChild(sectionBlock("Basic", metaTable));
+    wrap.appendChild(sectionBlock("基本資料", metaTable));
 
-    // 系統內建欄位
-    const sysTable = document.createElement("table");
-    sysTable.className = "mgmt-table";
-    sysTable.innerHTML =
-      "<thead><tr><th>field_id</th><th>label</th><th>note</th></tr></thead>";
-    const stb = document.createElement("tbody");
-    SYSTEM_FIELD_DEFS.forEach((def) => {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `<td>${def.id}</td><td>${def.label}</td><td class="muted-cell">${def.note || ""}</td>`;
-      stb.appendChild(tr);
-    });
-    const stepLevels = (doc.approval?.columns || [])
-      .filter((c) => Number(c.level) > 0)
-      .map((c) => Number(c.level))
-      .sort((a, b) => a - b);
-    stepLevels.forEach((n) => {
-      SYSTEM_STEP_FIELD_TMPL.forEach((t) => {
-        const fieldId = t.id.replaceAll("{n}", String(n));
-        const label = t.label.replaceAll("{n}", String(n));
-        const tr = document.createElement("tr");
-        tr.innerHTML = `<td>${fieldId}</td><td>${label}</td><td class="muted-cell">對應 step_${n}（ALR5 §2.1）</td>`;
-        stb.appendChild(tr);
-      });
-    });
-    sysTable.appendChild(stb);
-    const sysSec = sectionBlock("System fields (ALR5)", sysTable);
-    const sysNote = document.createElement("p");
-    sysNote.className = "sec-note";
-    sysNote.textContent =
-      "Per ALR5簽核系統.md：creator／requester／cc／cc_system／approvers[]／stage_notifies[]／fyi／fyi_system and system.*；Owner cannot add/remove as content fields. Flat ids: approver_n／stage_notify_n.";
-    sysSec.insertBefore(sysNote, sysTable);
-    const badge = document.createElement("span");
-    badge.className = "badge-sys";
-    badge.textContent = "系統";
-    sysSec.querySelector("h3")?.appendChild(badge);
-    wrap.appendChild(sysSec);
+    // 系統欄位：對 Owner 隱藏（規格仍在 JSON／ALR5 分頁）
 
-    // 簽核內容欄位（可增刪）
+    // 內容欄位
     const fTable = document.createElement("table");
-    fTable.className = "mgmt-table";
+    fTable.className = "mgmt-table content-fields-table";
     fTable.innerHTML =
-      "<thead><tr><th>field_id</th><th>label</th><th>type</th><th>default</th><th></th></tr></thead>";
+      "<thead><tr><th>field_id</th><th>label</th><th>type</th><th>default</th><th>rules</th><th></th></tr></thead>";
     const ftb = document.createElement("tbody");
+
+    const rebuildContent = () => renderDesignEdit();
+
     Object.keys(doc.fields || {}).forEach((fid) => {
-      const f = doc.fields[fid];
+      const f = ensureContentField(doc.fields[fid]);
       if (f.kind && f.kind !== "content") return;
       const tr = document.createElement("tr");
-      const cells = [
-        [fid, true],
-        [f.label || "", false, "label"],
-        [f.type || "text", false, "type"],
-        [f.value ?? "", false, "value"],
-      ];
-      cells.forEach(([val, ro, prop], idx) => {
-        const td = document.createElement("td");
-        if (idx === 0 || ro) {
-          td.textContent = String(val);
-        } else {
-          const inp = document.createElement("input");
-          inp.className = "cell-input";
-          inp.value = String(val);
-          inp.addEventListener("change", () => {
-            f[prop] = inp.value;
-            f.kind = "content";
-            persistDocForForm(doc.meta.form_id, doc);
-          });
-          td.appendChild(inp);
-        }
-        tr.appendChild(td);
+      tr.className = "content-field-row";
+
+      const tdId = document.createElement("td");
+      tdId.textContent = fid;
+      tr.appendChild(tdId);
+
+      const tdLabel = document.createElement("td");
+      const labInp = document.createElement("input");
+      labInp.className = "cell-input";
+      labInp.value = f.label || "";
+      labInp.addEventListener("change", () => {
+        f.label = labInp.value;
+        persistContentField();
       });
+      tdLabel.appendChild(labInp);
+      tr.appendChild(tdLabel);
+
+      const tdType = document.createElement("td");
+      tdType.appendChild(
+        createTypeSelect(f, () => {
+          rebuildContent();
+        })
+      );
+      tr.appendChild(tdType);
+
+      const tdDef = document.createElement("td");
+      tdDef.appendChild(createDefaultControl(f, rebuildContent));
+      tr.appendChild(tdDef);
+
+      const tdRules = document.createElement("td");
+      const rulesBtn = document.createElement("button");
+      rulesBtn.type = "button";
+      rulesBtn.className = "table-btn";
+      const summarizeRules = () => {
+        const bits = [];
+        if (f.required) bits.push("必填");
+        if (f.required_from_level != null && f.required_from_level !== "")
+          bits.push(`L≥${f.required_from_level}`);
+        if (f.required_when) bits.push("條件");
+        const v = (f.acl?.visible_to?.roles || []).length;
+        const e = (f.acl?.editable_by?.roles || []).length;
+        if (v) bits.push(`看${v}`);
+        if (e) bits.push(`編${e}`);
+        rulesBtn.textContent = bits.length ? bits.join("·") : "權限／必填";
+      };
+      summarizeRules();
+      tdRules.appendChild(rulesBtn);
+      tr.appendChild(tdRules);
+
       const tdDel = document.createElement("td");
       const del = document.createElement("button");
       del.type = "button";
       del.className = "table-btn danger";
-      del.textContent = "Delete";
+      del.textContent = "刪除";
       del.addEventListener("click", () => {
-        if (!confirm(`Delete content field 「${fid}」？`)) return;
+        if (!confirm(`刪除內容欄位「${fid}」？`)) return;
         delete doc.fields[fid];
         (doc.body?.paragraphs || []).forEach((para) => {
           para.parts = (para.parts || []).filter(
             (p) => !(p.t === "field" && p.name === fid)
           );
         });
-        persistDocForForm(doc.meta.form_id, doc);
-        renderDesignEdit();
+        persistContentField();
+        rebuildContent();
       });
       tdDel.appendChild(del);
       tr.appendChild(tdDel);
       ftb.appendChild(tr);
+
+      const trRules = document.createElement("tr");
+      trRules.className = "content-field-rules-row";
+      trRules.hidden = true;
+      const tdPanel = document.createElement("td");
+      tdPanel.colSpan = 6;
+      tdPanel.appendChild(createFieldRulesPanel(fid, f));
+      trRules.appendChild(tdPanel);
+      ftb.appendChild(trRules);
+
+      rulesBtn.addEventListener("click", () => {
+        trRules.hidden = !trRules.hidden;
+        rulesBtn.classList.toggle("primary", !trRules.hidden);
+        summarizeRules();
+      });
     });
     fTable.appendChild(ftb);
-    const fSec = sectionBlock("Content fields (add/remove)", fTable);
+    const fSec = sectionBlock("內容欄位（可新增／刪除）", fTable);
     const fNote = document.createElement("p");
     fNote.className = "sec-note";
     fNote.textContent =
-      "Business fill-in fields (applicant, leave type, dates…); separate from system approval fields.";
+      "申請畫面填寫用（申請人、假別、日期…）。點「權限／必填」設定誰可看／可編、階段必填（依 ALR5）。系統簽核欄位不在此顯示。";
     fSec.insertBefore(fNote, fTable);
     const addField = document.createElement("button");
     addField.type = "button";
     addField.className = "table-btn";
-    addField.textContent = "+ Add content field";
+    addField.textContent = "＋ 新增內容欄位";
     addField.addEventListener("click", () => {
       const id = prompt(
-        "field_id (snake_case)",
+        "欄位 id（英文／底線）",
         "field_" + (Object.keys(doc.fields || {}).length + 1)
       );
       if (!id || (doc.fields && doc.fields[id])) {
@@ -2216,9 +2571,14 @@
         return;
       }
       if (!doc.fields) doc.fields = {};
-      doc.fields[id] = { kind: "content", type: "text", label: id, value: "" };
-      persistDocForForm(doc.meta.form_id, doc);
-      renderDesignEdit();
+      doc.fields[id] = ensureContentField({
+        kind: "content",
+        type: "text",
+        label: id,
+        value: "",
+      });
+      persistContentField();
+      rebuildContent();
     });
     const fActions = document.createElement("div");
     fActions.className = "table-actions";
@@ -2275,9 +2635,9 @@
         const del = document.createElement("button");
         del.type = "button";
         del.className = "table-btn danger";
-        del.textContent = "Delete";
+        del.textContent = "刪除";
         del.addEventListener("click", () => {
-          if (!confirm(`Delete ${col.id}（${col.label || ""}）？`)) return;
+          if (!confirm(`刪除 ${col.id}（${col.label || ""}）？`)) return;
           doc.approval.columns = (doc.approval.columns || []).filter(
             (c) => c.id !== col.id
           );
@@ -2294,16 +2654,16 @@
       atb.appendChild(tr);
     });
     aTable.appendChild(atb);
-    const aSec = sectionBlock("Approval steps（waterfall）", aTable);
+    const aSec = sectionBlock("簽核階層（水流）", aTable);
     const aNote = document.createElement("p");
     aNote.className = "sec-note";
     aNote.textContent =
-      "水流：step_0（Submit）在最上，往下 step_1→step_2…。label＝畫面顯示名；role＝權限角色 id（非顯示字）；stamp_name＝印章完整姓名。刪 step≥1 後自動重編。";
+      "水流：step_0（Submit）在最上，往下 step_1→step_2…。label＝畫面顯示名；role＝權限角色 id；stamp_name＝印章完整姓名。刪 step≥1 後自動重編。";
     aSec.insertBefore(aNote, aTable);
     const addCol = document.createElement("button");
     addCol.type = "button";
     addCol.className = "table-btn";
-    addCol.textContent = "+ Add step";
+    addCol.textContent = "＋ 新增簽核關";
     addCol.addEventListener("click", () => {
       if (!doc.approval) doc.approval = { title: "簽核", columns: [] };
       if (!doc.approval.columns) doc.approval.columns = [];
@@ -2312,8 +2672,8 @@
           0,
           ...doc.approval.columns.map((c) => Number(c.level) || 0)
         ) + 1;
-      const label = prompt("label（顯示名稱）", `Approver ${nextLv}`) || `Approver ${nextLv}`;
-      const fullName = prompt("stamp_name（完整姓名）", label) || label;
+      const label = prompt("顯示名稱（label）", `簽核 ${nextLv}`) || `簽核 ${nextLv}`;
+      const fullName = prompt("印章完整姓名（stamp_name）", label) || label;
       doc.approval.columns.push({
         id: `step_${nextLv}`,
         label,
@@ -2341,7 +2701,7 @@
     const saveNote = document.createElement("p");
     saveNote.className = "list-tip";
     saveNote.textContent =
-      "變更即寫入本機（設計 PoC）。form_id／版本在 JSON 分頁可見，列表不強調。";
+      "變更即寫入本機（設計 PoC）。系統欄位與 form_id／版本請到 JSON／ALR5 分頁查看。";
     wrap.appendChild(saveNote);
     stage.appendChild(wrap);
   }
@@ -2460,6 +2820,11 @@
       }
     });
     ensureFieldOptions(d.fields, base.fields);
+    Object.keys(d.fields || {}).forEach((fid) => {
+      if (!d.fields[fid].kind || d.fields[fid].kind === "content") {
+        ensureContentField(d.fields[fid]);
+      }
+    });
     if (!d.system.doc_no || !/\.\d+$/.test(d.system.doc_no)) {
       d.system.doc_version = d.system.doc_version || 1;
       d.system.doc_no = makeDocNo(
