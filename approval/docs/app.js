@@ -8,6 +8,8 @@
   const DOC_PREFIX = "approval.doc.v1:";
   const DOCS_INDEX_KEY = "approval.docs.index.v1";
   const FORMS_KEY = "approval.forms.catalog.v2";
+  const OPTION_LISTS_KEY = "approval.option_lists.v1";
+  const ACCOUNT_KEY = "approval.account.v1";
   const NAV_KEY = "approval.nav.v1";
   const MIN_CH = 2;
 
@@ -225,24 +227,14 @@
         "kind": "content",
         "type": "dropdown",
         "label": "假別",
-        "value": "事假",
+        "value": "特休",
+        "options_ref": "list_leave_types",
+        "allow_blank": false,
+        "allow_manual": false,
         "options": [
-          {
-            "value": "特休",
-            "label": "特休"
-          },
-          {
-            "value": "事假",
-            "label": "事假"
-          },
-          {
-            "value": "病假",
-            "label": "病假"
-          },
-          {
-            "value": "其他",
-            "label": "其他"
-          }
+          { "value": "事假", "label": "事假" },
+          { "value": "病假", "label": "病假" },
+          { "value": "特休", "label": "特休" }
         ]
       },
       "leave_date": {
@@ -423,6 +415,7 @@
   let alr5Markdown = "";
   let formsCatalog = [];
   let docsIndex = [];
+  let optionLists = [];
   let appNav = {
     tab: "apply",
     applyLayer: "list",
@@ -479,15 +472,33 @@
     }
   }
 
+  /** 舊設計：假別尚無 options_ref → 連示範 B 清單；回傳是否有改 */
+  function softMigrateDropdownRefs(d) {
+    if (!d?.fields?.leave_type) return false;
+    const f = d.fields.leave_type;
+    if (f.type === "dropdown" && !f.options_ref) {
+      f.options_ref = "list_leave_types";
+      const list = getOptionList("list_leave_types");
+      if (list) f.options = normalizeOptions(list.items);
+      return true;
+    }
+    return false;
+  }
+
   function loadDesign(formId) {
     if (!formId) return null;
     try {
       let raw = localStorage.getItem(designStorageKey(formId));
-      if (raw) return JSON.parse(raw);
+      if (raw) {
+        const d = JSON.parse(raw);
+        if (softMigrateDropdownRefs(d)) persistDesign(formId, d);
+        return d;
+      }
       // 遷移：舊版共用 key 當設計檔
       raw = localStorage.getItem(LEGACY_DOC_KEY + ":" + formId);
       if (raw) {
         const d = JSON.parse(raw);
+        softMigrateDropdownRefs(d);
         if (!d.meta) d.meta = {};
         d.meta.kind = "form_design";
         d.meta.form_id = formId;
@@ -498,6 +509,7 @@
       if (raw) {
         const d = JSON.parse(raw);
         if (d?.meta?.form_id === formId) {
+          softMigrateDropdownRefs(d);
           if (!d.meta) d.meta = {};
           d.meta.kind = "form_design";
           persistDesign(formId, d);
@@ -731,16 +743,114 @@
       .filter(Boolean);
   }
 
+  function currentAccount() {
+    try {
+      const a = localStorage.getItem(ACCOUNT_KEY);
+      if (a && a.trim()) return a.trim();
+    } catch {
+      /* ignore */
+    }
+    return "王小明";
+  }
+
+  function setCurrentAccount(name) {
+    try {
+      localStorage.setItem(ACCOUNT_KEY, String(name || "王小明"));
+    } catch {
+      /* ignore */
+    }
+  }
+
+  function loadOptionLists() {
+    try {
+      const raw = localStorage.getItem(OPTION_LISTS_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch {
+      /* ignore */
+    }
+    return null;
+  }
+
+  function persistOptionLists() {
+    try {
+      localStorage.setItem(OPTION_LISTS_KEY, JSON.stringify(optionLists));
+    } catch {
+      /* ignore */
+    }
+  }
+
+  function defaultOptionLists() {
+    return [
+      {
+        list_id: "list_leave_types",
+        title: "假別清單",
+        owner: "王小明",
+        readers: [],
+        items: [
+          { value: "事假", label: "事假" },
+          { value: "病假", label: "病假" },
+          { value: "特休", label: "特休" },
+        ],
+        updated_at: nowStamp(),
+        note: "B Form：共用下拉選項（帳號可讀）",
+      },
+    ];
+  }
+
+  function canReadOptionList(list, account) {
+    if (!list) return false;
+    const acc = account || currentAccount();
+    if (list.owner === acc) return true;
+    const readers = list.readers || [];
+    return readers.includes("*") || readers.includes(acc);
+  }
+
+  function canEditOptionList(list, account) {
+    if (!list) return false;
+    return list.owner === (account || currentAccount());
+  }
+
+  function getOptionList(listId) {
+    return optionLists.find((l) => l.list_id === listId) || null;
+  }
+
+  function resolveFieldOptions(f) {
+    if (f?.options_ref) {
+      const list = getOptionList(f.options_ref);
+      if (list && canReadOptionList(list)) {
+        return normalizeOptions(list.items);
+      }
+    }
+    return normalizeOptions(f?.options);
+  }
+
+  function syncFieldOptionsFromRef(f) {
+    if (!f || f.type !== "dropdown") return;
+    if (f.options_ref) {
+      const list = getOptionList(f.options_ref);
+      if (list && canReadOptionList(list)) {
+        f.options = normalizeOptions(list.items);
+      }
+    }
+  }
+
   function ensureFieldOptions(fields, fallbackFields) {
     Object.keys(fields || {}).forEach((key) => {
       const f = fields[key];
       if (!f || f.type !== "dropdown") return;
-      let opts = normalizeOptions(f.options);
+      syncFieldOptionsFromRef(f);
+      let opts = resolveFieldOptions(f);
       if (!opts.length && fallbackFields?.[key]) {
         opts = normalizeOptions(fallbackFields[key].options);
+        if (!f.options_ref) f.options = opts;
       }
-      f.options = opts;
-      if (f.value == null || f.value === "") {
+      if (!f.options_ref) f.options = opts;
+      if (f.allow_blank) {
+        if (f.value == null) f.value = "";
+      } else if (f.value == null || f.value === "") {
         f.value = opts[0]?.value ?? "";
       }
     });
@@ -858,18 +968,80 @@
     const type = def.type || "text";
     let el;
 
-    if (type === "dropdown" || type === "person") {
+    if (type === "dropdown") {
+      syncFieldOptionsFromRef(def);
+      const opts = resolveFieldOptions(def);
+      const cur = def.value != null ? String(def.value) : "";
+      const allowBlank = !!def.allow_blank;
+      const allowManual = !!def.allow_manual;
+
+      if (allowManual) {
+        const wrap = document.createElement("span");
+        wrap.className = "blank-combo";
+        const listId = "dl_" + name + "_" + Math.random().toString(36).slice(2, 7);
+        const input = document.createElement("input");
+        input.className = "blank";
+        input.type = "text";
+        input.setAttribute("list", listId);
+        input.placeholder = allowBlank ? "選或手填（可空白）" : "選或手填";
+        input.value = cur;
+        input.size = MIN_CH;
+        input.dataset.field = name;
+        if (def.label) input.setAttribute("aria-label", def.label);
+        const dl = document.createElement("datalist");
+        dl.id = listId;
+        opts.forEach((opt) => {
+          const o = document.createElement("option");
+          o.value = opt.value;
+          o.label = opt.label;
+          dl.appendChild(o);
+        });
+        const onChange = () => {
+          setFieldValue(name, input.value);
+          fitBlank(input);
+        };
+        input.addEventListener("input", onChange);
+        input.addEventListener("change", onChange);
+        wrap.appendChild(input);
+        wrap.appendChild(dl);
+        requestAnimationFrame(() => fitBlank(input));
+        return wrap;
+      }
+
       el = document.createElement("select");
       el.className = "blank blank-select";
-      let opts = normalizeOptions(def.options);
-      if (type === "person" && !opts.length) {
-        opts = knownPeopleOptions();
+      if (allowBlank) {
+        const blank = document.createElement("option");
+        blank.value = "";
+        blank.textContent = "—";
+        el.appendChild(blank);
       }
+      opts.forEach((opt) => {
+        const o = document.createElement("option");
+        o.value = opt.value;
+        o.textContent = opt.label;
+        el.appendChild(o);
+      });
+      if (cur && !opts.some((o) => o.value === cur) && cur !== "") {
+        const o = document.createElement("option");
+        o.value = cur;
+        o.textContent = cur;
+        el.appendChild(o);
+      }
+      el.value = cur || (allowBlank ? "" : opts[0]?.value || "");
+      if (def.value !== el.value) def.value = el.value;
+    } else if (type === "person") {
+      el = document.createElement("select");
+      el.className = "blank blank-select";
+      let opts = knownPeopleOptions();
       if (!opts.length) {
         const fallback = def.value != null ? String(def.value) : "";
         if (fallback) opts.push({ value: fallback, label: fallback });
       }
-      if (type === "dropdown") def.options = opts;
+      const blank = document.createElement("option");
+      blank.value = "";
+      blank.textContent = "—";
+      el.appendChild(blank);
       opts.forEach((opt) => {
         const o = document.createElement("option");
         o.value = opt.value;
@@ -883,7 +1055,7 @@
         o.textContent = cur;
         el.appendChild(o);
       }
-      el.value = cur || opts[0]?.value || "";
+      el.value = cur || "";
       if (def.value !== el.value) def.value = el.value;
     } else if (type === "multiline") {
       el = document.createElement("textarea");
@@ -2685,6 +2857,176 @@
     return btn;
   }
 
+  /** B Form：共用下拉選項庫選擇／管理（帳號可讀） */
+  function openOptionListPicker(field, onDone) {
+    const account = currentAccount();
+    const overlay = document.createElement("div");
+    overlay.className = "opt-overlay";
+    const card = document.createElement("div");
+    card.className = "opt-card list-stage-light";
+
+    const close = () => overlay.remove();
+
+    const head = document.createElement("div");
+    head.className = "opt-card-head";
+    const h = document.createElement("h3");
+    h.textContent = "B Form｜下拉選項庫";
+    head.appendChild(h);
+    const x = document.createElement("button");
+    x.type = "button";
+    x.className = "icon-btn";
+    x.textContent = "×";
+    x.addEventListener("click", close);
+    head.appendChild(x);
+    card.appendChild(head);
+
+    const tip = document.createElement("p");
+    tip.className = "sec-note";
+    tip.textContent =
+      `帳號：${account}。選共用清單連到 A 欄位；公司清單請把 readers 設成可讀帳號或 *。`;
+    card.appendChild(tip);
+
+    const body = document.createElement("div");
+    body.className = "opt-card-body";
+
+    const paint = () => {
+      body.replaceChildren();
+      const readable = optionLists.filter((l) => canReadOptionList(l, account));
+
+      const useLocal = document.createElement("button");
+      useLocal.type = "button";
+      useLocal.className =
+        "table-btn" + (!field.options_ref ? " primary" : "");
+      useLocal.textContent = "用本機選項（不連 B）";
+      useLocal.addEventListener("click", () => {
+        delete field.options_ref;
+        if (!normalizeOptions(field.options).length) {
+          field.options = [
+            { value: "選項A", label: "選項A" },
+            { value: "選項B", label: "選項B" },
+          ];
+        }
+        if (onDone) onDone();
+        close();
+      });
+      body.appendChild(useLocal);
+
+      readable.forEach((list) => {
+        const row = document.createElement("div");
+        row.className = "opt-list-row";
+        const main = document.createElement("button");
+        main.type = "button";
+        main.className =
+          "table-btn" +
+          (field.options_ref === list.list_id ? " primary" : "");
+        main.textContent = `${list.title}（${(list.items || []).length}）· ${list.owner}`;
+        main.addEventListener("click", () => {
+          field.options_ref = list.list_id;
+          field.options = normalizeOptions(list.items);
+          if (
+            !field.allow_blank &&
+            field.value &&
+            !field.options.some((o) => o.value === field.value)
+          ) {
+            field.value = field.options[0]?.value || "";
+          }
+          if (onDone) onDone();
+          close();
+        });
+        row.appendChild(main);
+
+        if (canEditOptionList(list, account)) {
+          const edit = document.createElement("button");
+          edit.type = "button";
+          edit.className = "icon-btn";
+          edit.textContent = "✎";
+          edit.title = "編輯此 B 清單";
+          edit.addEventListener("click", () => {
+            editOptionListItem(list, () => {
+              persistOptionLists();
+              if (field.options_ref === list.list_id) {
+                field.options = normalizeOptions(list.items);
+              }
+              paint();
+              if (onDone) onDone();
+            });
+          });
+          row.appendChild(edit);
+        }
+        body.appendChild(row);
+      });
+
+      const add = document.createElement("button");
+      add.type = "button";
+      add.className = "table-btn";
+      add.textContent = "＋ 新建 B 清單（我是 owner）";
+      add.addEventListener("click", () => {
+        const title = prompt("清單名稱", "新下拉清單");
+        if (!title) return;
+        const id =
+          "list_" +
+          Date.now().toString(36) +
+          Math.random().toString(36).slice(2, 5);
+        const list = {
+          list_id: id,
+          title,
+          owner: account,
+          readers: [],
+          items: [
+            { value: "選項1", label: "選項1" },
+            { value: "選項2", label: "選項2" },
+          ],
+          updated_at: nowStamp(),
+        };
+        optionLists.unshift(list);
+        persistOptionLists();
+        editOptionListItem(list, () => {
+          persistOptionLists();
+          paint();
+        });
+        paint();
+      });
+      body.appendChild(add);
+    };
+
+    paint();
+    card.appendChild(body);
+    overlay.appendChild(card);
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) close();
+    });
+    document.body.appendChild(overlay);
+  }
+
+  function editOptionListItem(list, onSaved) {
+    const itemsText = normalizeOptions(list.items)
+      .map((o) => o.label)
+      .join("\n");
+    const next = prompt(
+      `編輯「${list.title}」選項（每行一項）`,
+      itemsText
+    );
+    if (next == null) return;
+    list.items = next
+      .split(/\n|,/)
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .map((s) => ({ value: s, label: s }));
+    const readers = prompt(
+      "可讀帳號（逗號分隔；*＝全公司；空白＝僅 owner）",
+      (list.readers || []).join(",")
+    );
+    if (readers != null) {
+      list.readers = readers
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+    }
+    list.updated_at = nowStamp();
+    persistOptionLists();
+    if (onSaved) onSaved();
+  }
+
   function createDefaultControl(f, onRebuild) {
     const type = f.type || "text";
     const wrap = document.createElement("div");
@@ -2709,6 +3051,7 @@
     if (type === "dropdown") {
       if (f.allow_blank == null) f.allow_blank = true;
       if (f.allow_manual == null) f.allow_manual = false;
+      syncFieldOptionsFromRef(f);
 
       const toggles = document.createElement("div");
       toggles.className = "dash-chips mini-row";
@@ -2716,11 +3059,11 @@
         createMiniToggleChip(
           "可空白",
           !!f.allow_blank,
-          "下拉可否選空白",
+          "申請人填單時可否空白",
           () => {
             f.allow_blank = !f.allow_blank;
             if (!f.allow_blank && (f.value == null || f.value === "")) {
-              const opts = normalizeOptions(f.options);
+              const opts = resolveFieldOptions(f);
               f.value = opts[0]?.value || "";
             }
             persistContentField();
@@ -2732,7 +3075,7 @@
         createMiniToggleChip(
           "可手填",
           !!f.allow_manual,
-          "允許不在選項內的手填值",
+          "申請人填單時可手填（設計檔不另開文字欄）",
           () => {
             f.allow_manual = !f.allow_manual;
             persistContentField();
@@ -2742,11 +3085,25 @@
       );
       wrap.appendChild(toggles);
 
-      const opts = normalizeOptions(f.options);
-      if (!opts.length) {
+      let opts = resolveFieldOptions(f);
+      if (!opts.length && !f.options_ref) {
         ["選項A", "選項B"].forEach((v) => opts.push({ value: v, label: v }));
         f.options = opts;
       }
+
+      const src = document.createElement("div");
+      src.className = "option-src-row";
+      const srcLab = document.createElement("span");
+      srcLab.className = "option-src-label";
+      if (f.options_ref) {
+        const list = getOptionList(f.options_ref);
+        srcLab.textContent = list
+          ? `B：${list.title}`
+          : `B：${f.options_ref}（無法讀）`;
+      } else {
+        srcLab.textContent = "本機選項";
+      }
+      src.appendChild(srcLab);
 
       const sel = document.createElement("select");
       sel.className = "cell-input";
@@ -2766,54 +3123,27 @@
       if (cur && !Array.from(sel.options).some((o) => o.value === cur)) {
         const o = document.createElement("option");
         o.value = cur;
-        o.textContent = cur + (f.allow_manual ? "（手填）" : "");
+        o.textContent = cur;
         sel.appendChild(o);
       }
       sel.value = cur;
       bind(sel);
       wrap.appendChild(sel);
 
-      if (f.allow_manual) {
-        const manual = document.createElement("input");
-        manual.className = "cell-input";
-        manual.placeholder = "手填值（可覆寫下拉）";
-        manual.value = cur;
-        manual.addEventListener("change", () => {
-          f.value = manual.value;
-          persistContentField();
-          onRebuild();
-        });
-        wrap.appendChild(manual);
-      }
-
       const editOpts = document.createElement("button");
       editOpts.type = "button";
       editOpts.className = "icon-btn";
-      editOpts.title = "編輯下拉選項";
-      editOpts.setAttribute("aria-label", "編輯選項");
+      editOpts.title = "選擇／管理 B Form 下拉選項庫";
+      editOpts.setAttribute("aria-label", "下拉選項庫");
       editOpts.textContent = "⋯";
       editOpts.addEventListener("click", () => {
-        const curLabels = normalizeOptions(f.options)
-          .map((o) => o.label)
-          .join(",");
-        const next = prompt("下拉選項（逗號分隔）", curLabels);
-        if (next == null) return;
-        f.options = next
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean)
-          .map((s) => ({ value: s, label: s }));
-        if (
-          !f.allow_blank &&
-          !f.allow_manual &&
-          !f.options.some((o) => o.value === f.value)
-        ) {
-          f.value = f.options[0]?.value || "";
-        }
-        persistContentField();
-        onRebuild();
+        openOptionListPicker(f, () => {
+          persistContentField();
+          onRebuild();
+        });
       });
-      wrap.appendChild(editOpts);
+      src.appendChild(editOpts);
+      wrap.appendChild(src);
     } else if (type === "person") {
       const sel = document.createElement("select");
       sel.className = "cell-input";
@@ -3343,6 +3673,17 @@
       openDesignForm(id);
     });
     head.appendChild(add);
+    const bLib = document.createElement("button");
+    bLib.type = "button";
+    bLib.className = "table-btn";
+    bLib.textContent = "B 下拉選項庫";
+    bLib.title = "管理共用下拉清單（AB 連動）";
+    bLib.addEventListener("click", () => {
+      appNav.designLayer = "lists";
+      persistNav();
+      renderApp();
+    });
+    head.appendChild(bLib);
     wrap.appendChild(head);
 
     const table = document.createElement("table");
@@ -3371,8 +3712,124 @@
     const tip = document.createElement("p");
     tip.className = "list-tip";
     tip.textContent =
-      "列表以名稱、建立者為主；所屬位置之後再設計。變更寫入表單設計檔，與已開出的申請單互不覆蓋。";
+      "A＝表單設計；B＝下拉選項庫（帳號可讀）。欄位⋯可選共用清單；公司來源請在 B item 設 readers。";
     wrap.appendChild(tip);
+    stage.appendChild(wrap);
+  }
+
+  function renderOptionListsPage() {
+    const stage = els.form;
+    stage.replaceChildren();
+    const wrap = document.createElement("div");
+    wrap.className = "list-stage list-stage-light";
+    wrap.appendChild(
+      renderBackBar("表單列表", () => {
+        appNav.designLayer = "list";
+        persistNav();
+        renderApp();
+      })
+    );
+    const head = document.createElement("div");
+    head.className = "list-head";
+    const h = document.createElement("h2");
+    h.className = "list-title";
+    h.textContent = "B Form｜下拉選項庫";
+    head.appendChild(h);
+    const acc = document.createElement("button");
+    acc.type = "button";
+    acc.className = "table-btn";
+    acc.textContent = "帳號：" + currentAccount();
+    acc.addEventListener("click", () => {
+      const next = prompt("目前帳號（決定可讀／可管的 B 清單）", currentAccount());
+      if (!next) return;
+      setCurrentAccount(next.trim());
+      renderOptionListsPage();
+    });
+    head.appendChild(acc);
+    wrap.appendChild(head);
+
+    const tip = document.createElement("p");
+    tip.className = "list-tip";
+    tip.textContent =
+      "每個清單是一個 B item：owner 可編；readers 可讀。A 表單下拉欄位用 options_ref 連過來。";
+    wrap.appendChild(tip);
+
+    const table = document.createElement("table");
+    table.className = "mgmt-table";
+    table.innerHTML =
+      "<thead><tr><th>名稱</th><th>owner</th><th>readers</th><th>項數</th><th></th></tr></thead>";
+    const tb = document.createElement("tbody");
+    const account = currentAccount();
+    optionLists
+      .filter((l) => canReadOptionList(l, account))
+      .forEach((list) => {
+        const tr = document.createElement("tr");
+        [
+          list.title,
+          list.owner,
+          (list.readers || []).join(", ") || "—",
+          String((list.items || []).length),
+        ].forEach((t) => {
+          const td = document.createElement("td");
+          td.textContent = t;
+          tr.appendChild(td);
+        });
+        const td = document.createElement("td");
+        if (canEditOptionList(list, account)) {
+          const edit = document.createElement("button");
+          edit.type = "button";
+          edit.className = "table-btn";
+          edit.textContent = "編輯";
+          edit.addEventListener("click", () => {
+            editOptionListItem(list, () => {
+              persistOptionLists();
+              renderOptionListsPage();
+            });
+          });
+          td.appendChild(edit);
+        } else {
+          td.textContent = "唯讀";
+          td.className = "muted-cell";
+        }
+        tr.appendChild(td);
+        tb.appendChild(tr);
+      });
+    table.appendChild(tb);
+    const scroll = document.createElement("div");
+    scroll.className = "table-scroll";
+    scroll.appendChild(table);
+    wrap.appendChild(scroll);
+
+    const add = document.createElement("button");
+    add.type = "button";
+    add.className = "table-btn primary";
+    add.textContent = "＋ 新建清單";
+    add.addEventListener("click", () => {
+      const title = prompt("清單名稱", "新下拉清單");
+      if (!title) return;
+      const list = {
+        list_id: "list_" + Date.now().toString(36),
+        title,
+        owner: account,
+        readers: [],
+        items: [
+          { value: "選項1", label: "選項1" },
+          { value: "選項2", label: "選項2" },
+        ],
+        updated_at: nowStamp(),
+      };
+      optionLists.unshift(list);
+      persistOptionLists();
+      editOptionListItem(list, () => {
+        persistOptionLists();
+        renderOptionListsPage();
+      });
+      renderOptionListsPage();
+    });
+    const actions = document.createElement("div");
+    actions.className = "table-actions";
+    actions.appendChild(add);
+    wrap.appendChild(actions);
     stage.appendChild(wrap);
   }
 
@@ -3887,6 +4344,7 @@
       else renderApplyList();
     } else if (tab === "design") {
       if (appNav.designLayer === "edit") renderDesignEdit();
+      else if (appNav.designLayer === "lists") renderOptionListsPage();
       else renderDesignList();
     } else if (tab === "alr5") {
       renderAlr5Guide();
@@ -3996,7 +4454,7 @@
   async function boot() {
     let seedDesign = null;
     try {
-      const res = await fetch("./document.json?v=design11", {
+      const res = await fetch("./document.json?v=design15", {
         cache: "no-store",
       });
       if (res.ok) seedDesign = await res.json();
@@ -4004,7 +4462,7 @@
       /* offline */
     }
     try {
-      const sr = await fetch("./alr5-standard.json?v=design11", {
+      const sr = await fetch("./alr5-standard.json?v=design15", {
         cache: "no-store",
       });
       if (sr.ok) alr5Standard = await sr.json();
@@ -4012,7 +4470,7 @@
       /* offline */
     }
     try {
-      const mr = await fetch("./ALR5標準互通.md?v=design11", {
+      const mr = await fetch("./ALR5標準互通.md?v=design15", {
         cache: "no-store",
       });
       if (mr.ok) alr5Markdown = await mr.text();
@@ -4022,6 +4480,8 @@
 
     loadNav();
     docsIndex = loadDocsIndex();
+    optionLists = loadOptionLists() || defaultOptionLists();
+    persistOptionLists();
     const catalogSeed = seedDesign || EMBEDDED_DOC;
     formsCatalog = loadFormsCatalog() || defaultCatalogFromDoc(catalogSeed);
     persistFormsCatalog();
@@ -4038,6 +4498,13 @@
           d.meta = { ...d.meta, kind: "form_design", form_id: f.form_id };
         } else {
           d = makeBlankForm(f.form_id, f.title, f.creator);
+        }
+        // 示範：假別連到 B 清單
+        if (d.fields?.leave_type && getOptionList("list_leave_types")) {
+          d.fields.leave_type.options_ref = "list_leave_types";
+          d.fields.leave_type.options = normalizeOptions(
+            getOptionList("list_leave_types").items
+          );
         }
         persistDesign(f.form_id, ensureDocShape(d));
       }
