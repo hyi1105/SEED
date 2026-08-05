@@ -1185,6 +1185,95 @@ table.inkan-table td {
   color: #6e675c;
   line-height: 1.4;
 }
+
+/* 欄位規則儀表板：摘要＋點開細部 */
+.field-rules-dash {
+  gap: 10px;
+}
+.dash-head-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1a1814;
+}
+.dash-head-hint {
+  font-size: 11px;
+  color: #6e675c;
+  margin-top: 2px;
+}
+.dash-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.dash-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 650;
+  background: #ebe4d6;
+  color: #5a5348;
+  border: 1px solid #ddd4c4;
+}
+.dash-chip.on {
+  background: #e8eef8;
+  color: #2a3366;
+  border-color: #c5d0e8;
+}
+.dash-section {
+  border: 1px solid #e0d8c8;
+  border-radius: 10px;
+  background: #fffdf8;
+  overflow: hidden;
+}
+.dash-summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 14px;
+  font-size: 13px;
+  color: #1a1814;
+  user-select: none;
+}
+.dash-summary::-webkit-details-marker {
+  display: none;
+}
+.dash-summary::after {
+  content: "▸";
+  color: #8a8276;
+  font-size: 12px;
+  flex: 0 0 auto;
+}
+.dash-section[open] > .dash-summary::after {
+  content: "▾";
+}
+.dash-summary-title {
+  font-weight: 700;
+  flex: 0 0 auto;
+}
+.dash-summary-meta {
+  flex: 1 1 auto;
+  text-align: right;
+  font-size: 12px;
+  color: #6e675c;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dash-section-body {
+  padding: 0 14px 12px;
+  border-top: 1px solid #efe8dc;
+}
+.acl-group-plain {
+  border: 0;
+  padding: 8px 0 0;
+  background: transparent;
+}
+
 .blank-multiline {
   min-width: 8em;
   vertical-align: top;
