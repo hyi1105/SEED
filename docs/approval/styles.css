@@ -1227,3 +1227,200 @@ table.inkan-table td {
     max-width: 9.5rem;
   }
 }
+
+/* —— 手機：設計表單表格改卡片，避免欄位擠成直排字 —— */
+.table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.field-id-cell {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+@media (max-width: 720px) {
+  .view-tabs {
+    gap: 6px;
+    padding: 8px 8px;
+    flex-wrap: wrap;
+  }
+  .view-tab {
+    flex: 1 1 auto;
+    text-align: center;
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+  .stage {
+    padding: 12px 8px 32px;
+  }
+  .list-stage {
+    padding: 8px 2px 24px;
+    max-width: none;
+  }
+  .list-stage-light .mgmt-table th,
+  .list-stage-light .mgmt-table td,
+  .mgmt-table th,
+  .mgmt-table td {
+    word-break: normal;
+    overflow-wrap: anywhere;
+  }
+  .cell-input,
+  .list-stage-light .cell-input,
+  .default-cell .cell-input,
+  .cell-input-sm,
+  .field-rule-wide .cell-input {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+  .default-cell {
+    width: 100%;
+  }
+
+  .design-edit .content-fields-table,
+  .design-edit .stage-table {
+    border: 0;
+    background: transparent;
+    overflow: visible;
+  }
+  .design-edit .content-fields-table thead,
+  .design-edit .stage-table thead {
+    display: none;
+  }
+  .design-edit .content-fields-table tbody,
+  .design-edit .stage-table tbody {
+    display: block;
+  }
+  .design-edit .content-field-row,
+  .design-edit .stage-row {
+    display: block;
+    margin: 0 0 12px;
+    padding: 12px 12px 8px;
+    background: #fffdf8;
+    border: 1px solid #e0d8c8;
+    border-radius: 10px;
+  }
+  .design-edit .content-field-row td,
+  .design-edit .stage-row td {
+    display: grid;
+    grid-template-columns: 6.2rem minmax(0, 1fr);
+    gap: 8px;
+    align-items: center;
+    width: 100%;
+    border: 0;
+    border-bottom: 1px solid #efe8dc;
+    padding: 8px 0;
+    background: transparent;
+  }
+  .design-edit .content-field-row td:last-child,
+  .design-edit .stage-row td:last-child {
+    border-bottom: 0;
+  }
+  .design-edit .content-field-row td::before,
+  .design-edit .stage-row td::before {
+    content: attr(data-label);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: #6e675c;
+    line-height: 1.3;
+  }
+  .design-edit .field-id-cell {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    font-size: 13px;
+    font-weight: 650;
+    color: #1a1814;
+  }
+  .design-edit .level-cell {
+    width: auto;
+    text-align: left;
+    font-size: 15px;
+  }
+  .design-edit .row-actions-cell {
+    padding-top: 10px;
+  }
+  .design-edit .row-actions-cell .table-btn {
+    width: 100%;
+  }
+  .design-edit .content-field-rules-row,
+  .design-edit .stage-mail-rules-row {
+    display: block;
+    margin: -6px 0 14px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+  .design-edit .content-field-rules-row > td,
+  .design-edit .stage-mail-rules-row > td {
+    display: block;
+    width: 100%;
+    border: 1px solid #e0d8c8;
+    border-radius: 10px;
+    padding: 12px;
+    background: #f3efe6;
+  }
+  .design-edit .content-field-rules-row > td::before,
+  .design-edit .stage-mail-rules-row > td::before {
+    display: none;
+    content: none;
+  }
+  .design-edit .table-scroll {
+    overflow: visible;
+  }
+
+  .design-edit .edit-table {
+    display: block;
+    border: 0;
+    background: transparent;
+  }
+  .design-edit .edit-table thead {
+    display: none;
+  }
+  .design-edit .edit-table tbody,
+  .design-edit .edit-table tr {
+    display: block;
+  }
+  .design-edit .edit-table tr {
+    margin-bottom: 10px;
+    padding: 10px 12px;
+    background: #fffdf8;
+    border: 1px solid #e0d8c8;
+    border-radius: 10px;
+  }
+  .design-edit .edit-table th,
+  .design-edit .edit-table td {
+    display: block;
+    width: 100%;
+    border: 0;
+    padding: 4px 0;
+    background: transparent;
+  }
+  .design-edit .edit-table th {
+    font-size: 11px;
+    color: #6e675c;
+    width: auto;
+  }
+
+  .list-stage .table-scroll .mgmt-table,
+  .list-stage-light .table-scroll .mgmt-table {
+    min-width: 28rem;
+  }
+  .list-stage .table-scroll,
+  .list-stage-light .table-scroll {
+    border-radius: 8px;
+  }
+
+  .guide-toolbar {
+    flex-wrap: wrap;
+  }
+  .guide-btn {
+    flex: 1 1 auto;
+  }
+  .inkan {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
