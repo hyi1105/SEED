@@ -2672,6 +2672,19 @@
     return sel;
   }
 
+  function createMiniToggleChip(label, on, title, onToggle) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "dash-chip mini" + (on ? " on" : "");
+    btn.textContent = label;
+    btn.title = title;
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      onToggle();
+    });
+    return btn;
+  }
+
   function createDefaultControl(f, onRebuild) {
     const type = f.type || "text";
     const wrap = document.createElement("div");
@@ -2686,7 +2699,6 @@
       el.addEventListener("change", save);
       el.addEventListener("input", () => {
         if (type === "number") {
-          // 僅允許數字／小數／負號
           const cleaned = el.value.replace(/[^\d.\-]/g, "");
           if (cleaned !== el.value) el.value = cleaned;
         }
@@ -2695,12 +2707,54 @@
     };
 
     if (type === "dropdown") {
-      const sel = document.createElement("select");
-      sel.className = "cell-input";
+      if (f.allow_blank == null) f.allow_blank = true;
+      if (f.allow_manual == null) f.allow_manual = false;
+
+      const toggles = document.createElement("div");
+      toggles.className = "dash-chips mini-row";
+      toggles.appendChild(
+        createMiniToggleChip(
+          "可空白",
+          !!f.allow_blank,
+          "下拉可否選空白",
+          () => {
+            f.allow_blank = !f.allow_blank;
+            if (!f.allow_blank && (f.value == null || f.value === "")) {
+              const opts = normalizeOptions(f.options);
+              f.value = opts[0]?.value || "";
+            }
+            persistContentField();
+            onRebuild();
+          }
+        )
+      );
+      toggles.appendChild(
+        createMiniToggleChip(
+          "可手填",
+          !!f.allow_manual,
+          "允許不在選項內的手填值",
+          () => {
+            f.allow_manual = !f.allow_manual;
+            persistContentField();
+            onRebuild();
+          }
+        )
+      );
+      wrap.appendChild(toggles);
+
       const opts = normalizeOptions(f.options);
       if (!opts.length) {
         ["選項A", "選項B"].forEach((v) => opts.push({ value: v, label: v }));
         f.options = opts;
+      }
+
+      const sel = document.createElement("select");
+      sel.className = "cell-input";
+      if (f.allow_blank) {
+        const blank = document.createElement("option");
+        blank.value = "";
+        blank.textContent = "（空白）";
+        sel.appendChild(blank);
       }
       opts.forEach((opt) => {
         const o = document.createElement("option");
@@ -2708,26 +2762,52 @@
         o.textContent = opt.label;
         sel.appendChild(o);
       });
-      sel.value = f.value != null ? String(f.value) : opts[0]?.value || "";
+      const cur = f.value != null ? String(f.value) : "";
+      if (cur && !Array.from(sel.options).some((o) => o.value === cur)) {
+        const o = document.createElement("option");
+        o.value = cur;
+        o.textContent = cur + (f.allow_manual ? "（手填）" : "");
+        sel.appendChild(o);
+      }
+      sel.value = cur;
       bind(sel);
       wrap.appendChild(sel);
+
+      if (f.allow_manual) {
+        const manual = document.createElement("input");
+        manual.className = "cell-input";
+        manual.placeholder = "手填值（可覆寫下拉）";
+        manual.value = cur;
+        manual.addEventListener("change", () => {
+          f.value = manual.value;
+          persistContentField();
+          onRebuild();
+        });
+        wrap.appendChild(manual);
+      }
+
       const editOpts = document.createElement("button");
       editOpts.type = "button";
-      editOpts.className = "table-btn";
-      editOpts.textContent = "選項";
-      editOpts.title = "編輯下拉選項（逗號分隔）";
+      editOpts.className = "icon-btn";
+      editOpts.title = "編輯下拉選項";
+      editOpts.setAttribute("aria-label", "編輯選項");
+      editOpts.textContent = "⋯";
       editOpts.addEventListener("click", () => {
-        const cur = normalizeOptions(f.options)
+        const curLabels = normalizeOptions(f.options)
           .map((o) => o.label)
           .join(",");
-        const next = prompt("下拉選項（逗號分隔）", cur);
+        const next = prompt("下拉選項（逗號分隔）", curLabels);
         if (next == null) return;
         f.options = next
           .split(",")
           .map((s) => s.trim())
           .filter(Boolean)
           .map((s) => ({ value: s, label: s }));
-        if (!f.options.some((o) => o.value === f.value)) {
+        if (
+          !f.allow_blank &&
+          !f.allow_manual &&
+          !f.options.some((o) => o.value === f.value)
+        ) {
           f.value = f.options[0]?.value || "";
         }
         persistContentField();
@@ -2739,7 +2819,7 @@
       sel.className = "cell-input";
       const blank = document.createElement("option");
       blank.value = "";
-      blank.textContent = "（選擇人員）";
+      blank.textContent = "（空白）";
       sel.appendChild(blank);
       knownPeopleOptions().forEach((opt) => {
         const o = document.createElement("option");
@@ -3041,27 +3121,8 @@
     return grid;
   }
 
-  function createFieldRulesPanel(fid, f) {
-    ensureContentField(f);
-    const panel = document.createElement("div");
-    panel.className = "field-rules field-rules-dash";
-
-    const head = document.createElement("div");
-    head.className = "dash-head";
-    const headHint = document.createElement("div");
-    headHint.className = "dash-head-hint";
-    headHint.textContent = "燈號＝狀態；點燈號才開細部。再點一次關閉。";
-    head.appendChild(headHint);
-    panel.appendChild(head);
-
-    const chips = document.createElement("div");
-    chips.className = "dash-chips";
-    const detail = document.createElement("div");
-    detail.className = "dash-detail";
-    detail.hidden = true;
-    let activeKey = null;
-
-    const chipDefs = [
+  function getFieldRuleChipDefs(f) {
+    return [
       {
         key: "required",
         title: "必填",
@@ -3084,16 +3145,36 @@
       },
       {
         key: "access",
-        title: "權限（不能看／只能看／可編輯）",
+        title: "權限",
         label: () => aclAccessSummary(f),
         on: () => aclAccessSummary(f) !== "權限 預設",
         build: (onChange) => createAclAccessBoard(f, onChange),
       },
     ];
+  }
 
-    const refreshChips = () => {
+  function createTrashIconBtn(onClick) {
+    const del = document.createElement("button");
+    del.type = "button";
+    del.className = "icon-btn danger";
+    del.title = "刪除欄位";
+    del.setAttribute("aria-label", "刪除欄位");
+    del.innerHTML =
+      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>';
+    del.addEventListener("click", onClick);
+    return del;
+  }
+
+  /** 列上燈號；回傳 { el, setActive, refresh } */
+  function createFieldRuleChips(f, opts) {
+    const chips = document.createElement("div");
+    chips.className = "dash-chips row-chips";
+    let activeKey = opts?.activeKey || null;
+    const defs = getFieldRuleChipDefs(f);
+
+    const refresh = () => {
       chips.replaceChildren();
-      chipDefs.forEach((def) => {
+      defs.forEach((def) => {
         const btn = document.createElement("button");
         btn.type = "button";
         btn.className =
@@ -3101,40 +3182,59 @@
           (def.on() ? " on" : "") +
           (activeKey === def.key ? " active" : "");
         btn.textContent = def.label();
-        btn.title = "點擊設定：" + def.title;
+        btn.title = def.title;
         btn.addEventListener("click", () => {
-          if (activeKey === def.key) {
-            activeKey = null;
-            detail.hidden = true;
-            detail.replaceChildren();
-          } else {
-            activeKey = def.key;
-            detail.hidden = false;
-            detail.replaceChildren();
-            const title = document.createElement("div");
-            title.className = "dash-detail-title";
-            title.textContent = def.title;
-            detail.appendChild(title);
-            detail.appendChild(
-              def.build(() => {
-                refreshChips();
-              })
-            );
-          }
-          refreshChips();
+          if (opts?.onSelect) opts.onSelect(def.key, activeKey === def.key);
         });
         chips.appendChild(btn);
       });
     };
-    refreshChips();
-    panel.appendChild(chips);
-    panel.appendChild(detail);
 
-    const foot = document.createElement("p");
-    foot.className = "acl-tip";
-    foot.textContent =
-      "依 ALR5 §3.3b。權限板會寫入 visible_to／editable_by／hidden_from。SAVE 草稿不擋必填。";
-    panel.appendChild(foot);
+    refresh();
+    return {
+      el: chips,
+      refresh,
+      setActive: (key) => {
+        activeKey = key;
+        refresh();
+      },
+      openDetail: (key, host, onChange) => {
+        const def = defs.find((d) => d.key === key);
+        if (!def) return;
+        host.replaceChildren();
+        const title = document.createElement("div");
+        title.className = "dash-detail-title";
+        title.textContent = def.title;
+        host.appendChild(title);
+        host.appendChild(
+          def.build(() => {
+            refresh();
+            if (onChange) onChange();
+          })
+        );
+      },
+    };
+  }
+
+  function createFieldRulesPanel(fid, f, opts = {}) {
+    ensureContentField(f);
+    const panel = document.createElement("div");
+    panel.className = "field-rules field-rules-dash compact-panel";
+    const detail = document.createElement("div");
+    detail.className = "dash-detail";
+    const key = opts.initialKey || "required";
+    const defs = getFieldRuleChipDefs(f);
+    const def = defs.find((d) => d.key === key) || defs[0];
+    const title = document.createElement("div");
+    title.className = "dash-detail-title";
+    title.textContent = def.title;
+    detail.appendChild(title);
+    detail.appendChild(
+      def.build(() => {
+        if (opts.onChange) opts.onChange();
+      })
+    );
+    panel.appendChild(detail);
     return panel;
   }
 
@@ -3336,9 +3436,9 @@
 
     // 內容欄位
     const fTable = document.createElement("table");
-    fTable.className = "mgmt-table content-fields-table";
+    fTable.className = "mgmt-table content-fields-table compact-fields";
     fTable.innerHTML =
-      "<thead><tr><th>field_id</th><th>label</th><th>type</th><th>default</th><th>rules</th><th></th></tr></thead>";
+      "<thead><tr><th>field</th><th>label</th><th>type</th><th>default</th><th>狀態</th></tr></thead>";
     const ftb = document.createElement("tbody");
 
     const rebuildContent = () => renderDesignEdit();
@@ -3350,9 +3450,28 @@
       tr.className = "content-field-row";
 
       const tdId = document.createElement("td");
-      tdId.dataset.label = "field_id";
+      tdId.dataset.label = "field";
       tdId.className = "field-id-cell";
-      tdId.textContent = fid;
+      const idRow = document.createElement("div");
+      idRow.className = "field-id-row";
+      const idText = document.createElement("span");
+      idText.className = "field-id-text";
+      idText.textContent = fid;
+      idRow.appendChild(idText);
+      idRow.appendChild(
+        createTrashIconBtn(() => {
+          if (!confirm(`刪除內容欄位「${fid}」？`)) return;
+          delete doc.fields[fid];
+          (doc.body?.paragraphs || []).forEach((para) => {
+            para.parts = (para.parts || []).filter(
+              (p) => !(p.t === "field" && p.name === fid)
+            );
+          });
+          persistContentField();
+          rebuildContent();
+        })
+      );
+      tdId.appendChild(idRow);
       tr.appendChild(tdId);
 
       const tdLabel = document.createElement("td");
@@ -3382,68 +3501,50 @@
       tr.appendChild(tdDef);
 
       const tdRules = document.createElement("td");
-      tdRules.dataset.label = "rules";
-      const rulesBtn = document.createElement("button");
-      rulesBtn.type = "button";
-      rulesBtn.className = "table-btn";
-      const summarizeRules = () => {
-        const bits = [];
-        if (f.required) bits.push("必填");
-        if (f.required_from_level != null && f.required_from_level !== "")
-          bits.push(`L≥${f.required_from_level}`);
-        if (f.required_when) bits.push("條件");
-        const acc = aclAccessSummary(f);
-        if (acc !== "權限 預設") bits.push(acc.replace(/^權限\s*/, ""));
-        rulesBtn.textContent = bits.length ? bits.join("·") : "規則";
-      };
-      summarizeRules();
-      tdRules.appendChild(rulesBtn);
-      tr.appendChild(tdRules);
-
-      const tdDel = document.createElement("td");
-      tdDel.dataset.label = "actions";
-      tdDel.className = "row-actions-cell";
-      const del = document.createElement("button");
-      del.type = "button";
-      del.className = "table-btn danger";
-      del.textContent = "刪除";
-      del.addEventListener("click", () => {
-        if (!confirm(`刪除內容欄位「${fid}」？`)) return;
-        delete doc.fields[fid];
-        (doc.body?.paragraphs || []).forEach((para) => {
-          para.parts = (para.parts || []).filter(
-            (p) => !(p.t === "field" && p.name === fid)
-          );
-        });
-        persistContentField();
-        rebuildContent();
-      });
-      tdDel.appendChild(del);
-      tr.appendChild(tdDel);
-      ftb.appendChild(tr);
+      tdRules.dataset.label = "狀態";
+      tdRules.className = "status-chips-cell";
 
       const trRules = document.createElement("tr");
       trRules.className = "content-field-rules-row";
       trRules.hidden = true;
       const tdPanel = document.createElement("td");
-      tdPanel.colSpan = 6;
+      tdPanel.colSpan = 5;
       tdPanel.dataset.label = "rules panel";
-      tdPanel.appendChild(createFieldRulesPanel(fid, f));
       trRules.appendChild(tdPanel);
-      ftb.appendChild(trRules);
 
-      rulesBtn.addEventListener("click", () => {
-        trRules.hidden = !trRules.hidden;
-        rulesBtn.classList.toggle("primary", !trRules.hidden);
-        summarizeRules();
+      let openKey = null;
+      const chipsApi = createFieldRuleChips(f, {
+        activeKey: null,
+        onSelect: (key, wasActive) => {
+          if (wasActive || openKey === key) {
+            openKey = null;
+            trRules.hidden = true;
+            tdPanel.replaceChildren();
+            chipsApi.setActive(null);
+            return;
+          }
+          openKey = key;
+          trRules.hidden = false;
+          chipsApi.setActive(key);
+          tdPanel.replaceChildren(
+            createFieldRulesPanel(fid, f, {
+              initialKey: key,
+              onChange: () => chipsApi.refresh(),
+            })
+          );
+        },
       });
+      tdRules.appendChild(chipsApi.el);
+      tr.appendChild(tdRules);
+      ftb.appendChild(tr);
+      ftb.appendChild(trRules);
     });
     fTable.appendChild(ftb);
     const fSec = sectionBlock("內容欄位（可新增／刪除）", fTable);
     const fNote = document.createElement("p");
     fNote.className = "sec-note";
     fNote.textContent =
-      "申請畫面填寫用（申請人、假別、日期…）。點「權限／必填」設定誰可看／可編、階段必填（依 ALR5）。系統簽核欄位不在此顯示。";
+      "狀態燈號＝必填／權限；點開細部。下拉可設「可空白」「可手填」。";
     const fScroll = fSec.querySelector(".table-scroll");
     fSec.insertBefore(fNote, fScroll || fTable);
     const addField = document.createElement("button");

@@ -10,6 +10,7 @@
 
 ## 場次
 
+- 2026-08-05 — 欄位列壓縮：燈號取代規則、垃圾桶、下拉可空白／手填 — 標籤：SEED、Approval、ALR5、內容欄位、UI — [sessions/2026-08-05-alr5-field-row-compact.md](sessions/2026-08-05-alr5-field-row-compact.md)
 - 2026-08-05 — Mail 設定改流程圖 — 標籤：SEED、Approval、ALR5、Mail、流程圖、UI — [sessions/2026-08-05-alr5-mail-flowchart.md](sessions/2026-08-05-alr5-mail-flowchart.md)
 - 2026-08-05 — 欄位權限合一板（拖拉區塊） — 標籤：SEED、Approval、ALR5、ACL、權限板、UI — [sessions/2026-08-05-alr5-acl-board.md](sessions/2026-08-05-alr5-acl-board.md)
 - 2026-08-05 — 欄位規則改純燈號（點開細部） — 標籤：SEED、Approval、ALR5、Rules、燈號、UI — [sessions/2026-08-05-alr5-field-rules-dash.md](sessions/2026-08-05-alr5-field-rules-dash.md)

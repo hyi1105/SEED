@@ -1622,6 +1622,62 @@ table.inkan-table td {
   font-size: 12px;
   white-space: nowrap;
 }
+.field-id-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+.field-id-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 650;
+}
+.icon-btn {
+  appearance: none;
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #d2caba;
+  border-radius: 8px;
+  background: #fffdf8;
+  color: #5a5348;
+  cursor: pointer;
+}
+.icon-btn.danger {
+  color: #a33;
+  border-color: #e0b8b8;
+  background: #fff8f8;
+}
+.icon-btn:hover {
+  background: #f3efe6;
+}
+.status-chips-cell {
+  vertical-align: top;
+}
+.row-chips {
+  justify-content: flex-start;
+}
+.dash-chip.mini {
+  padding: 3px 8px;
+  font-size: 10px;
+}
+.mini-row {
+  width: 100%;
+  margin-bottom: 2px;
+}
+.compact-panel .dash-detail {
+  margin-top: 0;
+}
+.compact-fields .cell-input {
+  font-size: 13px;
+}
 
 @media (max-width: 720px) {
   .view-tabs {
