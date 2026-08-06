@@ -5309,7 +5309,7 @@
   async function boot() {
     let seedDesign = null;
     try {
-      const res = await fetch("./document.json?v=design20", {
+      const res = await fetch("./document.json?v=design23", {
         cache: "no-store",
       });
       if (res.ok) seedDesign = await res.json();
@@ -5317,7 +5317,7 @@
       /* offline */
     }
     try {
-      const sr = await fetch("./alr5-standard.json?v=design20", {
+      const sr = await fetch("./alr5-standard.json?v=design23", {
         cache: "no-store",
       });
       if (sr.ok) alr5Standard = await sr.json();
@@ -5325,7 +5325,7 @@
       /* offline */
     }
     try {
-      const mr = await fetch("./ALR5標準互通.md?v=design20", {
+      const mr = await fetch("./ALR5標準互通.md?v=design23", {
         cache: "no-store",
       });
       if (mr.ok) alr5Markdown = await mr.text();
