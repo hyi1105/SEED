@@ -669,10 +669,19 @@ async function boot() {
   bindUi();
   refresh();
 
-  // Mobile: start with sheet open once, then user can collapse
+  // Mobile: keep map dominant; sheet starts collapsed
   if (window.matchMedia("(max-width: 899px)").matches) {
-    els.sheet.setAttribute("data-open", "true");
+    els.sheet.setAttribute("data-open", "false");
+    els.sheetToggle?.setAttribute("aria-expanded", "false");
   }
+
+  // Fit after layout/paint settles (mobile heights differ once sheet collapses)
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      fitCamera();
+      setTimeout(fitCamera, 80);
+    });
+  });
 }
 
 boot().catch((err) => {

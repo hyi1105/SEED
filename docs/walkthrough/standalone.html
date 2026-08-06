@@ -779,7 +779,7 @@ button:disabled {
           <div class="entities" id="lineage-canvas"></div>
         </div>
       </div>
-      <p class="map-hint" id="map-hint">單指拖地圖 · 雙指縮放 · 按住卡片標題列可拖動</p>
+      <p class="map-hint" id="map-hint">單指拖地圖 · 雙指縮放 · 長按卡片可拖動位置</p>
     </div>
 
     <section class="sheet" id="sheet" data-open="true">
@@ -823,6 +823,7 @@ button:disabled {
       </div>
     </section>
   </div>
+
   <script type="application/json" id="system-data">
 {
   "system": "離職單",
@@ -1748,10 +1749,19 @@ async function boot() {
   bindUi();
   refresh();
 
-  // Mobile: start with sheet open once, then user can collapse
+  // Mobile: keep map dominant; sheet starts collapsed
   if (window.matchMedia("(max-width: 899px)").matches) {
-    els.sheet.setAttribute("data-open", "true");
+    els.sheet.setAttribute("data-open", "false");
+    els.sheetToggle?.setAttribute("aria-expanded", "false");
   }
+
+  // Fit after layout/paint settles (mobile heights differ once sheet collapses)
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      fitCamera();
+      setTimeout(fitCamera, 80);
+    });
+  });
 }
 
 boot().catch((err) => {
