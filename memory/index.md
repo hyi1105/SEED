@@ -10,6 +10,7 @@
 
 ## 場次
 
+- 2026-08-06 — 地圖式儀表板＋JSON Schema／Skill（AI 產系統包） — 標籤：產品、儀表板、地圖、JSON、Skill — [sessions/2026-08-06-walkthrough-map-skill.md](sessions/2026-08-06-walkthrough-map-skill.md)
 - 2026-08-06 — 構想：情境式快速認識陌生系統（角色×情境×欄位高亮） — 標籤：產品、系統理解、資料血緣、情境、角色 — [sessions/2026-08-06-scenario-system-walkthrough.md](sessions/2026-08-06-scenario-system-walkthrough.md)
 - 2026-08-06 — 還原「流程圖唯一入口」改版（回到橢圓燈號＋內容欄位表） — 標籤：SEED、Approval、ALR5、還原、流程圖 — [sessions/2026-08-06-alr5-revert-flow-only.md](sessions/2026-08-06-alr5-revert-flow-only.md)
 - 2026-08-05 — 流程圖欄位節點改橢圓燈號風格（同上方材料列） — 標籤：SEED、Approval、ALR5、流程圖、欄位、UI — [sessions/2026-08-05-alr5-field-node-pill-style.md](sessions/2026-08-05-alr5-field-node-pill-style.md)

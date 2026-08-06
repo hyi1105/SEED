@@ -194,16 +194,28 @@ status: active
 - 認同此方向；優先強化「動作類型＋覆蓋熱圖＋跨角色接龍＋JSON 可攜」
 - 用語嚴格分開：角色 ≠ 情境 ≠ 步驟
 - 跨平台靠資料模型，不靠特定 UI 框架
+- **2026-08-06 追加：** 呈現改地圖儀表板（手機可拖可縮）；執行期 JSON；契約用 Schema + SKILL.md（先不要發明新語法）
 
 ## 待續
 
 - [x] 離職單 MVP 單頁（`docs/walkthrough/`）
+- [x] 地圖式拖拉／縮放儀表板
+- [x] schema.json + SKILL.md（AI 產 JSON）
+- [ ] 多系統切換（系統目錄）
+- [ ] 版面匯出／匯入 layout
 - [ ] 是否把此模型併入 ALR5「學習模式」
 - [ ] 補上原資料血緣圖檔到 assets
-- [ ] 再加第二個示範系統驗證 JSON 可攜
+- [ ] AI 依 skill 產第二個示範系統驗證契約
 
 ## MVP 實作（2026-08-06）
 
 - 路徑：`docs/walkthrough/`（`index.html` / `app.js` / `styles.css` / `system.json`）
 - 功能：角色／情境下拉、步驟清單、欄位與邊高亮、動作圖例、跨情境接龍、覆蓋熱圖（候選死欄位）
 - 示範死欄位：`人員主檔.舊識別證號`、`離職單主檔.傳真備註`
+
+## 地圖儀表板＋語言契約（同日追加）
+
+- 手機：地圖全螢幕＋底部可收合導覽面板；桌面：右欄面板
+- 單指拖地圖、雙指／滾輪縮放、拖卡片標題列重排；版面存 localStorage
+- [`schema.json`](../../docs/walkthrough/schema.json)＝文法；[`SKILL.md`](../../docs/walkthrough/SKILL.md)＝AI 寫作規範；`system.json`＝執行期
+- 單檔預覽：`docs/walkthrough/standalone.html`

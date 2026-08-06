@@ -1,0 +1,164 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hyi1105.github.io/SEED/walkthrough/schema.json",
+  "title": "System Walkthrough Pack",
+  "description": "情境式系統導覽的可攜資料包。網站播放器只消費此結構。",
+  "type": "object",
+  "required": ["system", "roles", "actions", "entities", "edges", "scenarios"],
+  "additionalProperties": false,
+  "properties": {
+    "system": {
+      "type": "string",
+      "minLength": 1,
+      "description": "系統顯示名稱，例如「離職單」。"
+    },
+    "subtitle": {
+      "type": "string",
+      "description": "一句話說明這個系統包在教什麼。"
+    },
+    "roles": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "label"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z][a-z0-9_-]*$" },
+          "label": { "type": "string" }
+        }
+      }
+    },
+    "actions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "label"],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "enum": ["write", "lookup", "sync", "auto", "validate", "approve", "notify"]
+          },
+          "label": { "type": "string" },
+          "color": { "type": "string" }
+        }
+      }
+    },
+    "entities": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "label", "kind"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z][a-z0-9_-]*$" },
+          "label": { "type": "string" },
+          "kind": { "type": "string", "enum": ["api", "table", "form", "service", "file"] },
+          "fields": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["id", "label"],
+              "additionalProperties": false,
+              "properties": {
+                "id": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+                "label": { "type": "string" },
+                "auto": { "type": "boolean" },
+                "note": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "edges": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "from", "to", "kind"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string" },
+          "from": {
+            "type": "string",
+            "description": "entityId 或 entityId.fieldId"
+          },
+          "to": {
+            "type": "string",
+            "description": "entityId 或 entityId.fieldId"
+          },
+          "kind": { "type": "string", "enum": ["sync", "lookup", "write", "notify"] },
+          "label": { "type": "string" }
+        }
+      }
+    },
+    "scenarios": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "role", "steps"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z][a-z0-9_-]*$" },
+          "title": { "type": "string" },
+          "role": { "type": "string" },
+          "next": { "type": "string", "description": "下一個情境 id，用於跨角色接龍" },
+          "summary": { "type": "string" },
+          "steps": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": ["n", "action", "fields", "note"],
+              "additionalProperties": false,
+              "properties": {
+                "n": { "type": "integer", "minimum": 1 },
+                "action": {
+                  "type": "string",
+                  "enum": ["write", "lookup", "sync", "auto", "validate", "approve", "notify"]
+                },
+                "fields": {
+                  "type": "array",
+                  "items": { "type": "string" },
+                  "description": "entityId.fieldId 列表"
+                },
+                "edges": {
+                  "type": "array",
+                  "items": { "type": "string" }
+                },
+                "note": { "type": "string" },
+                "risks": {
+                  "type": "array",
+                  "items": { "type": "string" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "layout": {
+      "type": "object",
+      "description": "地圖預設版面。使用者拖拉後可由播放器覆寫到本機。",
+      "additionalProperties": false,
+      "properties": {
+        "entities": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "required": ["x", "y"],
+            "properties": {
+              "x": { "type": "number" },
+              "y": { "type": "number" },
+              "w": { "type": "number" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -2,38 +2,62 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>離職單 · 情境導覽 — SEED</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
+  <title>離職單 · 地圖儀表板 — SEED</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=1" />
+  <link rel="stylesheet" href="styles.css?v=map2" />
 </head>
 <body>
-  <div class="page">
-    <header class="hero">
-      <a class="back" href="../index.html">← SEED</a>
-      <p class="eyebrow">System Walkthrough</p>
-      <h1 id="sys-title">離職單</h1>
-      <p class="lede" id="sys-sub">用角色 × 情境 × 步驟，走一遍資料怎麼動</p>
+  <div class="dash">
+    <header class="topbar">
+      <a class="back" href="../index.html">SEED</a>
+      <div class="brand">
+        <p class="eyebrow">Map Dashboard</p>
+        <h1 id="sys-title">離職單</h1>
+      </div>
+      <p class="top-sub" id="sys-sub">拖地圖、縮放、點步驟看欄位活起來</p>
     </header>
 
-    <section class="controls" aria-label="角色與情境">
-      <label class="ctrl">
-        <span>角色</span>
-        <select id="role-select"></select>
-      </label>
-      <label class="ctrl">
-        <span>情境</span>
-        <select id="scenario-select"></select>
-      </label>
-      <p class="scenario-summary" id="scenario-summary"></p>
-      <p class="chain" id="scenario-chain" hidden></p>
-    </section>
+    <div class="map-shell" id="map-shell">
+      <div class="map-toolbar" aria-label="地圖控制">
+        <button type="button" id="zoom-out" title="縮小">−</button>
+        <button type="button" id="zoom-in" title="放大">+</button>
+        <button type="button" id="zoom-fit" title="適合畫面">適合</button>
+        <button type="button" id="layout-reset" title="重設版面">重設版面</button>
+      </div>
+      <div class="legend float-legend" id="action-legend"></div>
+      <div class="viewport" id="viewport">
+        <div class="world" id="world">
+          <svg class="edges-svg" id="edges-svg" aria-hidden="true"></svg>
+          <div class="entities" id="lineage-canvas"></div>
+        </div>
+      </div>
+      <p class="map-hint" id="map-hint">單指拖地圖 · 雙指縮放 · 長按卡片可拖動位置</p>
+    </div>
 
-    <section class="stage" aria-label="導覽主區">
-      <aside class="steps-panel">
-        <div class="panel-head">
+    <section class="sheet" id="sheet" data-open="true">
+      <button type="button" class="sheet-handle" id="sheet-toggle" aria-expanded="true">
+        <span class="grip" aria-hidden="true"></span>
+        <span id="sheet-title">導覽面板</span>
+      </button>
+
+      <div class="sheet-body">
+        <div class="controls">
+          <label class="ctrl">
+            <span>角色</span>
+            <select id="role-select"></select>
+          </label>
+          <label class="ctrl">
+            <span>情境</span>
+            <select id="scenario-select"></select>
+          </label>
+        </div>
+        <p class="scenario-summary" id="scenario-summary"></p>
+        <p class="chain" id="scenario-chain" hidden></p>
+
+        <div class="steps-head">
           <h2>操作步驟</h2>
           <div class="step-nav">
             <button type="button" id="btn-prev" class="ghost">上一步</button>
@@ -41,31 +65,20 @@
           </div>
         </div>
         <ol class="steps" id="steps-list"></ol>
-        <div class="step-detail" id="step-detail">
+        <div class="step-detail">
           <p class="step-note" id="step-note">選擇情境後，逐步看欄位如何被點亮。</p>
           <ul class="risks" id="step-risks" hidden></ul>
         </div>
-      </aside>
 
-      <div class="canvas-wrap">
-        <div class="legend" id="action-legend" aria-label="動作圖例"></div>
-        <div class="canvas" id="lineage-canvas" aria-live="polite"></div>
+        <div class="coverage">
+          <h2>欄位覆蓋</h2>
+          <p class="hint">從未被步驟碰到的欄位＝候選死欄位。拖卡片只改版面，不改資料邏輯。</p>
+          <div class="coverage-grid" id="coverage-grid"></div>
+        </div>
       </div>
     </section>
-
-    <section class="coverage" aria-label="欄位覆蓋熱圖">
-      <div class="panel-head">
-        <h2>欄位覆蓋熱圖</h2>
-        <p class="hint">跑過目前角色下可見情境後，從未被步驟碰到的欄位會標成候選死欄位。</p>
-      </div>
-      <div class="coverage-grid" id="coverage-grid"></div>
-    </section>
-
-    <footer class="foot">
-      <p>資料來自 <code>system.json</code> · 換系統只需換 JSON，畫面可重用</p>
-      <p><a href="https://github.com/hyi1105/SEED/blob/main/memory/topics/scenario-system-walkthrough.md">構想筆記</a></p>
-    </footer>
   </div>
+
   <script type="application/json" id="system-data">
 {
   "system": "離職單",
@@ -309,9 +322,16 @@
         }
       ]
     }
-  ]
+  ],
+  "layout": {
+    "entities": {
+      "hr_api": { "x": 40, "y": 80, "w": 220 },
+      "personnel": { "x": 320, "y": 60, "w": 240 },
+      "resignation": { "x": 620, "y": 40, "w": 260 }
+    }
+  }
 }
   </script>
-  <script src="app.js?v=2" type="module"></script>
+  <script src="app.js?v=map2" type="module"></script>
 </body>
 </html>

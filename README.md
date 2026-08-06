@@ -16,13 +16,16 @@
 
 詳見 [`approval/README.md`](approval/README.md)、[`approval/學習約定.md`](approval/學習約定.md)。
 
-## 情境式系統導覽（MVP）
+## 情境式系統導覽（MVP → 地圖儀表板）
 
 用「角色 × 情境 × 步驟」高亮資料血緣，快速認識陌生系統：
 
 - **手機／公開：** https://hyi1105.github.io/SEED/walkthrough/（合併 `main` 後；檔在 `docs/walkthrough/`）
 - **單檔立刻可開（不必等 Pages）：** https://htmlpreview.github.io/?https://github.com/hyi1105/SEED/blob/main/docs/walkthrough/standalone.html
+- **AI 產資料契約：** [`docs/walkthrough/SKILL.md`](docs/walkthrough/SKILL.md) + [`docs/walkthrough/schema.json`](docs/walkthrough/schema.json)
 - 構想筆記：[`memory/topics/scenario-system-walkthrough.md`](memory/topics/scenario-system-walkthrough.md)
+
+操作：單指拖地圖、雙指縮放、按住表卡標題列可重排；底部面板選角色／情境／步驟。
 
 ## 第一次啟用 Pages（若網址 404／沒綠勾）
 
