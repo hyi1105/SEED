@@ -219,3 +219,7 @@ status: active
 - 單指拖地圖、雙指／滾輪縮放、拖卡片標題列重排；版面存 localStorage
 - [`schema.json`](../../docs/walkthrough/schema.json)＝文法；[`SKILL.md`](../../docs/walkthrough/SKILL.md)＝AI 寫作規範；`system.json`＝執行期
 - 單檔預覽：`docs/walkthrough/standalone.html`
+
+## 總願景連結（2026-08-06 睡前）
+
+互動地圖只是工具之一。完整目標見 [system-consultant-vision.md](./system-consultant-vision.md)：靜態簡報全覽、操作演示／影片（阿嬤路徑）、多來源統一成 JSON、進階顧問（漏情境／風險）。

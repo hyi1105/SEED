@@ -10,6 +10,7 @@
 
 ## 場次
 
+- 2026-08-06 — 睡前願景：靜態簡報＋操作影片＋系統架構顧問 — 標籤：產品、願景、簡報、影片、阿嬤、顧問 — [sessions/2026-08-06-consultant-vision-sleep.md](sessions/2026-08-06-consultant-vision-sleep.md)
 - 2026-08-06 — 地圖式儀表板＋JSON Schema／Skill（AI 產系統包） — 標籤：產品、儀表板、地圖、JSON、Skill — [sessions/2026-08-06-walkthrough-map-skill.md](sessions/2026-08-06-walkthrough-map-skill.md)
 - 2026-08-06 — 構想：情境式快速認識陌生系統（角色×情境×欄位高亮） — 標籤：產品、系統理解、資料血緣、情境、角色 — [sessions/2026-08-06-scenario-system-walkthrough.md](sessions/2026-08-06-scenario-system-walkthrough.md)
 - 2026-08-06 — 還原「流程圖唯一入口」改版（回到橢圓燈號＋內容欄位表） — 標籤：SEED、Approval、ALR5、還原、流程圖 — [sessions/2026-08-06-alr5-revert-flow-only.md](sessions/2026-08-06-alr5-revert-flow-only.md)
@@ -88,6 +89,7 @@
 
 ## 主題
 
+- **產品願景：系統理解工具箱 → 系統架構顧問**— [topics/system-consultant-vision.md](topics/system-consultant-vision.md)
 - **情境式系統理解（角色×情境×欄位逐步高亮）**— [topics/scenario-system-walkthrough.md](topics/scenario-system-walkthrough.md)
 - **ALR5：系統欄位（Creator／Approval_n／step）**— [topics/alr5-system-fields.md](topics/alr5-system-fields.md)
 - **ALR5：Form 版本、環境與發布**— [topics/alr5-env-versioning-publish.md](topics/alr5-env-versioning-publish.md)
