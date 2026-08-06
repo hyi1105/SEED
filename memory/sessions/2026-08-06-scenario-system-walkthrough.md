@@ -30,5 +30,6 @@ status: active
 
 ## 待續
 
-- 是否做離職單 MVP 單頁播放器
-- 是否與 ALR5 學習視圖合併
+- [x] 離職單 MVP 單頁播放器（`docs/walkthrough/`）
+- [ ] 是否與 ALR5 學習視圖合併
+- [ ] 使用者看效果後的調整意見

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>離職單 · 情境導覽 — SEED</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css?v=1" />
+</head>
+<body>
+  <div class="page">
+    <header class="hero">
+      <a class="back" href="../index.html">← SEED</a>
+      <p class="eyebrow">System Walkthrough</p>
+      <h1 id="sys-title">離職單</h1>
+      <p class="lede" id="sys-sub">用角色 × 情境 × 步驟，走一遍資料怎麼動</p>
+    </header>
+
+    <section class="controls" aria-label="角色與情境">
+      <label class="ctrl">
+        <span>角色</span>
+        <select id="role-select"></select>
+      </label>
+      <label class="ctrl">
+        <span>情境</span>
+        <select id="scenario-select"></select>
+      </label>
+      <p class="scenario-summary" id="scenario-summary"></p>
+      <p class="chain" id="scenario-chain" hidden></p>
+    </section>
+
+    <section class="stage" aria-label="導覽主區">
+      <aside class="steps-panel">
+        <div class="panel-head">
+          <h2>操作步驟</h2>
+          <div class="step-nav">
+            <button type="button" id="btn-prev" class="ghost">上一步</button>
+            <button type="button" id="btn-next" class="primary">下一步</button>
+          </div>
+        </div>
+        <ol class="steps" id="steps-list"></ol>
+        <div class="step-detail" id="step-detail">
+          <p class="step-note" id="step-note">選擇情境後，逐步看欄位如何被點亮。</p>
+          <ul class="risks" id="step-risks" hidden></ul>
+        </div>
+      </aside>
+
+      <div class="canvas-wrap">
+        <div class="legend" id="action-legend" aria-label="動作圖例"></div>
+        <div class="canvas" id="lineage-canvas" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <section class="coverage" aria-label="欄位覆蓋熱圖">
+      <div class="panel-head">
+        <h2>欄位覆蓋熱圖</h2>
+        <p class="hint">跑過目前角色下可見情境後，從未被步驟碰到的欄位會標成候選死欄位。</p>
+      </div>
+      <div class="coverage-grid" id="coverage-grid"></div>
+    </section>
+
+    <footer class="foot">
+      <p>資料來自 <code>system.json</code> · 換系統只需換 JSON，畫面可重用</p>
+      <p><a href="https://github.com/hyi1105/SEED/blob/main/memory/topics/scenario-system-walkthrough.md">構想筆記</a></p>
+    </footer>
+  </div>
+  <script src="app.js?v=1" type="module"></script>
+</body>
+</html>

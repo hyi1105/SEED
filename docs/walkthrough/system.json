@@ -1,0 +1,244 @@
+{
+  "system": "離職單",
+  "subtitle": "用角色 × 情境 × 步驟，走一遍資料怎麼動",
+  "roles": [
+    { "id": "employee", "label": "員工" },
+    { "id": "manager", "label": "主管" },
+    { "id": "hr", "label": "HR" }
+  ],
+  "actions": [
+    { "id": "write", "label": "人手填寫", "color": "write" },
+    { "id": "lookup", "label": "查閱帶出", "color": "lookup" },
+    { "id": "sync", "label": "同步寫入", "color": "sync" },
+    { "id": "auto", "label": "自動產生", "color": "auto" },
+    { "id": "validate", "label": "檢核", "color": "validate" },
+    { "id": "approve", "label": "簽核", "color": "approve" },
+    { "id": "notify", "label": "通知", "color": "notify" }
+  ],
+  "entities": [
+    {
+      "id": "hr_api",
+      "label": "人事 API",
+      "kind": "api",
+      "fields": [
+        { "id": "payload", "label": "人員資料包" }
+      ]
+    },
+    {
+      "id": "personnel",
+      "label": "人員主檔",
+      "kind": "table",
+      "fields": [
+        { "id": "id", "label": "ID" },
+        { "id": "name", "label": "姓名" },
+        { "id": "dept", "label": "部門" },
+        { "id": "status", "label": "在職狀態" },
+        { "id": "legacy_badge", "label": "舊識別證號", "note": "疑似舊欄位" }
+      ]
+    },
+    {
+      "id": "resignation",
+      "label": "離職單主檔",
+      "kind": "table",
+      "fields": [
+        { "id": "id", "label": "ID", "auto": true },
+        { "id": "name", "label": "姓名" },
+        { "id": "dept", "label": "部門" },
+        { "id": "reason", "label": "事由" },
+        { "id": "last_day", "label": "最後上班日" },
+        { "id": "manager_comment", "label": "主管意見" },
+        { "id": "hr_close_date", "label": "HR 結案日" },
+        { "id": "status", "label": "單據狀態" },
+        { "id": "old_fax", "label": "傳真備註", "note": "疑似舊欄位" }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "e-sync-api",
+      "from": "hr_api.payload",
+      "to": "personnel",
+      "kind": "sync",
+      "label": "api.pyc"
+    },
+    {
+      "id": "e-lookup-name",
+      "from": "personnel.id",
+      "to": "resignation.name",
+      "kind": "lookup",
+      "label": "lookup (人員主檔.ID)"
+    },
+    {
+      "id": "e-lookup-dept",
+      "from": "personnel.dept",
+      "to": "resignation.dept",
+      "kind": "lookup",
+      "label": "lookup (人員主檔.部門)"
+    },
+    {
+      "id": "e-status-check",
+      "from": "personnel.status",
+      "to": "resignation.status",
+      "kind": "lookup",
+      "label": "在職狀態檢核"
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "voluntary-resign",
+      "title": "想離職了",
+      "role": "employee",
+      "next": "manager-approve",
+      "summary": "員工開立自願離職單，系統帶出部門後送出。",
+      "steps": [
+        {
+          "n": 1,
+          "action": "write",
+          "fields": ["resignation.name"],
+          "note": "在離職單填寫姓名（實際常以人員 ID 選人）。"
+        },
+        {
+          "n": 2,
+          "action": "lookup",
+          "fields": ["personnel.id", "personnel.dept", "resignation.dept"],
+          "edges": ["e-lookup-name", "e-lookup-dept"],
+          "note": "依人員鍵查主檔，自動帶出部門到離職單。"
+        },
+        {
+          "n": 3,
+          "action": "write",
+          "fields": ["resignation.reason", "resignation.last_day"],
+          "note": "填寫事由（自願離職）與最後上班日。"
+        },
+        {
+          "n": 4,
+          "action": "validate",
+          "fields": ["personnel.status", "resignation.status"],
+          "edges": ["e-status-check"],
+          "note": "檢核在職才能開單；單據狀態改為「待主管簽核」。",
+          "risks": ["若主檔同步延遲，可能誤擋或誤放"]
+        },
+        {
+          "n": 5,
+          "action": "auto",
+          "fields": ["resignation.id"],
+          "note": "送出時系統自動產生離職單流水號。"
+        },
+        {
+          "n": 6,
+          "action": "notify",
+          "fields": ["resignation.status"],
+          "note": "通知直屬主管有待簽案件。"
+        }
+      ]
+    },
+    {
+      "id": "parental-leave",
+      "title": "育嬰留停（需填離職單）",
+      "role": "employee",
+      "next": "manager-approve",
+      "summary": "流程與自願離職類似，但事由為育嬰留停。",
+      "steps": [
+        {
+          "n": 1,
+          "action": "write",
+          "fields": ["resignation.name"],
+          "note": "選取本人／填寫姓名。"
+        },
+        {
+          "n": 2,
+          "action": "lookup",
+          "fields": ["personnel.dept", "resignation.dept"],
+          "edges": ["e-lookup-dept"],
+          "note": "自動帶出部門。"
+        },
+        {
+          "n": 3,
+          "action": "write",
+          "fields": ["resignation.reason", "resignation.last_day"],
+          "note": "事由選「育嬰留停」，填最後上班日。",
+          "risks": ["與真正離職共用主檔，報表易混在一起"]
+        },
+        {
+          "n": 4,
+          "action": "auto",
+          "fields": ["resignation.id", "resignation.status"],
+          "note": "產生單號，狀態進入待簽。"
+        },
+        {
+          "n": 5,
+          "action": "notify",
+          "fields": ["resignation.status"],
+          "note": "通知主管簽核。"
+        }
+      ]
+    },
+    {
+      "id": "manager-approve",
+      "title": "主管簽核離職單",
+      "role": "manager",
+      "next": "hr-close",
+      "summary": "主管檢視部門與事由，填意見後核准。",
+      "steps": [
+        {
+          "n": 1,
+          "action": "lookup",
+          "fields": ["resignation.name", "resignation.dept", "resignation.reason", "resignation.last_day"],
+          "note": "開啟待簽單，檢視員工帶出的欄位。"
+        },
+        {
+          "n": 2,
+          "action": "write",
+          "fields": ["resignation.manager_comment"],
+          "note": "填寫主管意見。"
+        },
+        {
+          "n": 3,
+          "action": "approve",
+          "fields": ["resignation.status"],
+          "note": "核准後狀態改為「待 HR 結案」。"
+        },
+        {
+          "n": 4,
+          "action": "notify",
+          "fields": ["resignation.status"],
+          "note": "通知 HR 處理結案。"
+        }
+      ]
+    },
+    {
+      "id": "hr-close",
+      "title": "HR 結案並同步主檔",
+      "role": "hr",
+      "summary": "HR 確認後結案，並把在職狀態同步回人員主檔。",
+      "steps": [
+        {
+          "n": 1,
+          "action": "lookup",
+          "fields": ["resignation.name", "resignation.dept", "resignation.manager_comment", "personnel.status"],
+          "note": "對照離職單與目前主檔在職狀態。"
+        },
+        {
+          "n": 2,
+          "action": "sync",
+          "fields": ["hr_api.payload", "personnel.id", "personnel.name", "personnel.dept", "personnel.status"],
+          "edges": ["e-sync-api"],
+          "note": "必要時先跑 api.pyc，確保主檔最新。",
+          "risks": ["同步失敗時結案與主檔會不一致"]
+        },
+        {
+          "n": 3,
+          "action": "write",
+          "fields": ["resignation.hr_close_date", "resignation.status", "personnel.status"],
+          "note": "填結案日；離職單結案；主檔在職狀態改為離職／留停。"
+        },
+        {
+          "n": 4,
+          "action": "notify",
+          "fields": ["resignation.status"],
+          "note": "通知申請人結案完成。"
+        }
+      ]
+    }
+  ]
+}

@@ -197,6 +197,13 @@ status: active
 
 ## 待續
 
-- [ ] 是否立刻做離職單 MVP 單頁（Pages／docs）
+- [x] 離職單 MVP 單頁（`docs/walkthrough/`）
 - [ ] 是否把此模型併入 ALR5「學習模式」
 - [ ] 補上原資料血緣圖檔到 assets
+- [ ] 再加第二個示範系統驗證 JSON 可攜
+
+## MVP 實作（2026-08-06）
+
+- 路徑：`docs/walkthrough/`（`index.html` / `app.js` / `styles.css` / `system.json`）
+- 功能：角色／情境下拉、步驟清單、欄位與邊高亮、動作圖例、跨情境接龍、覆蓋熱圖（候選死欄位）
+- 示範死欄位：`人員主檔.舊識別證號`、`離職單主檔.傳真備註`

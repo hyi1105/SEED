@@ -16,6 +16,14 @@
 
 詳見 [`approval/README.md`](approval/README.md)、[`approval/學習約定.md`](approval/學習約定.md)。
 
+## 情境式系統導覽（MVP）
+
+用「角色 × 情境 × 步驟」高亮資料血緣，快速認識陌生系統：
+
+- **手機／公開：** https://hyi1105.github.io/SEED/walkthrough/（合併 `main` 後；檔在 `docs/walkthrough/`）
+- **臨時預覽：** https://raw.githack.com/hyi1105/SEED/cursor/scenario-system-walkthrough-f268/docs/walkthrough/index.html
+- 構想筆記：[`memory/topics/scenario-system-walkthrough.md`](memory/topics/scenario-system-walkthrough.md)
+
 ## 第一次啟用 Pages（若網址 404／沒綠勾）
 
 **先可看的臨時網址（不必等 Pages）：**  
