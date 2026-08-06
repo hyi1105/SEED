@@ -8,21 +8,35 @@ const ACTION_COLORS = {
   notify: "var(--notify)",
 };
 
+const MODE_COPY = {
+  map: { eyebrow: "Map Dashboard", hint: "拖地圖、縮放，看欄位怎麼連" },
+  slide: { eyebrow: "Paper Slide", hint: "一情境一張作業紙，①②③ 照順序填" },
+  demo: { eyebrow: "Live Demo", hint: "模擬真人填寫，阿嬤照做就會" },
+};
+
 const WORLD = { w: 1400, h: 900 };
 
 const state = {
   data: null,
+  mode: "map",
   roleId: null,
   scenarioId: null,
   stepIndex: 0,
   layout: {},
   cam: { x: 40, y: 40, scale: 1 },
   hintHidden: false,
+  paperValues: {},
+  demo: {
+    playing: false,
+    timer: null,
+    token: 0,
+  },
 };
 
 const els = {
   title: document.getElementById("sys-title"),
   sub: document.getElementById("sys-sub"),
+  modeEyebrow: document.getElementById("mode-eyebrow"),
   role: document.getElementById("role-select"),
   scenario: document.getElementById("scenario-select"),
   summary: document.getElementById("scenario-summary"),
@@ -33,6 +47,7 @@ const els = {
   legend: document.getElementById("action-legend"),
   canvas: document.getElementById("lineage-canvas"),
   coverage: document.getElementById("coverage-grid"),
+  coverageBlock: document.getElementById("coverage-block"),
   prev: document.getElementById("btn-prev"),
   next: document.getElementById("btn-next"),
   viewport: document.getElementById("viewport"),
@@ -40,6 +55,15 @@ const els = {
   sheet: document.getElementById("sheet"),
   sheetToggle: document.getElementById("sheet-toggle"),
   mapHint: document.getElementById("map-hint"),
+  viewMap: document.getElementById("view-map"),
+  viewPaper: document.getElementById("view-paper"),
+  paperForm: document.getElementById("paper-form"),
+  paperGuide: document.getElementById("paper-guide"),
+  paperCaption: document.getElementById("paper-caption"),
+  demoControls: document.getElementById("demo-controls"),
+  demoPlay: document.getElementById("demo-play"),
+  demoRestart: document.getElementById("demo-restart"),
+  demoLive: document.getElementById("demo-live"),
 };
 
 function storageKey() {
@@ -54,6 +78,13 @@ function roleLabel(id) {
   return state.data.roles.find((r) => r.id === id)?.label ?? id;
 }
 
+function fieldMeta(ref) {
+  const [entityId, fieldId] = ref.split(".");
+  const entity = state.data.entities.find((e) => e.id === entityId);
+  const field = entity?.fields?.find((f) => f.id === fieldId);
+  return { entityId, fieldId, entity, field, label: field?.label || fieldId };
+}
+
 function scenariosForRole(roleId) {
   return state.data.scenarios.filter((s) => s.role === roleId);
 }
@@ -63,8 +94,11 @@ function currentScenario() {
 }
 
 function currentStep() {
-  const sc = currentScenario();
-  return sc?.steps?.[state.stepIndex] ?? null;
+  return currentScenario()?.steps?.[state.stepIndex] ?? null;
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function defaultLayout() {
@@ -84,8 +118,7 @@ function loadLayout() {
   try {
     const raw = localStorage.getItem(storageKey());
     if (raw) {
-      const parsed = JSON.parse(raw);
-      state.layout = { ...defaultLayout(), ...parsed };
+      state.layout = { ...defaultLayout(), ...JSON.parse(raw) };
       return;
     }
   } catch (_) {
@@ -108,9 +141,10 @@ function clampScale(s) {
 }
 
 function fitCamera() {
+  if (!els.viewport) return;
   const vp = els.viewport.getBoundingClientRect();
   const ids = Object.keys(state.layout);
-  if (!ids.length) return;
+  if (!ids.length || vp.width < 10) return;
   let minX = Infinity;
   let minY = Infinity;
   let maxX = -Infinity;
@@ -198,7 +232,7 @@ function renderCanvasStructure() {
 
   requestAnimationFrame(() => {
     drawEdges();
-    fitCamera();
+    if (state.mode === "map") fitCamera();
   });
 }
 
@@ -234,7 +268,6 @@ function drawEdges() {
   svg.setAttribute("viewBox", `0 0 ${WORLD.w} ${WORLD.h}`);
   svg.setAttribute("width", String(WORLD.w));
   svg.setAttribute("height", String(WORLD.h));
-
   svg.innerHTML = state.data.edges
     .map((edge) => {
       const from = resolveEdgeEndpoint(edge.from, "right");
@@ -242,14 +275,12 @@ function drawEdges() {
       if (!from || !to) return "";
       const midX = (from.x + to.x) / 2;
       const d = `M ${from.x} ${from.y} C ${midX} ${from.y}, ${midX} ${to.y}, ${to.x} ${to.y}`;
-      const labelX = midX;
       const labelY = (from.y + to.y) / 2 - 8;
       return `<path class="edge-path" data-edge="${edge.id}" d="${d}" />
-        <text class="edge-label" data-edge-label="${edge.id}" x="${labelX}" y="${labelY}" text-anchor="middle">${edge.label || ""}</text>`;
+        <text class="edge-label" data-edge-label="${edge.id}" x="${midX}" y="${labelY}" text-anchor="middle">${edge.label || ""}</text>`;
     })
     .join("");
-
-  applyHighlight();
+  applyMapHighlight();
 }
 
 function renderSteps() {
@@ -290,15 +321,15 @@ function renderSteps() {
   els.next.disabled = state.stepIndex >= sc.steps.length - 1;
 }
 
-function applyHighlight() {
+function applyMapHighlight() {
   const step = currentStep();
   const hotFields = new Set(step?.fields ?? []);
   const hotEdges = new Set(step?.edges ?? []);
   const color = ACTION_COLORS[step?.action] ?? "var(--glow)";
-  els.canvas.style.setProperty("--active", color);
+  els.canvas?.style.setProperty("--active", color);
   document.getElementById("edges-svg")?.style.setProperty("--active", color);
 
-  els.canvas.querySelectorAll(".field").forEach((node) => {
+  els.canvas?.querySelectorAll(".field").forEach((node) => {
     const id = node.getAttribute("data-field");
     const on = hotFields.has(id);
     node.classList.toggle("hot", on);
@@ -306,23 +337,26 @@ function applyHighlight() {
   });
 
   document.querySelectorAll(".edge-path").forEach((node) => {
-    const id = node.getAttribute("data-edge");
-    node.classList.toggle("hot", hotEdges.has(id));
+    node.classList.toggle("hot", hotEdges.has(node.getAttribute("data-edge")));
   });
   document.querySelectorAll(".edge-label").forEach((node) => {
-    const id = node.getAttribute("data-edge-label");
-    node.classList.toggle("hot", hotEdges.has(id));
+    node.classList.toggle(
+      "hot",
+      hotEdges.has(node.getAttribute("data-edge-label"))
+    );
   });
+}
 
-  if (step) {
-    els.note.textContent = step.note;
-    if (step.risks?.length) {
-      els.risks.hidden = false;
-      els.risks.innerHTML = step.risks.map((r) => `<li>風險：${r}</li>`).join("");
-    } else {
-      els.risks.hidden = true;
-      els.risks.innerHTML = "";
-    }
+function applyStepDetail() {
+  const step = currentStep();
+  if (!step) return;
+  els.note.textContent = step.note;
+  if (step.risks?.length) {
+    els.risks.hidden = false;
+    els.risks.innerHTML = step.risks.map((r) => `<li>風險：${r}</li>`).join("");
+  } else {
+    els.risks.hidden = true;
+    els.risks.innerHTML = "";
   }
 }
 
@@ -340,11 +374,8 @@ function touchedFieldsForScenarios(scenarios) {
 }
 
 function renderCoverage() {
-  const allScenarios = state.data.scenarios;
-  const touchedAll = touchedFieldsForScenarios(allScenarios);
-  const roleScenarios = scenariosForRole(state.roleId);
-  const touchedRole = touchedFieldsForScenarios(roleScenarios);
-
+  const touchedAll = touchedFieldsForScenarios(state.data.scenarios);
+  const touchedRole = touchedFieldsForScenarios(scenariosForRole(state.roleId));
   els.coverage.innerHTML = state.data.entities
     .map((entity) => {
       const rows = (entity.fields || [])
@@ -373,43 +404,377 @@ function renderCoverage() {
     .join("");
 }
 
-function refresh() {
+/* ---------- Paper / Demo ---------- */
+
+function fieldMarks(ref) {
+  const sc = currentScenario();
+  if (!sc) return [];
+  return sc.steps
+    .filter((s) => (s.fields || []).includes(ref))
+    .map((s) => ({ n: s.n, action: s.action }));
+}
+
+function orderedPaperFields() {
+  const sc = currentScenario();
+  if (!sc) return [];
+  const seen = new Set();
+  const ordered = [];
+  for (const step of sc.steps) {
+    for (const ref of step.fields || []) {
+      if (seen.has(ref)) continue;
+      seen.add(ref);
+      ordered.push(ref);
+    }
+  }
+  return ordered;
+}
+
+function groupFieldsByEntity(refs) {
+  const groups = [];
+  const index = new Map();
+  for (const ref of refs) {
+    const { entityId, entity } = fieldMeta(ref);
+    if (!index.has(entityId)) {
+      index.set(entityId, groups.length);
+      groups.push({ entity, refs: [] });
+    }
+    groups[index.get(entityId)].refs.push(ref);
+  }
+  return groups;
+}
+
+function resetPaperValues(uptoStepInclusive = -1) {
+  const sc = currentScenario();
+  state.paperValues = { ...(sc?.demoSeed || {}) };
+  if (!sc) return;
+  sc.steps.forEach((step, idx) => {
+    if (idx <= uptoStepInclusive && step.fill) {
+      Object.assign(state.paperValues, step.fill);
+    }
+  });
+}
+
+function slideValues() {
+  const sc = currentScenario();
+  const values = {
+    ...(state.data.demo?.values || {}),
+    ...(sc?.demoValues || {}),
+    ...(sc?.demoSeed || {}),
+  };
+  sc?.steps?.forEach((step) => {
+    if (step.fill) Object.assign(values, step.fill);
+  });
+  return values;
+}
+
+function renderPaper() {
+  const sc = currentScenario();
+  if (!sc || !els.paperForm) return;
+
+  const refs = orderedPaperFields();
+  const groups = groupFieldsByEntity(refs);
+  const persona =
+    state.data.demo?.persona?.[sc.role] || roleLabel(sc.role);
+  const values =
+    state.mode === "slide" ? slideValues() : state.paperValues;
+
+  els.paperCaption.textContent =
+    state.mode === "demo"
+      ? `演示中：${roleLabel(sc.role)} · ${sc.title}`
+      : `簡報全覽：${roleLabel(sc.role)} · ${sc.title}`;
+
+  els.paperForm.innerHTML = `
+    <div class="paper-head">
+      <h2>${state.data.system}作業紙</h2>
+      <p class="paper-meta">${persona}　／　情境：${sc.title}</p>
+    </div>
+    ${groups
+      .map((g) => {
+        const rows = g.refs
+          .map((ref) => {
+            const meta = fieldMeta(ref);
+            const marks = fieldMarks(ref)
+              .map((m) => `<span class="mark ${m.action}">${m.n}</span>`)
+              .join("");
+            const raw = values[ref];
+            const shown =
+              raw == null || raw === ""
+                ? `<span class="empty-ph">（尚未填）</span>`
+                : escapeHtml(String(raw));
+            return `<div class="paper-row" data-paper-field="${ref}">
+              <div class="step-marks">${marks || "<span></span>"}</div>
+              <div class="paper-label">${meta.label}</div>
+              <div class="paper-value ${raw ? "" : "empty"}" data-paper-value="${ref}">${shown}</div>
+            </div>`;
+          })
+          .join("");
+        return `<div class="paper-section-title">${g.entity?.label || ""}</div>${rows}`;
+      })
+      .join("")}
+  `;
+
+  els.paperGuide.innerHTML = `
+    <h3>填寫順序（紙本感）</h3>
+    ${sc.steps
+      .map((step, idx) => {
+        const color = ACTION_COLORS[step.action];
+        return `<div class="guide-item ${idx === state.stepIndex ? "active" : ""}" data-step="${idx}" style="--active:${color}">
+          <span class="mark ${step.action}">${step.n}</span>
+          <div>
+            <div class="g-note">${escapeHtml(step.note)}</div>
+            <span class="g-action">${actionLabel(step.action)} · ${(step.fields || []).map((f) => fieldMeta(f).label).join("、")}</span>
+          </div>
+        </div>`;
+      })
+      .join("")}
+  `;
+
+  applyPaperHighlight();
+}
+
+function escapeHtml(str) {
+  return str
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
+}
+
+function applyPaperHighlight() {
+  const step = currentStep();
+  if (!step) return;
+  const hot = new Set(step.fields || []);
+  const color = ACTION_COLORS[step.action] ?? "var(--brand)";
+  els.paperForm?.style.setProperty("--active", color);
+  els.paperGuide?.style.setProperty("--active", color);
+
+  els.paperForm?.querySelectorAll(".paper-row").forEach((row) => {
+    const ref = row.getAttribute("data-paper-field");
+    const on = hot.has(ref);
+    row.classList.toggle("hot", on);
+    row.classList.toggle(
+      "dim",
+      state.mode === "demo" && Boolean(step) && !on
+    );
+    row.classList.toggle(
+      "circled",
+      state.mode === "demo" &&
+        on &&
+        ["lookup", "auto", "validate", "approve", "sync"].includes(step.action)
+    );
+  });
+
+  els.paperGuide?.querySelectorAll(".guide-item").forEach((item) => {
+    const idx = Number(item.getAttribute("data-step"));
+    item.classList.toggle("active", idx === state.stepIndex);
+  });
+}
+
+async function typeIntoField(ref, text, token) {
+  const node = els.paperForm?.querySelector(`[data-paper-value="${ref}"]`);
+  if (!node) {
+    state.paperValues[ref] = text;
+    return;
+  }
+  node.classList.remove("empty");
+  let out = "";
+  for (const ch of String(text)) {
+    if (token !== state.demo.token) return;
+    out += ch;
+    node.innerHTML = `${escapeHtml(out)}<span class="caret"></span>`;
+    await sleep(42 + Math.random() * 36);
+  }
+  node.textContent = text;
+  state.paperValues[ref] = text;
+}
+
+async function popIntoField(ref, text, token) {
+  const node = els.paperForm?.querySelector(`[data-paper-value="${ref}"]`);
+  state.paperValues[ref] = text;
+  if (!node) return;
+  node.classList.remove("empty");
+  node.textContent = text;
+  const row = node.closest(".paper-row");
+  row?.classList.add("circled");
+  await sleep(280);
+  if (token !== state.demo.token) return;
+}
+
+async function playDemoStep(step, token) {
+  const fills = step.fill || {};
+  const action = step.action;
+  setDemoLive(`${step.n}. ${step.note}`);
+
+  if (action === "write") {
+    for (const ref of step.fields || []) {
+      if (token !== state.demo.token) return;
+      const val = fills[ref] ?? state.data.demo?.values?.[ref] ?? "";
+      await typeIntoField(ref, val, token);
+    }
+  } else {
+    for (const ref of step.fields || []) {
+      if (token !== state.demo.token) return;
+      const val = fills[ref] ?? state.data.demo?.values?.[ref] ?? "";
+      await popIntoField(ref, val, token);
+    }
+  }
+  applyPaperHighlight();
+  await sleep(520);
+}
+
+async function runDemo() {
+  const sc = currentScenario();
+  if (!sc) return;
+  stopDemo();
+  const token = ++state.demo.token;
+  state.demo.playing = true;
+  els.demoPlay.textContent = "⏸ 演示中…";
+  els.demoPlay.disabled = true;
+  resetPaperValues(-1);
+  renderPaper();
+  setDemoLive("開始演示：請看作業紙上的欄位");
+
+  for (let i = 0; i < sc.steps.length; i++) {
+    if (token !== state.demo.token) return;
+    state.stepIndex = i;
+    renderSteps();
+    applyStepDetail();
+    applyPaperHighlight();
+    await playDemoStep(sc.steps[i], token);
+  }
+
+  if (token === state.demo.token) {
+    setDemoLive("完成！這張單已依順序填完，可換下一個情境。");
+    state.demo.playing = false;
+    els.demoPlay.textContent = "▶ 再播一次";
+    els.demoPlay.disabled = false;
+  }
+}
+
+function stopDemo() {
+  state.demo.token += 1;
+  state.demo.playing = false;
+  if (els.demoPlay) {
+    els.demoPlay.textContent = "▶ 播放演示";
+    els.demoPlay.disabled = false;
+  }
+}
+
+function setDemoLive(text) {
+  if (!els.demoLive) return;
+  els.demoLive.hidden = !text;
+  els.demoLive.textContent = text || "";
+}
+
+function setMode(mode) {
+  state.mode = mode;
+  stopDemo();
+  document.querySelectorAll(".mode-tab").forEach((btn) => {
+    const on = btn.getAttribute("data-mode") === mode;
+    btn.classList.toggle("active", on);
+    btn.setAttribute("aria-selected", on ? "true" : "false");
+  });
+
+  const isMap = mode === "map";
+  const isPaper = mode === "slide" || mode === "demo";
+  els.viewMap.hidden = !isMap;
+  els.viewMap.dataset.active = isMap ? "true" : "false";
+  els.viewPaper.hidden = !isPaper;
+  els.viewPaper.dataset.active = isPaper ? "true" : "false";
+  els.demoControls.hidden = mode !== "demo";
+  els.demoLive.hidden = mode !== "demo";
+  if (els.coverageBlock) {
+    els.coverageBlock.style.display = mode === "map" ? "" : "none";
+  }
+
+  const copy = MODE_COPY[mode];
+  if (els.modeEyebrow) els.modeEyebrow.textContent = copy.eyebrow;
+  if (els.sub) els.sub.textContent = copy.hint;
+
+  if (isMap) {
+    requestAnimationFrame(() => {
+      drawEdges();
+      fitCamera();
+    });
+  } else if (mode === "slide") {
+    renderPaper();
+  } else if (mode === "demo") {
+    resetPaperValues(-1);
+    renderPaper();
+    setDemoLive("按「播放演示」，看系統一步步幫你填");
+  }
+
+  refresh(false);
+}
+
+function refresh(resetPaper = true) {
   fillScenarios();
   renderSteps();
-  applyHighlight();
+  applyStepDetail();
+  applyMapHighlight();
   renderCoverage();
+  if (state.mode === "slide") {
+    renderPaper();
+  } else if (state.mode === "demo") {
+    if (resetPaper && !state.demo.playing) {
+      resetPaperValues(state.stepIndex - 1);
+      // apply current step fills for manual step browsing
+      const step = currentStep();
+      if (step?.fill) Object.assign(state.paperValues, step.fill);
+      renderPaper();
+    } else {
+      applyPaperHighlight();
+    }
+  }
 }
 
 function setRole(roleId) {
+  stopDemo();
   state.roleId = roleId;
   state.stepIndex = 0;
-  refresh();
+  refresh(true);
 }
 
 function setScenario(scenarioId) {
+  stopDemo();
   state.scenarioId = scenarioId;
   const sc = currentScenario();
   if (sc) state.roleId = sc.role;
   els.role.value = state.roleId;
   state.stepIndex = 0;
-  refresh();
+  refresh(true);
 }
 
 function setStep(index) {
   const sc = currentScenario();
   if (!sc) return;
+  if (state.demo.playing) stopDemo();
   state.stepIndex = Math.max(0, Math.min(index, sc.steps.length - 1));
   renderSteps();
-  applyHighlight();
-  focusHotEntities();
+  applyStepDetail();
+  if (state.mode === "map") {
+    applyMapHighlight();
+    focusHotEntities();
+  } else if (state.mode === "slide") {
+    applyPaperHighlight();
+    els.paperGuide
+      ?.querySelectorAll(".guide-item")
+      .forEach((item) =>
+        item.classList.toggle(
+          "active",
+          Number(item.getAttribute("data-step")) === state.stepIndex
+        )
+      );
+  } else if (state.mode === "demo") {
+    resetPaperValues(state.stepIndex);
+    renderPaper();
+  }
 }
 
 function focusHotEntities() {
   const step = currentStep();
-  if (!step?.fields?.length) return;
-  const entityIds = [
-    ...new Set(step.fields.map((f) => f.split(".")[0])),
-  ];
+  if (!step?.fields?.length || state.mode !== "map") return;
+  const entityIds = [...new Set(step.fields.map((f) => f.split(".")[0]))];
   const vp = els.viewport.getBoundingClientRect();
   let minX = Infinity;
   let minY = Infinity;
@@ -444,10 +809,9 @@ function bindMap() {
   let last = null;
   let pinch = null;
 
-  const onPointerDown = (e) => {
+  vp.addEventListener("pointerdown", (e) => {
     const handle = e.target.closest("[data-drag-handle]");
     const entity = e.target.closest(".entity");
-
     if (handle && entity) {
       mode = "drag-entity";
       const id = entity.getAttribute("data-entity");
@@ -460,36 +824,28 @@ function bindMap() {
         ox: state.layout[id].x,
         oy: state.layout[id].y,
       };
-      entity.setPointerCapture?.(e.pointerId);
       hideHintSoon();
       e.preventDefault();
       return;
     }
-
     if (e.target.closest(".entity")) return;
-
     mode = "pan";
     last = { pointerId: e.pointerId, x: e.clientX, y: e.clientY };
     vp.classList.add("panning");
-    vp.setPointerCapture?.(e.pointerId);
     hideHintSoon();
-  };
+  });
 
-  const onPointerMove = (e) => {
+  vp.addEventListener("pointermove", (e) => {
     if (!mode || !last || last.pointerId !== e.pointerId) return;
     const dx = e.clientX - last.x;
     const dy = e.clientY - last.y;
-
     if (mode === "pan") {
       state.cam.x += dx;
       state.cam.y += dy;
       last.x = e.clientX;
       last.y = e.clientY;
       applyCamera();
-      return;
-    }
-
-    if (mode === "drag-entity") {
+    } else if (mode === "drag-entity") {
       const scale = state.cam.scale || 1;
       state.layout[last.id].x = last.ox + dx / scale;
       state.layout[last.id].y = last.oy + dy / scale;
@@ -497,24 +853,22 @@ function bindMap() {
       if (node) placeEntity(node, last.id);
       drawEdges();
     }
-  };
+  });
 
-  const onPointerUp = (e) => {
+  const end = (e) => {
     if (!last || last.pointerId !== e.pointerId) return;
     if (mode === "drag-entity") {
-      const node = els.canvas.querySelector(`[data-entity="${last.id}"]`);
-      node?.classList.remove("dragging");
+      els.canvas
+        .querySelector(`[data-entity="${last.id}"]`)
+        ?.classList.remove("dragging");
       saveLayout();
     }
     mode = null;
     last = null;
     vp.classList.remove("panning");
   };
-
-  vp.addEventListener("pointerdown", onPointerDown);
-  vp.addEventListener("pointermove", onPointerMove);
-  vp.addEventListener("pointerup", onPointerUp);
-  vp.addEventListener("pointercancel", onPointerUp);
+  vp.addEventListener("pointerup", end);
+  vp.addEventListener("pointercancel", end);
 
   vp.addEventListener(
     "wheel",
@@ -536,7 +890,6 @@ function bindMap() {
     { passive: false }
   );
 
-  // Pinch zoom
   vp.addEventListener(
     "touchstart",
     (e) => {
@@ -551,7 +904,6 @@ function bindMap() {
     },
     { passive: true }
   );
-
   vp.addEventListener(
     "touchmove",
     (e) => {
@@ -564,7 +916,6 @@ function bindMap() {
     },
     { passive: true }
   );
-
   vp.addEventListener("touchend", () => {
     if (mode === "pinch") {
       mode = null;
@@ -594,6 +945,10 @@ function bindMap() {
 }
 
 function bindUi() {
+  document.querySelectorAll(".mode-tab").forEach((btn) => {
+    btn.addEventListener("click", () => setMode(btn.getAttribute("data-mode")));
+  });
+
   els.role.addEventListener("change", () => setRole(els.role.value));
   els.scenario.addEventListener("change", () => setScenario(els.scenario.value));
   els.prev.addEventListener("click", () => setStep(state.stepIndex - 1));
@@ -611,6 +966,22 @@ function bindUi() {
     setScenario(btn.getAttribute("data-jump"));
   });
 
+  els.paperGuide?.addEventListener("click", (e) => {
+    const item = e.target.closest("[data-step]");
+    if (!item) return;
+    setStep(Number(item.getAttribute("data-step")));
+  });
+
+  els.demoPlay?.addEventListener("click", () => runDemo());
+  els.demoRestart?.addEventListener("click", () => {
+    stopDemo();
+    state.stepIndex = 0;
+    resetPaperValues(-1);
+    renderSteps();
+    renderPaper();
+    setDemoLive("已重來，按播放開始");
+  });
+
   els.sheetToggle?.addEventListener("click", () => {
     const open = els.sheet.getAttribute("data-open") === "true";
     els.sheet.setAttribute("data-open", open ? "false" : "true");
@@ -620,7 +991,7 @@ function bindUi() {
   window.addEventListener("resize", () => {
     clearTimeout(window.__walkResize);
     window.__walkResize = setTimeout(() => {
-      drawEdges();
+      if (state.mode === "map") drawEdges();
     }, 120);
   });
 
@@ -655,8 +1026,7 @@ async function loadSystemData() {
 async function boot() {
   state.data = await loadSystemData();
   els.title.textContent = state.data.system;
-  els.sub.textContent =
-    state.data.subtitle || "拖地圖、縮放、點步驟看欄位活起來";
+  els.sub.textContent = MODE_COPY.map.hint;
   state.roleId = state.data.roles[0].id;
   state.scenarioId = scenariosForRole(state.roleId)[0]?.id ?? null;
 
@@ -667,15 +1037,13 @@ async function boot() {
   renderCanvasStructure();
   bindMap();
   bindUi();
-  refresh();
+  refresh(true);
 
-  // Mobile: keep map dominant; sheet starts collapsed
   if (window.matchMedia("(max-width: 899px)").matches) {
     els.sheet.setAttribute("data-open", "false");
     els.sheetToggle?.setAttribute("aria-expanded", "false");
   }
 
-  // Fit after layout/paint settles (mobile heights differ once sheet collapses)
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
       fitCamera();

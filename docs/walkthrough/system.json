@@ -1,19 +1,56 @@
 {
   "system": "離職單",
-  "subtitle": "用角色 × 情境 × 步驟，走一遍資料怎麼動",
+  "subtitle": "地圖認識 · 簡報全覽 · 演示照做",
   "roles": [
-    { "id": "employee", "label": "員工" },
-    { "id": "manager", "label": "主管" },
-    { "id": "hr", "label": "HR" }
+    {
+      "id": "employee",
+      "label": "員工"
+    },
+    {
+      "id": "manager",
+      "label": "主管"
+    },
+    {
+      "id": "hr",
+      "label": "HR"
+    }
   ],
   "actions": [
-    { "id": "write", "label": "人手填寫", "color": "write" },
-    { "id": "lookup", "label": "查閱帶出", "color": "lookup" },
-    { "id": "sync", "label": "同步寫入", "color": "sync" },
-    { "id": "auto", "label": "自動產生", "color": "auto" },
-    { "id": "validate", "label": "檢核", "color": "validate" },
-    { "id": "approve", "label": "簽核", "color": "approve" },
-    { "id": "notify", "label": "通知", "color": "notify" }
+    {
+      "id": "write",
+      "label": "人手填寫",
+      "color": "write"
+    },
+    {
+      "id": "lookup",
+      "label": "查閱帶出",
+      "color": "lookup"
+    },
+    {
+      "id": "sync",
+      "label": "同步寫入",
+      "color": "sync"
+    },
+    {
+      "id": "auto",
+      "label": "自動產生",
+      "color": "auto"
+    },
+    {
+      "id": "validate",
+      "label": "檢核",
+      "color": "validate"
+    },
+    {
+      "id": "approve",
+      "label": "簽核",
+      "color": "approve"
+    },
+    {
+      "id": "notify",
+      "label": "通知",
+      "color": "notify"
+    }
   ],
   "entities": [
     {
@@ -21,7 +58,10 @@
       "label": "人事 API",
       "kind": "api",
       "fields": [
-        { "id": "payload", "label": "人員資料包" }
+        {
+          "id": "payload",
+          "label": "人員資料包"
+        }
       ]
     },
     {
@@ -29,11 +69,27 @@
       "label": "人員主檔",
       "kind": "table",
       "fields": [
-        { "id": "id", "label": "ID" },
-        { "id": "name", "label": "姓名" },
-        { "id": "dept", "label": "部門" },
-        { "id": "status", "label": "在職狀態" },
-        { "id": "legacy_badge", "label": "舊識別證號", "note": "疑似舊欄位" }
+        {
+          "id": "id",
+          "label": "ID"
+        },
+        {
+          "id": "name",
+          "label": "姓名"
+        },
+        {
+          "id": "dept",
+          "label": "部門"
+        },
+        {
+          "id": "status",
+          "label": "在職狀態"
+        },
+        {
+          "id": "legacy_badge",
+          "label": "舊識別證號",
+          "note": "疑似舊欄位"
+        }
       ]
     },
     {
@@ -41,15 +97,44 @@
       "label": "離職單主檔",
       "kind": "table",
       "fields": [
-        { "id": "id", "label": "ID", "auto": true },
-        { "id": "name", "label": "姓名" },
-        { "id": "dept", "label": "部門" },
-        { "id": "reason", "label": "事由" },
-        { "id": "last_day", "label": "最後上班日" },
-        { "id": "manager_comment", "label": "主管意見" },
-        { "id": "hr_close_date", "label": "HR 結案日" },
-        { "id": "status", "label": "單據狀態" },
-        { "id": "old_fax", "label": "傳真備註", "note": "疑似舊欄位" }
+        {
+          "id": "id",
+          "label": "ID",
+          "auto": true
+        },
+        {
+          "id": "name",
+          "label": "姓名"
+        },
+        {
+          "id": "dept",
+          "label": "部門"
+        },
+        {
+          "id": "reason",
+          "label": "事由"
+        },
+        {
+          "id": "last_day",
+          "label": "最後上班日"
+        },
+        {
+          "id": "manager_comment",
+          "label": "主管意見"
+        },
+        {
+          "id": "hr_close_date",
+          "label": "HR 結案日"
+        },
+        {
+          "id": "status",
+          "label": "單據狀態"
+        },
+        {
+          "id": "old_fax",
+          "label": "傳真備註",
+          "note": "疑似舊欄位"
+        }
       ]
     }
   ],
@@ -94,41 +179,86 @@
         {
           "n": 1,
           "action": "write",
-          "fields": ["resignation.name"],
-          "note": "在離職單填寫姓名（實際常以人員 ID 選人）。"
+          "fields": [
+            "resignation.name"
+          ],
+          "note": "在離職單填寫姓名（實際常以人員 ID 選人）。",
+          "fill": {
+            "resignation.name": "王小明"
+          }
         },
         {
           "n": 2,
           "action": "lookup",
-          "fields": ["personnel.id", "personnel.dept", "resignation.dept"],
-          "edges": ["e-lookup-name", "e-lookup-dept"],
-          "note": "依人員鍵查主檔，自動帶出部門到離職單。"
+          "fields": [
+            "personnel.id",
+            "personnel.dept",
+            "resignation.dept"
+          ],
+          "edges": [
+            "e-lookup-name",
+            "e-lookup-dept"
+          ],
+          "note": "依人員鍵查主檔，自動帶出部門到離職單。",
+          "fill": {
+            "personnel.id": "E0123",
+            "personnel.dept": "資訊部",
+            "resignation.dept": "資訊部"
+          }
         },
         {
           "n": 3,
           "action": "write",
-          "fields": ["resignation.reason", "resignation.last_day"],
-          "note": "填寫事由（自願離職）與最後上班日。"
+          "fields": [
+            "resignation.reason",
+            "resignation.last_day"
+          ],
+          "note": "填寫事由（自願離職）與最後上班日。",
+          "fill": {
+            "resignation.reason": "自願離職",
+            "resignation.last_day": "2026-09-30"
+          }
         },
         {
           "n": 4,
           "action": "validate",
-          "fields": ["personnel.status", "resignation.status"],
-          "edges": ["e-status-check"],
+          "fields": [
+            "personnel.status",
+            "resignation.status"
+          ],
+          "edges": [
+            "e-status-check"
+          ],
           "note": "檢核在職才能開單；單據狀態改為「待主管簽核」。",
-          "risks": ["若主檔同步延遲，可能誤擋或誤放"]
+          "risks": [
+            "若主檔同步延遲，可能誤擋或誤放"
+          ],
+          "fill": {
+            "personnel.status": "在職",
+            "resignation.status": "待主管簽核"
+          }
         },
         {
           "n": 5,
           "action": "auto",
-          "fields": ["resignation.id"],
-          "note": "送出時系統自動產生離職單流水號。"
+          "fields": [
+            "resignation.id"
+          ],
+          "note": "送出時系統自動產生離職單流水號。",
+          "fill": {
+            "resignation.id": "R-20260806-001"
+          }
         },
         {
           "n": 6,
           "action": "notify",
-          "fields": ["resignation.status"],
-          "note": "通知直屬主管有待簽案件。"
+          "fields": [
+            "resignation.status"
+          ],
+          "note": "通知直屬主管有待簽案件。",
+          "fill": {
+            "resignation.status": "待主管簽核"
+          }
         }
       ]
     },
@@ -142,36 +272,76 @@
         {
           "n": 1,
           "action": "write",
-          "fields": ["resignation.name"],
-          "note": "選取本人／填寫姓名。"
+          "fields": [
+            "resignation.name"
+          ],
+          "note": "選取本人／填寫姓名。",
+          "fill": {
+            "resignation.name": "王小明"
+          }
         },
         {
           "n": 2,
           "action": "lookup",
-          "fields": ["personnel.dept", "resignation.dept"],
-          "edges": ["e-lookup-dept"],
-          "note": "自動帶出部門。"
+          "fields": [
+            "personnel.dept",
+            "resignation.dept"
+          ],
+          "edges": [
+            "e-lookup-dept"
+          ],
+          "note": "自動帶出部門。",
+          "fill": {
+            "personnel.dept": "資訊部",
+            "resignation.dept": "資訊部"
+          }
         },
         {
           "n": 3,
           "action": "write",
-          "fields": ["resignation.reason", "resignation.last_day"],
+          "fields": [
+            "resignation.reason",
+            "resignation.last_day"
+          ],
           "note": "事由選「育嬰留停」，填最後上班日。",
-          "risks": ["與真正離職共用主檔，報表易混在一起"]
+          "risks": [
+            "與真正離職共用主檔，報表易混在一起"
+          ],
+          "fill": {
+            "resignation.reason": "育嬰留停",
+            "resignation.last_day": "2026-09-30"
+          }
         },
         {
           "n": 4,
           "action": "auto",
-          "fields": ["resignation.id", "resignation.status"],
-          "note": "產生單號，狀態進入待簽。"
+          "fields": [
+            "resignation.id",
+            "resignation.status"
+          ],
+          "note": "產生單號，狀態進入待簽。",
+          "fill": {
+            "resignation.id": "R-20260806-002",
+            "resignation.status": "待主管簽核"
+          }
         },
         {
           "n": 5,
           "action": "notify",
-          "fields": ["resignation.status"],
-          "note": "通知主管簽核。"
+          "fields": [
+            "resignation.status"
+          ],
+          "note": "通知主管簽核。",
+          "fill": {
+            "resignation.status": "待主管簽核"
+          }
         }
-      ]
+      ],
+      "demoValues": {
+        "resignation.reason": "育嬰留停",
+        "resignation.status": "待主管簽核",
+        "personnel.status": "留停中"
+      }
     },
     {
       "id": "manager-approve",
@@ -183,28 +353,65 @@
         {
           "n": 1,
           "action": "lookup",
-          "fields": ["resignation.name", "resignation.dept", "resignation.reason", "resignation.last_day"],
-          "note": "開啟待簽單，檢視員工帶出的欄位。"
+          "fields": [
+            "resignation.name",
+            "resignation.dept",
+            "resignation.reason",
+            "resignation.last_day"
+          ],
+          "note": "開啟待簽單，檢視員工帶出的欄位。",
+          "fill": {
+            "resignation.name": "王小明",
+            "resignation.dept": "資訊部",
+            "resignation.reason": "自願離職",
+            "resignation.last_day": "2026-09-30"
+          }
         },
         {
           "n": 2,
           "action": "write",
-          "fields": ["resignation.manager_comment"],
-          "note": "填寫主管意見。"
+          "fields": [
+            "resignation.manager_comment"
+          ],
+          "note": "填寫主管意見。",
+          "fill": {
+            "resignation.manager_comment": "同意，請 HR 辦理後續"
+          }
         },
         {
           "n": 3,
           "action": "approve",
-          "fields": ["resignation.status"],
-          "note": "核准後狀態改為「待 HR 結案」。"
+          "fields": [
+            "resignation.status"
+          ],
+          "note": "核准後狀態改為「待 HR 結案」。",
+          "fill": {
+            "resignation.status": "待 HR 結案"
+          }
         },
         {
           "n": 4,
           "action": "notify",
-          "fields": ["resignation.status"],
-          "note": "通知 HR 處理結案。"
+          "fields": [
+            "resignation.status"
+          ],
+          "note": "通知 HR 處理結案。",
+          "fill": {
+            "resignation.status": "待 HR 結案"
+          }
         }
-      ]
+      ],
+      "demoValues": {
+        "resignation.status": "待 HR 結案"
+      },
+      "demoSeed": {
+        "resignation.name": "王小明",
+        "resignation.dept": "資訊部",
+        "resignation.reason": "自願離職",
+        "resignation.last_day": "2026-09-30",
+        "resignation.id": "R-20260806-001",
+        "resignation.status": "待主管簽核"
+      }
     },
     {
       "id": "hr-close",
@@ -215,37 +422,130 @@
         {
           "n": 1,
           "action": "lookup",
-          "fields": ["resignation.name", "resignation.dept", "resignation.manager_comment", "personnel.status"],
-          "note": "對照離職單與目前主檔在職狀態。"
+          "fields": [
+            "resignation.name",
+            "resignation.dept",
+            "resignation.manager_comment",
+            "personnel.status"
+          ],
+          "note": "對照離職單與目前主檔在職狀態。",
+          "fill": {
+            "resignation.name": "王小明",
+            "resignation.dept": "資訊部",
+            "resignation.manager_comment": "同意，請 HR 辦理後續",
+            "personnel.status": "在職"
+          }
         },
         {
           "n": 2,
           "action": "sync",
-          "fields": ["hr_api.payload", "personnel.id", "personnel.name", "personnel.dept", "personnel.status"],
-          "edges": ["e-sync-api"],
+          "fields": [
+            "hr_api.payload",
+            "personnel.id",
+            "personnel.name",
+            "personnel.dept",
+            "personnel.status"
+          ],
+          "edges": [
+            "e-sync-api"
+          ],
           "note": "必要時先跑 api.pyc，確保主檔最新。",
-          "risks": ["同步失敗時結案與主檔會不一致"]
+          "risks": [
+            "同步失敗時結案與主檔會不一致"
+          ],
+          "fill": {
+            "hr_api.payload": "人員資料已同步",
+            "personnel.id": "E0123",
+            "personnel.name": "王小明",
+            "personnel.dept": "資訊部",
+            "personnel.status": "在職"
+          }
         },
         {
           "n": 3,
           "action": "write",
-          "fields": ["resignation.hr_close_date", "resignation.status", "personnel.status"],
-          "note": "填結案日；離職單結案；主檔在職狀態改為離職／留停。"
+          "fields": [
+            "resignation.hr_close_date",
+            "resignation.status",
+            "personnel.status"
+          ],
+          "note": "填結案日；離職單結案；主檔在職狀態改為離職／留停。",
+          "fill": {
+            "resignation.hr_close_date": "2026-08-20",
+            "resignation.status": "已結案",
+            "personnel.status": "已離職"
+          }
         },
         {
           "n": 4,
           "action": "notify",
-          "fields": ["resignation.status"],
-          "note": "通知申請人結案完成。"
+          "fields": [
+            "resignation.status"
+          ],
+          "note": "通知申請人結案完成。",
+          "fill": {
+            "resignation.status": "已結案"
+          }
         }
-      ]
+      ],
+      "demoValues": {
+        "resignation.status": "已結案",
+        "personnel.status": "已離職"
+      },
+      "demoSeed": {
+        "resignation.name": "王小明",
+        "resignation.dept": "資訊部",
+        "resignation.reason": "自願離職",
+        "resignation.last_day": "2026-09-30",
+        "resignation.id": "R-20260806-001",
+        "resignation.manager_comment": "同意，請 HR 辦理後續",
+        "resignation.status": "待 HR 結案",
+        "personnel.id": "E0123",
+        "personnel.name": "王小明",
+        "personnel.dept": "資訊部",
+        "personnel.status": "在職"
+      }
     }
   ],
   "layout": {
     "entities": {
-      "hr_api": { "x": 40, "y": 80, "w": 220 },
-      "personnel": { "x": 320, "y": 60, "w": 240 },
-      "resignation": { "x": 620, "y": 40, "w": 260 }
+      "hr_api": {
+        "x": 40,
+        "y": 80,
+        "w": 220
+      },
+      "personnel": {
+        "x": 320,
+        "y": 60,
+        "w": 240
+      },
+      "resignation": {
+        "x": 620,
+        "y": 40,
+        "w": 260
+      }
+    }
+  },
+  "demo": {
+    "persona": {
+      "employee": "王小明",
+      "manager": "林主管",
+      "hr": "陳 HR"
+    },
+    "values": {
+      "hr_api.payload": "人員資料已同步",
+      "personnel.id": "E0123",
+      "personnel.name": "王小明",
+      "personnel.dept": "資訊部",
+      "personnel.status": "在職",
+      "resignation.name": "王小明",
+      "resignation.dept": "資訊部",
+      "resignation.reason": "自願離職",
+      "resignation.last_day": "2026-09-30",
+      "resignation.id": "R-20260806-001",
+      "resignation.status": "待主管簽核",
+      "resignation.manager_comment": "同意，請 HR 辦理後續",
+      "resignation.hr_close_date": "2026-08-20"
     }
   }
 }

@@ -25,7 +25,7 @@
 - **AI 產資料契約：** [`docs/walkthrough/SKILL.md`](docs/walkthrough/SKILL.md) + [`docs/walkthrough/schema.json`](docs/walkthrough/schema.json)
 - 構想筆記：[`memory/topics/scenario-system-walkthrough.md`](memory/topics/scenario-system-walkthrough.md)
 
-操作：單指拖地圖、雙指縮放、按住表卡標題列可重排；底部面板選角色／情境／步驟。
+三種模式：地圖（可拖可縮）／簡報（①②③ 紙本全覽）／演示（打字帶出動畫）。底部面板選角色／情境／步驟。
 
 ## 第一次啟用 Pages（若網址 404／沒綠勾）
 
