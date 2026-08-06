@@ -1,0 +1,1387 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>離職單 · 情境導覽 — SEED</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+:root {
+  --bg0: #eef3f1;
+  --bg1: #f7faf8;
+  --ink: #14201c;
+  --muted: #5a6b64;
+  --line: #c5d4cd;
+  --card: rgba(255, 255, 255, 0.78);
+  --card-solid: #ffffff;
+  --brand: #0f6b5c;
+  --brand-soft: #d7efe8;
+  --glow: #1aa88f;
+  --write: #0d7a5f;
+  --lookup: #1f6fbf;
+  --sync: #7a4bb8;
+  --auto: #0b9e8a;
+  --validate: #b86a12;
+  --approve: #c0392b;
+  --notify: #3d6b8a;
+  --dead: #9a3b3b;
+  --touched: #1f7a5c;
+  --shadow: 0 18px 50px rgba(20, 40, 34, 0.08);
+  --font-display: "Outfit", "Noto Sans TC", sans-serif;
+  --font-body: "Noto Sans TC", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --radius: 14px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  color: var(--ink);
+  font-family: var(--font-body);
+  background:
+    radial-gradient(1200px 600px at 10% -10%, rgba(26, 168, 143, 0.16), transparent 55%),
+    radial-gradient(900px 500px at 100% 0%, rgba(31, 111, 191, 0.1), transparent 50%),
+    linear-gradient(180deg, var(--bg1), var(--bg0));
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.35;
+  background-image:
+    linear-gradient(rgba(20, 32, 28, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(20, 32, 28, 0.04) 1px, transparent 1px);
+  background-size: 28px 28px;
+  mask-image: radial-gradient(ellipse at center, black 40%, transparent 85%);
+}
+
+.page {
+  position: relative;
+  width: min(1180px, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: 1.5rem 0 3rem;
+}
+
+.hero {
+  margin-bottom: 1.25rem;
+  animation: rise 0.55s ease both;
+}
+
+.back {
+  display: inline-block;
+  margin-bottom: 0.75rem;
+  color: var(--brand);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.92rem;
+}
+
+.eyebrow {
+  margin: 0;
+  font-family: var(--font-display);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: 0.78rem;
+  color: var(--brand);
+  font-weight: 600;
+}
+
+.hero h1 {
+  margin: 0.2rem 0 0.35rem;
+  font-family: var(--font-display);
+  font-size: clamp(2.2rem, 5vw, 3.4rem);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  font-weight: 700;
+}
+
+.lede {
+  margin: 0;
+  color: var(--muted);
+  font-size: 1.05rem;
+  max-width: 36rem;
+}
+
+.controls,
+.steps-panel,
+.canvas-wrap,
+.coverage {
+  background: var(--card);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(197, 212, 205, 0.9);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.85rem 1rem;
+  padding: 1rem 1.1rem;
+  margin-bottom: 1rem;
+  animation: rise 0.6s ease 0.05s both;
+}
+
+.ctrl {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.82rem;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.ctrl select {
+  appearance: none;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0.7rem 0.85rem;
+  font: inherit;
+  font-size: 1rem;
+  color: var(--ink);
+  background:
+    linear-gradient(180deg, #fff, #f4f8f6)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%235a6b64' stroke-width='1.5' fill='none'/%3E%3C/svg%3E")
+    right 0.85rem center / 12px no-repeat;
+  cursor: pointer;
+}
+
+.scenario-summary {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--ink);
+  font-size: 0.95rem;
+}
+
+.chain {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--brand);
+}
+
+.chain button {
+  border: 0;
+  background: var(--brand-soft);
+  color: var(--brand);
+  border-radius: 999px;
+  padding: 0.2rem 0.65rem;
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+  margin-left: 0.35rem;
+}
+
+.stage {
+  display: grid;
+  grid-template-columns: minmax(260px, 340px) 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  animation: rise 0.65s ease 0.1s both;
+}
+
+.panel-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.panel-head h2,
+.coverage .panel-head h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  letter-spacing: -0.02em;
+}
+
+.steps-panel {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  min-height: 520px;
+}
+
+.step-nav {
+  display: flex;
+  gap: 0.4rem;
+}
+
+button.ghost,
+button.primary {
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  padding: 0.4rem 0.75rem;
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+button.ghost {
+  background: transparent;
+  color: var(--muted);
+}
+
+button.primary {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #fff;
+}
+
+button.ghost:hover,
+button.primary:hover {
+  transform: translateY(-1px);
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  flex: 1;
+  overflow: auto;
+}
+
+.step-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 0.55rem;
+  align-items: center;
+  width: 100%;
+  text-align: left;
+  border: 1px solid transparent;
+  background: rgba(255, 255, 255, 0.55);
+  border-radius: 12px;
+  padding: 0.65rem 0.7rem;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.step-item:hover {
+  border-color: var(--line);
+}
+
+.step-item.active {
+  border-color: color-mix(in srgb, var(--active, var(--brand)) 55%, white);
+  background: color-mix(in srgb, var(--active, var(--brand)) 12%, white);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--active, var(--brand)) 16%, transparent);
+}
+
+.step-n {
+  width: 1.55rem;
+  height: 1.55rem;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  background: #e7efeb;
+  color: var(--muted);
+}
+
+.step-item.active .step-n {
+  background: var(--active, var(--brand));
+  color: #fff;
+}
+
+.step-title {
+  font-size: 0.92rem;
+  font-weight: 500;
+}
+
+.badge {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.18rem 0.42rem;
+  border-radius: 999px;
+  color: #fff;
+  background: var(--muted);
+}
+
+.badge.write { background: var(--write); }
+.badge.lookup { background: var(--lookup); }
+.badge.sync { background: var(--sync); }
+.badge.auto { background: var(--auto); }
+.badge.validate { background: var(--validate); }
+.badge.approve { background: var(--approve); }
+.badge.notify { background: var(--notify); }
+
+.step-detail {
+  margin-top: 0.85rem;
+  padding-top: 0.85rem;
+  border-top: 1px dashed var(--line);
+}
+
+.step-note {
+  margin: 0;
+  color: var(--ink);
+  line-height: 1.55;
+  font-size: 0.95rem;
+}
+
+.risks {
+  margin: 0.65rem 0 0;
+  padding: 0.55rem 0.7rem;
+  list-style: none;
+  border-radius: 10px;
+  background: #fff4ef;
+  border: 1px solid #f0c8b4;
+  color: #8a3a1e;
+  font-size: 0.88rem;
+}
+
+.risks li + li {
+  margin-top: 0.25rem;
+}
+
+.canvas-wrap {
+  padding: 1rem;
+  min-height: 520px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.22rem 0.55rem;
+}
+
+.legend i {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  display: inline-block;
+  background: var(--c, var(--muted));
+}
+
+.canvas {
+  position: relative;
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1.15fr 1.25fr;
+  gap: 1.1rem;
+  align-items: start;
+  padding: 0.5rem 0.25rem 1rem;
+}
+
+.entity {
+  position: relative;
+  z-index: 1;
+  background: var(--card-solid);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  overflow: hidden;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.entity.kind-api {
+  background: linear-gradient(180deg, #f3fbf8, #ffffff);
+}
+
+.entity-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.8rem 0.9rem;
+  border-bottom: 1px solid var(--line);
+  background: #f4f9f7;
+}
+
+.entity-head h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  letter-spacing: -0.02em;
+}
+
+.kind-tag {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.fields {
+  list-style: none;
+  margin: 0;
+  padding: 0.45rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.55rem 0.65rem;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: #f7faf8;
+  font-size: 0.92rem;
+  transition:
+    background 0.25s ease,
+    border-color 0.25s ease,
+    box-shadow 0.25s ease,
+    transform 0.25s ease,
+    color 0.25s ease;
+}
+
+.field .fname {
+  font-weight: 500;
+}
+
+.field .auto-pill {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.05em;
+  color: #066;
+  background: #d8f5ef;
+  border-radius: 999px;
+  padding: 0.12rem 0.4rem;
+}
+
+.field.dim {
+  opacity: 0.42;
+}
+
+.field.hot {
+  opacity: 1;
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--active, var(--glow)) 65%, white);
+  background: color-mix(in srgb, var(--active, var(--glow)) 18%, white);
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--active, var(--glow)) 18%, transparent),
+    0 10px 24px color-mix(in srgb, var(--active, var(--glow)) 18%, transparent);
+  animation: pulse 0.9s ease;
+}
+
+.edges-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  overflow: visible;
+}
+
+.edge-path {
+  fill: none;
+  stroke: #9bb0a7;
+  stroke-width: 2;
+  stroke-dasharray: 6 5;
+  opacity: 0.55;
+  transition: stroke 0.25s ease, opacity 0.25s ease, stroke-width 0.25s ease;
+}
+
+.edge-path.hot {
+  opacity: 1;
+  stroke-width: 3;
+  stroke-dasharray: none;
+  stroke: var(--active, var(--lookup));
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--active, var(--lookup)) 45%, transparent));
+  animation: dashflow 1.2s linear infinite;
+}
+
+.edge-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  fill: var(--muted);
+  opacity: 0.7;
+  transition: fill 0.25s ease, opacity 0.25s ease;
+}
+
+.edge-label.hot {
+  fill: var(--active, var(--lookup));
+  opacity: 1;
+  font-weight: 500;
+}
+
+.coverage {
+  padding: 1rem 1.1rem 1.2rem;
+  animation: rise 0.7s ease 0.15s both;
+}
+
+.coverage .hint {
+  margin: 0.15rem 0 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+  max-width: 40rem;
+}
+
+.coverage-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.85rem;
+  margin-top: 0.9rem;
+}
+
+.cov-card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 0.75rem;
+}
+
+.cov-card h3 {
+  margin: 0 0 0.55rem;
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+}
+
+.cov-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0;
+  border-top: 1px dashed #e2ebe6;
+  font-size: 0.88rem;
+}
+
+.cov-row:first-of-type {
+  border-top: 0;
+}
+
+.pill {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  border-radius: 999px;
+  padding: 0.12rem 0.45rem;
+}
+
+.pill.touched {
+  background: #dff3ea;
+  color: var(--touched);
+}
+
+.pill.dead {
+  background: #f8e2e2;
+  color: var(--dead);
+}
+
+.pill.partial {
+  background: #fff0d9;
+  color: #9a5b00;
+}
+
+.foot {
+  margin-top: 1.25rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+}
+
+.foot a {
+  color: var(--brand);
+}
+
+.foot code {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(0.985);
+  }
+  60% {
+    transform: scale(1.015);
+  }
+  100% {
+    transform: translateY(-1px) scale(1);
+  }
+}
+
+@keyframes dashflow {
+  to {
+    stroke-dashoffset: -18;
+  }
+}
+
+@media (max-width: 920px) {
+  .stage,
+  .coverage-grid,
+  .canvas {
+    grid-template-columns: 1fr;
+  }
+
+  .steps-panel,
+  .canvas-wrap {
+    min-height: 0;
+  }
+
+  .canvas {
+    gap: 0.85rem;
+  }
+
+  .edges-svg {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .controls {
+    grid-template-columns: 1fr;
+  }
+
+  .page {
+    width: min(100% - 1.2rem, 1180px);
+  }
+}
+
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="hero">
+      <a class="back" href="https://hyi1105.github.io/SEED/">← SEED</a>
+      <p class="eyebrow">System Walkthrough</p>
+      <h1 id="sys-title">離職單</h1>
+      <p class="lede" id="sys-sub">用角色 × 情境 × 步驟，走一遍資料怎麼動</p>
+    </header>
+
+    <section class="controls" aria-label="角色與情境">
+      <label class="ctrl">
+        <span>角色</span>
+        <select id="role-select"></select>
+      </label>
+      <label class="ctrl">
+        <span>情境</span>
+        <select id="scenario-select"></select>
+      </label>
+      <p class="scenario-summary" id="scenario-summary"></p>
+      <p class="chain" id="scenario-chain" hidden></p>
+    </section>
+
+    <section class="stage" aria-label="導覽主區">
+      <aside class="steps-panel">
+        <div class="panel-head">
+          <h2>操作步驟</h2>
+          <div class="step-nav">
+            <button type="button" id="btn-prev" class="ghost">上一步</button>
+            <button type="button" id="btn-next" class="primary">下一步</button>
+          </div>
+        </div>
+        <ol class="steps" id="steps-list"></ol>
+        <div class="step-detail" id="step-detail">
+          <p class="step-note" id="step-note">選擇情境後，逐步看欄位如何被點亮。</p>
+          <ul class="risks" id="step-risks" hidden></ul>
+        </div>
+      </aside>
+
+      <div class="canvas-wrap">
+        <div class="legend" id="action-legend" aria-label="動作圖例"></div>
+        <div class="canvas" id="lineage-canvas" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <section class="coverage" aria-label="欄位覆蓋熱圖">
+      <div class="panel-head">
+        <h2>欄位覆蓋熱圖</h2>
+        <p class="hint">跑過目前角色下可見情境後，從未被步驟碰到的欄位會標成候選死欄位。</p>
+      </div>
+      <div class="coverage-grid" id="coverage-grid"></div>
+    </section>
+
+    <footer class="foot">
+      <p>單檔預覽版（內嵌資料）· 正式版見 <a href="https://hyi1105.github.io/SEED/walkthrough/">Pages</a></p>
+    </footer>
+  </div>
+  <script type="application/json" id="system-data">
+{
+  "system": "離職單",
+  "subtitle": "用角色 × 情境 × 步驟，走一遍資料怎麼動",
+  "roles": [
+    { "id": "employee", "label": "員工" },
+    { "id": "manager", "label": "主管" },
+    { "id": "hr", "label": "HR" }
+  ],
+  "actions": [
+    { "id": "write", "label": "人手填寫", "color": "write" },
+    { "id": "lookup", "label": "查閱帶出", "color": "lookup" },
+    { "id": "sync", "label": "同步寫入", "color": "sync" },
+    { "id": "auto", "label": "自動產生", "color": "auto" },
+    { "id": "validate", "label": "檢核", "color": "validate" },
+    { "id": "approve", "label": "簽核", "color": "approve" },
+    { "id": "notify", "label": "通知", "color": "notify" }
+  ],
+  "entities": [
+    {
+      "id": "hr_api",
+      "label": "人事 API",
+      "kind": "api",
+      "fields": [
+        { "id": "payload", "label": "人員資料包" }
+      ]
+    },
+    {
+      "id": "personnel",
+      "label": "人員主檔",
+      "kind": "table",
+      "fields": [
+        { "id": "id", "label": "ID" },
+        { "id": "name", "label": "姓名" },
+        { "id": "dept", "label": "部門" },
+        { "id": "status", "label": "在職狀態" },
+        { "id": "legacy_badge", "label": "舊識別證號", "note": "疑似舊欄位" }
+      ]
+    },
+    {
+      "id": "resignation",
+      "label": "離職單主檔",
+      "kind": "table",
+      "fields": [
+        { "id": "id", "label": "ID", "auto": true },
+        { "id": "name", "label": "姓名" },
+        { "id": "dept", "label": "部門" },
+        { "id": "reason", "label": "事由" },
+        { "id": "last_day", "label": "最後上班日" },
+        { "id": "manager_comment", "label": "主管意見" },
+        { "id": "hr_close_date", "label": "HR 結案日" },
+        { "id": "status", "label": "單據狀態" },
+        { "id": "old_fax", "label": "傳真備註", "note": "疑似舊欄位" }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "e-sync-api",
+      "from": "hr_api.payload",
+      "to": "personnel",
+      "kind": "sync",
+      "label": "api.pyc"
+    },
+    {
+      "id": "e-lookup-name",
+      "from": "personnel.id",
+      "to": "resignation.name",
+      "kind": "lookup",
+      "label": "lookup (人員主檔.ID)"
+    },
+    {
+      "id": "e-lookup-dept",
+      "from": "personnel.dept",
+      "to": "resignation.dept",
+      "kind": "lookup",
+      "label": "lookup (人員主檔.部門)"
+    },
+    {
+      "id": "e-status-check",
+      "from": "personnel.status",
+      "to": "resignation.status",
+      "kind": "lookup",
+      "label": "在職狀態檢核"
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "voluntary-resign",
+      "title": "想離職了",
+      "role": "employee",
+      "next": "manager-approve",
+      "summary": "員工開立自願離職單，系統帶出部門後送出。",
+      "steps": [
+        {
+          "n": 1,
+          "action": "write",
+          "fields": ["resignation.name"],
+          "note": "在離職單填寫姓名（實際常以人員 ID 選人）。"
+        },
+        {
+          "n": 2,
+          "action": "lookup",
+          "fields": ["personnel.id", "personnel.dept", "resignation.dept"],
+          "edges": ["e-lookup-name", "e-lookup-dept"],
+          "note": "依人員鍵查主檔，自動帶出部門到離職單。"
+        },
+        {
+          "n": 3,
+          "action": "write",
+          "fields": ["resignation.reason", "resignation.last_day"],
+          "note": "填寫事由（自願離職）與最後上班日。"
+        },
+        {
+          "n": 4,
+          "action": "validate",
+          "fields": ["personnel.status", "resignation.status"],
+          "edges": ["e-status-check"],
+          "note": "檢核在職才能開單；單據狀態改為「待主管簽核」。",
+          "risks": ["若主檔同步延遲，可能誤擋或誤放"]
+        },
+        {
+          "n": 5,
+          "action": "auto",
+          "fields": ["resignation.id"],
+          "note": "送出時系統自動產生離職單流水號。"
+        },
+        {
+          "n": 6,
+          "action": "notify",
+          "fields": ["resignation.status"],
+          "note": "通知直屬主管有待簽案件。"
+        }
+      ]
+    },
+    {
+      "id": "parental-leave",
+      "title": "育嬰留停（需填離職單）",
+      "role": "employee",
+      "next": "manager-approve",
+      "summary": "流程與自願離職類似，但事由為育嬰留停。",
+      "steps": [
+        {
+          "n": 1,
+          "action": "write",
+          "fields": ["resignation.name"],
+          "note": "選取本人／填寫姓名。"
+        },
+        {
+          "n": 2,
+          "action": "lookup",
+          "fields": ["personnel.dept", "resignation.dept"],
+          "edges": ["e-lookup-dept"],
+          "note": "自動帶出部門。"
+        },
+        {
+          "n": 3,
+          "action": "write",
+          "fields": ["resignation.reason", "resignation.last_day"],
+          "note": "事由選「育嬰留停」，填最後上班日。",
+          "risks": ["與真正離職共用主檔，報表易混在一起"]
+        },
+        {
+          "n": 4,
+          "action": "auto",
+          "fields": ["resignation.id", "resignation.status"],
+          "note": "產生單號，狀態進入待簽。"
+        },
+        {
+          "n": 5,
+          "action": "notify",
+          "fields": ["resignation.status"],
+          "note": "通知主管簽核。"
+        }
+      ]
+    },
+    {
+      "id": "manager-approve",
+      "title": "主管簽核離職單",
+      "role": "manager",
+      "next": "hr-close",
+      "summary": "主管檢視部門與事由，填意見後核准。",
+      "steps": [
+        {
+          "n": 1,
+          "action": "lookup",
+          "fields": ["resignation.name", "resignation.dept", "resignation.reason", "resignation.last_day"],
+          "note": "開啟待簽單，檢視員工帶出的欄位。"
+        },
+        {
+          "n": 2,
+          "action": "write",
+          "fields": ["resignation.manager_comment"],
+          "note": "填寫主管意見。"
+        },
+        {
+          "n": 3,
+          "action": "approve",
+          "fields": ["resignation.status"],
+          "note": "核准後狀態改為「待 HR 結案」。"
+        },
+        {
+          "n": 4,
+          "action": "notify",
+          "fields": ["resignation.status"],
+          "note": "通知 HR 處理結案。"
+        }
+      ]
+    },
+    {
+      "id": "hr-close",
+      "title": "HR 結案並同步主檔",
+      "role": "hr",
+      "summary": "HR 確認後結案，並把在職狀態同步回人員主檔。",
+      "steps": [
+        {
+          "n": 1,
+          "action": "lookup",
+          "fields": ["resignation.name", "resignation.dept", "resignation.manager_comment", "personnel.status"],
+          "note": "對照離職單與目前主檔在職狀態。"
+        },
+        {
+          "n": 2,
+          "action": "sync",
+          "fields": ["hr_api.payload", "personnel.id", "personnel.name", "personnel.dept", "personnel.status"],
+          "edges": ["e-sync-api"],
+          "note": "必要時先跑 api.pyc，確保主檔最新。",
+          "risks": ["同步失敗時結案與主檔會不一致"]
+        },
+        {
+          "n": 3,
+          "action": "write",
+          "fields": ["resignation.hr_close_date", "resignation.status", "personnel.status"],
+          "note": "填結案日；離職單結案；主檔在職狀態改為離職／留停。"
+        },
+        {
+          "n": 4,
+          "action": "notify",
+          "fields": ["resignation.status"],
+          "note": "通知申請人結案完成。"
+        }
+      ]
+    }
+  ]
+}
+
+  </script>
+  <script type="module">
+const ACTION_COLORS = {
+  write: "var(--write)",
+  lookup: "var(--lookup)",
+  sync: "var(--sync)",
+  auto: "var(--auto)",
+  validate: "var(--validate)",
+  approve: "var(--approve)",
+  notify: "var(--notify)",
+};
+
+const state = {
+  data: null,
+  roleId: null,
+  scenarioId: null,
+  stepIndex: 0,
+};
+
+const els = {
+  title: document.getElementById("sys-title"),
+  sub: document.getElementById("sys-sub"),
+  role: document.getElementById("role-select"),
+  scenario: document.getElementById("scenario-select"),
+  summary: document.getElementById("scenario-summary"),
+  chain: document.getElementById("scenario-chain"),
+  steps: document.getElementById("steps-list"),
+  note: document.getElementById("step-note"),
+  risks: document.getElementById("step-risks"),
+  legend: document.getElementById("action-legend"),
+  canvas: document.getElementById("lineage-canvas"),
+  coverage: document.getElementById("coverage-grid"),
+  prev: document.getElementById("btn-prev"),
+  next: document.getElementById("btn-next"),
+};
+
+function actionLabel(id) {
+  return state.data.actions.find((a) => a.id === id)?.label ?? id;
+}
+
+function roleLabel(id) {
+  return state.data.roles.find((r) => r.id === id)?.label ?? id;
+}
+
+function fieldMeta(fieldRef) {
+  const [entityId, fieldId] = fieldRef.split(".");
+  const entity = state.data.entities.find((e) => e.id === entityId);
+  const field = entity?.fields?.find((f) => f.id === fieldId);
+  return { entityId, fieldId, entity, field };
+}
+
+function scenariosForRole(roleId) {
+  return state.data.scenarios.filter((s) => s.role === roleId);
+}
+
+function currentScenario() {
+  return state.data.scenarios.find((s) => s.id === state.scenarioId);
+}
+
+function currentStep() {
+  const sc = currentScenario();
+  return sc?.steps?.[state.stepIndex] ?? null;
+}
+
+function fillRoles() {
+  els.role.innerHTML = state.data.roles
+    .map((r) => `<option value="${r.id}">${r.label}</option>`)
+    .join("");
+}
+
+function fillScenarios() {
+  const list = scenariosForRole(state.roleId);
+  els.scenario.innerHTML = list
+    .map((s) => `<option value="${s.id}">${s.title}</option>`)
+    .join("");
+  if (!list.some((s) => s.id === state.scenarioId)) {
+    state.scenarioId = list[0]?.id ?? null;
+  }
+  els.scenario.value = state.scenarioId ?? "";
+}
+
+function fillLegend() {
+  els.legend.innerHTML = state.data.actions
+    .map(
+      (a) =>
+        `<span><i style="--c:${ACTION_COLORS[a.id]}"></i>${a.label}</span>`
+    )
+    .join("");
+}
+
+function renderCanvasStructure() {
+  const entitiesHtml = state.data.entities
+    .map((entity) => {
+      const fields = (entity.fields || [])
+        .map((f) => {
+          const auto = f.auto
+            ? `<span class="auto-pill">AUTO</span>`
+            : "";
+          return `<li class="field" data-field="${entity.id}.${f.id}">
+            <span class="fname">${f.label}</span>${auto}
+          </li>`;
+        })
+        .join("");
+      return `<article class="entity kind-${entity.kind}" data-entity="${entity.id}">
+        <div class="entity-head">
+          <h3>${entity.label}</h3>
+          <span class="kind-tag">${entity.kind}</span>
+        </div>
+        <ul class="fields">${fields}</ul>
+      </article>`;
+    })
+    .join("");
+
+  els.canvas.innerHTML = `<svg class="edges-svg" id="edges-svg" aria-hidden="true"></svg>${entitiesHtml}`;
+  requestAnimationFrame(drawEdges);
+}
+
+function nodeAnchor(selector, side) {
+  const el = els.canvas.querySelector(selector);
+  if (!el) return null;
+  const canvasRect = els.canvas.getBoundingClientRect();
+  const r = el.getBoundingClientRect();
+  const y = r.top - canvasRect.top + r.height / 2;
+  const x =
+    side === "left"
+      ? r.left - canvasRect.left
+      : side === "right"
+        ? r.right - canvasRect.left
+        : r.left - canvasRect.left + r.width / 2;
+  return { x, y, el };
+}
+
+function resolveEdgeEndpoint(ref, preferSide) {
+  if (ref.includes(".")) {
+    return nodeAnchor(`[data-field="${ref}"]`, preferSide);
+  }
+  const head = nodeAnchor(`[data-entity="${ref}"] .entity-head`, preferSide);
+  if (head) return head;
+  return nodeAnchor(`[data-entity="${ref}"]`, preferSide);
+}
+
+function drawEdges() {
+  const svg = document.getElementById("edges-svg");
+  if (!svg) return;
+  const rect = els.canvas.getBoundingClientRect();
+  svg.setAttribute("viewBox", `0 0 ${rect.width} ${rect.height}`);
+  svg.setAttribute("width", String(rect.width));
+  svg.setAttribute("height", String(rect.height));
+
+  const paths = state.data.edges
+    .map((edge) => {
+      const from = resolveEdgeEndpoint(edge.from, "right");
+      const to = resolveEdgeEndpoint(edge.to, "left");
+      if (!from || !to) return "";
+      const midX = (from.x + to.x) / 2;
+      const d = `M ${from.x} ${from.y} C ${midX} ${from.y}, ${midX} ${to.y}, ${to.x} ${to.y}`;
+      const labelX = midX;
+      const labelY = (from.y + to.y) / 2 - 8;
+      return `<path class="edge-path" data-edge="${edge.id}" d="${d}" />
+        <text class="edge-label" data-edge-label="${edge.id}" x="${labelX}" y="${labelY}" text-anchor="middle">${edge.label}</text>`;
+    })
+    .join("");
+
+  svg.innerHTML = paths;
+  applyHighlight();
+}
+
+function renderSteps() {
+  const sc = currentScenario();
+  if (!sc) {
+    els.steps.innerHTML = "";
+    els.summary.textContent = "此角色尚無情境。";
+    els.chain.hidden = true;
+    return;
+  }
+
+  els.summary.textContent = sc.summary;
+  if (sc.next) {
+    const next = state.data.scenarios.find((s) => s.id === sc.next);
+    els.chain.hidden = false;
+    els.chain.innerHTML = next
+      ? `下一步情境：<button type="button" data-jump="${next.id}">${roleLabel(next.role)} · ${next.title}</button>`
+      : "";
+  } else {
+    els.chain.hidden = true;
+  }
+
+  els.steps.innerHTML = sc.steps
+    .map((step, idx) => {
+      return `<li>
+        <button type="button" class="step-item ${idx === state.stepIndex ? "active" : ""}" data-step="${idx}" style="--active:${ACTION_COLORS[step.action]}">
+          <span class="step-n">${step.n}</span>
+          <span class="step-title">${step.note.length > 28 ? step.note.slice(0, 28) + "…" : step.note}</span>
+          <span class="badge ${step.action}">${actionLabel(step.action)}</span>
+        </button>
+      </li>`;
+    })
+    .join("");
+
+  els.prev.disabled = state.stepIndex <= 0;
+  els.next.disabled = state.stepIndex >= sc.steps.length - 1;
+}
+
+function applyHighlight() {
+  const step = currentStep();
+  const hotFields = new Set(step?.fields ?? []);
+  const hotEdges = new Set(step?.edges ?? []);
+  const color = ACTION_COLORS[step?.action] ?? "var(--glow)";
+
+  els.canvas.style.setProperty("--active", color);
+
+  els.canvas.querySelectorAll(".field").forEach((node) => {
+    const id = node.getAttribute("data-field");
+    const on = hotFields.has(id);
+    node.classList.toggle("hot", on);
+    node.classList.toggle("dim", Boolean(step) && !on);
+  });
+
+  els.canvas.querySelectorAll(".edge-path").forEach((node) => {
+    const id = node.getAttribute("data-edge");
+    node.classList.toggle("hot", hotEdges.has(id));
+    if (hotEdges.has(id)) node.style.setProperty("--active", color);
+  });
+
+  els.canvas.querySelectorAll(".edge-label").forEach((node) => {
+    const id = node.getAttribute("data-edge-label");
+    node.classList.toggle("hot", hotEdges.has(id));
+    if (hotEdges.has(id)) node.style.setProperty("--active", color);
+  });
+
+  if (step) {
+    els.note.textContent = step.note;
+    if (step.risks?.length) {
+      els.risks.hidden = false;
+      els.risks.innerHTML = step.risks
+        .map((r) => `<li>風險：${r}</li>`)
+        .join("");
+    } else {
+      els.risks.hidden = true;
+      els.risks.innerHTML = "";
+    }
+  }
+}
+
+function touchedFieldsForScenarios(scenarios) {
+  const map = new Map();
+  for (const sc of scenarios) {
+    for (const step of sc.steps) {
+      for (const f of step.fields || []) {
+        if (!map.has(f)) map.set(f, new Set());
+        map.get(f).add(sc.id);
+      }
+    }
+  }
+  return map;
+}
+
+function renderCoverage() {
+  const allScenarios = state.data.scenarios;
+  const touchedAll = touchedFieldsForScenarios(allScenarios);
+  const roleScenarios = scenariosForRole(state.roleId);
+  const touchedRole = touchedFieldsForScenarios(roleScenarios);
+
+  els.coverage.innerHTML = state.data.entities
+    .map((entity) => {
+      const rows = (entity.fields || [])
+        .map((f) => {
+          const ref = `${entity.id}.${f.id}`;
+          const allHit = touchedAll.get(ref);
+          const roleHit = touchedRole.get(ref);
+          let pill;
+          let cls;
+          if (!allHit) {
+            cls = "dead";
+            pill = "候選死欄位";
+          } else if (!roleHit) {
+            cls = "partial";
+            pill = "其他角色才用";
+          } else {
+            cls = "touched";
+            pill = `出現 ${allHit.size} 情境`;
+          }
+          const note = f.note ? ` · ${f.note}` : "";
+          return `<div class="cov-row"><span>${f.label}${note}</span><span class="pill ${cls}">${pill}</span></div>`;
+        })
+        .join("");
+      return `<article class="cov-card"><h3>${entity.label}</h3>${rows || "<p class='hint'>無欄位</p>"}</article>`;
+    })
+    .join("");
+}
+
+function refresh() {
+  fillScenarios();
+  renderSteps();
+  applyHighlight();
+  renderCoverage();
+}
+
+function setRole(roleId) {
+  state.roleId = roleId;
+  state.stepIndex = 0;
+  refresh();
+}
+
+function setScenario(scenarioId) {
+  state.scenarioId = scenarioId;
+  const sc = currentScenario();
+  if (sc) state.roleId = sc.role;
+  els.role.value = state.roleId;
+  state.stepIndex = 0;
+  refresh();
+}
+
+function setStep(index) {
+  const sc = currentScenario();
+  if (!sc) return;
+  state.stepIndex = Math.max(0, Math.min(index, sc.steps.length - 1));
+  renderSteps();
+  applyHighlight();
+}
+
+function bind() {
+  els.role.addEventListener("change", () => setRole(els.role.value));
+  els.scenario.addEventListener("change", () => setScenario(els.scenario.value));
+  els.prev.addEventListener("click", () => setStep(state.stepIndex - 1));
+  els.next.addEventListener("click", () => setStep(state.stepIndex + 1));
+
+  els.steps.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-step]");
+    if (!btn) return;
+    setStep(Number(btn.getAttribute("data-step")));
+  });
+
+  els.chain.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-jump]");
+    if (!btn) return;
+    setScenario(btn.getAttribute("data-jump"));
+  });
+
+  window.addEventListener("resize", () => {
+    clearTimeout(window.__walkResize);
+    window.__walkResize = setTimeout(drawEdges, 120);
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowRight") setStep(state.stepIndex + 1);
+    if (e.key === "ArrowLeft") setStep(state.stepIndex - 1);
+  });
+}
+
+async function loadSystemData() {
+  const embedded = document.getElementById("system-data");
+  if (embedded?.textContent?.trim()) {
+    return JSON.parse(embedded.textContent);
+  }
+  const urls = [
+    "./system.json",
+    "https://cdn.jsdelivr.net/gh/hyi1105/SEED@main/docs/walkthrough/system.json",
+  ];
+  let lastErr;
+  for (const url of urls) {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`${url} → ${res.status}`);
+      return await res.json();
+    } catch (err) {
+      lastErr = err;
+    }
+  }
+  throw lastErr || new Error("無法載入 system.json");
+}
+
+async function boot() {
+  state.data = await loadSystemData();
+  els.title.textContent = state.data.system;
+  els.sub.textContent = state.data.subtitle;
+  state.roleId = state.data.roles[0].id;
+  state.scenarioId = scenariosForRole(state.roleId)[0]?.id ?? null;
+
+  fillRoles();
+  els.role.value = state.roleId;
+  fillLegend();
+  renderCanvasStructure();
+  bind();
+  refresh();
+}
+
+boot().catch((err) => {
+  els.summary.textContent = `載入失敗：${err.message}`;
+  console.error(err);
+});
+
+  </script>
+</body>
+</html>

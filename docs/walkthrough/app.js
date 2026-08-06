@@ -346,9 +346,30 @@ function bind() {
   });
 }
 
+async function loadSystemData() {
+  const embedded = document.getElementById("system-data");
+  if (embedded?.textContent?.trim()) {
+    return JSON.parse(embedded.textContent);
+  }
+  const urls = [
+    "./system.json",
+    "https://cdn.jsdelivr.net/gh/hyi1105/SEED@main/docs/walkthrough/system.json",
+  ];
+  let lastErr;
+  for (const url of urls) {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`${url} → ${res.status}`);
+      return await res.json();
+    } catch (err) {
+      lastErr = err;
+    }
+  }
+  throw lastErr || new Error("無法載入 system.json");
+}
+
 async function boot() {
-  const res = await fetch("./system.json");
-  state.data = await res.json();
+  state.data = await loadSystemData();
   els.title.textContent = state.data.system;
   els.sub.textContent = state.data.subtitle;
   state.roleId = state.data.roles[0].id;
