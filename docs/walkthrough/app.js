@@ -163,10 +163,18 @@ function fitCamera() {
   const pad = 48;
   const bw = maxX - minX + pad * 2;
   const bh = maxY - minY + pad * 2;
-  const scale = clampScale(Math.min(vp.width / bw, vp.height / bh));
+  // 手機／平板：底部導覽面板會蓋住地圖，只對「看得見的上半部」做適合
+  const sheetOpen = els.sheet?.getAttribute("data-open") === "true";
+  const sheetH = els.sheet?.getBoundingClientRect().height || 0;
+  const cover = window.matchMedia("(max-width: 899px)").matches
+    ? Math.max(sheetOpen ? sheetH : 56, 56)
+    : 0;
+  const viewW = vp.width;
+  const viewH = Math.max(120, vp.height - cover);
+  const scale = clampScale(Math.min(viewW / bw, viewH / bh) * 0.92);
   state.cam.scale = scale;
-  state.cam.x = (vp.width - bw * scale) / 2 - (minX - pad) * scale;
-  state.cam.y = (vp.height - bh * scale) / 2 - (minY - pad) * scale;
+  state.cam.x = (viewW - bw * scale) / 2 - (minX - pad) * scale;
+  state.cam.y = (viewH - bh * scale) / 2 - (minY - pad) * scale;
   applyCamera();
 }
 
@@ -757,8 +765,8 @@ function setStep(index) {
   renderSteps();
   applyStepDetail();
   if (state.mode === "map") {
+    // 只高亮，不平移／縮放——手機看得見的多半是上半部，鏡頭亂跳會看不到
     applyMapHighlight();
-    focusHotEntities();
   } else if (state.mode === "slide") {
     applyPaperHighlight();
     els.paperGuide
@@ -773,32 +781,6 @@ function setStep(index) {
     resetPaperValues(state.stepIndex);
     renderPaper();
   }
-}
-
-function focusHotEntities() {
-  const step = currentStep();
-  if (!step?.fields?.length || state.mode !== "map") return;
-  const entityIds = [...new Set(step.fields.map((f) => f.split(".")[0]))];
-  const vp = els.viewport.getBoundingClientRect();
-  let minX = Infinity;
-  let minY = Infinity;
-  let maxX = -Infinity;
-  let maxY = -Infinity;
-  entityIds.forEach((id) => {
-    const pos = state.layout[id];
-    const node = els.canvas.querySelector(`[data-entity="${id}"]`);
-    if (!pos || !node) return;
-    minX = Math.min(minX, pos.x);
-    minY = Math.min(minY, pos.y);
-    maxX = Math.max(maxX, pos.x + (pos.w || 240));
-    maxY = Math.max(maxY, pos.y + node.offsetHeight);
-  });
-  if (!Number.isFinite(minX)) return;
-  const cx = (minX + maxX) / 2;
-  const cy = (minY + maxY) / 2;
-  state.cam.x = vp.width / 2 - cx * state.cam.scale;
-  state.cam.y = vp.height / 2 - cy * state.cam.scale;
-  applyCamera();
 }
 
 function hideHintSoon() {
