@@ -55,8 +55,9 @@ body {
 .dash {
   height: 100dvh;
   display: grid;
-  grid-template-rows: var(--topbar-h) 1fr;
+  grid-template-rows: var(--topbar-h) minmax(0, 1fr);
   position: relative;
+  overflow: hidden;
 }
 
 .topbar {
@@ -143,7 +144,9 @@ body {
 
 .view {
   min-height: 0;
+  min-width: 0;
   position: relative;
+  overflow: hidden;
 }
 
 .view[hidden],
@@ -151,9 +154,16 @@ body {
   display: none !important;
 }
 
-.view-map[data-active="true"],
+.view-map[data-active="true"] {
+  display: flex !important;
+  flex-direction: column;
+  height: 100%;
+}
+
 .view-paper[data-active="true"] {
-  display: block;
+  display: flex !important;
+  flex-direction: column;
+  height: 100%;
 }
 
 .view-map,
@@ -162,8 +172,6 @@ body {
 }
 
 .view-paper {
-  display: flex;
-  flex-direction: column;
   background:
     radial-gradient(800px 400px at 20% 0%, rgba(26, 168, 143, 0.1), transparent 55%),
     linear-gradient(180deg, #f7faf8, #eef3f1);
@@ -437,7 +445,10 @@ body {
 
 .map-shell {
   position: relative;
+  flex: 1 1 auto;
   min-height: 0;
+  width: 100%;
+  height: 100%;
   background:
     radial-gradient(900px 480px at 15% 10%, rgba(26, 168, 143, 0.14), transparent 55%),
     radial-gradient(700px 420px at 90% 0%, rgba(31, 111, 191, 0.1), transparent 50%),
@@ -1033,8 +1044,8 @@ button:disabled {
   }
 
   .dash {
-    grid-template-columns: 1fr minmax(320px, 400px);
-    grid-template-rows: var(--topbar-h) 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 400px);
+    grid-template-rows: var(--topbar-h) minmax(0, 1fr);
   }
 
   .topbar {
@@ -1044,8 +1055,10 @@ button:disabled {
   }
 
   .mode-tabs {
+    grid-column: auto;
     grid-row: 1 / span 2;
     align-self: center;
+    margin-top: 0;
   }
 
   .view-map,
@@ -1053,11 +1066,14 @@ button:disabled {
     grid-column: 1;
     grid-row: 2;
     min-height: 0;
+    height: auto;
+    align-self: stretch;
   }
 
   .map-shell {
     grid-column: unset;
     grid-row: unset;
+    flex: 1 1 auto;
     height: 100%;
   }
 
@@ -1066,12 +1082,21 @@ button:disabled {
     grid-column: 2;
     grid-row: 2;
     max-height: none;
-    height: 100%;
+    height: auto;
+    min-height: 0;
+    align-self: stretch;
+    display: flex;
+    flex-direction: column;
     transform: none !important;
     border-radius: 0;
     border-top: 0;
     border-left: 1px solid var(--line);
     box-shadow: none;
+  }
+
+  .sheet-body {
+    flex: 1 1 auto;
+    min-height: 0;
   }
 
   .sheet-handle {
@@ -1887,7 +1912,8 @@ function fitCamera() {
   if (!els.viewport) return;
   const vp = els.viewport.getBoundingClientRect();
   const ids = Object.keys(state.layout);
-  if (!ids.length || vp.width < 10) return;
+  // 地圖容器高度曾塌成 0；尺寸未就緒時不要算相機
+  if (!ids.length || vp.width < 10 || vp.height < 10) return;
   let minX = Infinity;
   let minY = Infinity;
   let maxX = -Infinity;
@@ -2436,8 +2462,11 @@ function setMode(mode) {
 
   if (isMap) {
     requestAnimationFrame(() => {
-      drawEdges();
-      fitCamera();
+      requestAnimationFrame(() => {
+        drawEdges();
+        fitCamera();
+        setTimeout(fitCamera, 60);
+      });
     });
   } else if (mode === "slide") {
     renderPaper();
@@ -2791,6 +2820,7 @@ async function boot() {
     requestAnimationFrame(() => {
       fitCamera();
       setTimeout(fitCamera, 80);
+      setTimeout(fitCamera, 250);
     });
   });
 }

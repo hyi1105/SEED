@@ -144,7 +144,8 @@ function fitCamera() {
   if (!els.viewport) return;
   const vp = els.viewport.getBoundingClientRect();
   const ids = Object.keys(state.layout);
-  if (!ids.length || vp.width < 10) return;
+  // 地圖容器高度曾塌成 0；尺寸未就緒時不要算相機
+  if (!ids.length || vp.width < 10 || vp.height < 10) return;
   let minX = Infinity;
   let minY = Infinity;
   let maxX = -Infinity;
@@ -693,8 +694,11 @@ function setMode(mode) {
 
   if (isMap) {
     requestAnimationFrame(() => {
-      drawEdges();
-      fitCamera();
+      requestAnimationFrame(() => {
+        drawEdges();
+        fitCamera();
+        setTimeout(fitCamera, 60);
+      });
     });
   } else if (mode === "slide") {
     renderPaper();
@@ -1048,6 +1052,7 @@ async function boot() {
     requestAnimationFrame(() => {
       fitCamera();
       setTimeout(fitCamera, 80);
+      setTimeout(fitCamera, 250);
     });
   });
 }
