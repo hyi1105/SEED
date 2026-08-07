@@ -114,6 +114,10 @@ function defaultLayout() {
   return layout;
 }
 
+function cameraKey() {
+  return `walkthrough-camera:${state.data?.system || "default"}`;
+}
+
 function loadLayout() {
   try {
     const raw = localStorage.getItem(storageKey());
@@ -131,6 +135,40 @@ function saveLayout() {
   localStorage.setItem(storageKey(), JSON.stringify(state.layout));
 }
 
+function loadCamera() {
+  try {
+    const raw = localStorage.getItem(cameraKey());
+    if (!raw) return false;
+    const cam = JSON.parse(raw);
+    if (
+      typeof cam.x === "number" &&
+      typeof cam.y === "number" &&
+      typeof cam.scale === "number"
+    ) {
+      state.cam = {
+        x: cam.x,
+        y: cam.y,
+        scale: clampScale(cam.scale),
+      };
+      return true;
+    }
+  } catch (_) {
+    /* ignore */
+  }
+  return false;
+}
+
+function saveCamera() {
+  localStorage.setItem(
+    cameraKey(),
+    JSON.stringify({
+      x: state.cam.x,
+      y: state.cam.y,
+      scale: state.cam.scale,
+    })
+  );
+}
+
 function applyCamera() {
   const { x, y, scale } = state.cam;
   els.world.style.transform = `translate(${x}px, ${y}px) scale(${scale})`;
@@ -140,7 +178,7 @@ function clampScale(s) {
   return Math.min(2.4, Math.max(0.35, s));
 }
 
-function fitCamera() {
+function fitCamera({ persist = true } = {}) {
   if (!els.viewport) return;
   const vp = els.viewport.getBoundingClientRect();
   const ids = Object.keys(state.layout);
@@ -176,6 +214,7 @@ function fitCamera() {
   state.cam.x = (viewW - bw * scale) / 2 - (minX - pad) * scale;
   state.cam.y = (viewH - bh * scale) / 2 - (minY - pad) * scale;
   applyCamera();
+  if (persist) saveCamera();
 }
 
 function fillRoles() {
@@ -241,7 +280,8 @@ function renderCanvasStructure() {
 
   requestAnimationFrame(() => {
     drawEdges();
-    if (state.mode === "map") fitCamera();
+    // 切換步驟／重繪時不要自動 fit——保留使用者縮放與位置
+    applyCamera();
   });
 }
 
@@ -704,8 +744,8 @@ function setMode(mode) {
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         drawEdges();
-        fitCamera();
-        setTimeout(fitCamera, 60);
+        // 回到地圖只恢復鏡頭，絕不自動「適合」打亂使用者縮放
+        applyCamera();
       });
     });
   } else if (mode === "slide") {
@@ -848,6 +888,8 @@ function bindMap() {
         .querySelector(`[data-entity="${last.id}"]`)
         ?.classList.remove("dragging");
       saveLayout();
+    } else if (mode === "pan") {
+      saveCamera();
     }
     mode = null;
     last = null;
@@ -871,6 +913,7 @@ function bindMap() {
       state.cam.x = mx - wx * after;
       state.cam.y = my - wy * after;
       applyCamera();
+      saveCamera();
       hideHintSoon();
     },
     { passive: false }
@@ -906,27 +949,33 @@ function bindMap() {
     if (mode === "pinch") {
       mode = null;
       pinch = null;
+      saveCamera();
     }
   });
 
   document.getElementById("zoom-in")?.addEventListener("click", () => {
     state.cam.scale = clampScale(state.cam.scale * 1.15);
     applyCamera();
+    saveCamera();
   });
   document.getElementById("zoom-out")?.addEventListener("click", () => {
     state.cam.scale = clampScale(state.cam.scale / 1.15);
     applyCamera();
+    saveCamera();
   });
-  document.getElementById("zoom-fit")?.addEventListener("click", fitCamera);
+  document.getElementById("zoom-fit")?.addEventListener("click", () => {
+    fitCamera({ persist: true });
+  });
   document.getElementById("layout-reset")?.addEventListener("click", () => {
     localStorage.removeItem(storageKey());
+    localStorage.removeItem(cameraKey());
     state.layout = defaultLayout();
     state.data.entities.forEach((entity) => {
       const node = els.canvas.querySelector(`[data-entity="${entity.id}"]`);
       if (node) placeEntity(node, entity.id);
     });
     drawEdges();
-    fitCamera();
+    fitCamera({ persist: true });
   });
 }
 
@@ -1017,6 +1066,7 @@ async function boot() {
   state.scenarioId = scenariosForRole(state.roleId)[0]?.id ?? null;
 
   loadLayout();
+  const hasSavedCam = loadCamera();
   fillRoles();
   els.role.value = state.roleId;
   fillLegend();
@@ -1032,9 +1082,13 @@ async function boot() {
 
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
-      fitCamera();
-      setTimeout(fitCamera, 80);
-      setTimeout(fitCamera, 250);
+      if (hasSavedCam) {
+        applyCamera();
+      } else {
+        // 僅第一次沒有使用者鏡頭時自動適合；之後絕不因步驟而改
+        fitCamera({ persist: true });
+        setTimeout(() => fitCamera({ persist: true }), 120);
+      }
     });
   });
 }
