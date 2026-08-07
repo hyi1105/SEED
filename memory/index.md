@@ -10,7 +10,7 @@
 
 ## 場次
 
-- 2026-08-07 — ERP 畫面問：怎麼打退貨單？ — 標籤：ERP、出貨單、退貨單、銷退、出庫確認 — [sessions/2026-08-07-erp-return-order.md](sessions/2026-08-07-erp-return-order.md)
+- 2026-08-07 — ERP：打退貨單要短 SOP＋流程圖 — 標籤：ERP、出貨單、退貨單、銷退、SOP — [sessions/2026-08-07-erp-return-order.md](sessions/2026-08-07-erp-return-order.md)
 - 2026-08-06 — 睡前願景：靜態簡報＋操作影片＋系統架構顧問 — 標籤：產品、願景、簡報、影片、阿嬤、顧問 — [sessions/2026-08-06-consultant-vision-sleep.md](sessions/2026-08-06-consultant-vision-sleep.md)
 - 2026-08-06 — 地圖式儀表板＋JSON Schema／Skill（AI 產系統包） — 標籤：產品、儀表板、地圖、JSON、Skill — [sessions/2026-08-06-walkthrough-map-skill.md](sessions/2026-08-06-walkthrough-map-skill.md)
 - 2026-08-06 — 構想：情境式快速認識陌生系統（角色×情境×欄位高亮） — 標籤：產品、系統理解、資料血緣、情境、角色 — [sessions/2026-08-06-scenario-system-walkthrough.md](sessions/2026-08-06-scenario-system-walkthrough.md)
