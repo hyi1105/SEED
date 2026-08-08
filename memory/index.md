@@ -10,6 +10,8 @@
 
 ## 場次
 
+- 2026-08-08 — 四合院式漸進拼圖學習陌生系統 — 標籤：產品、導引、漸進拼圖、四合院、記憶、陌生系統 — [sessions/2026-08-08-build-puzzle-learn.md](sessions/2026-08-08-build-puzzle-learn.md)
+- 2026-08-08 — 導引改問答學習（先想再選再揭曉） — 標籤：產品、導引、問答、教學、催收、學習偏好 — [sessions/2026-08-08-qa-guide-learn.md](sessions/2026-08-08-qa-guide-learn.md)
 - 2026-08-08 — 導引功能：從聊需求到可用系統（催收範例） — 標籤：產品、導引、教學、催收、欄位、權限 — [sessions/2026-08-08-design-guide-wizard.md](sessions/2026-08-08-design-guide-wizard.md)
 - 2026-08-06 — 睡前願景：靜態簡報＋操作影片＋系統架構顧問 — 標籤：產品、願景、簡報、影片、阿嬤、顧問 — [sessions/2026-08-06-consultant-vision-sleep.md](sessions/2026-08-06-consultant-vision-sleep.md)
 - 2026-08-06 — 地圖式儀表板＋JSON Schema／Skill（AI 產系統包） — 標籤：產品、儀表板、地圖、JSON、Skill — [sessions/2026-08-06-walkthrough-map-skill.md](sessions/2026-08-06-walkthrough-map-skill.md)
@@ -98,6 +100,7 @@
 - **ALR5：跨單關聯與開單模式**— [topics/alr5-cross-links-create-modes.md](topics/alr5-cross-links-create-modes.md)
 - **ALR5：AB 表單、可設定匯出、JSON 完全轉移**— [topics/alr5-ab-export-json-transfer.md](topics/alr5-ab-export-json-transfer.md)
 - **怎麼跟 Agent 講 UI，少重複改**— [topics/agent-ui-briefing.md](topics/agent-ui-briefing.md)
+- **跨專案怎麼說：四合院式漸進拼圖學習**— [topics/progressive-puzzle-brief.md](topics/progressive-puzzle-brief.md)
 - **如何從 Markdown 讀懂 SEED 系統**— [topics/system-guide.md](topics/system-guide.md)
 - **簽核模板工作流（角色、權限、流程、通知）**— [topics/approval-workflow.md](topics/approval-workflow.md)
 - **最終版進度總表**— [topics/progress-final.md](topics/progress-final.md)

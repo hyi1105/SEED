@@ -223,3 +223,10 @@ status: active
 ## 總願景連結（2026-08-06 睡前）
 
 互動地圖只是工具之一。完整目標見 [system-consultant-vision.md](./system-consultant-vision.md)：靜態簡報全覽、操作演示／影片（阿嬤路徑）、多來源統一成 JSON、進階顧問（漏情境／風險）。
+
+## 導引＝漸進拼圖記憶（2026-08-08）
+
+- 偏好：像四合院 Shorts——**一塊一塊長出來**，名稱／用途綁在空間區塊上；先問再長出，答對才長。
+- 用途：上手一堆**陌生名稱、用途、需求**（降低認知負荷）。
+- `guide.json` 用 `style: "build-qa"`：`build.zones` + 每關 `reveal.pieces`；答對才累積到舞台。
+- 參考：Google Photos `ARjDdXCuyPNYhSiP8`（錄 YouTube 四合院）；場次見 [2026-08-08-build-puzzle-learn.md](../sessions/2026-08-08-build-puzzle-learn.md)。

@@ -1182,6 +1182,350 @@ button:disabled {
   line-height: 1.45;
 }
 
+.guide-stage {
+  margin: 0 0 0.95rem;
+  padding: 0.75rem 0.8rem 0.85rem;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--brand) 20%, white);
+  background:
+    radial-gradient(120% 90% at 10% 0%, rgba(46, 125, 98, 0.1), transparent 50%),
+    linear-gradient(160deg, #f7fbf9 0%, #eef4f1 55%, #e7efe9 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.guide-stage-head h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  letter-spacing: -0.01em;
+}
+
+.guide-stage-head p {
+  margin: 0.2rem 0 0.65rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.guide-stage-banner {
+  margin: 0 0 0.65rem;
+  padding: 0.45rem 0.65rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: #1f6b52;
+  color: #fff;
+  font-family: var(--font-display);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  animation: guide-banner-in 0.45s ease both;
+}
+
+@keyframes guide-banner-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.guide-zones {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.5rem;
+}
+
+@media (min-width: 720px) {
+  .guide-zones {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .guide-zone[data-zone="pack"] {
+    grid-column: 1 / -1;
+  }
+}
+
+.guide-zone {
+  position: relative;
+  min-height: 5.5rem;
+  padding: 0.55rem 0.6rem 0.65rem;
+  border-radius: 12px;
+  border: 1px dashed #c5d4cc;
+  background: rgba(255, 255, 255, 0.55);
+  transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+
+.guide-zone.is-locked {
+  opacity: 0.55;
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.guide-zone.is-active {
+  border-style: solid;
+  border-color: color-mix(in srgb, var(--brand) 45%, white);
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 0 0 3px rgba(46, 125, 98, 0.08);
+}
+
+.guide-zone.is-grown {
+  border-style: solid;
+  border-color: #b7cdc2;
+  background: #fff;
+}
+
+.guide-zone-label {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.4rem;
+  margin-bottom: 0.45rem;
+}
+
+.guide-zone-label strong {
+  font-family: var(--font-display);
+  font-size: 0.92rem;
+}
+
+.guide-zone-label span {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.guide-zone-empty {
+  font-size: 0.8rem;
+  color: #8a9a92;
+  padding: 0.35rem 0;
+}
+
+.guide-zone-empty .q {
+  display: inline-block;
+  margin-right: 0.25rem;
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--brand);
+}
+
+.guide-pieces {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.guide-piece {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.1rem;
+  padding: 0.4rem 0.55rem;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: #f4f8f6;
+  max-width: 100%;
+  animation: guide-piece-grow 0.42s cubic-bezier(0.2, 0.85, 0.25, 1.15) both;
+}
+
+.guide-piece.is-new {
+  animation-name: guide-piece-pop;
+}
+
+.guide-piece .piece-label {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  color: var(--ink);
+}
+
+.guide-piece .piece-note {
+  font-size: 0.68rem;
+  color: var(--muted);
+  line-height: 1.25;
+}
+
+.guide-piece.kind-field {
+  background: #f7faf8;
+}
+
+.guide-piece.kind-field.is-added,
+.guide-piece[data-tag="新增"] {
+  background: #e7f6f1;
+  border-color: color-mix(in srgb, var(--brand) 35%, white);
+}
+
+.guide-piece.kind-acl {
+  background: #fff8e8;
+  border-color: #f0dfb0;
+}
+
+.guide-piece.kind-pack {
+  background: #eef3ff;
+  border-color: #c9d4f0;
+}
+
+@keyframes guide-piece-grow {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes guide-piece-pop {
+  0% {
+    opacity: 0;
+    transform: translateY(14px) scale(0.7);
+  }
+  70% {
+    opacity: 1;
+    transform: translateY(-2px) scale(1.04);
+  }
+  100% {
+    transform: none;
+  }
+}
+
+.guide-story {
+  margin: 0 0 0.85rem;
+}
+
+.guide-story-card {
+  padding: 0.85rem 0.95rem;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--brand) 22%, white);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(232, 244, 239, 0.95)),
+    radial-gradient(120% 80% at 0% 0%, rgba(46, 125, 98, 0.08), transparent 55%);
+}
+
+.guide-story-card p {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: var(--ink);
+}
+
+.guide-quiz {
+  margin: 0 0 0.85rem;
+}
+
+.guide-q-label {
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--brand);
+  font-weight: 700;
+  margin-bottom: 0.3rem;
+}
+
+.guide-q-prompt {
+  margin: 0 0 0.65rem;
+  font-size: 1.02rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.guide-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.guide-choice {
+  text-align: left;
+  width: 100%;
+  padding: 0.7rem 0.85rem;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: #fff;
+  font: inherit;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: var(--ink);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.12s ease;
+}
+
+.guide-choice:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--brand) 45%, white);
+  background: #f4faf7;
+  transform: translateY(-1px);
+}
+
+.guide-choice:disabled {
+  cursor: default;
+  opacity: 1;
+}
+
+.guide-choice.is-correct {
+  border-color: #2e7d62;
+  background: #e7f6f1;
+}
+
+.guide-choice.is-wrong {
+  border-color: #c45c4a;
+  background: #fceeed;
+}
+
+.guide-choice.is-answer {
+  border-color: #2e7d62;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, #2e7d62 35%, white);
+}
+
+.guide-feedback {
+  margin: 0 0 0.85rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.guide-feedback.ok {
+  background: #eef8f4;
+  border-color: color-mix(in srgb, #2e7d62 30%, white);
+}
+
+.guide-feedback.no {
+  background: #fff6f4;
+  border-color: color-mix(in srgb, #c45c4a 28%, white);
+}
+
+.guide-feedback-badge {
+  display: inline-block;
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 0.3rem;
+}
+
+.guide-feedback.ok .guide-feedback-badge {
+  color: #1f6b52;
+}
+
+.guide-feedback.no .guide-feedback-badge {
+  color: #a14436;
+}
+
+.guide-feedback p {
+  margin: 0;
+}
+
+.guide-reveal {
+  margin-bottom: 0.25rem;
+}
+
 .guide-turns {
   display: flex;
   flex-direction: column;
@@ -1344,6 +1688,21 @@ button:disabled {
   font-weight: 600;
 }
 
+.guide-phase-btn.is-done:not(.active) {
+  color: var(--ink);
+}
+
+.guide-phase-btn.is-done::after {
+  content: " ✓";
+  color: #2e7d62;
+  font-weight: 700;
+}
+
+.guide-phase-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .guide-rail-title {
   margin: 0 0 0.55rem;
   font-size: 0.72rem;
@@ -1381,7 +1740,7 @@ button:disabled {
 <body>
   <div class="dash">
     <header class="topbar">
-      <a class="back" href="https://hyi1105.github.io/SEED/">SEED</a>
+      <a class="back" href="../index.html">SEED</a>
       <div class="brand">
         <p class="eyebrow" id="mode-eyebrow">System Walkthrough</p>
         <h1 id="sys-title">離職單</h1>
@@ -1437,17 +1796,29 @@ button:disabled {
           <ol class="guide-phases" id="guide-phases"></ol>
         </aside>
         <div class="guide-main">
-          <p class="guide-kicker" id="guide-kicker">需求 → 欄位 → 權限 → 成檔 → 可用系統</p>
+          <p class="guide-kicker" id="guide-kicker">漸進拼圖 · 先想再選再長出</p>
           <h2 id="guide-phase-title">導引</h2>
           <p class="guide-goal" id="guide-phase-goal"></p>
-          <div class="guide-turns" id="guide-turns"></div>
-          <div class="guide-board" id="guide-board" hidden></div>
-          <div class="guide-acl" id="guide-acl" hidden></div>
-          <div class="guide-file" id="guide-file" hidden></div>
-          <p class="guide-tip" id="guide-tip" hidden></p>
+          <section class="guide-stage" id="guide-stage" aria-label="系統拼圖舞台">
+            <div class="guide-stage-head">
+              <h3 id="guide-stage-title">系統拼圖</h3>
+              <p id="guide-stage-hint"></p>
+            </div>
+            <div class="guide-stage-banner" id="guide-stage-banner" hidden></div>
+            <div class="guide-zones" id="guide-zones"></div>
+          </section>
+          <div class="guide-story" id="guide-story"></div>
+          <div class="guide-quiz" id="guide-quiz"></div>
+          <div class="guide-feedback" id="guide-feedback" hidden></div>
+          <div class="guide-reveal" id="guide-reveal" hidden>
+            <div class="guide-turns" id="guide-turns"></div>
+            <div class="guide-acl" id="guide-acl" hidden></div>
+            <div class="guide-file" id="guide-file" hidden></div>
+            <p class="guide-tip" id="guide-tip" hidden></p>
+          </div>
           <div class="guide-nav">
-            <button type="button" id="guide-prev" class="ghost">上一階段</button>
-            <button type="button" id="guide-next" class="primary">下一階段</button>
+            <button type="button" id="guide-prev" class="ghost">上一關</button>
+            <button type="button" id="guide-next" class="primary">下一關</button>
             <button type="button" id="guide-cta" class="primary" hidden>打開催收系統導覽</button>
           </div>
         </div>
@@ -2059,15 +2430,88 @@ button:disabled {
   </script>
   <script type="application/json" id="guide-data">
 {
-  "title": "從需求對話到可用系統",
-  "subtitle": "教學導引：怎麼把「我想做催收系統」變成欄位、權限與可上手流程",
+  "title": "從需求拼出可用系統",
+  "subtitle": "四合院式記憶：一塊一塊長出來——先想、再選、再長出陌生名稱與用途",
   "example": "催收系統",
   "targetSystem": "systems/collection.json",
+  "style": "build-qa",
+  "build": {
+    "title": "催收系統拼圖",
+    "hint": "像蓋院子：先地基，再一進一進長出來。名稱與用途綁在空間上，比較好記。",
+    "zones": [
+      {
+        "id": "applicant",
+        "label": "申請端",
+        "role": "申請人開單",
+        "order": 1
+      },
+      {
+        "id": "collect",
+        "label": "催收接力",
+        "role": "一／二／三催",
+        "order": 2
+      },
+      {
+        "id": "close",
+        "label": "結案",
+        "role": "交付與完成",
+        "order": 3
+      },
+      {
+        "id": "acl",
+        "label": "誰能动",
+        "role": "權限圍牆",
+        "order": 4
+      },
+      {
+        "id": "pack",
+        "label": "系統包",
+        "role": "可播放檔案",
+        "order": 5
+      }
+    ]
+  },
   "phases": [
     {
       "id": "hear",
-      "title": "1. 聽需求",
-      "goal": "先聽使用者要做什麼，不要急著開表。",
+      "title": "1. 先長申請端",
+      "goal": "先聽原話，把申請人會填的名稱釘在「申請端」這塊地上。",
+      "story": "空地上還什麼都沒有。有人說：「我想做催收系統。申請人要填姓名、部門、職位、系統名稱、預計催收日、區域。」",
+      "quiz": {
+        "ask": "第一塊該先長什麼？",
+        "choices": [
+          {
+            "id": "a",
+            "text": "申請人會填的六個基本欄位（使用者原話清單）",
+            "correct": true
+          },
+          {
+            "id": "b",
+            "text": "立刻長出完整資料庫與所有 API",
+            "correct": false
+          },
+          {
+            "id": "c",
+            "text": "先長漂亮畫面，欄位名稱以後再說",
+            "correct": false
+          }
+        ],
+        "explainCorrect": "對。先把陌生名稱釘在「申請端」——這是整座系統的地基。",
+        "explainWrong": "太早長技術或畫面，名稱會飄掉。先原話、先申請端。"
+      },
+      "reveal": {
+        "banner": "申請端長出來了",
+        "zone": "applicant",
+        "pieces": [
+          { "id": "name", "label": "姓名", "kind": "field", "note": "申請人填" },
+          { "id": "dept", "label": "部門", "kind": "field", "note": "申請人填" },
+          { "id": "title", "label": "職位", "kind": "field", "note": "申請人填" },
+          { "id": "system_name", "label": "系統名稱", "kind": "field", "note": "催哪個系統" },
+          { "id": "expect_date", "label": "預計催收日", "kind": "field", "note": "預期時程" },
+          { "id": "area", "label": "區域", "kind": "field", "note": "業務範圍" }
+        ]
+      },
+      "tip": "記名稱的方法：名稱永遠掛在它所屬的「院子區塊」上。",
       "turns": [
         {
           "who": "user",
@@ -2075,74 +2519,105 @@ button:disabled {
         },
         {
           "who": "guide",
-          "text": "收到。這是「申請端」會填的基本資料。接下來我會問：催收本身要不要分階段？通常會。"
+          "text": "申請端這進院先立好。接下來要問：催收本身要不要分階段？"
         }
-      ],
-      "board": {
-        "headline": "使用者先提出的欄位",
-        "fields": [
-          { "id": "name", "label": "姓名", "source": "user" },
-          { "id": "dept", "label": "部門", "source": "user" },
-          { "id": "title", "label": "職位", "source": "user" },
-          { "id": "system_name", "label": "系統名稱", "source": "user" },
-          { "id": "expect_date", "label": "預計催收日", "source": "user" },
-          { "id": "area", "label": "區域", "source": "user" }
-        ]
-      }
+      ]
     },
     {
       "id": "enrich",
-      "title": "2. 補齊催收欄位",
-      "goal": "因為是催收，顧問會補上「第幾次催收」的狀態與日期——使用者沒講，但實務一定要。",
+      "title": "2. 長出催收與結案",
+      "goal": "使用者沒講完的，顧問補「這種流程一定會漏」的名稱與用途。",
+      "story": "申請端已在。但催收很少一次結束——通常有一催、二催、三催，最後還要交付／完成日。",
+      "quiz": {
+        "ask": "下一進院最該主動長出哪些名稱？",
+        "choices": [
+          {
+            "id": "a",
+            "text": "一／二／三催的狀態與日期，再加上最終交付日、催收完成日",
+            "correct": true
+          },
+          {
+            "id": "b",
+            "text": "只要再加一個「備註」就夠了",
+            "correct": false
+          },
+          {
+            "id": "c",
+            "text": "把預計催收日拆掉，改成自由文字",
+            "correct": false
+          }
+        ],
+        "explainCorrect": "對。催收接力與結案，是「用途」真正開始分層的地方。",
+        "explainWrong": "只有備註或刪日期，之後無法分工、無法結案對帳。"
+      },
+      "reveal": {
+        "banner": "催收接力與結案長出來了",
+        "zone": "collect",
+        "alsoUnlock": ["close"],
+        "pieces": [
+          { "id": "c1_status", "label": "一催狀態", "kind": "field", "zone": "collect", "note": "新增·進度", "tag": "新增" },
+          { "id": "c1_date", "label": "一催日期", "kind": "field", "zone": "collect", "note": "新增·時點", "tag": "新增" },
+          { "id": "c2_status", "label": "二催狀態", "kind": "field", "zone": "collect", "note": "新增·進度", "tag": "新增" },
+          { "id": "c2_date", "label": "二催日期", "kind": "field", "zone": "collect", "note": "新增·時點", "tag": "新增" },
+          { "id": "c3_status", "label": "三催狀態", "kind": "field", "zone": "collect", "note": "新增·進度", "tag": "新增" },
+          { "id": "c3_date", "label": "三催日期", "kind": "field", "zone": "collect", "note": "新增·時點", "tag": "新增" },
+          { "id": "final_delivery", "label": "最終交付日", "kind": "field", "zone": "close", "note": "新增·結案", "tag": "新增" },
+          { "id": "done_date", "label": "催收完成日", "kind": "field", "zone": "close", "note": "新增·結案", "tag": "新增" }
+        ]
+      },
+      "tip": "使用者講「要什麼」；顧問補「這種流程一定會漏的名稱」。",
       "turns": [
         {
           "who": "guide",
-          "text": "催收通常不是一次結束。我建議加上：第一次／第二次／第三次催收的狀態與日期。這樣才追得動。"
-        },
-        {
-          "who": "user",
-          "text": "對，要有一催、二催、三催。"
-        },
-        {
-          "who": "guide",
-          "text": "再加兩個結果欄位：最終交付日、催收完成日。這樣結案才有依據。"
+          "text": "催收通常不是一次結束。建議加上一／二／三催的狀態與日期，以及最終交付日、催收完成日。"
         }
-      ],
-      "board": {
-        "headline": "顧問補上的催收欄位",
-        "fields": [
-          { "id": "name", "label": "姓名", "source": "user" },
-          { "id": "dept", "label": "部門", "source": "user" },
-          { "id": "title", "label": "職位", "source": "user" },
-          { "id": "system_name", "label": "系統名稱", "source": "user" },
-          { "id": "expect_date", "label": "預計催收日", "source": "user" },
-          { "id": "area", "label": "區域", "source": "user" },
-          { "id": "c1_status", "label": "一催狀態", "source": "guide", "tag": "新增" },
-          { "id": "c1_date", "label": "一催日期", "source": "guide", "tag": "新增" },
-          { "id": "c2_status", "label": "二催狀態", "source": "guide", "tag": "新增" },
-          { "id": "c2_date", "label": "二催日期", "source": "guide", "tag": "新增" },
-          { "id": "c3_status", "label": "三催狀態", "source": "guide", "tag": "新增" },
-          { "id": "c3_date", "label": "三催日期", "source": "guide", "tag": "新增" },
-          { "id": "final_delivery", "label": "最終交付日", "source": "guide", "tag": "新增" },
-          { "id": "done_date", "label": "催收完成日", "source": "guide", "tag": "新增" }
-        ]
-      },
-      "tip": "教學重點：使用者講「要什麼」；顧問補「催收這種流程一定會漏的欄位」。"
+      ]
     },
     {
       "id": "acl-applicant",
-      "title": "3. 問申請人權限",
-      "goal": "申請人送出後：哪些能看、哪些不能改、哪些根本不該看見。",
-      "turns": [
-        {
-          "who": "guide",
-          "text": "申請人送單之後：哪些欄位不能再改？哪些催收狀態他不該看到？"
-        },
-        {
-          "who": "user",
-          "text": "基本資料送出後就不能改。一催／二催／三催的狀態與日期，申請人只能看結果，不能改。"
-        }
-      ],
+      "title": "3. 圍申請人的牆",
+      "goal": "送出之後：申請人能看什麼、不能改什麼——權限也是要「長」出來的結構。",
+      "story": "欄位院子已經成形。申請人把基本資料送出了，一催狀態開始有人填。你要問清楚權限。",
+      "quiz": {
+        "ask": "申請人這道牆，比較合理的開口是？",
+        "choices": [
+          {
+            "id": "a",
+            "text": "基本資料鎖定；催收狀態／日期可看結果但不能改",
+            "correct": true
+          },
+          {
+            "id": "b",
+            "text": "申請人隨時可改所有催收狀態",
+            "correct": false
+          },
+          {
+            "id": "c",
+            "text": "申請人完全看不到催收進度",
+            "correct": false
+          }
+        ],
+        "explainCorrect": "對。可看結果、不可改——責任才分得清。",
+        "explainWrong": "讓申請人改催收會亂帳；完全看不到又無法對進度。"
+      },
+      "reveal": {
+        "banner": "申請人權限牆立起來了",
+        "zone": "acl",
+        "pieces": [
+          {
+            "id": "acl_app_base",
+            "label": "申請欄：送出後鎖定",
+            "kind": "acl",
+            "note": "看得到／不可再改"
+          },
+          {
+            "id": "acl_app_prog",
+            "label": "催收進度：只看不編",
+            "kind": "acl",
+            "note": "結果可見、責任在催收"
+          }
+        ]
+      },
       "acl": {
         "role": "申請人",
         "rows": [
@@ -2150,26 +2625,55 @@ button:disabled {
           { "field": "一催／二催／三催 狀態與日期", "view": "可看結果", "edit": "不可編" },
           { "field": "最終交付日／催收完成日", "view": "可看", "edit": "不可編" }
         ]
-      }
-    },
-    {
-      "id": "acl-collectors",
-      "title": "4. 問催收人權限",
-      "goal": "一催、二催、三催各自能動哪一欄——這就是「反對／簽核／分工」的起點。",
+      },
       "turns": [
         {
           "who": "guide",
-          "text": "一催的人只能填一催狀態與日期嗎？二催、三催呢？"
+          "text": "申請人送單之後：哪些不能再改？哪些催收欄位只能看？"
         },
         {
           "who": "user",
-          "text": "對。一催只能改一催欄位；二催改二催；三催改三催。別人的催收欄位只能看、不能改。"
-        },
-        {
-          "who": "guide",
-          "text": "主管或結案角色再填最終交付日、催收完成日。這樣就有完整對立流程：申請 → 催收 → 結案。"
+          "text": "基本資料送出後鎖定。一／二／三催狀態與日期只能看、不能改。"
         }
-      ],
+      ]
+    },
+    {
+      "id": "acl-collectors",
+      "title": "4. 切開催收人的門",
+      "goal": "一催、二催、三催各自只能進自己的門——對立／分工從這裡來。",
+      "story": "現在有一催、二催、三催三位要接力。若門沒切開，大家會互相改欄位。",
+      "quiz": {
+        "ask": "催收人的門，哪一種最像可用的對立流程？",
+        "choices": [
+          {
+            "id": "a",
+            "text": "一催只編一催欄；二催只編二催；三催只編三催；結案才編交付／完成日",
+            "correct": true
+          },
+          {
+            "id": "b",
+            "text": "三位催收人都可改全部催收欄位",
+            "correct": false
+          },
+          {
+            "id": "c",
+            "text": "只有申請人能改催收狀態",
+            "correct": false
+          }
+        ],
+        "explainCorrect": "對。每關只開自己的門，名稱才綁得住責任。",
+        "explainWrong": "全都能改＝無法追責；申請人改催收＝角色錯位。"
+      },
+      "reveal": {
+        "banner": "催收人的門切開了",
+        "zone": "acl",
+        "pieces": [
+          { "id": "acl_c1", "label": "一催門 → 只編一催", "kind": "acl", "note": "各催各欄" },
+          { "id": "acl_c2", "label": "二催門 → 只編二催", "kind": "acl", "note": "各催各欄" },
+          { "id": "acl_c3", "label": "三催門 → 只編三催", "kind": "acl", "note": "各催各欄" },
+          { "id": "acl_close", "label": "結案門 → 交付／完成日", "kind": "acl", "note": "收尾角色" }
+        ]
+      },
       "acl": {
         "role": "催收人／結案",
         "rows": [
@@ -2179,51 +2683,118 @@ button:disabled {
           { "field": "三催狀態／日期", "view": "全員可看", "edit": "僅三催可編" },
           { "field": "最終交付日／催收完成日", "view": "可看", "edit": "僅結案角色可編" }
         ]
-      }
-    },
-    {
-      "id": "pack",
-      "title": "5. 收成檔案",
-      "goal": "把對話變成統一的 system.json——欄位、角色、情境、步驟都在裡面。",
+      },
       "turns": [
         {
           "who": "guide",
-          "text": "討論結束後，我會依 SKILL／Schema 產出一份 JSON：表、欄位、角色、情境步驟、演示假資料。"
+          "text": "一催只能填一催欄位嗎？二催、三催呢？結案誰填？"
         },
         {
-          "who": "guide",
-          "text": "這份檔就是「可攜系統包」。換平台也能播：地圖認識、簡報全覽、演示照做。"
+          "who": "user",
+          "text": "一催改一催、二催改二催、三催改三催；結案填最終交付日與完成日。"
         }
-      ],
+      ]
+    },
+    {
+      "id": "pack",
+      "title": "5. 收成可攜檔",
+      "goal": "院子要收成 system.json，才能搬家到任何播放器／平台。",
+      "story": "名稱、用途、權限都談完了。下一步不是寫死一個畫面，而是先產出「系統包」。",
+      "quiz": {
+        "ask": "這份檔案最該帶走哪些東西？",
+        "choices": [
+          {
+            "id": "a",
+            "text": "表／欄位、角色、情境步驟（含誰在哪步動哪欄）、演示假資料",
+            "correct": true
+          },
+          {
+            "id": "b",
+            "text": "只要一張截圖就夠交接",
+            "correct": false
+          },
+          {
+            "id": "c",
+            "text": "只留程式碼，不要欄位說明",
+            "correct": false
+          }
+        ],
+        "explainCorrect": "對。JSON 系統包＝名稱／用途／步驟可驗證、可播放。",
+        "explainWrong": "截圖與裸程式不好問「誰能改哪欄」。"
+      },
+      "reveal": {
+        "banner": "系統包成形了",
+        "zone": "pack",
+        "pieces": [
+          { "id": "pack_ent", "label": "entities 欄位", "kind": "pack", "note": "名稱與表" },
+          { "id": "pack_roles", "label": "roles 角色", "kind": "pack", "note": "誰是誰" },
+          { "id": "pack_scen", "label": "scenarios 步驟", "kind": "pack", "note": "用途怎麼走" },
+          { "id": "pack_demo", "label": "demo 假資料", "kind": "pack", "note": "可演示" }
+        ]
+      },
       "filePreview": {
         "name": "systems/collection.json",
         "bullets": [
           "entities：催收單主檔（含一～三催與結案欄位）",
           "roles：申請人／一催／二催／三催／結案",
-          "scenarios：申請開單 → 一催 → 二催 → 三催 → 結案（可接龍）",
+          "scenarios：申請開單 → 一催 → 二催 → 三催 → 結案",
           "每步附 fill，演示模式可模擬真人填寫"
         ]
-      }
-    },
-    {
-      "id": "ready",
-      "title": "6. 變成可用系統",
-      "goal": "檔案進播放器＝可上手系統：看地圖、走簡報、播演示；也看得到對立流程。",
+      },
       "turns": [
         {
           "who": "guide",
-          "text": "現在可以打開「催收系統」導覽：用角色×情境看每個欄位實際在哪一步被填、被鎖、被帶出。"
-        },
-        {
-          "who": "guide",
-          "text": "這就是教學網站的導引功能：從聊天需求 → 欄位管理 → 每欄要做什麼 → 可播放的系統。"
+          "text": "依 SKILL／Schema 產出 JSON：表、欄位、角色、情境步驟、演示假資料——這就是可攜系統包。"
         }
-      ],
+      ]
+    },
+    {
+      "id": "ready",
+      "title": "6. 走進真實系統",
+      "goal": "抽象拼圖學會後，走進可上手系統：地圖／簡報／演示驗證每個名稱怎麼被用。",
+      "story": "模型院子已蓋完。最後一步：用角色×情境走一遍，確認名稱不是「長得像」，而是「用得出來」。",
+      "quiz": {
+        "ask": "打開催收導覽後，你最該先驗證哪件事？",
+        "choices": [
+          {
+            "id": "a",
+            "text": "換角色走情境：看每欄在哪一步被填、被鎖、被接龍",
+            "correct": true
+          },
+          {
+            "id": "b",
+            "text": "只看顏色好不好看",
+            "correct": false
+          },
+          {
+            "id": "c",
+            "text": "立刻加十個新欄位，不要先跑流程",
+            "correct": false
+          }
+        ],
+        "explainCorrect": "對。從模型走進真實場景——才完成記憶轉移。",
+        "explainWrong": "外觀與狂加欄位都不能證明流程可跑。先走申請→一催→二催→三催→結案。"
+      },
+      "reveal": {
+        "banner": "可以走進可用系統了",
+        "zone": "pack",
+        "pieces": [
+          { "id": "ready_map", "label": "地圖驗證", "kind": "pack", "note": "看連線" },
+          { "id": "ready_slide", "label": "簡報全覽", "kind": "pack", "note": "紙本順序" },
+          { "id": "ready_demo", "label": "演示照做", "kind": "pack", "note": "一步步填" }
+        ]
+      },
       "cta": {
         "label": "打開催收系統導覽",
         "system": "collection",
         "mode": "map"
-      }
+      },
+      "turns": [
+        {
+          "who": "guide",
+          "text": "打開催收系統：用地圖／簡報／演示，確認每個欄位在對的步驟被對的人使用。"
+        }
+      ]
     }
   ]
 }
@@ -2240,7 +2811,7 @@ const ACTION_COLORS = {
 };
 
 const MODE_COPY = {
-  guide: { eyebrow: "Design Guide", hint: "從聊需求 → 欄位 → 權限 → 成檔 → 可用系統" },
+  guide: { eyebrow: "Build Guide", hint: "漸進拼圖：先想、再選、再長出名稱與用途" },
   map: { eyebrow: "Map Dashboard", hint: "拖地圖、縮放，看欄位怎麼連" },
   slide: { eyebrow: "Paper Slide", hint: "一情境一張作業紙，①②③ 照順序填" },
   demo: { eyebrow: "Live Demo", hint: "模擬真人填寫，阿嬤照做就會" },
@@ -2279,6 +2850,8 @@ const state = {
   },
   guide: null,
   guidePhase: 0,
+  /** @type {Record<string, string>} phaseId -> choiceId */
+  guideAnswers: {},
 };
 
 const els = {
@@ -2316,8 +2889,16 @@ const els = {
   guidePhases: document.getElementById("guide-phases"),
   guideTitle: document.getElementById("guide-phase-title"),
   guideGoal: document.getElementById("guide-phase-goal"),
+  guideStory: document.getElementById("guide-story"),
+  guideStage: document.getElementById("guide-stage"),
+  guideStageTitle: document.getElementById("guide-stage-title"),
+  guideStageHint: document.getElementById("guide-stage-hint"),
+  guideStageBanner: document.getElementById("guide-stage-banner"),
+  guideZones: document.getElementById("guide-zones"),
+  guideQuiz: document.getElementById("guide-quiz"),
+  guideFeedback: document.getElementById("guide-feedback"),
+  guideReveal: document.getElementById("guide-reveal"),
   guideTurns: document.getElementById("guide-turns"),
-  guideBoard: document.getElementById("guide-board"),
   guideAcl: document.getElementById("guide-acl"),
   guideFile: document.getElementById("guide-file"),
   guideTip: document.getElementById("guide-tip"),
@@ -3008,44 +3589,230 @@ function currentGuidePhase() {
   return state.guide?.phases?.[state.guidePhase] ?? null;
 }
 
-function renderGuide() {
-  if (!state.guide || !els.guideTurns) return;
-  const phases = state.guide.phases || [];
-  els.guidePhases.innerHTML = phases
-    .map(
-      (p, i) =>
-        `<li><button type="button" class="guide-phase-btn ${i === state.guidePhase ? "active" : ""}" data-guide-phase="${i}">${p.title}</button></li>`
-    )
-    .join("");
+function isGuidePhaseAnswered(phase) {
+  if (!phase?.quiz) return true;
+  const id = state.guideAnswers[phase.id];
+  if (!id) return false;
+  // 答對才算過關／才長出拼圖
+  return Boolean(phase.quiz.choices?.find((c) => c.id === id && c.correct));
+}
 
+function isGuidePhaseUnlocked(index) {
+  const phases = state.guide?.phases || [];
+  for (let i = 0; i < index; i++) {
+    if (!isGuidePhaseAnswered(phases[i])) return false;
+  }
+  return true;
+}
+
+/** 累積已解鎖的拼圖零件（含當關答完才長出的） */
+function collectGuidePieces({ includeCurrent = false } = {}) {
+  const phases = state.guide?.phases || [];
+  const byZone = {};
+  const grownZones = new Set();
+  let newestIds = new Set();
+
+  phases.forEach((p, i) => {
+    const done = i < state.guidePhase || (includeCurrent && i === state.guidePhase && isGuidePhaseAnswered(p));
+    if (!done || !p.reveal) return;
+    const defaultZone = p.reveal.zone;
+    if (defaultZone) grownZones.add(defaultZone);
+    (p.reveal.alsoUnlock || []).forEach((z) => grownZones.add(z));
+    (p.reveal.pieces || []).forEach((piece) => {
+      const zone = piece.zone || defaultZone || "pack";
+      grownZones.add(zone);
+      if (!byZone[zone]) byZone[zone] = [];
+      byZone[zone].push({ ...piece, fromPhase: p.id, isNew: i === state.guidePhase && includeCurrent });
+      if (i === state.guidePhase && includeCurrent) newestIds.add(piece.id);
+    });
+  });
+
+  return { byZone, grownZones, newestIds };
+}
+
+function renderGuideStage(phase, answered) {
+  if (!els.guideZones) return;
+  const build = state.guide.build || {};
+  if (els.guideStageTitle) els.guideStageTitle.textContent = build.title || "系統拼圖";
+  if (els.guideStageHint) {
+    els.guideStageHint.textContent =
+      build.hint || "一塊一塊長出來：名稱掛在它所屬的區塊上。";
+  }
+
+  const { byZone, grownZones, newestIds } = collectGuidePieces({ includeCurrent: answered });
+  const activeZone = phase?.reveal?.zone || null;
+  const zones = build.zones || [];
+
+  if (els.guideStageBanner) {
+    if (answered && phase?.reveal?.banner) {
+      els.guideStageBanner.hidden = false;
+      els.guideStageBanner.textContent = phase.reveal.banner;
+    } else {
+      els.guideStageBanner.hidden = true;
+      els.guideStageBanner.textContent = "";
+    }
+  }
+
+  els.guideZones.innerHTML = "";
+  zones.forEach((zone) => {
+    const pieces = byZone[zone.id] || [];
+    const grown = grownZones.has(zone.id);
+    const isActive = answered && activeZone === zone.id;
+    const box = document.createElement("div");
+    box.className = "guide-zone";
+    box.dataset.zone = zone.id;
+    if (!grown && !isActive) box.classList.add("is-locked");
+    if (grown) box.classList.add("is-grown");
+    if (isActive) box.classList.add("is-active");
+
+    const head = document.createElement("div");
+    head.className = "guide-zone-label";
+    head.innerHTML = `<strong>${escapeHtml(zone.label)}</strong><span>${escapeHtml(zone.role || "")}</span>`;
+    box.appendChild(head);
+
+    if (!pieces.length) {
+      const empty = document.createElement("div");
+      empty.className = "guide-zone-empty";
+      if (!answered && activeZone === zone.id) {
+        empty.innerHTML = `<span class="q">？</span>答對這一關，這裡會長出名稱`;
+      } else if (!grown) {
+        empty.textContent = "尚未長出";
+      } else {
+        empty.textContent = "（空）";
+      }
+      box.appendChild(empty);
+    } else {
+      const wrap = document.createElement("div");
+      wrap.className = "guide-pieces";
+      pieces.forEach((piece, idx) => {
+        const el = document.createElement("div");
+        const kind = piece.kind || "field";
+        el.className = `guide-piece kind-${kind}`;
+        if (piece.tag === "新增" || piece.note?.includes("新增")) el.classList.add("is-added");
+        if (piece.isNew || newestIds.has(piece.id)) {
+          el.classList.add("is-new");
+          el.style.animationDelay = `${Math.min(idx, 8) * 0.05}s`;
+        }
+        if (piece.tag) el.dataset.tag = piece.tag;
+        el.innerHTML = `<span class="piece-label">${escapeHtml(piece.label)}</span>${
+          piece.note ? `<span class="piece-note">${escapeHtml(piece.note)}</span>` : ""
+        }`;
+        wrap.appendChild(el);
+      });
+      box.appendChild(wrap);
+    }
+
+    els.guideZones.appendChild(box);
+  });
+}
+
+function renderGuide() {
+  if (!state.guide || !els.guideQuiz) return;
+  const phases = state.guide.phases || [];
   const phase = currentGuidePhase();
   if (!phase) return;
-  els.guideTitle.textContent = phase.title;
-  els.guideGoal.textContent = phase.goal || "";
 
-  els.guideTurns.innerHTML = (phase.turns || [])
-    .map((t) => {
-      const who = t.who === "user" ? "使用者" : "顧問導引";
-      return `<div class="bubble ${t.who}"><span class="who">${who}</span>${escapeHtml(t.text)}</div>`;
+  const answeredId = state.guideAnswers[phase.id];
+  const picked = phase.quiz?.choices?.find((c) => c.id === answeredId) || null;
+  const cleared = isGuidePhaseAnswered(phase); // 答對才算過關
+  const triedWrong = Boolean(picked && !picked.correct);
+
+  els.guidePhases.innerHTML = phases
+    .map((p, i) => {
+      const unlocked = isGuidePhaseUnlocked(i);
+      const done = isGuidePhaseAnswered(p);
+      const cls = [
+        "guide-phase-btn",
+        i === state.guidePhase ? "active" : "",
+        done ? "is-done" : "",
+      ]
+        .filter(Boolean)
+        .join(" ");
+      return `<li><button type="button" class="${cls}" data-guide-phase="${i}" ${unlocked ? "" : "disabled"}>${p.title}</button></li>`;
     })
     .join("");
 
-  if (phase.board?.fields?.length) {
-    els.guideBoard.hidden = false;
-    els.guideBoard.innerHTML = `<h3>${escapeHtml(phase.board.headline || "欄位板")}</h3>
-      <div class="field-chips">${phase.board.fields
-        .map((f) => {
-          const cls = f.source === "guide" ? "guide-added" : "";
-          const tag = f.tag ? `<span class="tag">${escapeHtml(f.tag)}</span>` : "";
-          return `<span class="field-chip ${cls}">${escapeHtml(f.label)}${tag}</span>`;
-        })
-        .join("")}</div>`;
-  } else {
-    els.guideBoard.hidden = true;
-    els.guideBoard.innerHTML = "";
+  els.guideTitle.textContent = phase.title;
+  els.guideGoal.textContent = phase.goal || "";
+  renderGuideStage(phase, cleared);
+
+  if (els.guideStory) {
+    if (phase.story) {
+      els.guideStory.hidden = false;
+      els.guideStory.innerHTML = `<div class="guide-story-card"><p>${escapeHtml(phase.story)}</p></div>`;
+    } else {
+      els.guideStory.hidden = true;
+      els.guideStory.innerHTML = "";
+    }
   }
 
-  if (phase.acl?.rows?.length) {
+  els.guideQuiz.innerHTML = "";
+  if (phase.quiz) {
+    const wrap = document.createElement("div");
+    wrap.innerHTML = `
+      <div class="guide-q-label">想一想 · 下一塊長什麼</div>
+      <p class="guide-q-prompt">${escapeHtml(phase.quiz.ask || "")}</p>
+    `;
+    els.guideQuiz.appendChild(wrap);
+
+    const choices = document.createElement("div");
+    choices.className = "guide-choices";
+    (phase.quiz.choices || []).forEach((c) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "guide-choice";
+      btn.textContent = c.text;
+      // 答對才鎖住；答錯可重選
+      btn.disabled = cleared;
+      if (cleared) {
+        if (c.id === answeredId) btn.classList.add("is-correct");
+        else if (c.correct) btn.classList.add("is-answer");
+      } else if (triedWrong && c.id === answeredId) {
+        btn.classList.add("is-wrong");
+      }
+      btn.addEventListener("click", () => {
+        state.guideAnswers[phase.id] = c.id;
+        renderGuide();
+      });
+      choices.appendChild(btn);
+    });
+    els.guideQuiz.appendChild(choices);
+  }
+
+  if (els.guideFeedback) {
+    if (picked && phase.quiz) {
+      const ok = Boolean(picked.correct);
+      els.guideFeedback.hidden = false;
+      els.guideFeedback.className = `guide-feedback ${ok ? "ok" : "no"}`;
+      const explain = ok
+        ? phase.quiz.explainCorrect || picked.explain || ""
+        : phase.quiz.explainWrong || picked.explain || "";
+      els.guideFeedback.innerHTML = `
+        <div class="guide-feedback-badge">${ok ? "長出來了" : "還沒長出 · 再選一次"}</div>
+        <p>${escapeHtml(explain)}</p>
+      `;
+    } else {
+      els.guideFeedback.hidden = true;
+      els.guideFeedback.innerHTML = "";
+      els.guideFeedback.className = "guide-feedback";
+    }
+  }
+
+  const reveal = cleared;
+  if (els.guideReveal) els.guideReveal.hidden = !reveal;
+
+  if (els.guideTurns) {
+    els.guideTurns.innerHTML = reveal
+      ? (phase.turns || [])
+          .map((t) => {
+            const who = t.who === "user" ? "使用者" : "顧問導引";
+            return `<div class="bubble ${t.who}"><span class="who">${who}</span>${escapeHtml(t.text)}</div>`;
+          })
+          .join("")
+      : "";
+  }
+
+  if (reveal && phase.acl?.rows?.length) {
     els.guideAcl.hidden = false;
     els.guideAcl.innerHTML = `<h3>權限：${escapeHtml(phase.acl.role || "")}</h3>
       <table class="acl-table"><thead><tr><th>欄位</th><th>看</th><th>編</th></tr></thead><tbody>
@@ -3056,34 +3823,37 @@ function renderGuide() {
         )
         .join("")}
       </tbody></table>`;
-  } else {
+  } else if (els.guideAcl) {
     els.guideAcl.hidden = true;
     els.guideAcl.innerHTML = "";
   }
 
-  if (phase.filePreview) {
+  if (reveal && phase.filePreview) {
     els.guideFile.hidden = false;
     const bullets = (phase.filePreview.bullets || [])
       .map((b) => `<li>${escapeHtml(b)}</li>`)
       .join("");
     els.guideFile.innerHTML = `<h3>產出檔：${escapeHtml(phase.filePreview.name || "")}</h3><ul>${bullets}</ul>`;
-  } else {
+  } else if (els.guideFile) {
     els.guideFile.hidden = true;
     els.guideFile.innerHTML = "";
   }
 
-  if (phase.tip) {
+  if (reveal && phase.tip) {
     els.guideTip.hidden = false;
     els.guideTip.textContent = phase.tip;
-  } else {
+  } else if (els.guideTip) {
     els.guideTip.hidden = true;
     els.guideTip.textContent = "";
   }
 
   els.guidePrev.disabled = state.guidePhase <= 0;
-  els.guideNext.disabled = state.guidePhase >= phases.length - 1;
+  const atEnd = state.guidePhase >= phases.length - 1;
+  els.guideNext.disabled = !cleared || atEnd;
+  els.guideNext.textContent = !cleared && phase.quiz ? "答對才會長出下一塊" : "下一關";
+
   const cta = phase.cta;
-  if (cta) {
+  if (reveal && cta) {
     els.guideCta.hidden = false;
     els.guideCta.textContent = cta.label || "打開系統導覽";
     els.guideCta.dataset.system = cta.system || "collection";
@@ -3096,7 +3866,9 @@ function renderGuide() {
 function setGuidePhase(index) {
   if (!state.guide) return;
   const max = state.guide.phases.length - 1;
-  state.guidePhase = Math.max(0, Math.min(index, max));
+  const next = Math.max(0, Math.min(index, max));
+  if (!isGuidePhaseUnlocked(next)) return;
+  state.guidePhase = next;
   renderGuide();
 }
 
@@ -3467,7 +4239,7 @@ function bindUi() {
   els.guideNext?.addEventListener("click", () => setGuidePhase(state.guidePhase + 1));
   els.guidePhases?.addEventListener("click", (e) => {
     const btn = e.target.closest("[data-guide-phase]");
-    if (!btn) return;
+    if (!btn || btn.disabled) return;
     setGuidePhase(Number(btn.getAttribute("data-guide-phase")));
   });
   els.guideCta?.addEventListener("click", () => {
