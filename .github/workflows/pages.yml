@@ -13,7 +13,8 @@ permissions:
 
 concurrency:
   group: "pages"
-  cancel-in-progress: false
+  # 卡住的 pending 會擋後面；改 true 讓新推送能蓋掉舊部署
+  cancel-in-progress: true
 
 jobs:
   deploy:
