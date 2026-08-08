@@ -10,6 +10,7 @@
 
 ## 場次
 
+- 2026-08-08 — Show 手機版：欄位壓扁＋自動縮放重點範圍 — 標籤：產品、walkthrough、Show、手機、欄位、學習 — [sessions/2026-08-08-show-mobile-field-fit.md](sessions/2026-08-08-show-mobile-field-fit.md)
 - 2026-08-08 — 同級獨立表單＋圖狀關聯（料號 A→B→C→D） — 標籤：產品、walkthrough、獨立表單、關聯圖、料號、總表 — [sessions/2026-08-08-independent-forms-graph.md](sessions/2026-08-08-independent-forms-graph.md)
 - 2026-08-08 — AFON／BFON 儀器校正試玩包（假資料熟悉系統） — 標籤：產品、walkthrough、AFON、BFON、儀器、校正 — [sessions/2026-08-08-abfon-bfon-walkthrough.md](sessions/2026-08-08-abfon-bfon-walkthrough.md)
 - 2026-08-08 — LINE 對話＋三層 JSON＋事後 ACL — 標籤：產品、walkthrough、LINE、JSON、ACL、Skill — [sessions/2026-08-08-line-json-acl.md](sessions/2026-08-08-line-json-acl.md)
