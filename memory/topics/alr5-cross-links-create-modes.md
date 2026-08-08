@@ -22,6 +22,8 @@
 
 試玩包（walkthrough，假資料、AFON／BFON 命名）：[`docs/walkthrough/vn/abfon.json`](../../docs/walkthrough/vn/abfon.json) · 場次 [2026-08-08-abfon-bfon-walkthrough](../sessions/2026-08-08-abfon-bfon-walkthrough.md)。
 
+**更新（2026-08-08）：** 使用者要的是**同級獨立表單**＋圖狀連結，不是一張表分區。料號範例：[`vn/material-graph.json`](../../docs/walkthrough/vn/material-graph.json)；場次 [independent-forms-graph](../sessions/2026-08-08-independent-forms-graph.md)。
+
 這樣 C 不必每次追整條鏈；「認證狀態」住在主檔上。
 
 ### 純流程鏈

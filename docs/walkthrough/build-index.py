@@ -6,8 +6,8 @@ import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-DEFAULT = "abfon"
-ORDER = ["abfon", "leave"]
+DEFAULT = "material-graph"
+ORDER = ["material-graph", "abfon", "leave"]
 
 
 def main() -> None:
@@ -52,6 +52,7 @@ def main() -> None:
       <div class="mode-tabs" role="tablist" aria-label="模式">
         <button type="button" class="mode-tab active" data-mode="show">Show</button>
         <button type="button" class="mode-tab" data-mode="form">表單</button>
+        <button type="button" class="mode-tab" data-mode="board">總表</button>
         <button type="button" class="mode-tab" data-mode="settings">設定</button>
         <a class="mode-tab" href="./map.html">地圖</a>
       </div>
@@ -68,6 +69,8 @@ def main() -> None:
         <div class="mode-tabs" id="role-tabs" aria-label="角色"></div>
         <span class="progress">資料／設定存在此瀏覽器；可匯出 JSON 帶走</span>
       </div>
+      <div id="form-type-tabs" class="mode-tabs" aria-label="獨立表單種類" hidden></div>
+      <div id="doc-list" hidden></div>
       <article class="form-sheet" id="form-sheet">
         <h2 class="form-title" id="form-title">表單</h2>
         <p class="form-sub" id="form-sub">空白開始 · 一欄一欄填進去</p>
@@ -79,7 +82,7 @@ def main() -> None:
         <div class="action-row" id="action-row"></div>
       </article>
       <aside class="summary" id="summary"></aside>
-      <p class="form-note">JSON 分三層：form／actions（人讀設定）· show（教學腳本）· demo（範例值）。畫面只是播放器。</p>
+      <p class="form-note">JSON：forms[] 同級獨立表單 · links 圖狀關聯 · show 腳本 · demo 單據／範例。畫面只是播放器。</p>
     </div>
 
     <section class="chat" id="chat" aria-label="對話">

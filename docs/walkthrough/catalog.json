@@ -1,6 +1,12 @@
 {
   "systems": [
     {
+      "id": "material-graph",
+      "label": "料號關聯圖 A→B→C→D",
+      "path": "./vn/material-graph.json",
+      "cdn": "https://cdn.jsdelivr.net/gh/hyi1105/SEED@main/docs/walkthrough/vn/material-graph.json"
+    },
+    {
       "id": "abfon",
       "label": "AFON／BFON 儀器校正",
       "path": "./vn/abfon.json",

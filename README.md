@@ -18,13 +18,14 @@
 
 ## 統一表單系統（畫面與資料分開）
 
-任意系統收成**一份 JSON**（`vn/*.json`）丟進播放器即可。JSON 分三層：人讀欄位／ACL／動作、Show 腳本、demo 範例值。
+任意系統收成**一份 JSON**（`vn/*.json`）丟進播放器即可。支援**多張同級獨立表單**＋圖狀連結＋狀態總表。
 
 - **主入口：** [`docs/walkthrough/index.html`](docs/walkthrough/index.html) · 合併後 https://hyi1105.github.io/SEED/walkthrough/
 - **立刻預覽：** https://htmlpreview.github.io/?https://github.com/hyi1105/SEED/blob/main/docs/walkthrough/index.html
-- **模式：** Show（LINE 對話＋上一步／下一步）／表單／設定（必填·可看·可編）／地圖（可選）
-- **契約：** [`docs/walkthrough/SKILL.md`](docs/walkthrough/SKILL.md) · 範例 [`vn/abfon.json`](docs/walkthrough/vn/abfon.json)（儀器校正）、[`vn/leave.json`](docs/walkthrough/vn/leave.json) · 源碼 [`player.js`](docs/walkthrough/player.js)
-- **組裝：** 改 `player.*`／`vn/*.json` 後跑 `python3 docs/walkthrough/build-index.py`
+- **模式：** Show／表單／**總表**／設定／地圖（可選）
+- **契約：** [`docs/walkthrough/SKILL.md`](docs/walkthrough/SKILL.md)
+- **範例：** [`vn/material-graph.json`](docs/walkthrough/vn/material-graph.json)（料號 A→B→C→D）、[`vn/abfon.json`](docs/walkthrough/vn/abfon.json)、[`vn/leave.json`](docs/walkthrough/vn/leave.json)
+- **組裝：** `python3 docs/walkthrough/build-index.py`
 - **構想：** [`memory/topics/blank-origin-map.md`](memory/topics/blank-origin-map.md)
 
 已拿掉：導引／簡報／演示。

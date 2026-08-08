@@ -491,6 +491,89 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
   font-family: var(--font-b);
   font-size: 0.82rem;
 }
+#form-type-tabs, #doc-list { width: min(720px, 100%); margin: 0 auto 0.55rem; }
+#form-type-tabs { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+.doc-list-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin: 0.35rem 0;
+}
+.doc-chips { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.doc-chip {
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 12px;
+  padding: 0.35rem 0.65rem;
+  font: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+  text-align: left;
+}
+.doc-chip small { display: block; color: var(--muted); font-weight: 500; }
+.doc-chip.active {
+  border-color: var(--brand);
+  background: var(--soft);
+}
+.link-panel {
+  margin-top: 0.55rem;
+  padding: 0.55rem 0.7rem;
+  background: rgba(255, 252, 247, 0.75);
+  border: 1px dashed var(--line);
+  border-radius: 12px;
+}
+.link-ul { margin: 0.25rem 0 0; padding-left: 1.1rem; font-size: 0.82rem; }
+.link-ul .muted, .muted { color: var(--muted); }
+.board-lead { margin: 0 0 0.75rem; line-height: 1.55; }
+.board-rules { margin: 0 0 0.85rem; padding-left: 1.1rem; font-size: 0.85rem; color: var(--muted); }
+.board-table-wrap { overflow: auto; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+.board-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+.board-table th, .board-table td {
+  padding: 0.55rem 0.65rem;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+.board-table th { background: #f3f7f5; font-family: var(--font-ui); font-size: 0.72rem; letter-spacing: 0.04em; }
+.board-table tr { cursor: pointer; }
+.board-table tr:hover { background: rgba(23, 143, 114, 0.06); }
+.board-table tr.hi { background: rgba(23, 143, 114, 0.12); }
+.board-table tr.done td:nth-child(5) { color: var(--brand); font-weight: 700; }
+.lvl {
+  display: inline-flex;
+  min-width: 1.4rem;
+  justify-content: center;
+  padding: 0.1rem 0.35rem;
+  border-radius: 6px;
+  background: var(--soft);
+  font-family: var(--font-ui);
+  font-weight: 700;
+  color: var(--brand);
+}
+.board-graph { margin-top: 0.85rem; display: grid; gap: 0.35rem; }
+.edge {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr auto;
+  gap: 0.35rem;
+  align-items: center;
+  padding: 0.45rem 0.6rem;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  font-size: 0.8rem;
+}
+.edge.hi { border-color: var(--brand-2); box-shadow: 0 0 0 1px rgba(23, 143, 114, 0.2); }
+.edge-arrow { color: var(--brand); font-weight: 700; }
+.edge-label { color: var(--muted); font-size: 0.72rem; }
+.settings-form-title {
+  margin: 1rem 0 0.5rem;
+  font-family: var(--font-d);
+  font-size: 1.05rem;
+}
+.app[data-mode="form"] #form-toolbar { display: flex; }
 .toast {
   position: fixed;
   left: 50%;
@@ -532,6 +615,7 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
       <div class="mode-tabs" role="tablist" aria-label="模式">
         <button type="button" class="mode-tab active" data-mode="show">Show</button>
         <button type="button" class="mode-tab" data-mode="form">表單</button>
+        <button type="button" class="mode-tab" data-mode="board">總表</button>
         <button type="button" class="mode-tab" data-mode="settings">設定</button>
         <a class="mode-tab" href="./map.html">地圖</a>
       </div>
@@ -548,6 +632,8 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
         <div class="mode-tabs" id="role-tabs" aria-label="角色"></div>
         <span class="progress">資料／設定存在此瀏覽器；可匯出 JSON 帶走</span>
       </div>
+      <div id="form-type-tabs" class="mode-tabs" aria-label="獨立表單種類" hidden></div>
+      <div id="doc-list" hidden></div>
       <article class="form-sheet" id="form-sheet">
         <h2 class="form-title" id="form-title">表單</h2>
         <p class="form-sub" id="form-sub">空白開始 · 一欄一欄填進去</p>
@@ -559,7 +645,7 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
         <div class="action-row" id="action-row"></div>
       </article>
       <aside class="summary" id="summary"></aside>
-      <p class="form-note">JSON 分三層：form／actions（人讀設定）· show（教學腳本）· demo（範例值）。畫面只是播放器。</p>
+      <p class="form-note">JSON：forms[] 同級獨立表單 · links 圖狀關聯 · show 腳本 · demo 單據／範例。畫面只是播放器。</p>
     </div>
 
     <section class="chat" id="chat" aria-label="對話">
@@ -575,618 +661,653 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
   </div>
   <div class="toast" id="toast" role="status"></div>
 
-  <script type="application/json" id="vn-data" data-default="abfon">
+  <script type="application/json" id="vn-data" data-default="material-graph">
 {
   "meta": {
-    "id": "abfon",
-    "title": "AFON／BFON 儀器校正",
-    "subtitle": "儀器主檔 × 年度校正報告 · 假資料試玩熟悉系統"
+    "id": "material-graph",
+    "title": "料號關聯圖 A→B→C→D",
+    "subtitle": "同級獨立表單 · 一對多連結 · 總表看狀態"
   },
   "roles": [
     {
-      "id": "afon_staff",
-      "label": "儀器管理員（AFON）"
+      "id": "planner",
+      "label": "料號企劃"
     },
     {
-      "id": "bfon_staff",
-      "label": "校正人員（BFON）"
+      "id": "warehouse",
+      "label": "倉庫／備料"
     },
     {
-      "id": "qa",
-      "label": "品保"
+      "id": "buyer",
+      "label": "採購"
     }
   ],
-  "form": {
-    "title": "AFON 儀器主檔 ＋ BFON 校正報告",
-    "statusField": "workflow_status",
-    "sections": [
-      {
-        "id": "afon",
-        "label": "AFON · 儀器主檔",
-        "fields": [
-          {
-            "id": "asset_no",
-            "label": "儀器編號",
-            "type": "text",
-            "placeholder": "例如 AFON-2024-0012",
-            "meaning": "這台儀器在全公司的身分證字號；之後所有校正報告都掛在這個號碼上",
-            "acl": {
-              "requiredFrom": [
-                "afon_staff"
-              ],
-              "read": [
-                "afon_staff",
-                "bfon_staff",
-                "qa"
-              ],
-              "write": [
-                "afon_staff"
-              ]
-            }
-          },
-          {
-            "id": "asset_name",
-            "label": "儀器名稱",
-            "type": "text",
-            "placeholder": "例如 光學顯微鏡",
-            "meaning": "人看得懂的名字；編號給系統對帳，名稱給人找機器",
-            "acl": {
-              "requiredFrom": [
-                "afon_staff"
-              ],
-              "read": [
-                "afon_staff",
-                "bfon_staff",
-                "qa"
-              ],
-              "write": [
-                "afon_staff"
-              ]
-            }
-          },
-          {
-            "id": "model",
-            "label": "型號",
-            "type": "text",
-            "placeholder": "廠牌型號",
-            "meaning": "校正程序常依型號不同；寫錯會對到錯的校正規範",
-            "acl": {
-              "requiredFrom": [
-                "afon_staff"
-              ],
-              "read": [
-                "afon_staff",
-                "bfon_staff",
-                "qa"
-              ],
-              "write": [
-                "afon_staff"
-              ]
-            }
-          },
-          {
-            "id": "location",
-            "label": "放置地點",
-            "type": "text",
-            "placeholder": "實驗室／產線位置",
-            "meaning": "校正人員要找得到機器；搬過沒改，BFON 就會跑錯現場",
-            "acl": {
-              "requiredFrom": [],
-              "read": [
-                "afon_staff",
-                "bfon_staff",
-                "qa"
-              ],
-              "write": [
-                "afon_staff"
-              ]
-            }
-          },
-          {
-            "id": "owner",
-            "label": "保管人",
-            "type": "text",
-            "placeholder": "儀器管理員姓名",
-            "meaning": "AFON 這一側的窗口；不是校正工程師",
-            "autoPersona": true,
-            "acl": {
-              "requiredFrom": [
-                "afon_staff"
-              ],
-              "read": [
-                "afon_staff",
-                "bfon_staff",
-                "qa"
-              ],
-              "write": [
-                "afon_staff"
-              ]
-            }
-          },
-          {
-            "id": "qualify_flag",
-            "label": "合格狀態",
-            "type": "select",
-            "options": [
-              "合格",
-              "待校正",
-              "不合格",
-              "停用"
-            ],
-            "meaning": "主檔上的『現在能不能用』；由最近一次 BFON 結果回寫，不是手填心情",
-            "acl": {
-              "requiredFrom": [],
-              "read": [
-                "afon_staff",
-                "bfon_staff",
-                "qa"
-              ],
-              "write": [
-                "afon_staff"
-              ]
-            }
-          },
-          {
-            "id": "next_cal_date",
-            "label": "下次校正日",
-            "type": "date",
-            "meaning": "主檔上的到期日；過了就不能當合格儀器用。BFON 完成後會覆寫這裡",
-            "acl": {
-              "requiredFrom": [],
-              "read": [
-                "afon_staff",
-                "bfon_staff",
-                "qa"
-              ],
-              "write": [
-                "afon_staff"
-              ]
-            }
-          },
-          {
-            "id": "related_bfon",
-            "label": "關聯 BFON",
-            "type": "textarea",
-            "placeholder": "從此主檔可看到的校正報告清單",
-            "meaning": "為什麼開 AFON：不是只看一台機器，而是要看到『這台機器歷年校正報告』",
-            "acl": {
-              "requiredFrom": [],
-              "read": [
-                "afon_staff",
-                "bfon_staff",
-                "qa"
-              ],
-              "write": [
-                "afon_staff"
-              ]
-            }
-          }
-        ]
-      },
-      {
-        "id": "bfon",
-        "label": "BFON · 年度校正報告",
-        "fields": [
-          {
-            "id": "report_no",
-            "label": "報告編號",
-            "type": "text",
-            "placeholder": "例如 BFON-2026-0088",
-            "meaning": "每一次校正事件的單號；同一台 AFON 會有很多張 BFON",
-            "acl": {
-              "requiredFrom": [
-                "bfon_staff"
-              ],
-              "read": [
-                "afon_staff",
-                "bfon_staff",
-                "qa"
-              ],
-              "write": [
-                "bfon_staff"
-              ]
-            }
-          },
-          {
-            "id": "link_asset_no",
-            "label": "掛接儀器",
-            "type": "text",
-            "placeholder": "必須等於 AFON 儀器編號",
-            "meaning": "跨單關聯：BFON 一定要掛到某張 AFON，否則報告 orphan、主檔也回寫不回去",
-            "acl": {
-              "requiredFrom": [
-                "bfon_staff"
-              ],
-              "read": [
-                "afon_staff",
-                "bfon_staff",
-                "qa"
-              ],
-              "write": [
-                "bfon_staff"
-              ]
-            }
-          },
-          {
-            "id": "cal_date",
-            "label": "校正日期",
-            "type": "date",
-            "meaning": "這次事件發生日；用來算下次校正日、也用來排序『最新一次』",
-            "acl": {
-              "requiredFrom": [
-                "bfon_staff"
-              ],
-              "read": [
-                "afon_staff",
-                "bfon_staff",
-                "qa"
-              ],
-              "write": [
-                "bfon_staff"
-              ]
-            }
-          },
-          {
-            "id": "cal_cycle_months",
-            "label": "週期（月）",
-            "type": "text",
-            "placeholder": "12",
-            "meaning": "年度校正常見 12 個月；週期 × 校正日 → 建議下次校正日",
-            "acl": {
-              "requiredFrom": [
-                "bfon_staff"
-              ],
-              "read": [
-                "afon_staff",
-                "bfon_staff",
-                "qa"
-              ],
-              "write": [
-                "bfon_staff"
-              ]
-            }
-          },
-          {
-            "id": "technician",
-            "label": "校正人員",
-            "type": "text",
-            "placeholder": "BFON 側執行者",
-            "meaning": "BFON 這一側的窗口；跟 AFON 保管人是不同單位的人",
-            "autoPersona": true,
-            "acl": {
-              "requiredFrom": [
-                "bfon_staff"
-              ],
-              "read": [
-                "afon_staff",
-                "bfon_staff",
-                "qa"
-              ],
-              "write": [
-                "bfon_staff"
-              ]
-            }
-          },
-          {
-            "id": "result",
-            "label": "校正結果",
-            "type": "select",
-            "options": [
-              "合格",
-              "不合格",
-              "限制使用"
-            ],
-            "meaning": "這次事件的結論；完成後會回寫 AFON 的合格狀態",
-            "acl": {
-              "requiredFrom": [
-                "bfon_staff"
-              ],
-              "read": [
-                "afon_staff",
-                "bfon_staff",
-                "qa"
-              ],
-              "write": [
-                "bfon_staff"
-              ]
-            }
-          },
-          {
-            "id": "suggested_next",
-            "label": "建議下次校正日",
-            "type": "date",
-            "meaning": "本張 BFON 算出來的日期；結案合格時寫回 AFON.next_cal_date",
-            "acl": {
-              "requiredFrom": [
-                "bfon_staff"
-              ],
-              "read": [
-                "afon_staff",
-                "bfon_staff",
-                "qa"
-              ],
-              "write": [
-                "bfon_staff"
-              ]
-            }
-          },
-          {
-            "id": "bfon_comment",
-            "label": "校正備註",
-            "type": "textarea",
-            "placeholder": "標準件、偏差、環境條件…",
-            "meaning": "給未來的自己與稽核看：這次為什麼合格／不合格",
-            "acl": {
-              "requiredFrom": [],
-              "read": [
-                "afon_staff",
-                "bfon_staff",
-                "qa"
-              ],
-              "write": [
-                "bfon_staff"
-              ]
-            }
-          }
-        ]
-      },
-      {
-        "id": "qa_sec",
-        "label": "品保覆核",
-        "fields": [
-          {
-            "id": "qa_name",
-            "label": "覆核人",
-            "type": "text",
-            "meaning": "第三方確認這張 BFON 能不能生效回寫主檔",
-            "autoPersona": true,
-            "acl": {
-              "requiredFrom": [
-                "qa"
-              ],
-              "read": [
-                "afon_staff",
-                "bfon_staff",
-                "qa"
-              ],
-              "write": [
-                "qa"
-              ]
-            }
-          },
-          {
-            "id": "qa_date",
-            "label": "覆核日",
-            "type": "date",
-            "autoToday": true,
-            "meaning": "何時放行",
-            "acl": {
-              "requiredFrom": [
-                "qa"
-              ],
-              "read": [
-                "afon_staff",
-                "bfon_staff",
-                "qa"
-              ],
-              "write": [
-                "qa"
-              ]
-            }
-          },
-          {
-            "id": "qa_comment",
-            "label": "覆核意見",
-            "type": "textarea",
-            "placeholder": "同意回寫主檔／退回補件",
-            "meaning": "放行或退回的理由",
-            "acl": {
-              "requiredFrom": [
-                "qa"
-              ],
-              "read": [
-                "afon_staff",
-                "bfon_staff",
-                "qa"
-              ],
-              "write": [
-                "qa"
-              ]
-            }
-          }
-        ]
-      },
-      {
-        "id": "close",
-        "label": "流程狀態",
-        "fields": [
-          {
-            "id": "workflow_status",
-            "label": "目前狀態",
-            "type": "text",
-            "meaning": "整條 AFON→BFON→回寫 走到哪：草稿／主檔已建／校正中／待品保／已回寫／不合格停用",
-            "acl": {
-              "requiredFrom": [],
-              "read": [
-                "afon_staff",
-                "bfon_staff",
-                "qa"
-              ],
-              "write": []
-            }
-          }
-        ]
-      }
-    ]
-  },
-  "actions": [
+  "linkRules": [
     {
-      "id": "save_afon",
-      "label": "建立／更新儀器主檔",
-      "role": "afon_staff",
-      "whenStatus": [
-        "",
-        "草稿",
-        "主檔已建",
-        "待校正",
-        "不合格停用"
-      ],
-      "require": [
-        "asset_no",
-        "asset_name",
-        "model",
-        "owner"
-      ],
-      "set": {
-        "workflow_status": "主檔已建",
-        "qualify_flag": "待校正"
-      },
-      "autoPersona": [
-        "owner"
-      ],
-      "message": "AFON 主檔已就緒。可從「關聯 BFON」看到這台機器的校正報告；接著請校正單位開 BFON。"
+      "from": "material",
+      "to": "need",
+      "cardinality": "1:n",
+      "label": "料號 A 可掛多個需求 B（生產／定價／備料…）"
     },
     {
-      "id": "submit_bfon",
-      "label": "送出校正報告給品保",
-      "role": "bfon_staff",
-      "whenStatus": [
-        "主檔已建",
-        "校正中",
-        "待修改"
-      ],
-      "require": [
-        "report_no",
-        "link_asset_no",
-        "cal_date",
-        "technician",
-        "result",
-        "suggested_next"
-      ],
-      "set": {
-        "workflow_status": "待品保"
-      },
-      "autoPersona": [
-        "technician"
-      ],
-      "message": "BFON 已送出。品保覆核通過後，才會回寫 AFON 的下次校正日與合格狀態。"
+      "from": "need",
+      "to": "component",
+      "cardinality": "1:n",
+      "label": "一個需求 B 可拆多個底料／申請 C"
     },
     {
-      "id": "qa_pass",
-      "label": "覆核通過並回寫主檔",
-      "role": "qa",
-      "whenStatus": [
-        "待品保"
-      ],
-      "require": [
-        "qa_comment"
-      ],
-      "set": {
-        "workflow_status": "已回寫",
-        "qualify_flag": "合格"
-      },
-      "copy": {
-        "suggested_next": "next_cal_date"
-      },
-      "autoPersona": [
-        "qa_name"
-      ],
-      "autoToday": [
-        "qa_date"
-      ],
-      "message": "已放行：已把 BFON 的建議下次校正日回寫到 AFON 主檔，合格狀態＝合格。"
+      "from": "need",
+      "to": "purchase",
+      "cardinality": "1:n",
+      "label": "需求也可直接連到採購 D"
     },
     {
-      "id": "qa_return",
-      "label": "退回校正補件",
-      "role": "qa",
-      "whenStatus": [
-        "待品保"
-      ],
-      "require": [
-        "qa_comment"
-      ],
-      "set": {
-        "workflow_status": "待修改"
-      },
-      "autoPersona": [
-        "qa_name"
-      ],
-      "autoToday": [
-        "qa_date"
-      ],
-      "message": "已退回 BFON。校正人員可改完再送。"
-    },
-    {
-      "id": "fail_hold",
-      "label": "判定不合格並停用儀器",
-      "role": "qa",
-      "whenStatus": [
-        "待品保"
-      ],
-      "require": [
-        "qa_comment"
-      ],
-      "set": {
-        "workflow_status": "不合格停用",
-        "qualify_flag": "不合格",
-        "result": "不合格"
-      },
-      "autoPersona": [
-        "qa_name"
-      ],
-      "autoToday": [
-        "qa_date"
-      ],
-      "message": "主檔標不合格／停用。這台顯微鏡在重新校正合格前不應再使用。"
+      "from": "component",
+      "to": "purchase",
+      "cardinality": "n:n",
+      "label": "底料 C 可向供應商採購 D（多對多）"
     }
   ],
-  "tables": [
+  "forms": [
     {
-      "id": "afon",
-      "label": "AFON 儀器主檔（長期）",
-      "fields": [
+      "id": "material",
+      "label": "料號主檔",
+      "level": "A",
+      "title": "A · 料號主檔",
+      "titleField": "sku",
+      "statusField": "status",
+      "doneWhen": [
+        "已就緒",
+        "已完成"
+      ],
+      "sections": [
         {
-          "label": "儀器編號",
-          "origin": "全公司身分證；BFON 都掛這碼"
-        },
-        {
-          "label": "名稱／型號／地點",
-          "origin": "人找機器、校正對規範、現場找得到"
-        },
-        {
-          "label": "保管人",
-          "origin": "AFON 側窗口，與校正單位不同"
-        },
-        {
-          "label": "合格狀態／下次校正日",
-          "origin": "『現在能不能用』住在主檔；由 BFON 回寫"
-        },
-        {
-          "label": "關聯 BFON",
-          "origin": "從主檔看出這台機器的校正報告族譜"
+          "id": "main",
+          "label": "料號本身",
+          "fields": [
+            {
+              "id": "sku",
+              "label": "料號",
+              "type": "text",
+              "placeholder": "例如 SKU-8801",
+              "meaning": "A 的身分證。後面所有需求、底料、採購都掛回這個料號。",
+              "acl": {
+                "requiredFrom": [
+                  "planner"
+                ],
+                "read": [
+                  "planner",
+                  "warehouse",
+                  "buyer"
+                ],
+                "write": [
+                  "planner"
+                ]
+              }
+            },
+            {
+              "id": "sku_name",
+              "label": "品名",
+              "type": "text",
+              "placeholder": "人看得懂的名字",
+              "meaning": "給人找料；編號給系統對帳。",
+              "acl": {
+                "requiredFrom": [
+                  "planner"
+                ],
+                "read": [
+                  "planner",
+                  "warehouse",
+                  "buyer"
+                ],
+                "write": [
+                  "planner"
+                ]
+              }
+            },
+            {
+              "id": "goal",
+              "label": "目標說明",
+              "type": "textarea",
+              "placeholder": "為什麼要建這個料號",
+              "meaning": "先講清楚目標，才知道要連哪些 B（生產／定價／備料）。",
+              "acl": {
+                "requiredFrom": [],
+                "read": [
+                  "planner",
+                  "warehouse",
+                  "buyer"
+                ],
+                "write": [
+                  "planner"
+                ]
+              }
+            },
+            {
+              "id": "status",
+              "label": "料號狀態",
+              "type": "select",
+              "options": [
+                "草稿",
+                "規劃中",
+                "已就緒",
+                "停用"
+              ],
+              "meaning": "A 自己的狀態；不等於底下 B／C／D 都完成，但總表可以一起看。",
+              "acl": {
+                "requiredFrom": [],
+                "read": [
+                  "planner",
+                  "warehouse",
+                  "buyer"
+                ],
+                "write": [
+                  "planner"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
     {
-      "id": "bfon",
-      "label": "BFON 校正報告（每次事件）",
+      "id": "need",
+      "label": "需求／目標單",
+      "level": "B",
+      "title": "B · 需求／目標單",
+      "titleField": "need_title",
+      "statusField": "status",
+      "doneWhen": [
+        "已完成"
+      ],
+      "sections": [
+        {
+          "id": "main",
+          "label": "這個需求要做什麼",
+          "fields": [
+            {
+              "id": "need_title",
+              "label": "需求名稱",
+              "type": "text",
+              "placeholder": "例如：備料、定價、生產",
+              "meaning": "B 與 A 同級：不是料號裡的分頁，是另一張獨立單。",
+              "acl": {
+                "requiredFrom": [
+                  "planner",
+                  "warehouse"
+                ],
+                "read": [
+                  "planner",
+                  "warehouse",
+                  "buyer"
+                ],
+                "write": [
+                  "planner",
+                  "warehouse"
+                ]
+              }
+            },
+            {
+              "id": "need_type",
+              "label": "需求類型",
+              "type": "select",
+              "options": [
+                "備料",
+                "定價",
+                "生產",
+                "其他"
+              ],
+              "meaning": "同料號可同時有多張不同類型的 B。",
+              "acl": {
+                "requiredFrom": [
+                  "planner",
+                  "warehouse"
+                ],
+                "read": [
+                  "planner",
+                  "warehouse",
+                  "buyer"
+                ],
+                "write": [
+                  "planner",
+                  "warehouse"
+                ]
+              }
+            },
+            {
+              "id": "need_detail",
+              "label": "需求內容",
+              "type": "textarea",
+              "placeholder": "例如：倉庫要有空間、要有備料預算…",
+              "meaning": "把『需要什麼條件』寫清楚，後面才拆得出 C／D。",
+              "acl": {
+                "requiredFrom": [],
+                "read": [
+                  "planner",
+                  "warehouse",
+                  "buyer"
+                ],
+                "write": [
+                  "planner",
+                  "warehouse"
+                ]
+              }
+            },
+            {
+              "id": "space_ok",
+              "label": "倉庫空間",
+              "type": "select",
+              "options": [
+                "未確認",
+                "足夠",
+                "不足"
+              ],
+              "meaning": "備料類 B 常見條件之一：有沒有位子放。",
+              "acl": {
+                "requiredFrom": [],
+                "read": [
+                  "planner",
+                  "warehouse",
+                  "buyer"
+                ],
+                "write": [
+                  "warehouse"
+                ]
+              }
+            },
+            {
+              "id": "budget_ok",
+              "label": "備料預算",
+              "type": "select",
+              "options": [
+                "未確認",
+                "已編列",
+                "不足"
+              ],
+              "meaning": "另一個常見條件：有沒有錢備。",
+              "acl": {
+                "requiredFrom": [],
+                "read": [
+                  "planner",
+                  "warehouse",
+                  "buyer"
+                ],
+                "write": [
+                  "warehouse",
+                  "planner"
+                ]
+              }
+            },
+            {
+              "id": "status",
+              "label": "需求狀態",
+              "type": "select",
+              "options": [
+                "草稿",
+                "進行中",
+                "已完成",
+                "取消"
+              ],
+              "meaning": "這張 B 自己完不完成；總表用它判斷打勾。",
+              "acl": {
+                "requiredFrom": [],
+                "read": [
+                  "planner",
+                  "warehouse",
+                  "buyer"
+                ],
+                "write": [
+                  "planner",
+                  "warehouse"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "component",
+      "label": "底料／申請單",
+      "level": "C",
+      "title": "C · 底料／申請單",
+      "titleField": "comp_name",
+      "statusField": "status",
+      "doneWhen": [
+        "已完成",
+        "已核准"
+      ],
+      "sections": [
+        {
+          "id": "main",
+          "label": "底下還需要什麼",
+          "fields": [
+            {
+              "id": "comp_name",
+              "label": "品項",
+              "type": "text",
+              "placeholder": "例如：瓶子、新紙板",
+              "meaning": "備料完成前，常再拆出底料或『申請新板』——這是另一張獨立 C。",
+              "acl": {
+                "requiredFrom": [
+                  "warehouse"
+                ],
+                "read": [
+                  "planner",
+                  "warehouse",
+                  "buyer"
+                ],
+                "write": [
+                  "warehouse"
+                ]
+              }
+            },
+            {
+              "id": "comp_kind",
+              "label": "種類",
+              "type": "select",
+              "options": [
+                "包材",
+                "原料",
+                "新板申請",
+                "其他"
+              ],
+              "meaning": "方便分類與後續採購。",
+              "acl": {
+                "requiredFrom": [],
+                "read": [
+                  "planner",
+                  "warehouse",
+                  "buyer"
+                ],
+                "write": [
+                  "warehouse"
+                ]
+              }
+            },
+            {
+              "id": "qty",
+              "label": "數量",
+              "type": "text",
+              "placeholder": "需要多少",
+              "meaning": "給採購與倉庫對帳用。",
+              "acl": {
+                "requiredFrom": [
+                  "warehouse"
+                ],
+                "read": [
+                  "planner",
+                  "warehouse",
+                  "buyer"
+                ],
+                "write": [
+                  "warehouse"
+                ]
+              }
+            },
+            {
+              "id": "status",
+              "label": "申請狀態",
+              "type": "select",
+              "options": [
+                "草稿",
+                "申請中",
+                "已核准",
+                "已完成",
+                "駁回"
+              ],
+              "meaning": "C 的狀態獨立於 B；B 完成不代表每張 C 都好。",
+              "acl": {
+                "requiredFrom": [],
+                "read": [
+                  "planner",
+                  "warehouse",
+                  "buyer"
+                ],
+                "write": [
+                  "warehouse"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "purchase",
+      "label": "採購單",
+      "level": "D",
+      "title": "D · 採購單",
+      "titleField": "vendor",
+      "statusField": "status",
+      "doneWhen": [
+        "已到貨",
+        "已完成"
+      ],
+      "sections": [
+        {
+          "id": "main",
+          "label": "向誰買",
+          "fields": [
+            {
+              "id": "vendor",
+              "label": "供應商",
+              "type": "text",
+              "placeholder": "公司名稱",
+              "meaning": "倉庫可能向某公司採購——這是 D，可掛在 C 或直接掛在 B。",
+              "acl": {
+                "requiredFrom": [
+                  "buyer"
+                ],
+                "read": [
+                  "planner",
+                  "warehouse",
+                  "buyer"
+                ],
+                "write": [
+                  "buyer"
+                ]
+              }
+            },
+            {
+              "id": "po_no",
+              "label": "採購單號",
+              "type": "text",
+              "placeholder": "PO 編號",
+              "meaning": "對外對帳用的單號。",
+              "acl": {
+                "requiredFrom": [
+                  "buyer"
+                ],
+                "read": [
+                  "planner",
+                  "warehouse",
+                  "buyer"
+                ],
+                "write": [
+                  "buyer"
+                ]
+              }
+            },
+            {
+              "id": "buy_what",
+              "label": "採購內容",
+              "type": "textarea",
+              "placeholder": "買什麼、對應哪張 C",
+              "meaning": "說明這張 D 服務哪一條需求／底料。",
+              "acl": {
+                "requiredFrom": [],
+                "read": [
+                  "planner",
+                  "warehouse",
+                  "buyer"
+                ],
+                "write": [
+                  "buyer"
+                ]
+              }
+            },
+            {
+              "id": "status",
+              "label": "採購狀態",
+              "type": "select",
+              "options": [
+                "草稿",
+                "詢價中",
+                "已下單",
+                "已到貨",
+                "已完成",
+                "取消"
+              ],
+              "meaning": "D 自己的進度；總表用來打勾。",
+              "acl": {
+                "requiredFrom": [],
+                "read": [
+                  "planner",
+                  "warehouse",
+                  "buyer"
+                ],
+                "write": [
+                  "buyer"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "id": "a_ready",
+      "form": "material",
+      "label": "料號標為已就緒",
+      "role": "planner",
+      "whenStatus": [
+        "",
+        "草稿",
+        "規劃中"
+      ],
+      "require": [
+        "sku",
+        "sku_name"
+      ],
+      "set": {
+        "status": "已就緒"
+      },
+      "message": "A 已就緒。請到其他表單建 B，並用「連到…」掛回此料號。"
+    },
+    {
+      "id": "b_done",
+      "form": "need",
+      "label": "需求標為已完成",
+      "role": "warehouse",
+      "whenStatus": [
+        "",
+        "草稿",
+        "進行中"
+      ],
+      "require": [
+        "need_title",
+        "need_type"
+      ],
+      "set": {
+        "status": "已完成"
+      },
+      "message": "這張 B 完成。記得看總表：底下 C／D 可能還沒好。"
+    },
+    {
+      "id": "b_progress",
+      "form": "need",
+      "label": "需求進行中",
+      "role": "planner",
+      "whenStatus": [
+        "",
+        "草稿"
+      ],
+      "require": [
+        "need_title"
+      ],
+      "set": {
+        "status": "進行中"
+      },
+      "message": "B 進行中。"
+    },
+    {
+      "id": "c_done",
+      "form": "component",
+      "label": "底料／申請完成",
+      "role": "warehouse",
+      "whenStatus": [
+        "",
+        "草稿",
+        "申請中",
+        "已核准"
+      ],
+      "require": [
+        "comp_name",
+        "qty"
+      ],
+      "set": {
+        "status": "已完成"
+      },
+      "message": "C 完成。"
+    },
+    {
+      "id": "d_done",
+      "form": "purchase",
+      "label": "採購到貨完成",
+      "role": "buyer",
+      "whenStatus": [
+        "",
+        "草稿",
+        "詢價中",
+        "已下單"
+      ],
+      "require": [
+        "vendor",
+        "po_no"
+      ],
+      "set": {
+        "status": "已到貨"
+      },
+      "message": "D 到貨。可在總表一次核對整圖狀態。"
+    }
+  ],
+  "tables": [
+    {
+      "id": "forms",
+      "label": "四種同級獨立表單",
       "fields": [
         {
-          "label": "報告編號",
-          "origin": "每一次年度（或臨時）校正事件"
+          "label": "A 料號",
+          "origin": "主體存在；不是容器塞 B"
         },
         {
-          "label": "掛接儀器",
-          "origin": "跨單關聯：一定要連到 AFON"
+          "label": "B 需求",
+          "origin": "生產／定價／備料…各一張，A 可掛很多張"
         },
         {
-          "label": "校正日／週期／建議下次",
-          "origin": "事件時間軸與回寫來源"
+          "label": "C 底料／申請",
+          "origin": "備料底下再拆瓶子、新板…"
         },
         {
-          "label": "校正人員／結果／備註",
-          "origin": "BFON 側責任與稽核軌跡"
+          "label": "D 採購",
+          "origin": "向某公司買；可掛 C 或 B"
+        }
+      ]
+    },
+    {
+      "id": "graph",
+      "label": "圖與總表",
+      "fields": [
+        {
+          "label": "連結",
+          "origin": "多對多；不是表單內嵌子表"
+        },
+        {
+          "label": "狀態總表",
+          "origin": "一眼看哪些完成、連到誰"
         }
       ]
     }
@@ -1200,7 +1321,7 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
       },
       {
         "id": "you",
-        "label": "你（初學者）",
+        "label": "你",
         "tone": "user"
       },
       {
@@ -1209,18 +1330,18 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
         "tone": "guide"
       },
       {
-        "id": "afon",
-        "label": "儀器管理員",
+        "id": "planner",
+        "label": "料號企劃",
         "tone": "manager"
       },
       {
-        "id": "bfon",
-        "label": "校正工程師",
+        "id": "wh",
+        "label": "倉庫",
         "tone": "hr"
       },
       {
-        "id": "qa",
-        "label": "品保",
+        "id": "buyer",
+        "label": "採購",
         "tone": "guide"
       }
     ],
@@ -1228,335 +1349,400 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
     "nodes": {
       "s01": {
         "speaker": "narrator",
-        "line": "這是一套量測儀器管理：AFON 管『機器本身』，BFON 管『每次校正報告』。兩邊各有自己的人。我們用假資料帶你走一遍。",
+        "line": "重點先講清楚：A 表與 B 表是同級的兩張獨立表單，不是一張表裡塞兩個分頁。今天用「料號」當例子，走一條 A→B→C→D 的圖。",
+        "form": "material",
+        "doc": "a1",
         "next": "s02"
       },
       "s02": {
         "speaker": "you",
-        "line": "我對這系統完全不熟。聽說有一台顯微鏡？報告又是什麼？",
+        "line": "我先有一個料號。它可能要生產、要定價、要備料——這些不該全塞進料號那一張裡吧？",
+        "form": "material",
+        "doc": "a1",
         "next": "s03"
       },
       "s03": {
         "speaker": "guide",
-        "line": "先記一句話：AFON＝儀器身分證（長期）；BFON＝年度校正事件（每次一張）。從 AFON 可以看見這台機器相關的 BFON。",
+        "line": "對。料號是 A。需求是 B。A 用「連結」掛很多個 B，像圖的節點，不是父子欄位。",
+        "form": "material",
+        "doc": "a1",
         "next": "s04"
       },
       "s04": {
-        "speaker": "afon",
-        "line": "我是儀器管理員。先幫你建這台光學顯微鏡的主檔——第一欄「儀器編號」是全公司對帳用的號碼。",
-        "focus": "asset_no",
-        "unlockSection": "afon",
+        "speaker": "planner",
+        "line": "我先建 A：料號本身。這是身分證字號。",
+        "form": "material",
+        "doc": "a1",
+        "focus": "sku",
+        "unlockSection": "main",
         "reveal": [
-          "asset_no"
+          "sku"
         ],
         "fillFromDemo": [
-          "asset_no"
+          "sku"
         ],
         "typewriter": true,
         "next": "s05"
       },
       "s05": {
-        "speaker": "afon",
-        "line": "「儀器名稱」給人看：這是光學顯微鏡，不是一串代號。",
-        "focus": "asset_name",
+        "speaker": "planner",
+        "line": "品名給人看；目標說明寫為什麼要建它——後面才知道要連哪些 B。",
+        "form": "material",
+        "doc": "a1",
+        "focus": "sku_name",
         "reveal": [
-          "asset_name"
+          "sku_name",
+          "goal",
+          "status"
         ],
         "fillFromDemo": [
-          "asset_name"
+          "sku_name",
+          "goal",
+          "a_status"
         ],
+        "mapFill": {
+          "a_status": "status"
+        },
         "typewriter": true,
         "next": "s06"
       },
       "s06": {
-        "speaker": "afon",
-        "line": "「型號」很重要——校正程序常依型號不同；寫錯會對到錯的規範。",
-        "focus": "model",
-        "reveal": [
-          "model"
+        "speaker": "guide",
+        "line": "現在開三張獨立的 B，都連回同一張 A：備料、定價、生產。",
+        "form": "material",
+        "doc": "a1",
+        "ensureDocs": [
+          {
+            "id": "b_prep",
+            "formId": "need",
+            "title": "備料需求"
+          },
+          {
+            "id": "b_price",
+            "formId": "need",
+            "title": "定價需求"
+          },
+          {
+            "id": "b_mfg",
+            "formId": "need",
+            "title": "生產需求"
+          }
         ],
-        "fillFromDemo": [
-          "model"
+        "links": [
+          {
+            "from": "a1",
+            "to": "b_prep",
+            "label": "需要備料"
+          },
+          {
+            "from": "a1",
+            "to": "b_price",
+            "label": "需要定價"
+          },
+          {
+            "from": "a1",
+            "to": "b_mfg",
+            "label": "需要生產"
+          }
         ],
-        "typewriter": true,
         "next": "s07"
       },
       "s07": {
-        "speaker": "afon",
-        "line": "「放置地點」是給校正同事找機器用的。搬過沒改，他們會跑錯實驗室。",
-        "focus": "location",
+        "speaker": "wh",
+        "line": "先看備料這張 B。它是獨立表單：倉庫空間、備料預算——這些是這張需求的條件，不是寫在料號裡。",
+        "form": "need",
+        "doc": "b_prep",
+        "focus": "need_title",
+        "unlockSection": "main",
         "reveal": [
-          "location"
+          "need_title",
+          "need_type",
+          "need_detail",
+          "space_ok",
+          "budget_ok",
+          "status"
         ],
         "fillFromDemo": [
-          "location"
+          "b_prep_title",
+          "b_prep_type",
+          "b_prep_detail",
+          "space_ok",
+          "budget_ok",
+          "b_prep_status"
         ],
+        "mapFill": {
+          "b_prep_title": "need_title",
+          "b_prep_type": "need_type",
+          "b_prep_detail": "need_detail",
+          "b_prep_status": "status"
+        },
         "typewriter": true,
         "next": "s08"
       },
       "s08": {
-        "speaker": "afon",
-        "line": "「保管人」是 AFON 這一側的窗口——是我，不是校正工程師。兩邊人員分開，責任才清楚。",
-        "focus": "owner",
+        "speaker": "planner",
+        "line": "定價、生產也各是一張 B——同樣連著 A，但狀態各自走。",
+        "form": "need",
+        "doc": "b_price",
+        "ensureDocs": [
+          {
+            "id": "b_price",
+            "formId": "need",
+            "title": "定價需求"
+          },
+          {
+            "id": "b_mfg",
+            "formId": "need",
+            "title": "生產需求"
+          }
+        ],
         "reveal": [
-          "owner"
+          "need_title",
+          "need_type",
+          "need_detail",
+          "status"
         ],
         "fillFromDemo": [
-          "owner"
+          "b_price_title",
+          "b_price_type",
+          "b_price_detail",
+          "b_price_status"
         ],
+        "mapFill": {
+          "b_price_title": "need_title",
+          "b_price_type": "need_type",
+          "b_price_detail": "need_detail",
+          "b_price_status": "status"
+        },
         "typewriter": true,
         "next": "s09"
       },
       "s09": {
         "speaker": "guide",
-        "line": "主檔還有兩個『現在能不能用』的欄位：合格狀態、下次校正日。新機器先標待校正。",
-        "focus": "qualify_flag",
-        "reveal": [
-          "qualify_flag",
-          "next_cal_date"
+        "line": "備料做下去，常還要底下的東西：瓶子、申請新紙板——那是 C，再從 B 連出去。一張 B 可以掛很多 C。",
+        "form": "need",
+        "doc": "b_prep",
+        "ensureDocs": [
+          {
+            "id": "c_bottle",
+            "formId": "component",
+            "title": "瓶子"
+          },
+          {
+            "id": "c_board",
+            "formId": "component",
+            "title": "新紙板申請"
+          }
         ],
-        "fillFromDemo": [
-          "qualify_flag",
-          "next_cal_date"
+        "links": [
+          {
+            "from": "b_prep",
+            "to": "c_bottle",
+            "label": "需要瓶子"
+          },
+          {
+            "from": "b_prep",
+            "to": "c_board",
+            "label": "申請新板"
+          }
         ],
-        "typewriter": true,
         "next": "s10"
       },
       "s10": {
-        "speaker": "afon",
-        "line": "重點來了：從這張 AFON，我看得到『關聯 BFON』——歷年校正報告清單。還沒校正前，只有去年那張假報告當例子。",
-        "focus": "related_bfon",
+        "speaker": "wh",
+        "line": "這張 C：瓶子。數量、種類寫在自己的單上。",
+        "form": "component",
+        "doc": "c_bottle",
+        "focus": "comp_name",
+        "unlockSection": "main",
         "reveal": [
-          "related_bfon",
-          "workflow_status"
+          "comp_name",
+          "comp_kind",
+          "qty",
+          "status"
         ],
         "fillFromDemo": [
-          "related_bfon_before",
-          "status_master"
+          "c_bottle_name",
+          "c_bottle_kind",
+          "c_bottle_qty",
+          "c_bottle_status"
         ],
         "mapFill": {
-          "related_bfon_before": "related_bfon",
-          "status_master": "workflow_status"
+          "c_bottle_name": "comp_name",
+          "c_bottle_kind": "comp_kind",
+          "c_bottle_qty": "qty",
+          "c_bottle_status": "status"
         },
         "typewriter": true,
         "next": "s11"
       },
       "s11": {
-        "speaker": "you",
-        "line": "所以我開 AFON 不是只看機器規格，而是要追這台機器的校正族譜？",
+        "speaker": "buyer",
+        "line": "倉庫要向『明達包材』買瓶子——這是 D。我把採購單連到瓶子這張 C；也可以同時讓備料 B 看得到這條採購。",
+        "form": "purchase",
+        "doc": "d1",
+        "ensureDoc": {
+          "id": "d1",
+          "formId": "purchase",
+          "title": "明達包材"
+        },
+        "links": [
+          {
+            "from": "c_bottle",
+            "to": "d1",
+            "label": "向供應商採購"
+          },
+          {
+            "from": "b_prep",
+            "to": "d1",
+            "label": "備料相關採購"
+          }
+        ],
+        "focus": "vendor",
+        "unlockSection": "main",
+        "reveal": [
+          "vendor",
+          "po_no",
+          "buy_what",
+          "status"
+        ],
+        "fillFromDemo": [
+          "vendor",
+          "po_no",
+          "buy_what",
+          "d_status"
+        ],
+        "mapFill": {
+          "d_status": "status"
+        },
+        "typewriter": true,
         "next": "s12"
       },
       "s12": {
         "speaker": "guide",
-        "line": "對。現在換 BFON 側的人上場——他們幫你做一張『今年』的假校正報告，讓你摸摸流程。",
+        "line": "現在打開總表：每一張獨立單據的狀態、連出連入，一次看完。完成與否打在自己的狀態上。",
+        "showBoard": true,
+        "boardHighlight": [
+          "a1",
+          "b_prep",
+          "c_bottle",
+          "d1"
+        ],
         "next": "s13"
       },
       "s13": {
-        "speaker": "bfon",
-        "line": "我是校正工程師。「報告編號」是這一次事件的單號——同一台顯微鏡，每年會多一張 BFON。",
-        "focus": "report_no",
-        "unlockSection": "bfon",
-        "reveal": [
-          "report_no"
-        ],
-        "fillFromDemo": [
-          "report_no"
-        ],
-        "typewriter": true,
-        "next": "s14"
-      },
-      "s14": {
-        "speaker": "bfon",
-        "line": "「掛接儀器」一定要等於 AFON 的儀器編號。掛錯或空白，報告會變成 orphan，主檔也回寫不回去。",
-        "focus": "link_asset_no",
-        "reveal": [
-          "link_asset_no"
-        ],
-        "fillFromDemo": [
-          "link_asset_no"
-        ],
-        "typewriter": true,
-        "next": "s15"
-      },
-      "s15": {
-        "speaker": "bfon",
-        "line": "校正日期、週期（月）、建議下次校正日——用來算時間軸，也是回寫主檔的來源。",
-        "focus": "cal_date",
-        "reveal": [
-          "cal_date",
-          "cal_cycle_months",
-          "suggested_next"
-        ],
-        "fillFromDemo": [
-          "cal_date",
-          "cal_cycle_months",
-          "suggested_next"
-        ],
-        "typewriter": true,
-        "next": "s16"
-      },
-      "s16": {
-        "speaker": "bfon",
-        "line": "「校正人員」是 BFON 側窗口。我填自己，並先標結果為合格，備註寫標準件與環境條件。",
-        "focus": "technician",
-        "reveal": [
-          "technician",
-          "result",
-          "bfon_comment"
-        ],
-        "fillFromDemo": [
-          "technician",
-          "result_ok",
-          "bfon_comment_ok"
-        ],
-        "mapFill": {
-          "result_ok": "result",
-          "bfon_comment_ok": "bfon_comment"
-        },
-        "typewriter": true,
-        "next": "s17"
-      },
-      "s17": {
         "speaker": "guide",
-        "line": "報告送出品保前，AFON 的關聯清單會多出這張今年的 BFON——兩邊就對上了。",
-        "focus": "related_bfon",
-        "reveal": [
-          "related_bfon"
-        ],
-        "fillFromDemo": [
-          "related_bfon_after",
-          "status_pending_qa"
-        ],
-        "mapFill": {
-          "related_bfon_after": "related_bfon",
-          "status_pending_qa": "workflow_status"
-        },
-        "typewriter": true,
-        "next": "s18"
-      },
-      "s18": {
-        "speaker": "guide",
-        "line": "關鍵選擇：這張假報告，品保要怎麼收？",
+        "line": "你要哪一種結局示範？",
+        "showBoard": true,
         "choices": [
           {
-            "id": "pass",
-            "label": "覆核通過 → 回寫主檔（合格）",
-            "next": "b_pass"
+            "id": "all_done",
+            "label": "假設關鍵路徑都完成（總表打勾）",
+            "next": "b_done"
           },
           {
-            "id": "return",
-            "label": "退回校正補件",
-            "next": "b_return"
-          },
-          {
-            "id": "fail",
-            "label": "不合格 → 儀器停用",
-            "next": "b_fail"
+            "id": "partial",
+            "label": "備料完成但採購未到貨（狀態不一致）",
+            "next": "b_partial"
           }
         ]
       },
-      "b_pass": {
-        "speaker": "qa",
-        "line": "我是品保。意見：數據完整，同意回寫。主檔合格狀態＝合格，下次校正日改成 BFON 建議日。",
-        "focus": "qa_comment",
-        "unlockSection": "qa_sec",
-        "reveal": [
-          "qa_name",
-          "qa_date",
-          "qa_comment",
-          "qualify_flag",
-          "next_cal_date",
-          "workflow_status"
-        ],
-        "fillFromDemo": [
-          "qa_name",
-          "qa_date",
-          "qa_comment_ok",
-          "qualify_ok",
-          "next_cal_after",
-          "status_done"
-        ],
-        "mapFill": {
-          "qa_comment_ok": "qa_comment",
-          "qualify_ok": "qualify_flag",
-          "next_cal_after": "next_cal_date",
-          "status_done": "workflow_status"
-        },
-        "typewriter": true,
-        "next": "s_end"
-      },
-      "b_return": {
-        "speaker": "qa",
-        "line": "退回：標準件序號沒寫清楚。狀態變待修改——BFON 側改完再送，主檔先不要假裝合格。",
-        "focus": "qa_comment",
-        "unlockSection": "qa_sec",
-        "reveal": [
-          "qa_name",
-          "qa_date",
-          "qa_comment",
-          "workflow_status"
-        ],
-        "fillFromDemo": [
-          "qa_name",
-          "qa_date",
-          "qa_comment_return",
-          "status_revise"
-        ],
-        "mapFill": {
-          "qa_comment_return": "qa_comment",
-          "status_revise": "workflow_status"
-        },
-        "typewriter": true,
-        "next": "s_end_early"
-      },
-      "b_fail": {
-        "speaker": "qa",
-        "line": "結果不合格。主檔標不合格並停用——這台顯微鏡在重新校正合格前不應再量測。",
-        "focus": "qa_comment",
-        "unlockSection": "qa_sec",
-        "reveal": [
-          "qa_name",
-          "qa_date",
-          "qa_comment",
-          "qualify_flag",
-          "result",
-          "workflow_status"
-        ],
-        "fillFromDemo": [
-          "qa_name",
-          "qa_date",
-          "qa_comment_fail",
-          "qualify_bad",
-          "result_bad",
-          "status_fail"
-        ],
-        "mapFill": {
-          "qa_comment_fail": "qa_comment",
-          "qualify_bad": "qualify_flag",
-          "result_bad": "result",
-          "status_fail": "workflow_status"
-        },
-        "typewriter": true,
-        "next": "s_end_early"
-      },
-      "s_end": {
+      "b_done": {
         "speaker": "narrator",
-        "line": "你剛走完：建 AFON → 從主檔看關聯報告 → BFON 掛接儀器 → 品保放行回寫。假資料可以再玩；欄位權限也可在設定裡改。",
+        "line": "關鍵單據標成完成。注意：定價／生產兩張 B 仍可各自進行——圖允許不同分支不同進度。",
+        "showBoard": true,
+        "boardHighlight": [
+          "a1",
+          "b_prep",
+          "c_bottle",
+          "c_board",
+          "d1"
+        ],
+        "ensureDocs": [
+          {
+            "id": "a1",
+            "formId": "material",
+            "values": {
+              "status": "已就緒"
+            }
+          },
+          {
+            "id": "b_prep",
+            "formId": "need",
+            "values": {
+              "status": "已完成"
+            }
+          },
+          {
+            "id": "c_bottle",
+            "formId": "component",
+            "values": {
+              "status": "已完成"
+            }
+          },
+          {
+            "id": "c_board",
+            "formId": "component",
+            "values": {
+              "status": "已完成"
+            }
+          },
+          {
+            "id": "d1",
+            "formId": "purchase",
+            "values": {
+              "status": "已到貨"
+            }
+          }
+        ],
         "next": "end"
       },
-      "s_end_early": {
+      "b_partial": {
         "speaker": "narrator",
-        "line": "這條路沒有順利回寫合格。你仍然看得到：為什麼 AFON／BFON 要分開、為什麼兩邊要有各自的人、為什麼關聯與回寫重要。",
+        "line": "備料 B 與瓶子 C 完成，但 D 還在已下單——總表會清楚顯示『誰好了、誰還沒』。這正是圖狀狀態的價值。",
+        "showBoard": true,
+        "boardHighlight": [
+          "b_prep",
+          "d1"
+        ],
+        "ensureDocs": [
+          {
+            "id": "b_prep",
+            "formId": "need",
+            "values": {
+              "status": "已完成"
+            }
+          },
+          {
+            "id": "c_bottle",
+            "formId": "component",
+            "values": {
+              "status": "已完成"
+            }
+          },
+          {
+            "id": "d1",
+            "formId": "purchase",
+            "values": {
+              "status": "已下單"
+            }
+          }
+        ],
         "next": "end"
       },
       "end": {
         "speaker": "guide",
-        "line": "若這模型適合你：到「表單」切換儀器管理員／校正人員／品保自己辦一輪；或到「設定」改誰必填／可看／可編，再匯出 JSON。",
+        "line": "到「總表」看全圖；到「表單」切 A／B／C／D 新建單據並按「連到…」掛關係；到「設定」改各表單欄位權限。",
         "ending": true,
         "summary": true,
+        "showBoard": true,
         "cta": [
           {
-            "label": "自己辦一輪真表單",
+            "label": "打開關聯總表",
+            "action": "open-board"
+          },
+          {
+            "label": "自己操作獨立表單",
             "action": "open-form"
           },
           {
@@ -1573,48 +1759,1194 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
   },
   "demo": {
     "persona": {
-      "afon_staff": "周儀",
-      "bfon_staff": "許校正",
-      "qa": "林品保"
+      "planner": "何企劃",
+      "warehouse": "倉庫阿成",
+      "buyer": "採購小林"
     },
     "values": {
-      "asset_no": "AFON-2024-0012",
-      "asset_name": "光學顯微鏡",
-      "model": "Olympus CX23",
-      "location": "品保實驗室 A-2",
-      "owner": "周儀",
-      "qualify_flag": "待校正",
-      "next_cal_date": "2026-03-01",
-      "related_bfon_before": "BFON-2025-0041｜2025-03-02｜合格｜下次 2026-03-01\n（尚未有 2026 年度報告）",
-      "status_master": "主檔已建",
-      "report_no": "BFON-2026-0088",
-      "link_asset_no": "AFON-2024-0012",
-      "cal_date": "2026-08-08",
-      "cal_cycle_months": "12",
-      "suggested_next": "2027-08-08",
-      "technician": "許校正",
-      "result_ok": "合格",
-      "result_bad": "不合格",
-      "bfon_comment_ok": "使用標準片 SL-09；溫度 23±1℃；倍率與解析度皆在允收範圍。",
-      "related_bfon_after": "BFON-2026-0088｜2026-08-08｜合格（待品保）｜建議下次 2027-08-08\nBFON-2025-0041｜2025-03-02｜合格｜下次 2026-03-01",
-      "status_pending_qa": "待品保",
-      "qa_name": "林品保",
-      "qa_date": "2026-08-09",
-      "qa_comment_ok": "數據完整，同意回寫 AFON 主檔。",
-      "qa_comment_return": "請補標準片序號與環境濕度後再送。",
-      "qa_comment_fail": "解析度超出允收；儀器停用至複校合格。",
-      "qualify_ok": "合格",
-      "qualify_bad": "不合格",
-      "next_cal_after": "2027-08-08",
-      "status_done": "已回寫",
-      "status_revise": "待修改",
-      "status_fail": "不合格停用"
-    }
+      "sku": "SKU-8801",
+      "sku_name": "修護精華液 30ml",
+      "goal": "新品上市：要能生產、完成定價、並備好包材與庫存空間。",
+      "a_status": "規劃中",
+      "b_prep_title": "備料需求",
+      "b_prep_type": "備料",
+      "b_prep_detail": "倉庫要有空間；備料預算要編列；包材齊套後才能入庫。",
+      "space_ok": "足夠",
+      "budget_ok": "已編列",
+      "b_prep_status": "進行中",
+      "b_price_title": "定價需求",
+      "b_price_type": "定價",
+      "b_price_detail": "確認成本與建議售價。",
+      "b_price_status": "進行中",
+      "c_bottle_name": "茶色玻璃瓶 30ml",
+      "c_bottle_kind": "包材",
+      "c_bottle_qty": "5000",
+      "c_bottle_status": "申請中",
+      "vendor": "明達包材股份有限公司",
+      "po_no": "PO-2026-0818",
+      "buy_what": "茶色玻璃瓶 30ml × 5000（對應 C 瓶子）",
+      "d_status": "已下單"
+    },
+    "docs": [
+      {
+        "id": "a1",
+        "formId": "material",
+        "title": "SKU-8801",
+        "values": {
+          "sku": "SKU-8801",
+          "sku_name": "修護精華液 30ml",
+          "goal": "",
+          "status": "草稿"
+        }
+      }
+    ],
+    "links": []
   }
 }
   </script>
   <script type="application/json" id="vn-library">
 {
+  "material-graph": {
+    "meta": {
+      "id": "material-graph",
+      "title": "料號關聯圖 A→B→C→D",
+      "subtitle": "同級獨立表單 · 一對多連結 · 總表看狀態"
+    },
+    "roles": [
+      {
+        "id": "planner",
+        "label": "料號企劃"
+      },
+      {
+        "id": "warehouse",
+        "label": "倉庫／備料"
+      },
+      {
+        "id": "buyer",
+        "label": "採購"
+      }
+    ],
+    "linkRules": [
+      {
+        "from": "material",
+        "to": "need",
+        "cardinality": "1:n",
+        "label": "料號 A 可掛多個需求 B（生產／定價／備料…）"
+      },
+      {
+        "from": "need",
+        "to": "component",
+        "cardinality": "1:n",
+        "label": "一個需求 B 可拆多個底料／申請 C"
+      },
+      {
+        "from": "need",
+        "to": "purchase",
+        "cardinality": "1:n",
+        "label": "需求也可直接連到採購 D"
+      },
+      {
+        "from": "component",
+        "to": "purchase",
+        "cardinality": "n:n",
+        "label": "底料 C 可向供應商採購 D（多對多）"
+      }
+    ],
+    "forms": [
+      {
+        "id": "material",
+        "label": "料號主檔",
+        "level": "A",
+        "title": "A · 料號主檔",
+        "titleField": "sku",
+        "statusField": "status",
+        "doneWhen": [
+          "已就緒",
+          "已完成"
+        ],
+        "sections": [
+          {
+            "id": "main",
+            "label": "料號本身",
+            "fields": [
+              {
+                "id": "sku",
+                "label": "料號",
+                "type": "text",
+                "placeholder": "例如 SKU-8801",
+                "meaning": "A 的身分證。後面所有需求、底料、採購都掛回這個料號。",
+                "acl": {
+                  "requiredFrom": [
+                    "planner"
+                  ],
+                  "read": [
+                    "planner",
+                    "warehouse",
+                    "buyer"
+                  ],
+                  "write": [
+                    "planner"
+                  ]
+                }
+              },
+              {
+                "id": "sku_name",
+                "label": "品名",
+                "type": "text",
+                "placeholder": "人看得懂的名字",
+                "meaning": "給人找料；編號給系統對帳。",
+                "acl": {
+                  "requiredFrom": [
+                    "planner"
+                  ],
+                  "read": [
+                    "planner",
+                    "warehouse",
+                    "buyer"
+                  ],
+                  "write": [
+                    "planner"
+                  ]
+                }
+              },
+              {
+                "id": "goal",
+                "label": "目標說明",
+                "type": "textarea",
+                "placeholder": "為什麼要建這個料號",
+                "meaning": "先講清楚目標，才知道要連哪些 B（生產／定價／備料）。",
+                "acl": {
+                  "requiredFrom": [],
+                  "read": [
+                    "planner",
+                    "warehouse",
+                    "buyer"
+                  ],
+                  "write": [
+                    "planner"
+                  ]
+                }
+              },
+              {
+                "id": "status",
+                "label": "料號狀態",
+                "type": "select",
+                "options": [
+                  "草稿",
+                  "規劃中",
+                  "已就緒",
+                  "停用"
+                ],
+                "meaning": "A 自己的狀態；不等於底下 B／C／D 都完成，但總表可以一起看。",
+                "acl": {
+                  "requiredFrom": [],
+                  "read": [
+                    "planner",
+                    "warehouse",
+                    "buyer"
+                  ],
+                  "write": [
+                    "planner"
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "need",
+        "label": "需求／目標單",
+        "level": "B",
+        "title": "B · 需求／目標單",
+        "titleField": "need_title",
+        "statusField": "status",
+        "doneWhen": [
+          "已完成"
+        ],
+        "sections": [
+          {
+            "id": "main",
+            "label": "這個需求要做什麼",
+            "fields": [
+              {
+                "id": "need_title",
+                "label": "需求名稱",
+                "type": "text",
+                "placeholder": "例如：備料、定價、生產",
+                "meaning": "B 與 A 同級：不是料號裡的分頁，是另一張獨立單。",
+                "acl": {
+                  "requiredFrom": [
+                    "planner",
+                    "warehouse"
+                  ],
+                  "read": [
+                    "planner",
+                    "warehouse",
+                    "buyer"
+                  ],
+                  "write": [
+                    "planner",
+                    "warehouse"
+                  ]
+                }
+              },
+              {
+                "id": "need_type",
+                "label": "需求類型",
+                "type": "select",
+                "options": [
+                  "備料",
+                  "定價",
+                  "生產",
+                  "其他"
+                ],
+                "meaning": "同料號可同時有多張不同類型的 B。",
+                "acl": {
+                  "requiredFrom": [
+                    "planner",
+                    "warehouse"
+                  ],
+                  "read": [
+                    "planner",
+                    "warehouse",
+                    "buyer"
+                  ],
+                  "write": [
+                    "planner",
+                    "warehouse"
+                  ]
+                }
+              },
+              {
+                "id": "need_detail",
+                "label": "需求內容",
+                "type": "textarea",
+                "placeholder": "例如：倉庫要有空間、要有備料預算…",
+                "meaning": "把『需要什麼條件』寫清楚，後面才拆得出 C／D。",
+                "acl": {
+                  "requiredFrom": [],
+                  "read": [
+                    "planner",
+                    "warehouse",
+                    "buyer"
+                  ],
+                  "write": [
+                    "planner",
+                    "warehouse"
+                  ]
+                }
+              },
+              {
+                "id": "space_ok",
+                "label": "倉庫空間",
+                "type": "select",
+                "options": [
+                  "未確認",
+                  "足夠",
+                  "不足"
+                ],
+                "meaning": "備料類 B 常見條件之一：有沒有位子放。",
+                "acl": {
+                  "requiredFrom": [],
+                  "read": [
+                    "planner",
+                    "warehouse",
+                    "buyer"
+                  ],
+                  "write": [
+                    "warehouse"
+                  ]
+                }
+              },
+              {
+                "id": "budget_ok",
+                "label": "備料預算",
+                "type": "select",
+                "options": [
+                  "未確認",
+                  "已編列",
+                  "不足"
+                ],
+                "meaning": "另一個常見條件：有沒有錢備。",
+                "acl": {
+                  "requiredFrom": [],
+                  "read": [
+                    "planner",
+                    "warehouse",
+                    "buyer"
+                  ],
+                  "write": [
+                    "warehouse",
+                    "planner"
+                  ]
+                }
+              },
+              {
+                "id": "status",
+                "label": "需求狀態",
+                "type": "select",
+                "options": [
+                  "草稿",
+                  "進行中",
+                  "已完成",
+                  "取消"
+                ],
+                "meaning": "這張 B 自己完不完成；總表用它判斷打勾。",
+                "acl": {
+                  "requiredFrom": [],
+                  "read": [
+                    "planner",
+                    "warehouse",
+                    "buyer"
+                  ],
+                  "write": [
+                    "planner",
+                    "warehouse"
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "component",
+        "label": "底料／申請單",
+        "level": "C",
+        "title": "C · 底料／申請單",
+        "titleField": "comp_name",
+        "statusField": "status",
+        "doneWhen": [
+          "已完成",
+          "已核准"
+        ],
+        "sections": [
+          {
+            "id": "main",
+            "label": "底下還需要什麼",
+            "fields": [
+              {
+                "id": "comp_name",
+                "label": "品項",
+                "type": "text",
+                "placeholder": "例如：瓶子、新紙板",
+                "meaning": "備料完成前，常再拆出底料或『申請新板』——這是另一張獨立 C。",
+                "acl": {
+                  "requiredFrom": [
+                    "warehouse"
+                  ],
+                  "read": [
+                    "planner",
+                    "warehouse",
+                    "buyer"
+                  ],
+                  "write": [
+                    "warehouse"
+                  ]
+                }
+              },
+              {
+                "id": "comp_kind",
+                "label": "種類",
+                "type": "select",
+                "options": [
+                  "包材",
+                  "原料",
+                  "新板申請",
+                  "其他"
+                ],
+                "meaning": "方便分類與後續採購。",
+                "acl": {
+                  "requiredFrom": [],
+                  "read": [
+                    "planner",
+                    "warehouse",
+                    "buyer"
+                  ],
+                  "write": [
+                    "warehouse"
+                  ]
+                }
+              },
+              {
+                "id": "qty",
+                "label": "數量",
+                "type": "text",
+                "placeholder": "需要多少",
+                "meaning": "給採購與倉庫對帳用。",
+                "acl": {
+                  "requiredFrom": [
+                    "warehouse"
+                  ],
+                  "read": [
+                    "planner",
+                    "warehouse",
+                    "buyer"
+                  ],
+                  "write": [
+                    "warehouse"
+                  ]
+                }
+              },
+              {
+                "id": "status",
+                "label": "申請狀態",
+                "type": "select",
+                "options": [
+                  "草稿",
+                  "申請中",
+                  "已核准",
+                  "已完成",
+                  "駁回"
+                ],
+                "meaning": "C 的狀態獨立於 B；B 完成不代表每張 C 都好。",
+                "acl": {
+                  "requiredFrom": [],
+                  "read": [
+                    "planner",
+                    "warehouse",
+                    "buyer"
+                  ],
+                  "write": [
+                    "warehouse"
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "purchase",
+        "label": "採購單",
+        "level": "D",
+        "title": "D · 採購單",
+        "titleField": "vendor",
+        "statusField": "status",
+        "doneWhen": [
+          "已到貨",
+          "已完成"
+        ],
+        "sections": [
+          {
+            "id": "main",
+            "label": "向誰買",
+            "fields": [
+              {
+                "id": "vendor",
+                "label": "供應商",
+                "type": "text",
+                "placeholder": "公司名稱",
+                "meaning": "倉庫可能向某公司採購——這是 D，可掛在 C 或直接掛在 B。",
+                "acl": {
+                  "requiredFrom": [
+                    "buyer"
+                  ],
+                  "read": [
+                    "planner",
+                    "warehouse",
+                    "buyer"
+                  ],
+                  "write": [
+                    "buyer"
+                  ]
+                }
+              },
+              {
+                "id": "po_no",
+                "label": "採購單號",
+                "type": "text",
+                "placeholder": "PO 編號",
+                "meaning": "對外對帳用的單號。",
+                "acl": {
+                  "requiredFrom": [
+                    "buyer"
+                  ],
+                  "read": [
+                    "planner",
+                    "warehouse",
+                    "buyer"
+                  ],
+                  "write": [
+                    "buyer"
+                  ]
+                }
+              },
+              {
+                "id": "buy_what",
+                "label": "採購內容",
+                "type": "textarea",
+                "placeholder": "買什麼、對應哪張 C",
+                "meaning": "說明這張 D 服務哪一條需求／底料。",
+                "acl": {
+                  "requiredFrom": [],
+                  "read": [
+                    "planner",
+                    "warehouse",
+                    "buyer"
+                  ],
+                  "write": [
+                    "buyer"
+                  ]
+                }
+              },
+              {
+                "id": "status",
+                "label": "採購狀態",
+                "type": "select",
+                "options": [
+                  "草稿",
+                  "詢價中",
+                  "已下單",
+                  "已到貨",
+                  "已完成",
+                  "取消"
+                ],
+                "meaning": "D 自己的進度；總表用來打勾。",
+                "acl": {
+                  "requiredFrom": [],
+                  "read": [
+                    "planner",
+                    "warehouse",
+                    "buyer"
+                  ],
+                  "write": [
+                    "buyer"
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "actions": [
+      {
+        "id": "a_ready",
+        "form": "material",
+        "label": "料號標為已就緒",
+        "role": "planner",
+        "whenStatus": [
+          "",
+          "草稿",
+          "規劃中"
+        ],
+        "require": [
+          "sku",
+          "sku_name"
+        ],
+        "set": {
+          "status": "已就緒"
+        },
+        "message": "A 已就緒。請到其他表單建 B，並用「連到…」掛回此料號。"
+      },
+      {
+        "id": "b_done",
+        "form": "need",
+        "label": "需求標為已完成",
+        "role": "warehouse",
+        "whenStatus": [
+          "",
+          "草稿",
+          "進行中"
+        ],
+        "require": [
+          "need_title",
+          "need_type"
+        ],
+        "set": {
+          "status": "已完成"
+        },
+        "message": "這張 B 完成。記得看總表：底下 C／D 可能還沒好。"
+      },
+      {
+        "id": "b_progress",
+        "form": "need",
+        "label": "需求進行中",
+        "role": "planner",
+        "whenStatus": [
+          "",
+          "草稿"
+        ],
+        "require": [
+          "need_title"
+        ],
+        "set": {
+          "status": "進行中"
+        },
+        "message": "B 進行中。"
+      },
+      {
+        "id": "c_done",
+        "form": "component",
+        "label": "底料／申請完成",
+        "role": "warehouse",
+        "whenStatus": [
+          "",
+          "草稿",
+          "申請中",
+          "已核准"
+        ],
+        "require": [
+          "comp_name",
+          "qty"
+        ],
+        "set": {
+          "status": "已完成"
+        },
+        "message": "C 完成。"
+      },
+      {
+        "id": "d_done",
+        "form": "purchase",
+        "label": "採購到貨完成",
+        "role": "buyer",
+        "whenStatus": [
+          "",
+          "草稿",
+          "詢價中",
+          "已下單"
+        ],
+        "require": [
+          "vendor",
+          "po_no"
+        ],
+        "set": {
+          "status": "已到貨"
+        },
+        "message": "D 到貨。可在總表一次核對整圖狀態。"
+      }
+    ],
+    "tables": [
+      {
+        "id": "forms",
+        "label": "四種同級獨立表單",
+        "fields": [
+          {
+            "label": "A 料號",
+            "origin": "主體存在；不是容器塞 B"
+          },
+          {
+            "label": "B 需求",
+            "origin": "生產／定價／備料…各一張，A 可掛很多張"
+          },
+          {
+            "label": "C 底料／申請",
+            "origin": "備料底下再拆瓶子、新板…"
+          },
+          {
+            "label": "D 採購",
+            "origin": "向某公司買；可掛 C 或 B"
+          }
+        ]
+      },
+      {
+        "id": "graph",
+        "label": "圖與總表",
+        "fields": [
+          {
+            "label": "連結",
+            "origin": "多對多；不是表單內嵌子表"
+          },
+          {
+            "label": "狀態總表",
+            "origin": "一眼看哪些完成、連到誰"
+          }
+        ]
+      }
+    ],
+    "show": {
+      "cast": [
+        {
+          "id": "narrator",
+          "label": "旁白",
+          "tone": "soft"
+        },
+        {
+          "id": "you",
+          "label": "你",
+          "tone": "user"
+        },
+        {
+          "id": "guide",
+          "label": "系統顧問",
+          "tone": "guide"
+        },
+        {
+          "id": "planner",
+          "label": "料號企劃",
+          "tone": "manager"
+        },
+        {
+          "id": "wh",
+          "label": "倉庫",
+          "tone": "hr"
+        },
+        {
+          "id": "buyer",
+          "label": "採購",
+          "tone": "guide"
+        }
+      ],
+      "start": "s01",
+      "nodes": {
+        "s01": {
+          "speaker": "narrator",
+          "line": "重點先講清楚：A 表與 B 表是同級的兩張獨立表單，不是一張表裡塞兩個分頁。今天用「料號」當例子，走一條 A→B→C→D 的圖。",
+          "form": "material",
+          "doc": "a1",
+          "next": "s02"
+        },
+        "s02": {
+          "speaker": "you",
+          "line": "我先有一個料號。它可能要生產、要定價、要備料——這些不該全塞進料號那一張裡吧？",
+          "form": "material",
+          "doc": "a1",
+          "next": "s03"
+        },
+        "s03": {
+          "speaker": "guide",
+          "line": "對。料號是 A。需求是 B。A 用「連結」掛很多個 B，像圖的節點，不是父子欄位。",
+          "form": "material",
+          "doc": "a1",
+          "next": "s04"
+        },
+        "s04": {
+          "speaker": "planner",
+          "line": "我先建 A：料號本身。這是身分證字號。",
+          "form": "material",
+          "doc": "a1",
+          "focus": "sku",
+          "unlockSection": "main",
+          "reveal": [
+            "sku"
+          ],
+          "fillFromDemo": [
+            "sku"
+          ],
+          "typewriter": true,
+          "next": "s05"
+        },
+        "s05": {
+          "speaker": "planner",
+          "line": "品名給人看；目標說明寫為什麼要建它——後面才知道要連哪些 B。",
+          "form": "material",
+          "doc": "a1",
+          "focus": "sku_name",
+          "reveal": [
+            "sku_name",
+            "goal",
+            "status"
+          ],
+          "fillFromDemo": [
+            "sku_name",
+            "goal",
+            "a_status"
+          ],
+          "mapFill": {
+            "a_status": "status"
+          },
+          "typewriter": true,
+          "next": "s06"
+        },
+        "s06": {
+          "speaker": "guide",
+          "line": "現在開三張獨立的 B，都連回同一張 A：備料、定價、生產。",
+          "form": "material",
+          "doc": "a1",
+          "ensureDocs": [
+            {
+              "id": "b_prep",
+              "formId": "need",
+              "title": "備料需求"
+            },
+            {
+              "id": "b_price",
+              "formId": "need",
+              "title": "定價需求"
+            },
+            {
+              "id": "b_mfg",
+              "formId": "need",
+              "title": "生產需求"
+            }
+          ],
+          "links": [
+            {
+              "from": "a1",
+              "to": "b_prep",
+              "label": "需要備料"
+            },
+            {
+              "from": "a1",
+              "to": "b_price",
+              "label": "需要定價"
+            },
+            {
+              "from": "a1",
+              "to": "b_mfg",
+              "label": "需要生產"
+            }
+          ],
+          "next": "s07"
+        },
+        "s07": {
+          "speaker": "wh",
+          "line": "先看備料這張 B。它是獨立表單：倉庫空間、備料預算——這些是這張需求的條件，不是寫在料號裡。",
+          "form": "need",
+          "doc": "b_prep",
+          "focus": "need_title",
+          "unlockSection": "main",
+          "reveal": [
+            "need_title",
+            "need_type",
+            "need_detail",
+            "space_ok",
+            "budget_ok",
+            "status"
+          ],
+          "fillFromDemo": [
+            "b_prep_title",
+            "b_prep_type",
+            "b_prep_detail",
+            "space_ok",
+            "budget_ok",
+            "b_prep_status"
+          ],
+          "mapFill": {
+            "b_prep_title": "need_title",
+            "b_prep_type": "need_type",
+            "b_prep_detail": "need_detail",
+            "b_prep_status": "status"
+          },
+          "typewriter": true,
+          "next": "s08"
+        },
+        "s08": {
+          "speaker": "planner",
+          "line": "定價、生產也各是一張 B——同樣連著 A，但狀態各自走。",
+          "form": "need",
+          "doc": "b_price",
+          "ensureDocs": [
+            {
+              "id": "b_price",
+              "formId": "need",
+              "title": "定價需求"
+            },
+            {
+              "id": "b_mfg",
+              "formId": "need",
+              "title": "生產需求"
+            }
+          ],
+          "reveal": [
+            "need_title",
+            "need_type",
+            "need_detail",
+            "status"
+          ],
+          "fillFromDemo": [
+            "b_price_title",
+            "b_price_type",
+            "b_price_detail",
+            "b_price_status"
+          ],
+          "mapFill": {
+            "b_price_title": "need_title",
+            "b_price_type": "need_type",
+            "b_price_detail": "need_detail",
+            "b_price_status": "status"
+          },
+          "typewriter": true,
+          "next": "s09"
+        },
+        "s09": {
+          "speaker": "guide",
+          "line": "備料做下去，常還要底下的東西：瓶子、申請新紙板——那是 C，再從 B 連出去。一張 B 可以掛很多 C。",
+          "form": "need",
+          "doc": "b_prep",
+          "ensureDocs": [
+            {
+              "id": "c_bottle",
+              "formId": "component",
+              "title": "瓶子"
+            },
+            {
+              "id": "c_board",
+              "formId": "component",
+              "title": "新紙板申請"
+            }
+          ],
+          "links": [
+            {
+              "from": "b_prep",
+              "to": "c_bottle",
+              "label": "需要瓶子"
+            },
+            {
+              "from": "b_prep",
+              "to": "c_board",
+              "label": "申請新板"
+            }
+          ],
+          "next": "s10"
+        },
+        "s10": {
+          "speaker": "wh",
+          "line": "這張 C：瓶子。數量、種類寫在自己的單上。",
+          "form": "component",
+          "doc": "c_bottle",
+          "focus": "comp_name",
+          "unlockSection": "main",
+          "reveal": [
+            "comp_name",
+            "comp_kind",
+            "qty",
+            "status"
+          ],
+          "fillFromDemo": [
+            "c_bottle_name",
+            "c_bottle_kind",
+            "c_bottle_qty",
+            "c_bottle_status"
+          ],
+          "mapFill": {
+            "c_bottle_name": "comp_name",
+            "c_bottle_kind": "comp_kind",
+            "c_bottle_qty": "qty",
+            "c_bottle_status": "status"
+          },
+          "typewriter": true,
+          "next": "s11"
+        },
+        "s11": {
+          "speaker": "buyer",
+          "line": "倉庫要向『明達包材』買瓶子——這是 D。我把採購單連到瓶子這張 C；也可以同時讓備料 B 看得到這條採購。",
+          "form": "purchase",
+          "doc": "d1",
+          "ensureDoc": {
+            "id": "d1",
+            "formId": "purchase",
+            "title": "明達包材"
+          },
+          "links": [
+            {
+              "from": "c_bottle",
+              "to": "d1",
+              "label": "向供應商採購"
+            },
+            {
+              "from": "b_prep",
+              "to": "d1",
+              "label": "備料相關採購"
+            }
+          ],
+          "focus": "vendor",
+          "unlockSection": "main",
+          "reveal": [
+            "vendor",
+            "po_no",
+            "buy_what",
+            "status"
+          ],
+          "fillFromDemo": [
+            "vendor",
+            "po_no",
+            "buy_what",
+            "d_status"
+          ],
+          "mapFill": {
+            "d_status": "status"
+          },
+          "typewriter": true,
+          "next": "s12"
+        },
+        "s12": {
+          "speaker": "guide",
+          "line": "現在打開總表：每一張獨立單據的狀態、連出連入，一次看完。完成與否打在自己的狀態上。",
+          "showBoard": true,
+          "boardHighlight": [
+            "a1",
+            "b_prep",
+            "c_bottle",
+            "d1"
+          ],
+          "next": "s13"
+        },
+        "s13": {
+          "speaker": "guide",
+          "line": "你要哪一種結局示範？",
+          "showBoard": true,
+          "choices": [
+            {
+              "id": "all_done",
+              "label": "假設關鍵路徑都完成（總表打勾）",
+              "next": "b_done"
+            },
+            {
+              "id": "partial",
+              "label": "備料完成但採購未到貨（狀態不一致）",
+              "next": "b_partial"
+            }
+          ]
+        },
+        "b_done": {
+          "speaker": "narrator",
+          "line": "關鍵單據標成完成。注意：定價／生產兩張 B 仍可各自進行——圖允許不同分支不同進度。",
+          "showBoard": true,
+          "boardHighlight": [
+            "a1",
+            "b_prep",
+            "c_bottle",
+            "c_board",
+            "d1"
+          ],
+          "ensureDocs": [
+            {
+              "id": "a1",
+              "formId": "material",
+              "values": {
+                "status": "已就緒"
+              }
+            },
+            {
+              "id": "b_prep",
+              "formId": "need",
+              "values": {
+                "status": "已完成"
+              }
+            },
+            {
+              "id": "c_bottle",
+              "formId": "component",
+              "values": {
+                "status": "已完成"
+              }
+            },
+            {
+              "id": "c_board",
+              "formId": "component",
+              "values": {
+                "status": "已完成"
+              }
+            },
+            {
+              "id": "d1",
+              "formId": "purchase",
+              "values": {
+                "status": "已到貨"
+              }
+            }
+          ],
+          "next": "end"
+        },
+        "b_partial": {
+          "speaker": "narrator",
+          "line": "備料 B 與瓶子 C 完成，但 D 還在已下單——總表會清楚顯示『誰好了、誰還沒』。這正是圖狀狀態的價值。",
+          "showBoard": true,
+          "boardHighlight": [
+            "b_prep",
+            "d1"
+          ],
+          "ensureDocs": [
+            {
+              "id": "b_prep",
+              "formId": "need",
+              "values": {
+                "status": "已完成"
+              }
+            },
+            {
+              "id": "c_bottle",
+              "formId": "component",
+              "values": {
+                "status": "已完成"
+              }
+            },
+            {
+              "id": "d1",
+              "formId": "purchase",
+              "values": {
+                "status": "已下單"
+              }
+            }
+          ],
+          "next": "end"
+        },
+        "end": {
+          "speaker": "guide",
+          "line": "到「總表」看全圖；到「表單」切 A／B／C／D 新建單據並按「連到…」掛關係；到「設定」改各表單欄位權限。",
+          "ending": true,
+          "summary": true,
+          "showBoard": true,
+          "cta": [
+            {
+              "label": "打開關聯總表",
+              "action": "open-board"
+            },
+            {
+              "label": "自己操作獨立表單",
+              "action": "open-form"
+            },
+            {
+              "label": "調整欄位權限",
+              "action": "open-settings"
+            },
+            {
+              "label": "再看一次故事",
+              "action": "restart"
+            }
+          ]
+        }
+      }
+    },
+    "demo": {
+      "persona": {
+        "planner": "何企劃",
+        "warehouse": "倉庫阿成",
+        "buyer": "採購小林"
+      },
+      "values": {
+        "sku": "SKU-8801",
+        "sku_name": "修護精華液 30ml",
+        "goal": "新品上市：要能生產、完成定價、並備好包材與庫存空間。",
+        "a_status": "規劃中",
+        "b_prep_title": "備料需求",
+        "b_prep_type": "備料",
+        "b_prep_detail": "倉庫要有空間；備料預算要編列；包材齊套後才能入庫。",
+        "space_ok": "足夠",
+        "budget_ok": "已編列",
+        "b_prep_status": "進行中",
+        "b_price_title": "定價需求",
+        "b_price_type": "定價",
+        "b_price_detail": "確認成本與建議售價。",
+        "b_price_status": "進行中",
+        "c_bottle_name": "茶色玻璃瓶 30ml",
+        "c_bottle_kind": "包材",
+        "c_bottle_qty": "5000",
+        "c_bottle_status": "申請中",
+        "vendor": "明達包材股份有限公司",
+        "po_no": "PO-2026-0818",
+        "buy_what": "茶色玻璃瓶 30ml × 5000（對應 C 瓶子）",
+        "d_status": "已下單"
+      },
+      "docs": [
+        {
+          "id": "a1",
+          "formId": "material",
+          "title": "SKU-8801",
+          "values": {
+            "sku": "SKU-8801",
+            "sku_name": "修護精華液 30ml",
+            "goal": "",
+            "status": "草稿"
+          }
+        }
+      ],
+      "links": []
+    }
+  },
   "abfon": {
     "meta": {
       "id": "abfon",
@@ -3461,6 +4793,9 @@ const TONE = {
 /** @type {any} */
 let pack = null;
 
+/** @type {Record<string, any>} */
+let packLibrary = {};
+
 const els = {
   app: document.getElementById("app"),
   title: document.getElementById("title"),
@@ -3480,34 +4815,29 @@ const els = {
   btnPrev: document.getElementById("btn-prev"),
   btnNext: document.getElementById("btn-next"),
   fileImport: document.getElementById("file-import"),
+  formSheet: document.getElementById("form-sheet"),
+  formToolbar: document.getElementById("form-toolbar"),
 };
 
 const state = {
   mode: "show",
   nodeId: null,
+  formId: null,
+  docId: null,
+  /** @type {Record<string, {id:string, formId:string, title?:string, values:Record<string,string>}>} */
+  docs: {},
+  /** @type {{from:string,to:string,label?:string}[]} */
+  links: [],
   values: {},
   unlocked: new Set(),
   openSections: new Set(),
   busy: false,
   typeToken: 0,
   roleId: null,
-  history: [], // node ids visited for prev
-  chat: [], // {id, speaker, line, side}
+  history: [],
+  chat: [],
+  boardOnly: false,
 };
-
-/** @type {Record<string, any>} */
-let packLibrary = {};
-
-function firstSectionId() {
-  return pack?.form?.sections?.[0]?.id || "apply";
-}
-
-function storageKeyDoc() {
-  return `seed-form:${pack.meta.id}`;
-}
-function storageKeyPack() {
-  return `seed-pack:${pack.meta.id}`;
-}
 
 function toast(msg) {
   els.toast.textContent = msg;
@@ -3528,6 +4858,34 @@ function today() {
   return new Date().toISOString().slice(0, 10);
 }
 
+function isGraphPack() {
+  return (pack.forms || []).length > 1 || !!(pack.demo && pack.demo.docs);
+}
+
+function forms() {
+  return pack.forms || [];
+}
+
+function formById(id) {
+  return forms().find((f) => f.id === id) || forms()[0];
+}
+
+function activeForm() {
+  return formById(state.formId);
+}
+
+function firstSectionId(form = activeForm()) {
+  return form?.sections?.[0]?.id || "main";
+}
+
+function storageKeyGraph() {
+  return `seed-graph:${pack.meta.id}`;
+}
+
+function storageKeyPack() {
+  return `seed-pack:${pack.meta.id}`;
+}
+
 function castOf(id) {
   return pack.show.cast.find((c) => c.id === id) || { id, label: id, tone: "guide" };
 }
@@ -3536,20 +4894,24 @@ function roleOf(id) {
   return pack.roles.find((r) => r.id === id);
 }
 
-function allFields() {
-  return pack.form.sections.flatMap((s) =>
-    s.fields.map((f) => ({ ...f, sectionId: s.id }))
+function allFields(form = activeForm()) {
+  return (form?.sections || []).flatMap((s) =>
+    s.fields.map((f) => ({ ...f, sectionId: s.id, formId: form.id }))
   );
 }
 
-function fieldById(id) {
-  return allFields().find((f) => f.id === id);
+function allFieldsInPack() {
+  return forms().flatMap((f) => allFields(f));
+}
+
+function fieldById(id, form = activeForm()) {
+  return allFields(form).find((f) => f.id === id);
 }
 
 function aclOf(field) {
   return (
     field.acl || {
-      requiredFrom: field.required ? ["applicant"] : [],
+      requiredFrom: field.required ? [pack.roles[0]?.id].filter(Boolean) : [],
       read: pack.roles.map((r) => r.id),
       write: field.write || [],
     }
@@ -3570,8 +4932,20 @@ function isRequired(field, roleId) {
   return (aclOf(field).requiredFrom || []).includes(roleId);
 }
 
+function statusOf(doc) {
+  const form = formById(doc.formId);
+  return doc.values?.[form.statusField] || "草稿";
+}
+
 function status() {
-  return state.values[pack.form.statusField] || "草稿";
+  return state.values[activeForm()?.statusField] || "草稿";
+}
+
+function isDone(doc) {
+  const form = formById(doc.formId);
+  const st = statusOf(doc);
+  const doneWhen = form.doneWhen || ["已完成", "已就緒", "已回寫", "已核准"];
+  return doneWhen.includes(st);
 }
 
 function demoValue(key) {
@@ -3586,19 +4960,90 @@ function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
-function persistDoc() {
+function docTitle(doc) {
+  if (!doc) return "";
+  if (doc.title) return doc.title;
+  const form = formById(doc.formId);
+  const key = form?.titleField;
+  if (key && doc.values?.[key]) return doc.values[key];
+  return doc.id;
+}
+
+function flushActiveDoc() {
+  if (!state.docId || !state.docs[state.docId]) return;
+  state.docs[state.docId].values = { ...state.values };
+}
+
+function loadActiveDocValues() {
+  const doc = state.docs[state.docId];
+  state.values = { ...(doc?.values || {}) };
+  const sf = activeForm()?.statusField;
+  if (sf && !state.values[sf]) state.values[sf] = "草稿";
+}
+
+function persistGraph() {
+  flushActiveDoc();
   localStorage.setItem(
-    storageKeyDoc(),
-    JSON.stringify({ values: state.values, updatedAt: new Date().toISOString() })
+    storageKeyGraph(),
+    JSON.stringify({
+      docs: state.docs,
+      links: state.links,
+      formId: state.formId,
+      docId: state.docId,
+      updatedAt: new Date().toISOString(),
+    })
   );
 }
 
-function loadDoc() {
+function seedGraphFromDemo() {
+  const demoDocs = pack.demo?.docs;
+  if (demoDocs?.length) {
+    state.docs = {};
+    for (const d of demoDocs) {
+      state.docs[d.id] = {
+        id: d.id,
+        formId: d.formId,
+        title: d.title,
+        values: { ...(d.values || {}) },
+      };
+    }
+    state.links = (pack.demo.links || []).map((l) => ({ ...l }));
+    state.formId = demoDocs[0].formId;
+    state.docId = demoDocs[0].id;
+    return;
+  }
+  const form = forms()[0];
+  const id = "main";
+  state.docs = {
+    [id]: {
+      id,
+      formId: form.id,
+      title: form.title,
+      values: { [form.statusField]: "草稿" },
+    },
+  };
+  state.links = [];
+  state.formId = form.id;
+  state.docId = id;
+}
+
+function loadGraph() {
   try {
-    const raw = localStorage.getItem(storageKeyDoc());
-    if (raw) return JSON.parse(raw);
+    const raw = localStorage.getItem(storageKeyGraph());
+    if (raw) {
+      const data = JSON.parse(raw);
+      if (data.docs && Object.keys(data.docs).length) {
+        state.docs = data.docs;
+        state.links = data.links || [];
+        state.formId = data.formId || Object.values(data.docs)[0].formId;
+        state.docId = data.docId || Object.keys(data.docs)[0];
+        loadActiveDocValues();
+        return;
+      }
+    }
   } catch (_) {}
-  return { values: { [pack.form.statusField]: "草稿" } };
+  seedGraphFromDemo();
+  loadActiveDocValues();
 }
 
 function persistPackEdits() {
@@ -3610,16 +5055,17 @@ function loadPackEdits(base) {
     const raw = localStorage.getItem(`seed-pack:${base.meta.id}`);
     if (!raw) return base;
     const edited = JSON.parse(raw);
-    // keep show/demo from base if missing; prefer edited form/actions/roles
     return {
       ...base,
       ...edited,
       show: edited.show || base.show,
       demo: edited.demo || base.demo,
+      forms: edited.forms || base.forms,
       form: edited.form || base.form,
       actions: edited.actions || base.actions,
       roles: edited.roles || base.roles,
       tables: edited.tables || base.tables,
+      linkRules: edited.linkRules || base.linkRules,
       meta: { ...base.meta, ...edited.meta },
     };
   } catch (_) {
@@ -3627,18 +5073,68 @@ function loadPackEdits(base) {
   }
 }
 
+/** Accept forms[] graph packs; shim legacy single form */
+function normalizePack(raw) {
+  let base = raw;
+  if (!(raw.meta && (raw.form || raw.forms) && raw.show)) {
+    if (raw.form && raw.nodes) {
+      base = {
+        meta: { id: raw.id || "system", title: raw.title || "未命名系統", subtitle: raw.subtitle || "" },
+        roles: raw.roles || [],
+        form: raw.form,
+        actions: raw.actions || [],
+        tables: raw.tables || [],
+        show: { cast: raw.cast || [], start: raw.start, nodes: raw.nodes },
+        demo: raw.demo || { values: {}, persona: {} },
+      };
+    } else {
+      throw new Error("缺少 meta/form|forms/show");
+    }
+  }
+  const packOut = structuredClone(base);
+  if (!packOut.forms?.length && packOut.form) {
+    packOut.forms = [
+      {
+        id: packOut.form.id || "main",
+        label: packOut.form.label || packOut.form.title || "表單",
+        level: packOut.form.level || "A",
+        title: packOut.form.title,
+        titleField: packOut.form.titleField,
+        statusField: packOut.form.statusField,
+        doneWhen: packOut.form.doneWhen,
+        sections: packOut.form.sections,
+      },
+    ];
+  }
+  packOut.form = packOut.forms[0];
+  packOut.linkRules = packOut.linkRules || [];
+  packOut.actions = packOut.actions || [];
+  return packOut;
+}
+
 function snapshotShow() {
+  flushActiveDoc();
   return {
+    formId: state.formId,
+    docId: state.docId,
+    docs: structuredClone(state.docs),
+    links: structuredClone(state.links),
     values: { ...state.values },
     unlocked: [...state.unlocked],
     openSections: [...state.openSections],
+    boardOnly: state.boardOnly,
   };
 }
 
 function restoreShow(snap) {
+  state.docs = structuredClone(snap.docs);
+  state.links = structuredClone(snap.links);
+  state.formId = snap.formId;
+  state.docId = snap.docId;
   state.values = { ...snap.values };
   state.unlocked = new Set(snap.unlocked);
   state.openSections = new Set(snap.openSections);
+  state.boardOnly = !!snap.boardOnly;
 }
 
 function resolveFills(node) {
@@ -3653,10 +5149,57 @@ function resolveFills(node) {
   return out;
 }
 
+function switchContext(formId, docId, { rebuild = true } = {}) {
+  flushActiveDoc();
+  if (formId) state.formId = formId;
+  if (docId) state.docId = docId;
+  if (!state.docs[state.docId]) {
+    const form = activeForm();
+    state.docs[state.docId] = {
+      id: state.docId,
+      formId: state.formId,
+      values: { [form.statusField]: "草稿" },
+    };
+  }
+  // keep doc.formId authoritative
+  state.formId = state.docs[state.docId].formId;
+  loadActiveDocValues();
+  state.openSections = new Set([firstSectionId()]);
+  if (rebuild && state.mode === "show" && !state.boardOnly) buildShowForm();
+}
+
+function ensureDoc(spec) {
+  if (!spec?.id) return;
+  if (!state.docs[spec.id]) {
+    const formId = spec.formId || state.formId;
+    const form = formById(formId);
+    const values = { [form.statusField]: spec.status || "草稿", ...(spec.values || {}) };
+    state.docs[spec.id] = {
+      id: spec.id,
+      formId,
+      title: spec.title,
+      values,
+    };
+  } else {
+    if (spec.title) state.docs[spec.id].title = spec.title;
+    if (spec.values) Object.assign(state.docs[spec.id].values, spec.values);
+    if (spec.status) state.docs[spec.id].values[formById(state.docs[spec.id].formId).statusField] = spec.status;
+  }
+}
+
+function addLink(link) {
+  if (!link?.from || !link?.to) return;
+  const exists = state.links.some((l) => l.from === link.from && l.to === link.to && (l.label || "") === (link.label || ""));
+  if (!exists) state.links.push({ from: link.from, to: link.to, label: link.label || "" });
+}
+
 function buildShowForm() {
-  els.formTitle.textContent = pack.form.title;
-  els.formSub.textContent = "Show · 上方表單隨對話填入";
-  els.sections.innerHTML = pack.form.sections
+  const form = activeForm();
+  const doc = state.docs[state.docId];
+  els.formSheet.hidden = false;
+  els.formTitle.textContent = `${form.level ? form.level + " · " : ""}${form.title}`;
+  els.formSub.textContent = `Show · 獨立表單「${form.label}」· 單據 ${docTitle(doc) || doc?.id || ""}`;
+  els.sections.innerHTML = form.sections
     .map(
       (sec) => `<section class="section" data-section="${sec.id}" id="sec-${sec.id}">
         <p class="section-label">${escapeHtml(sec.label)}</p>
@@ -3673,10 +5216,13 @@ function buildShowForm() {
       </section>`
     )
     .join("");
+  paintShowForm();
 }
 
 function paintShowForm() {
-  pack.form.sections.forEach((sec) => {
+  const form = activeForm();
+  if (!form || state.boardOnly) return;
+  form.sections.forEach((sec) => {
     const secEl = document.getElementById(`sec-${sec.id}`);
     const showSec =
       state.openSections.has(sec.id) ||
@@ -3699,7 +5245,7 @@ function paintShowForm() {
       }
     });
   });
-  els.statusPill.textContent = status();
+  els.statusPill.textContent = `${form.level || ""} ${status()}`.trim();
 }
 
 function setFocus(fieldId) {
@@ -3722,6 +5268,7 @@ async function typeValue(fieldId, text) {
   const valEl = el?.querySelector("[data-value]");
   if (!valEl) {
     state.values[fieldId] = text;
+    flushActiveDoc();
     return;
   }
   state.unlocked.add(fieldId);
@@ -3739,6 +5286,7 @@ async function typeValue(fieldId, text) {
   if (token !== state.typeToken) return;
   valEl.classList.remove("typing");
   state.values[fieldId] = text;
+  flushActiveDoc();
 }
 
 function prepareReveal(node) {
@@ -3771,20 +5319,124 @@ async function applyFills(node) {
       state.unlocked.add(key);
       state.values[key] = String(fills[key]);
     }
+    flushActiveDoc();
     paintShowForm();
   }
+}
+
+function linkedFrom(docId) {
+  return state.links.filter((l) => l.from === docId);
+}
+
+function linkedTo(docId) {
+  return state.links.filter((l) => l.to === docId);
+}
+
+function renderBoard({ highlight = [] } = {}) {
+  const hi = new Set(highlight);
+  const rows = Object.values(state.docs).sort((a, b) => {
+    const la = formById(a.formId)?.level || "Z";
+    const lb = formById(b.formId)?.level || "Z";
+    return la.localeCompare(lb) || a.id.localeCompare(b.id);
+  });
+  const doneCount = rows.filter(isDone).length;
+  els.formSheet.hidden = false;
+  els.formTitle.textContent = "關聯總表";
+  els.formSub.textContent = `圖狀關聯 · ${doneCount}/${rows.length} 張已完成狀態`;
+  els.statusPill.textContent = `${state.links.length} 條連結`;
+  els.submitRow.classList.remove("open");
+  els.actionRow.classList.remove("open");
+  els.actionRow.innerHTML = "";
+
+  const rules = (pack.linkRules || [])
+    .map(
+      (r) =>
+        `<li><strong>${escapeHtml(r.from)}</strong> → <strong>${escapeHtml(r.to)}</strong>${
+          r.cardinality ? `（${escapeHtml(r.cardinality)}）` : ""
+        } ${escapeHtml(r.label || "")}</li>`
+    )
+    .join("");
+
+  els.sections.innerHTML = `
+    <div class="board">
+      <p class="board-lead">A／B／C／D 是<strong>同級獨立表單</strong>；一張 A 可掛多張 B，一張 B 可掛多張 C。狀態在總表一次看完。</p>
+      ${rules ? `<ul class="board-rules">${rules}</ul>` : ""}
+      <div class="board-table-wrap">
+        <table class="board-table">
+          <thead>
+            <tr>
+              <th>層級</th>
+              <th>表單</th>
+              <th>單據</th>
+              <th>狀態</th>
+              <th>完成</th>
+              <th>連出</th>
+              <th>連入</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows
+              .map((doc) => {
+                const form = formById(doc.formId);
+                const outs = linkedFrom(doc.id);
+                const ins = linkedTo(doc.id);
+                const done = isDone(doc);
+                return `<tr class="${hi.has(doc.id) ? "hi" : ""} ${done ? "done" : ""}" data-open-doc="${doc.id}">
+                  <td><span class="lvl">${escapeHtml(form?.level || "?")}</span></td>
+                  <td>${escapeHtml(form?.label || doc.formId)}</td>
+                  <td><strong>${escapeHtml(docTitle(doc))}</strong><div class="muted">${escapeHtml(doc.id)}</div></td>
+                  <td>${escapeHtml(statusOf(doc))}</td>
+                  <td>${done ? "✓" : "·"}</td>
+                  <td>${outs.map((l) => `<div>${escapeHtml(l.label || "→")} <code>${escapeHtml(l.to)}</code></div>`).join("") || "—"}</td>
+                  <td>${ins.map((l) => `<div><code>${escapeHtml(l.from)}</code></div>`).join("") || "—"}</td>
+                </tr>`;
+              })
+              .join("")}
+          </tbody>
+        </table>
+      </div>
+      <div class="board-graph">
+        ${state.links
+          .map((l) => {
+            const a = state.docs[l.from];
+            const b = state.docs[l.to];
+            return `<div class="edge ${hi.has(l.from) || hi.has(l.to) ? "hi" : ""}">
+              <span class="edge-a">${escapeHtml(formById(a?.formId)?.level || "")} ${escapeHtml(docTitle(a) || l.from)}</span>
+              <span class="edge-arrow">→</span>
+              <span class="edge-b">${escapeHtml(formById(b?.formId)?.level || "")} ${escapeHtml(docTitle(b) || l.to)}</span>
+              <span class="edge-label">${escapeHtml(l.label || "")}</span>
+            </div>`;
+          })
+          .join("") || `<p class="muted">尚無連結</p>`}
+      </div>
+    </div>`;
+
+  els.sections.querySelectorAll("[data-open-doc]").forEach((tr) => {
+    tr.addEventListener("click", () => {
+      const id = tr.getAttribute("data-open-doc");
+      const doc = state.docs[id];
+      if (!doc) return;
+      state.boardOnly = false;
+      switchContext(doc.formId, id);
+      if (state.mode === "board") setMode("form");
+      else if (state.mode === "show") {
+        state.unlocked = new Set(Object.keys(doc.values || {}).filter((k) => doc.values[k]));
+        buildShowForm();
+      }
+    });
+  });
 }
 
 function renderSummary() {
   els.summary.classList.add("show");
   els.summary.innerHTML = `
-    <h2>這個系統收成 ${(pack.tables || []).length} 張表</h2>
-    <p>每一欄都能追回剛才對話裡說的那句話：</p>
+    <h2>這個系統收成 ${forms().length} 種獨立表單 · ${(pack.tables || []).length} 張說明表</h2>
+    <p>A／B／C／D 同級；用連結組成圖。每一欄都能追回對話裡的那句話：</p>
     ${(pack.tables || [])
       .map(
         (t) => `<div class="table-card">
           <h3>${escapeHtml(t.label)}</h3>
-          <ul>${t.fields
+          <ul>${(t.fields || [])
             .map(
               (f) =>
                 `<li><strong>${escapeHtml(f.label)}</strong> <span class="origin">— ${escapeHtml(f.origin)}</span></li>`
@@ -3810,155 +5462,299 @@ function appendChat(node, { replaceLast = false } = {}) {
     side,
     tone: cast.tone,
   };
-  if (replaceLast && state.chat.length) state.chat.pop();
-  state.chat.push(item);
-  paintChat(item.id);
+  if (replaceLast && state.chat.length) state.chat[state.chat.length - 1] = item;
+  else state.chat.push(item);
+  paintChat();
 }
 
-function paintChat(activeId) {
+function paintChat() {
   els.chatLog.innerHTML = state.chat
-    .map(
-      (m) => `<div class="bubble-row ${m.side} ${m.id === activeId ? "active" : ""}" data-bubble="${m.id}">
-        <div class="bubble-who">${escapeHtml(m.speaker)}</div>
-        <div class="bubble">${escapeHtml(m.line)}</div>
-      </div>`
-    )
+    .map((m) => {
+      const color = TONE[m.tone] || TONE.guide;
+      return `<div class="bubble-row ${m.side}">
+        <div class="bubble" style="--tone:${color}">
+          <div class="who">${escapeHtml(m.speaker)}</div>
+          <div class="line">${escapeHtml(m.line)}</div>
+        </div>
+      </div>`;
+    })
     .join("");
-  const last = els.chatLog.lastElementChild;
-  last?.scrollIntoView({ block: "end", behavior: "smooth" });
+  els.chatLog.scrollTop = els.chatLog.scrollHeight;
 }
 
-function paintChatBar(node) {
-  const atStart = state.history.length === 0;
-  els.btnPrev.disabled = atStart || state.busy;
-  els.btnNext.disabled = state.busy || !!(node.choices?.length) || !!node.ending;
-
-  let extra = "";
-  if (node.choices?.length) {
-    extra = `<div class="chat-choices">
-      ${node.choices
-        .map(
-          (c) =>
-            `<button type="button" class="choice-btn" data-next="${escapeHtml(c.next)}">${escapeHtml(c.label)}</button>`
-        )
-        .join("")}
-    </div>`;
-  } else if (node.ending && node.cta?.length) {
-    els.btnNext.disabled = true;
-    extra = `<div class="cta-row">
-      ${node.cta
-        .map((c) => {
-          if (c.action === "open-form")
-            return `<button type="button" class="cta-btn" data-action="open-form">${escapeHtml(c.label)}</button>`;
-          if (c.action === "open-settings")
-            return `<button type="button" class="cta-btn" data-action="open-settings">${escapeHtml(c.label)}</button>`;
-          if (c.action === "restart")
-            return `<button type="button" class="cta-btn ghost" data-action="restart">${escapeHtml(c.label)}</button>`;
-          return "";
-        })
-        .join("")}
-    </div>`;
-  }
-
+function renderChatExtras(node) {
   const slot = document.getElementById("chat-extra");
-  if (slot) {
-    slot.innerHTML = extra;
-    slot.querySelectorAll(".choice-btn").forEach((btn) => {
-      btn.addEventListener("click", () => goNext(btn.getAttribute("data-next")));
-    });
+  if (!slot) return;
+  if (node.choices?.length) {
+    slot.innerHTML = `<div class="choice-row">${node.choices
+      .map(
+        (c) =>
+          `<button type="button" class="choice-btn" data-next="${escapeHtml(c.next)}">${escapeHtml(c.label)}</button>`
+      )
+      .join("")}</div>`;
+    slot.querySelectorAll("[data-next]").forEach((b) =>
+      b.addEventListener("click", () => goNext(b.getAttribute("data-next")))
+    );
+  } else if (node.ending && node.cta?.length) {
+    slot.innerHTML = `<div class="choice-row">${node.cta
+      .map((c) => {
+        if (c.action === "open-form")
+          return `<button type="button" class="cta-btn" data-action="open-form">${escapeHtml(c.label)}</button>`;
+        if (c.action === "open-settings")
+          return `<button type="button" class="cta-btn" data-action="open-settings">${escapeHtml(c.label)}</button>`;
+        if (c.action === "open-board")
+          return `<button type="button" class="cta-btn" data-action="open-board">${escapeHtml(c.label)}</button>`;
+        if (c.action === "restart")
+          return `<button type="button" class="cta-btn" data-action="restart">${escapeHtml(c.label)}</button>`;
+        return "";
+      })
+      .join("")}</div>`;
     slot.querySelectorAll("[data-action=open-form]").forEach((b) =>
       b.addEventListener("click", () => setMode("form"))
     );
     slot.querySelectorAll("[data-action=open-settings]").forEach((b) =>
       b.addEventListener("click", () => setMode("settings"))
     );
-    slot.querySelectorAll("[data-action=restart]").forEach((b) =>
-      b.addEventListener("click", restartShow)
+    slot.querySelectorAll("[data-action=open-board]").forEach((b) =>
+      b.addEventListener("click", () => setMode("board"))
     );
+    slot.querySelectorAll("[data-action=restart]").forEach((b) =>
+      b.addEventListener("click", () => restartShow())
+    );
+  } else {
+    slot.innerHTML = "";
   }
+  els.btnNext.disabled = !!(node.choices?.length || node.ending);
+  els.btnPrev.disabled = state.history.length === 0;
 }
 
 async function renderNode({ fromPrev = false } = {}) {
   const node = nodeOf(state.nodeId);
   if (!node) return;
-  if (node.summary) renderSummary();
-  else clearSummary();
+  state.busy = true;
+  els.btnNext.disabled = true;
+  els.btnPrev.disabled = true;
 
-  prepareReveal(node);
+  flushActiveDoc();
+  if (node.ensureDoc) ensureDoc(node.ensureDoc);
+  if (node.ensureDocs) node.ensureDocs.forEach(ensureDoc);
+  if (node.link) addLink(node.link);
+  if (node.links) node.links.forEach(addLink);
+  if (state.docs[state.docId]) {
+    state.values = { ...state.docs[state.docId].values };
+  }
+
+  const wantForm = node.form || state.formId;
+  const wantDoc = node.doc || state.docId;
+  if (node.showBoard) {
+    state.boardOnly = true;
+    renderBoard({ highlight: node.boardHighlight || [] });
+    persistGraph();
+  } else {
+    const formChanged = wantForm !== state.formId || wantDoc !== state.docId || state.boardOnly;
+    state.boardOnly = false;
+    if (formChanged) {
+      switchContext(wantForm, wantDoc, { rebuild: true });
+      // unlock already filled fields on this doc
+      Object.entries(state.values).forEach(([k, v]) => {
+        if (v) state.unlocked.add(k);
+      });
+    }
+  }
+
   if (!fromPrev) appendChat(node);
   else {
-    // prev: keep chat history trimmed already
-    paintChat(state.chat[state.chat.length - 1]?.id);
+    // history restore already set chat; just paint
+    paintChat();
   }
-  paintChatBar(node);
 
-  state.busy = true;
-  els.btnPrev.disabled = true;
-  els.btnNext.disabled = true;
-  if (!fromPrev) await applyFills(node);
-  else paintShowForm();
+  if (!node.showBoard) {
+    prepareReveal(node);
+    if (!fromPrev) await applyFills(node);
+    else paintShowForm();
+  }
+
+  if (node.summary || node.ending) renderSummary();
+  else if (!fromPrev) clearSummary();
+
+  renderChatExtras(node);
   state.busy = false;
-  paintChatBar(node);
+  if (!node.choices?.length && !node.ending) els.btnNext.disabled = false;
+  els.btnPrev.disabled = state.history.length === 0;
 }
 
-function goNext(explicitNext) {
+async function goNext(forcedNext) {
   if (state.busy) return;
   const node = nodeOf(state.nodeId);
-  if (!node) return;
-  if (node.choices?.length && !explicitNext) return;
-  if (node.ending && !explicitNext) return;
-  const nextId = explicitNext || node.next;
-  if (!nextId || !nodeOf(nextId)) return;
+  if (!node || node.ending) return;
+  if (node.choices?.length && !forcedNext) return;
+  const next = forcedNext || node.next;
+  if (!next) return;
   state.history.push({
     nodeId: state.nodeId,
     snap: snapshotShow(),
     chatLen: state.chat.length,
   });
-  state.nodeId = nextId;
-  renderNode();
+  state.nodeId = next;
+  await renderNode();
 }
 
 function goPrev() {
   if (state.busy || !state.history.length) return;
   const prev = state.history.pop();
-  state.typeToken += 1;
   state.nodeId = prev.nodeId;
   restoreShow(prev.snap);
   state.chat = state.chat.slice(0, prev.chatLen);
-  els.submitRow.classList.toggle("open", state.unlocked.has("final_status") || !!nodeOf(state.nodeId)?.showSubmit);
-  // re-open submit if current or past had it
-  if (pack.show.nodes[state.nodeId]?.showSubmit) els.submitRow.classList.add("open");
-  paintShowForm();
+  if (state.boardOnly) renderBoard({ highlight: nodeOf(state.nodeId)?.boardHighlight || [] });
+  else buildShowForm();
   renderNode({ fromPrev: true });
 }
 
 function restartShow() {
   state.typeToken += 1;
   state.nodeId = pack.show.start;
-  state.values = {};
+  seedGraphFromDemo();
+  // for demo.values-only packs, clear main values for show typing
+  if (!pack.demo?.docs) {
+    const form = activeForm();
+    state.docs.main.values = { [form.statusField]: "草稿" };
+  }
+  loadActiveDocValues();
   state.unlocked = new Set();
   state.openSections = new Set([firstSectionId()]);
   state.history = [];
   state.chat = [];
   state.busy = false;
+  state.boardOnly = false;
   els.submitRow.classList.remove("open");
   clearSummary();
   buildShowForm();
-  document.getElementById("sec-apply")?.classList.add("open");
   paintShowForm();
   renderNode();
 }
 
-/* ——— Real form ——— */
+/* ——— Real form / board ——— */
+
+function renderFormTabs() {
+  const host = document.getElementById("form-type-tabs");
+  if (!host) return;
+  if (!isGraphPack()) {
+    host.innerHTML = "";
+    host.hidden = true;
+    return;
+  }
+  host.hidden = false;
+  host.innerHTML = forms()
+    .map(
+      (f) =>
+        `<button type="button" class="role-tab ${f.id === state.formId ? "active" : ""}" data-form="${f.id}">${escapeHtml(f.level || "")} ${escapeHtml(f.label)}</button>`
+    )
+    .join("");
+  host.querySelectorAll("[data-form]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const formId = btn.getAttribute("data-form");
+      const existing = Object.values(state.docs).find((d) => d.formId === formId);
+      if (existing) switchContext(formId, existing.id, { rebuild: false });
+      else {
+        const id = `${formId}-${Date.now().toString(36).slice(-4)}`;
+        ensureDoc({ id, formId, title: `新${formById(formId).label}` });
+        switchContext(formId, id, { rebuild: false });
+      }
+      buildRealForm();
+    });
+  });
+}
+
+function renderDocList() {
+  const host = document.getElementById("doc-list");
+  if (!host) return;
+  if (!isGraphPack()) {
+    host.innerHTML = "";
+    host.hidden = true;
+    return;
+  }
+  host.hidden = false;
+  const same = Object.values(state.docs).filter((d) => d.formId === state.formId);
+  host.innerHTML = `
+    <div class="doc-list-head">
+      <span>此表單的單據（同級獨立）</span>
+      <button type="button" class="ghost-btn" id="btn-new-doc">＋ 新建</button>
+    </div>
+    <div class="doc-chips">
+      ${same
+        .map(
+          (d) =>
+            `<button type="button" class="doc-chip ${d.id === state.docId ? "active" : ""}" data-doc="${d.id}">
+              ${escapeHtml(docTitle(d))} <small>${escapeHtml(statusOf(d))}</small>
+            </button>`
+        )
+        .join("")}
+    </div>
+    <div class="link-panel">
+      <div class="doc-list-head"><span>連結（可多對多）</span>
+        <button type="button" class="ghost-btn" id="btn-add-link">＋ 連到…</button>
+      </div>
+      <ul class="link-ul">
+        ${linkedFrom(state.docId)
+          .map((l) => {
+            const t = state.docs[l.to];
+            return `<li>→ ${escapeHtml(l.label || "")} <strong>${escapeHtml(docTitle(t) || l.to)}</strong> <span class="muted">(${escapeHtml(formById(t?.formId)?.level || "")})</span></li>`;
+          })
+          .join("") || "<li class='muted'>尚未連出</li>"}
+        ${linkedTo(state.docId)
+          .map((l) => {
+            const t = state.docs[l.from];
+            return `<li>← 來自 <strong>${escapeHtml(docTitle(t) || l.from)}</strong></li>`;
+          })
+          .join("")}
+      </ul>
+    </div>`;
+  host.querySelectorAll("[data-doc]").forEach((b) =>
+    b.addEventListener("click", () => {
+      switchContext(state.formId, b.getAttribute("data-doc"), { rebuild: false });
+      buildRealForm();
+    })
+  );
+  document.getElementById("btn-new-doc")?.addEventListener("click", () => {
+    const form = activeForm();
+    const id = `${form.id}-${Date.now().toString(36).slice(-4)}`;
+    ensureDoc({ id, formId: form.id, title: `新${form.label}` });
+    switchContext(form.id, id, { rebuild: false });
+    persistGraph();
+    buildRealForm();
+  });
+  document.getElementById("btn-add-link")?.addEventListener("click", () => {
+    const targets = Object.values(state.docs).filter((d) => d.id !== state.docId);
+    if (!targets.length) {
+      toast("請先建立其他表單的單據");
+      return;
+    }
+    const labels = targets.map((d, i) => `${i + 1}. [${formById(d.formId)?.level}] ${docTitle(d)}`).join("\n");
+    const pick = prompt(`連到哪一張？輸入序號：\n${labels}`, "1");
+    const idx = Number(pick) - 1;
+    if (!targets[idx]) return;
+    const label = prompt("連結說明（例如：需要備料）", "") || "";
+    addLink({ from: state.docId, to: targets[idx].id, label });
+    persistGraph();
+    buildRealForm();
+    toast("已建立連結");
+  });
+}
 
 function buildRealForm() {
-  const doc = loadDoc();
-  state.values = { ...doc.values };
-  if (!state.values[pack.form.statusField]) state.values[pack.form.statusField] = "草稿";
+  loadActiveDocValues();
+  const form = activeForm();
+  if (!state.values[form.statusField]) state.values[form.statusField] = "草稿";
 
-  els.formTitle.textContent = pack.form.title;
-  els.formSub.textContent = "真實表單 · 依角色 ACL 顯示／編輯";
-  els.sections.innerHTML = pack.form.sections
+  els.formSheet.hidden = false;
+  els.formTitle.textContent = `${form.level ? form.level + " · " : ""}${form.title}`;
+  els.formSub.textContent = isGraphPack()
+    ? "獨立表單 · 用連結組成圖 · 依角色 ACL"
+    : "真實表單 · 依角色 ACL 顯示／編輯";
+  renderFormTabs();
+  renderDocList();
+
+  els.sections.innerHTML = form.sections
     .map((sec) => {
       const visibleFields = sec.fields.filter((f) => canRead(f, state.roleId));
       if (!visibleFields.length) return "";
@@ -4005,7 +5801,11 @@ function buildRealForm() {
   els.sections.querySelectorAll("[data-input]").forEach((input) => {
     const sync = () => {
       state.values[input.getAttribute("data-input")] = input.value;
-      persistDoc();
+      const tField = activeForm().titleField;
+      if (tField && input.getAttribute("data-input") === tField && state.docs[state.docId]) {
+        state.docs[state.docId].title = input.value;
+      }
+      persistGraph();
       els.statusPill.textContent = status();
     };
     input.addEventListener("input", sync);
@@ -4034,6 +5834,7 @@ function renderRoleTabs() {
 }
 
 function actionAvailable(action) {
+  if (action.form && action.form !== state.formId) return false;
   if (action.role !== state.roleId) return false;
   const st = status();
   const when = action.whenStatus || [];
@@ -4046,24 +5847,21 @@ function renderActions() {
   els.actionRow.classList.add("open");
   if (!acts.length) {
     els.actionRow.innerHTML = `<span class="progress">目前角色在「${escapeHtml(status())}」沒有可做的動作</span>
-      <button type="button" class="ghost-btn" id="btn-reset-doc">清空重填</button>`;
+      <button type="button" class="ghost-btn" id="btn-reset-doc">清空此單</button>`;
   } else {
     els.actionRow.innerHTML =
-      acts
-        .map(
-          (a) =>
-            `<button type="button" class="primary-btn" data-action-id="${a.id}">${escapeHtml(a.label)}</button>`
-        )
-        .join("") +
-      `<button type="button" class="ghost-btn" id="btn-reset-doc">清空重填</button>`;
+      acts.map((a) => `<button type="button" class="primary-btn" data-action-id="${a.id}">${escapeHtml(a.label)}</button>`).join("") +
+      `<button type="button" class="ghost-btn" id="btn-reset-doc">清空此單</button>`;
   }
   els.actionRow.querySelectorAll("[data-action-id]").forEach((btn) => {
     btn.addEventListener("click", () => runAction(btn.getAttribute("data-action-id")));
   });
   document.getElementById("btn-reset-doc")?.addEventListener("click", () => {
     if (!confirm("清空這張單，從頭開始？")) return;
-    state.values = { [pack.form.statusField]: "草稿" };
-    persistDoc();
+    const form = activeForm();
+    state.values = { [form.statusField]: "草稿" };
+    flushActiveDoc();
+    persistGraph();
     buildRealForm();
     toast("已清空");
   });
@@ -4080,15 +5878,6 @@ function runAction(actionId) {
       return;
     }
   }
-  // also enforce ACL requiredFrom for current role on require list already; extra check:
-  for (const f of allFields()) {
-    if (isRequired(f, state.roleId) && canWrite(f, state.roleId)) {
-      if ((action.require || []).includes(f.id) && !String(state.values[f.id] || "").trim()) {
-        toast(`「${f.label}」為必填`);
-        return;
-      }
-    }
-  }
   const persona = pack.demo?.persona?.[state.roleId] || roleOf(state.roleId)?.label || "";
   for (const id of action.autoPersona || []) state.values[id] = persona;
   for (const id of action.autoToday || []) state.values[id] = today();
@@ -4098,40 +5887,50 @@ function runAction(actionId) {
       state.values[to] = state.values[from];
     }
   }
-  persistDoc();
+  flushActiveDoc();
+  persistGraph();
   buildRealForm();
   toast(action.message || "已完成");
 }
 
-/* ——— Settings ACL ——— */
-
 function buildSettings() {
   els.formTitle.textContent = "欄位設定";
-  els.formSub.textContent = "誰必填 · 誰可看 · 誰可編 · 改完可匯出 JSON";
+  els.formSub.textContent = "依「獨立表單」分開設定 · 誰必填／可看／可編 · 可匯出";
   els.statusPill.textContent = pack.meta.title;
   els.submitRow.classList.remove("open");
   els.actionRow.classList.remove("open");
   els.actionRow.innerHTML = "";
+  document.getElementById("doc-list") && (document.getElementById("doc-list").hidden = true);
+  document.getElementById("form-type-tabs") && (document.getElementById("form-type-tabs").hidden = true);
 
   els.sections.innerHTML = `<div class="settings-list">
-    ${allFields()
-      .map((f) => {
-        const acl = aclOf(f);
-        const checks = (key) =>
-          pack.roles
-            .map(
-              (r) => `<label><input type="checkbox" data-acl="${f.id}:${key}:${r.id}" ${(acl[key] || []).includes(r.id) ? "checked" : ""}/> ${escapeHtml(r.label)}</label>`
-            )
-            .join("");
-        return `<article class="acl-card" data-field-acl="${f.id}">
-          <h3>${escapeHtml(f.label)} <span class="progress">(${escapeHtml(f.id)})</span></h3>
-          <p class="meaning">${escapeHtml(f.meaning || "")}</p>
-          <div class="acl-grid">
-            <div class="acl-row"><span>必填</span><div class="acl-checks">${checks("requiredFrom")}</div></div>
-            <div class="acl-row"><span>可看</span><div class="acl-checks">${checks("read")}</div></div>
-            <div class="acl-row"><span>可編</span><div class="acl-checks">${checks("write")}</div></div>
-          </div>
-        </article>`;
+    ${forms()
+      .map((form) => {
+        const fields = allFields(form);
+        return `<div class="settings-form-block">
+          <h2 class="settings-form-title">${escapeHtml(form.level || "")} · ${escapeHtml(form.label)}</h2>
+          ${fields
+            .map((f) => {
+              const acl = aclOf(f);
+              const checks = (key) =>
+                pack.roles
+                  .map(
+                    (r) =>
+                      `<label><input type="checkbox" data-acl="${form.id}:${f.id}:${key}:${r.id}" ${(acl[key] || []).includes(r.id) ? "checked" : ""}/> ${escapeHtml(r.label)}</label>`
+                  )
+                  .join("");
+              return `<article class="acl-card">
+                <h3>${escapeHtml(f.label)} <span class="progress">(${escapeHtml(f.id)})</span></h3>
+                <p class="meaning">${escapeHtml(f.meaning || "")}</p>
+                <div class="acl-grid">
+                  <div class="acl-row"><span>必填</span><div class="acl-checks">${checks("requiredFrom")}</div></div>
+                  <div class="acl-row"><span>可看</span><div class="acl-checks">${checks("read")}</div></div>
+                  <div class="acl-row"><span>可編</span><div class="acl-checks">${checks("write")}</div></div>
+                </div>
+              </article>`;
+            })
+            .join("")}
+        </div>`;
       })
       .join("")}
     <div class="settings-actions">
@@ -4142,13 +5941,16 @@ function buildSettings() {
 
   els.sections.querySelectorAll("[data-acl]").forEach((input) => {
     input.addEventListener("change", () => {
-      const [fieldId, key, roleId] = input.getAttribute("data-acl").split(":");
-      const field = fieldById(fieldId);
+      const [formId, fieldId, key, roleId] = input.getAttribute("data-acl").split(":");
+      const field = fieldById(fieldId, formById(formId));
       if (!field.acl) field.acl = { requiredFrom: [], read: [], write: [] };
-      const set = new Set(field.acl[key] || []);
+      // mutate source field in pack.forms
+      const src = formById(formId).sections.flatMap((s) => s.fields).find((x) => x.id === fieldId);
+      if (!src.acl) src.acl = { requiredFrom: [], read: [], write: [] };
+      const set = new Set(src.acl[key] || []);
       if (input.checked) set.add(roleId);
       else set.delete(roleId);
-      field.acl[key] = [...set];
+      src.acl[key] = [...set];
     });
   });
 
@@ -4161,13 +5963,26 @@ function buildSettings() {
 }
 
 function exportPack() {
-  const blob = new Blob([JSON.stringify(pack, null, 2)], { type: "application/json" });
+  flushActiveDoc();
+  const out = {
+    ...pack,
+    demo: {
+      ...(pack.demo || {}),
+      values: pack.demo?.values || {},
+      persona: pack.demo?.persona || {},
+      docs: Object.values(state.docs),
+      links: state.links,
+    },
+  };
+  // keep legacy form mirror for single-form
+  if (out.forms?.length === 1) out.form = { ...out.forms[0] };
+  const blob = new Blob([JSON.stringify(out, null, 2)], { type: "application/json" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
   a.download = `${pack.meta.id || "system"}.json`;
   a.click();
   URL.revokeObjectURL(a.href);
-  toast("已匯出 JSON");
+  toast("已匯出 JSON（含單據與連結）");
 }
 
 function importPackFile(file) {
@@ -4180,6 +5995,7 @@ function importPackFile(file) {
       packLibrary[pack.meta.id] = structuredClone(normalized);
       syncPackSelect();
       localStorage.removeItem(storageKeyPack());
+      localStorage.removeItem(storageKeyGraph());
       persistPackEdits();
       bootPack();
       toast(`已載入：${pack.meta.title}`);
@@ -4217,43 +6033,47 @@ function switchPack(id) {
   toast(`切換：${pack.meta.title}`);
 }
 
-/** Accept new split format; light shim for older root-level cast/nodes */
-function normalizePack(raw) {
-  if (raw.meta && raw.form && raw.show) return raw;
-  if (raw.form && raw.nodes) {
-    return {
-      meta: { id: raw.id || "system", title: raw.title || "未命名系統", subtitle: raw.subtitle || "" },
-      roles: raw.roles || [],
-      form: raw.form,
-      actions: raw.actions || [],
-      tables: raw.tables || [],
-      show: {
-        cast: raw.cast || [],
-        start: raw.start,
-        nodes: raw.nodes,
-      },
-      demo: raw.demo || { values: {}, persona: {} },
-    };
-  }
-  throw new Error("缺少 meta/form/show");
-}
-
 function setMode(mode) {
   state.mode = mode;
-  els.app.dataset.mode = mode;
+  els.app.dataset.mode = mode === "board" ? "form" : mode;
+  if (mode === "board") els.app.dataset.board = "1";
+  else delete els.app.dataset.board;
+
   document.querySelectorAll(".mode-tab[data-mode]").forEach((btn) => {
     btn.classList.toggle("active", btn.getAttribute("data-mode") === mode);
   });
   clearSummary();
   els.actionRow.classList.remove("open");
+  state.boardOnly = mode === "board";
 
   if (mode === "show") {
     els.eyebrow.textContent = "Show · LINE 對話";
     restartShow();
   } else if (mode === "form") {
-    els.eyebrow.textContent = "真實表單";
+    els.eyebrow.textContent = isGraphPack() ? "獨立表單 · 圖狀連結" : "真實表單";
     state.roleId = state.roleId || pack.roles[0].id;
+    if (!Object.keys(state.docs || {}).length) loadGraph();
+    else {
+      flushActiveDoc();
+      persistGraph();
+    }
+    state.boardOnly = false;
     buildRealForm();
+  } else if (mode === "board") {
+    els.eyebrow.textContent = "關聯總表";
+    state.roleId = state.roleId || pack.roles[0].id;
+    if (!Object.keys(state.docs || {}).length) loadGraph();
+    else {
+      flushActiveDoc();
+      persistGraph();
+    }
+    renderFormTabs();
+    const dl = document.getElementById("doc-list");
+    if (dl) dl.hidden = true;
+    const ft = document.getElementById("form-type-tabs");
+    if (ft) ft.hidden = true;
+    renderBoard();
+    renderRoleTabs();
   } else if (mode === "settings") {
     els.eyebrow.textContent = "欄位設定";
     state.roleId = state.roleId || pack.roles[0].id;
@@ -4276,10 +6096,13 @@ function bindChrome() {
   els.btnNext?.addEventListener("click", () => goNext());
   document.getElementById("btn-restart")?.addEventListener("click", () => {
     if (state.mode === "show") restartShow();
-    else if (state.mode === "form") {
-      state.values = { [pack.form.statusField]: "草稿" };
-      persistDoc();
-      buildRealForm();
+    else if (state.mode === "form" || state.mode === "board") {
+      if (!confirm("重設所有單據與連結為示範資料？")) return;
+      localStorage.removeItem(storageKeyGraph());
+      seedGraphFromDemo();
+      persistGraph();
+      if (state.mode === "board") renderBoard();
+      else buildRealForm();
       toast("已重來");
     } else toast("設定請用儲存／匯出");
   });
@@ -4310,10 +6133,16 @@ function bindChrome() {
 
 function bootPack() {
   pack = loadPackEdits(pack);
+  pack = normalizePack(pack);
   els.title.textContent = pack.meta.title;
   state.roleId = pack.roles[0]?.id;
   const bootMode = new URLSearchParams(location.search).get("mode");
-  const mode = ["show", "form", "settings"].includes(bootMode) ? bootMode : "show";
+  const mode = ["show", "form", "settings", "board"].includes(bootMode)
+    ? bootMode
+    : "show";
+  // show board tab only for graph packs
+  const boardTab = document.querySelector('.mode-tab[data-mode="board"]');
+  if (boardTab) boardTab.hidden = !isGraphPack() && forms().length < 2;
   setMode(mode);
 }
 

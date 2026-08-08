@@ -9,6 +9,9 @@ const TONE = {
 /** @type {any} */
 let pack = null;
 
+/** @type {Record<string, any>} */
+let packLibrary = {};
+
 const els = {
   app: document.getElementById("app"),
   title: document.getElementById("title"),
@@ -28,34 +31,29 @@ const els = {
   btnPrev: document.getElementById("btn-prev"),
   btnNext: document.getElementById("btn-next"),
   fileImport: document.getElementById("file-import"),
+  formSheet: document.getElementById("form-sheet"),
+  formToolbar: document.getElementById("form-toolbar"),
 };
 
 const state = {
   mode: "show",
   nodeId: null,
+  formId: null,
+  docId: null,
+  /** @type {Record<string, {id:string, formId:string, title?:string, values:Record<string,string>}>} */
+  docs: {},
+  /** @type {{from:string,to:string,label?:string}[]} */
+  links: [],
   values: {},
   unlocked: new Set(),
   openSections: new Set(),
   busy: false,
   typeToken: 0,
   roleId: null,
-  history: [], // node ids visited for prev
-  chat: [], // {id, speaker, line, side}
+  history: [],
+  chat: [],
+  boardOnly: false,
 };
-
-/** @type {Record<string, any>} */
-let packLibrary = {};
-
-function firstSectionId() {
-  return pack?.form?.sections?.[0]?.id || "apply";
-}
-
-function storageKeyDoc() {
-  return `seed-form:${pack.meta.id}`;
-}
-function storageKeyPack() {
-  return `seed-pack:${pack.meta.id}`;
-}
 
 function toast(msg) {
   els.toast.textContent = msg;
@@ -76,6 +74,34 @@ function today() {
   return new Date().toISOString().slice(0, 10);
 }
 
+function isGraphPack() {
+  return (pack.forms || []).length > 1 || !!(pack.demo && pack.demo.docs);
+}
+
+function forms() {
+  return pack.forms || [];
+}
+
+function formById(id) {
+  return forms().find((f) => f.id === id) || forms()[0];
+}
+
+function activeForm() {
+  return formById(state.formId);
+}
+
+function firstSectionId(form = activeForm()) {
+  return form?.sections?.[0]?.id || "main";
+}
+
+function storageKeyGraph() {
+  return `seed-graph:${pack.meta.id}`;
+}
+
+function storageKeyPack() {
+  return `seed-pack:${pack.meta.id}`;
+}
+
 function castOf(id) {
   return pack.show.cast.find((c) => c.id === id) || { id, label: id, tone: "guide" };
 }
@@ -84,20 +110,24 @@ function roleOf(id) {
   return pack.roles.find((r) => r.id === id);
 }
 
-function allFields() {
-  return pack.form.sections.flatMap((s) =>
-    s.fields.map((f) => ({ ...f, sectionId: s.id }))
+function allFields(form = activeForm()) {
+  return (form?.sections || []).flatMap((s) =>
+    s.fields.map((f) => ({ ...f, sectionId: s.id, formId: form.id }))
   );
 }
 
-function fieldById(id) {
-  return allFields().find((f) => f.id === id);
+function allFieldsInPack() {
+  return forms().flatMap((f) => allFields(f));
+}
+
+function fieldById(id, form = activeForm()) {
+  return allFields(form).find((f) => f.id === id);
 }
 
 function aclOf(field) {
   return (
     field.acl || {
-      requiredFrom: field.required ? ["applicant"] : [],
+      requiredFrom: field.required ? [pack.roles[0]?.id].filter(Boolean) : [],
       read: pack.roles.map((r) => r.id),
       write: field.write || [],
     }
@@ -118,8 +148,20 @@ function isRequired(field, roleId) {
   return (aclOf(field).requiredFrom || []).includes(roleId);
 }
 
+function statusOf(doc) {
+  const form = formById(doc.formId);
+  return doc.values?.[form.statusField] || "草稿";
+}
+
 function status() {
-  return state.values[pack.form.statusField] || "草稿";
+  return state.values[activeForm()?.statusField] || "草稿";
+}
+
+function isDone(doc) {
+  const form = formById(doc.formId);
+  const st = statusOf(doc);
+  const doneWhen = form.doneWhen || ["已完成", "已就緒", "已回寫", "已核准"];
+  return doneWhen.includes(st);
 }
 
 function demoValue(key) {
@@ -134,19 +176,90 @@ function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
-function persistDoc() {
+function docTitle(doc) {
+  if (!doc) return "";
+  if (doc.title) return doc.title;
+  const form = formById(doc.formId);
+  const key = form?.titleField;
+  if (key && doc.values?.[key]) return doc.values[key];
+  return doc.id;
+}
+
+function flushActiveDoc() {
+  if (!state.docId || !state.docs[state.docId]) return;
+  state.docs[state.docId].values = { ...state.values };
+}
+
+function loadActiveDocValues() {
+  const doc = state.docs[state.docId];
+  state.values = { ...(doc?.values || {}) };
+  const sf = activeForm()?.statusField;
+  if (sf && !state.values[sf]) state.values[sf] = "草稿";
+}
+
+function persistGraph() {
+  flushActiveDoc();
   localStorage.setItem(
-    storageKeyDoc(),
-    JSON.stringify({ values: state.values, updatedAt: new Date().toISOString() })
+    storageKeyGraph(),
+    JSON.stringify({
+      docs: state.docs,
+      links: state.links,
+      formId: state.formId,
+      docId: state.docId,
+      updatedAt: new Date().toISOString(),
+    })
   );
 }
 
-function loadDoc() {
+function seedGraphFromDemo() {
+  const demoDocs = pack.demo?.docs;
+  if (demoDocs?.length) {
+    state.docs = {};
+    for (const d of demoDocs) {
+      state.docs[d.id] = {
+        id: d.id,
+        formId: d.formId,
+        title: d.title,
+        values: { ...(d.values || {}) },
+      };
+    }
+    state.links = (pack.demo.links || []).map((l) => ({ ...l }));
+    state.formId = demoDocs[0].formId;
+    state.docId = demoDocs[0].id;
+    return;
+  }
+  const form = forms()[0];
+  const id = "main";
+  state.docs = {
+    [id]: {
+      id,
+      formId: form.id,
+      title: form.title,
+      values: { [form.statusField]: "草稿" },
+    },
+  };
+  state.links = [];
+  state.formId = form.id;
+  state.docId = id;
+}
+
+function loadGraph() {
   try {
-    const raw = localStorage.getItem(storageKeyDoc());
-    if (raw) return JSON.parse(raw);
+    const raw = localStorage.getItem(storageKeyGraph());
+    if (raw) {
+      const data = JSON.parse(raw);
+      if (data.docs && Object.keys(data.docs).length) {
+        state.docs = data.docs;
+        state.links = data.links || [];
+        state.formId = data.formId || Object.values(data.docs)[0].formId;
+        state.docId = data.docId || Object.keys(data.docs)[0];
+        loadActiveDocValues();
+        return;
+      }
+    }
   } catch (_) {}
-  return { values: { [pack.form.statusField]: "草稿" } };
+  seedGraphFromDemo();
+  loadActiveDocValues();
 }
 
 function persistPackEdits() {
@@ -158,16 +271,17 @@ function loadPackEdits(base) {
     const raw = localStorage.getItem(`seed-pack:${base.meta.id}`);
     if (!raw) return base;
     const edited = JSON.parse(raw);
-    // keep show/demo from base if missing; prefer edited form/actions/roles
     return {
       ...base,
       ...edited,
       show: edited.show || base.show,
       demo: edited.demo || base.demo,
+      forms: edited.forms || base.forms,
       form: edited.form || base.form,
       actions: edited.actions || base.actions,
       roles: edited.roles || base.roles,
       tables: edited.tables || base.tables,
+      linkRules: edited.linkRules || base.linkRules,
       meta: { ...base.meta, ...edited.meta },
     };
   } catch (_) {
@@ -175,18 +289,68 @@ function loadPackEdits(base) {
   }
 }
 
+/** Accept forms[] graph packs; shim legacy single form */
+function normalizePack(raw) {
+  let base = raw;
+  if (!(raw.meta && (raw.form || raw.forms) && raw.show)) {
+    if (raw.form && raw.nodes) {
+      base = {
+        meta: { id: raw.id || "system", title: raw.title || "未命名系統", subtitle: raw.subtitle || "" },
+        roles: raw.roles || [],
+        form: raw.form,
+        actions: raw.actions || [],
+        tables: raw.tables || [],
+        show: { cast: raw.cast || [], start: raw.start, nodes: raw.nodes },
+        demo: raw.demo || { values: {}, persona: {} },
+      };
+    } else {
+      throw new Error("缺少 meta/form|forms/show");
+    }
+  }
+  const packOut = structuredClone(base);
+  if (!packOut.forms?.length && packOut.form) {
+    packOut.forms = [
+      {
+        id: packOut.form.id || "main",
+        label: packOut.form.label || packOut.form.title || "表單",
+        level: packOut.form.level || "A",
+        title: packOut.form.title,
+        titleField: packOut.form.titleField,
+        statusField: packOut.form.statusField,
+        doneWhen: packOut.form.doneWhen,
+        sections: packOut.form.sections,
+      },
+    ];
+  }
+  packOut.form = packOut.forms[0];
+  packOut.linkRules = packOut.linkRules || [];
+  packOut.actions = packOut.actions || [];
+  return packOut;
+}
+
 function snapshotShow() {
+  flushActiveDoc();
   return {
+    formId: state.formId,
+    docId: state.docId,
+    docs: structuredClone(state.docs),
+    links: structuredClone(state.links),
     values: { ...state.values },
     unlocked: [...state.unlocked],
     openSections: [...state.openSections],
+    boardOnly: state.boardOnly,
   };
 }
 
 function restoreShow(snap) {
+  state.docs = structuredClone(snap.docs);
+  state.links = structuredClone(snap.links);
+  state.formId = snap.formId;
+  state.docId = snap.docId;
   state.values = { ...snap.values };
   state.unlocked = new Set(snap.unlocked);
   state.openSections = new Set(snap.openSections);
+  state.boardOnly = !!snap.boardOnly;
 }
 
 function resolveFills(node) {
@@ -201,10 +365,57 @@ function resolveFills(node) {
   return out;
 }
 
+function switchContext(formId, docId, { rebuild = true } = {}) {
+  flushActiveDoc();
+  if (formId) state.formId = formId;
+  if (docId) state.docId = docId;
+  if (!state.docs[state.docId]) {
+    const form = activeForm();
+    state.docs[state.docId] = {
+      id: state.docId,
+      formId: state.formId,
+      values: { [form.statusField]: "草稿" },
+    };
+  }
+  // keep doc.formId authoritative
+  state.formId = state.docs[state.docId].formId;
+  loadActiveDocValues();
+  state.openSections = new Set([firstSectionId()]);
+  if (rebuild && state.mode === "show" && !state.boardOnly) buildShowForm();
+}
+
+function ensureDoc(spec) {
+  if (!spec?.id) return;
+  if (!state.docs[spec.id]) {
+    const formId = spec.formId || state.formId;
+    const form = formById(formId);
+    const values = { [form.statusField]: spec.status || "草稿", ...(spec.values || {}) };
+    state.docs[spec.id] = {
+      id: spec.id,
+      formId,
+      title: spec.title,
+      values,
+    };
+  } else {
+    if (spec.title) state.docs[spec.id].title = spec.title;
+    if (spec.values) Object.assign(state.docs[spec.id].values, spec.values);
+    if (spec.status) state.docs[spec.id].values[formById(state.docs[spec.id].formId).statusField] = spec.status;
+  }
+}
+
+function addLink(link) {
+  if (!link?.from || !link?.to) return;
+  const exists = state.links.some((l) => l.from === link.from && l.to === link.to && (l.label || "") === (link.label || ""));
+  if (!exists) state.links.push({ from: link.from, to: link.to, label: link.label || "" });
+}
+
 function buildShowForm() {
-  els.formTitle.textContent = pack.form.title;
-  els.formSub.textContent = "Show · 上方表單隨對話填入";
-  els.sections.innerHTML = pack.form.sections
+  const form = activeForm();
+  const doc = state.docs[state.docId];
+  els.formSheet.hidden = false;
+  els.formTitle.textContent = `${form.level ? form.level + " · " : ""}${form.title}`;
+  els.formSub.textContent = `Show · 獨立表單「${form.label}」· 單據 ${docTitle(doc) || doc?.id || ""}`;
+  els.sections.innerHTML = form.sections
     .map(
       (sec) => `<section class="section" data-section="${sec.id}" id="sec-${sec.id}">
         <p class="section-label">${escapeHtml(sec.label)}</p>
@@ -221,10 +432,13 @@ function buildShowForm() {
       </section>`
     )
     .join("");
+  paintShowForm();
 }
 
 function paintShowForm() {
-  pack.form.sections.forEach((sec) => {
+  const form = activeForm();
+  if (!form || state.boardOnly) return;
+  form.sections.forEach((sec) => {
     const secEl = document.getElementById(`sec-${sec.id}`);
     const showSec =
       state.openSections.has(sec.id) ||
@@ -247,7 +461,7 @@ function paintShowForm() {
       }
     });
   });
-  els.statusPill.textContent = status();
+  els.statusPill.textContent = `${form.level || ""} ${status()}`.trim();
 }
 
 function setFocus(fieldId) {
@@ -270,6 +484,7 @@ async function typeValue(fieldId, text) {
   const valEl = el?.querySelector("[data-value]");
   if (!valEl) {
     state.values[fieldId] = text;
+    flushActiveDoc();
     return;
   }
   state.unlocked.add(fieldId);
@@ -287,6 +502,7 @@ async function typeValue(fieldId, text) {
   if (token !== state.typeToken) return;
   valEl.classList.remove("typing");
   state.values[fieldId] = text;
+  flushActiveDoc();
 }
 
 function prepareReveal(node) {
@@ -319,20 +535,124 @@ async function applyFills(node) {
       state.unlocked.add(key);
       state.values[key] = String(fills[key]);
     }
+    flushActiveDoc();
     paintShowForm();
   }
+}
+
+function linkedFrom(docId) {
+  return state.links.filter((l) => l.from === docId);
+}
+
+function linkedTo(docId) {
+  return state.links.filter((l) => l.to === docId);
+}
+
+function renderBoard({ highlight = [] } = {}) {
+  const hi = new Set(highlight);
+  const rows = Object.values(state.docs).sort((a, b) => {
+    const la = formById(a.formId)?.level || "Z";
+    const lb = formById(b.formId)?.level || "Z";
+    return la.localeCompare(lb) || a.id.localeCompare(b.id);
+  });
+  const doneCount = rows.filter(isDone).length;
+  els.formSheet.hidden = false;
+  els.formTitle.textContent = "關聯總表";
+  els.formSub.textContent = `圖狀關聯 · ${doneCount}/${rows.length} 張已完成狀態`;
+  els.statusPill.textContent = `${state.links.length} 條連結`;
+  els.submitRow.classList.remove("open");
+  els.actionRow.classList.remove("open");
+  els.actionRow.innerHTML = "";
+
+  const rules = (pack.linkRules || [])
+    .map(
+      (r) =>
+        `<li><strong>${escapeHtml(r.from)}</strong> → <strong>${escapeHtml(r.to)}</strong>${
+          r.cardinality ? `（${escapeHtml(r.cardinality)}）` : ""
+        } ${escapeHtml(r.label || "")}</li>`
+    )
+    .join("");
+
+  els.sections.innerHTML = `
+    <div class="board">
+      <p class="board-lead">A／B／C／D 是<strong>同級獨立表單</strong>；一張 A 可掛多張 B，一張 B 可掛多張 C。狀態在總表一次看完。</p>
+      ${rules ? `<ul class="board-rules">${rules}</ul>` : ""}
+      <div class="board-table-wrap">
+        <table class="board-table">
+          <thead>
+            <tr>
+              <th>層級</th>
+              <th>表單</th>
+              <th>單據</th>
+              <th>狀態</th>
+              <th>完成</th>
+              <th>連出</th>
+              <th>連入</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows
+              .map((doc) => {
+                const form = formById(doc.formId);
+                const outs = linkedFrom(doc.id);
+                const ins = linkedTo(doc.id);
+                const done = isDone(doc);
+                return `<tr class="${hi.has(doc.id) ? "hi" : ""} ${done ? "done" : ""}" data-open-doc="${doc.id}">
+                  <td><span class="lvl">${escapeHtml(form?.level || "?")}</span></td>
+                  <td>${escapeHtml(form?.label || doc.formId)}</td>
+                  <td><strong>${escapeHtml(docTitle(doc))}</strong><div class="muted">${escapeHtml(doc.id)}</div></td>
+                  <td>${escapeHtml(statusOf(doc))}</td>
+                  <td>${done ? "✓" : "·"}</td>
+                  <td>${outs.map((l) => `<div>${escapeHtml(l.label || "→")} <code>${escapeHtml(l.to)}</code></div>`).join("") || "—"}</td>
+                  <td>${ins.map((l) => `<div><code>${escapeHtml(l.from)}</code></div>`).join("") || "—"}</td>
+                </tr>`;
+              })
+              .join("")}
+          </tbody>
+        </table>
+      </div>
+      <div class="board-graph">
+        ${state.links
+          .map((l) => {
+            const a = state.docs[l.from];
+            const b = state.docs[l.to];
+            return `<div class="edge ${hi.has(l.from) || hi.has(l.to) ? "hi" : ""}">
+              <span class="edge-a">${escapeHtml(formById(a?.formId)?.level || "")} ${escapeHtml(docTitle(a) || l.from)}</span>
+              <span class="edge-arrow">→</span>
+              <span class="edge-b">${escapeHtml(formById(b?.formId)?.level || "")} ${escapeHtml(docTitle(b) || l.to)}</span>
+              <span class="edge-label">${escapeHtml(l.label || "")}</span>
+            </div>`;
+          })
+          .join("") || `<p class="muted">尚無連結</p>`}
+      </div>
+    </div>`;
+
+  els.sections.querySelectorAll("[data-open-doc]").forEach((tr) => {
+    tr.addEventListener("click", () => {
+      const id = tr.getAttribute("data-open-doc");
+      const doc = state.docs[id];
+      if (!doc) return;
+      state.boardOnly = false;
+      switchContext(doc.formId, id);
+      if (state.mode === "board") setMode("form");
+      else if (state.mode === "show") {
+        state.unlocked = new Set(Object.keys(doc.values || {}).filter((k) => doc.values[k]));
+        buildShowForm();
+      }
+    });
+  });
 }
 
 function renderSummary() {
   els.summary.classList.add("show");
   els.summary.innerHTML = `
-    <h2>這個系統收成 ${(pack.tables || []).length} 張表</h2>
-    <p>每一欄都能追回剛才對話裡說的那句話：</p>
+    <h2>這個系統收成 ${forms().length} 種獨立表單 · ${(pack.tables || []).length} 張說明表</h2>
+    <p>A／B／C／D 同級；用連結組成圖。每一欄都能追回對話裡的那句話：</p>
     ${(pack.tables || [])
       .map(
         (t) => `<div class="table-card">
           <h3>${escapeHtml(t.label)}</h3>
-          <ul>${t.fields
+          <ul>${(t.fields || [])
             .map(
               (f) =>
                 `<li><strong>${escapeHtml(f.label)}</strong> <span class="origin">— ${escapeHtml(f.origin)}</span></li>`
@@ -358,155 +678,299 @@ function appendChat(node, { replaceLast = false } = {}) {
     side,
     tone: cast.tone,
   };
-  if (replaceLast && state.chat.length) state.chat.pop();
-  state.chat.push(item);
-  paintChat(item.id);
+  if (replaceLast && state.chat.length) state.chat[state.chat.length - 1] = item;
+  else state.chat.push(item);
+  paintChat();
 }
 
-function paintChat(activeId) {
+function paintChat() {
   els.chatLog.innerHTML = state.chat
-    .map(
-      (m) => `<div class="bubble-row ${m.side} ${m.id === activeId ? "active" : ""}" data-bubble="${m.id}">
-        <div class="bubble-who">${escapeHtml(m.speaker)}</div>
-        <div class="bubble">${escapeHtml(m.line)}</div>
-      </div>`
-    )
+    .map((m) => {
+      const color = TONE[m.tone] || TONE.guide;
+      return `<div class="bubble-row ${m.side}">
+        <div class="bubble" style="--tone:${color}">
+          <div class="who">${escapeHtml(m.speaker)}</div>
+          <div class="line">${escapeHtml(m.line)}</div>
+        </div>
+      </div>`;
+    })
     .join("");
-  const last = els.chatLog.lastElementChild;
-  last?.scrollIntoView({ block: "end", behavior: "smooth" });
+  els.chatLog.scrollTop = els.chatLog.scrollHeight;
 }
 
-function paintChatBar(node) {
-  const atStart = state.history.length === 0;
-  els.btnPrev.disabled = atStart || state.busy;
-  els.btnNext.disabled = state.busy || !!(node.choices?.length) || !!node.ending;
-
-  let extra = "";
-  if (node.choices?.length) {
-    extra = `<div class="chat-choices">
-      ${node.choices
-        .map(
-          (c) =>
-            `<button type="button" class="choice-btn" data-next="${escapeHtml(c.next)}">${escapeHtml(c.label)}</button>`
-        )
-        .join("")}
-    </div>`;
-  } else if (node.ending && node.cta?.length) {
-    els.btnNext.disabled = true;
-    extra = `<div class="cta-row">
-      ${node.cta
-        .map((c) => {
-          if (c.action === "open-form")
-            return `<button type="button" class="cta-btn" data-action="open-form">${escapeHtml(c.label)}</button>`;
-          if (c.action === "open-settings")
-            return `<button type="button" class="cta-btn" data-action="open-settings">${escapeHtml(c.label)}</button>`;
-          if (c.action === "restart")
-            return `<button type="button" class="cta-btn ghost" data-action="restart">${escapeHtml(c.label)}</button>`;
-          return "";
-        })
-        .join("")}
-    </div>`;
-  }
-
+function renderChatExtras(node) {
   const slot = document.getElementById("chat-extra");
-  if (slot) {
-    slot.innerHTML = extra;
-    slot.querySelectorAll(".choice-btn").forEach((btn) => {
-      btn.addEventListener("click", () => goNext(btn.getAttribute("data-next")));
-    });
+  if (!slot) return;
+  if (node.choices?.length) {
+    slot.innerHTML = `<div class="choice-row">${node.choices
+      .map(
+        (c) =>
+          `<button type="button" class="choice-btn" data-next="${escapeHtml(c.next)}">${escapeHtml(c.label)}</button>`
+      )
+      .join("")}</div>`;
+    slot.querySelectorAll("[data-next]").forEach((b) =>
+      b.addEventListener("click", () => goNext(b.getAttribute("data-next")))
+    );
+  } else if (node.ending && node.cta?.length) {
+    slot.innerHTML = `<div class="choice-row">${node.cta
+      .map((c) => {
+        if (c.action === "open-form")
+          return `<button type="button" class="cta-btn" data-action="open-form">${escapeHtml(c.label)}</button>`;
+        if (c.action === "open-settings")
+          return `<button type="button" class="cta-btn" data-action="open-settings">${escapeHtml(c.label)}</button>`;
+        if (c.action === "open-board")
+          return `<button type="button" class="cta-btn" data-action="open-board">${escapeHtml(c.label)}</button>`;
+        if (c.action === "restart")
+          return `<button type="button" class="cta-btn" data-action="restart">${escapeHtml(c.label)}</button>`;
+        return "";
+      })
+      .join("")}</div>`;
     slot.querySelectorAll("[data-action=open-form]").forEach((b) =>
       b.addEventListener("click", () => setMode("form"))
     );
     slot.querySelectorAll("[data-action=open-settings]").forEach((b) =>
       b.addEventListener("click", () => setMode("settings"))
     );
-    slot.querySelectorAll("[data-action=restart]").forEach((b) =>
-      b.addEventListener("click", restartShow)
+    slot.querySelectorAll("[data-action=open-board]").forEach((b) =>
+      b.addEventListener("click", () => setMode("board"))
     );
+    slot.querySelectorAll("[data-action=restart]").forEach((b) =>
+      b.addEventListener("click", () => restartShow())
+    );
+  } else {
+    slot.innerHTML = "";
   }
+  els.btnNext.disabled = !!(node.choices?.length || node.ending);
+  els.btnPrev.disabled = state.history.length === 0;
 }
 
 async function renderNode({ fromPrev = false } = {}) {
   const node = nodeOf(state.nodeId);
   if (!node) return;
-  if (node.summary) renderSummary();
-  else clearSummary();
+  state.busy = true;
+  els.btnNext.disabled = true;
+  els.btnPrev.disabled = true;
 
-  prepareReveal(node);
+  flushActiveDoc();
+  if (node.ensureDoc) ensureDoc(node.ensureDoc);
+  if (node.ensureDocs) node.ensureDocs.forEach(ensureDoc);
+  if (node.link) addLink(node.link);
+  if (node.links) node.links.forEach(addLink);
+  if (state.docs[state.docId]) {
+    state.values = { ...state.docs[state.docId].values };
+  }
+
+  const wantForm = node.form || state.formId;
+  const wantDoc = node.doc || state.docId;
+  if (node.showBoard) {
+    state.boardOnly = true;
+    renderBoard({ highlight: node.boardHighlight || [] });
+    persistGraph();
+  } else {
+    const formChanged = wantForm !== state.formId || wantDoc !== state.docId || state.boardOnly;
+    state.boardOnly = false;
+    if (formChanged) {
+      switchContext(wantForm, wantDoc, { rebuild: true });
+      // unlock already filled fields on this doc
+      Object.entries(state.values).forEach(([k, v]) => {
+        if (v) state.unlocked.add(k);
+      });
+    }
+  }
+
   if (!fromPrev) appendChat(node);
   else {
-    // prev: keep chat history trimmed already
-    paintChat(state.chat[state.chat.length - 1]?.id);
+    // history restore already set chat; just paint
+    paintChat();
   }
-  paintChatBar(node);
 
-  state.busy = true;
-  els.btnPrev.disabled = true;
-  els.btnNext.disabled = true;
-  if (!fromPrev) await applyFills(node);
-  else paintShowForm();
+  if (!node.showBoard) {
+    prepareReveal(node);
+    if (!fromPrev) await applyFills(node);
+    else paintShowForm();
+  }
+
+  if (node.summary || node.ending) renderSummary();
+  else if (!fromPrev) clearSummary();
+
+  renderChatExtras(node);
   state.busy = false;
-  paintChatBar(node);
+  if (!node.choices?.length && !node.ending) els.btnNext.disabled = false;
+  els.btnPrev.disabled = state.history.length === 0;
 }
 
-function goNext(explicitNext) {
+async function goNext(forcedNext) {
   if (state.busy) return;
   const node = nodeOf(state.nodeId);
-  if (!node) return;
-  if (node.choices?.length && !explicitNext) return;
-  if (node.ending && !explicitNext) return;
-  const nextId = explicitNext || node.next;
-  if (!nextId || !nodeOf(nextId)) return;
+  if (!node || node.ending) return;
+  if (node.choices?.length && !forcedNext) return;
+  const next = forcedNext || node.next;
+  if (!next) return;
   state.history.push({
     nodeId: state.nodeId,
     snap: snapshotShow(),
     chatLen: state.chat.length,
   });
-  state.nodeId = nextId;
-  renderNode();
+  state.nodeId = next;
+  await renderNode();
 }
 
 function goPrev() {
   if (state.busy || !state.history.length) return;
   const prev = state.history.pop();
-  state.typeToken += 1;
   state.nodeId = prev.nodeId;
   restoreShow(prev.snap);
   state.chat = state.chat.slice(0, prev.chatLen);
-  els.submitRow.classList.toggle("open", state.unlocked.has("final_status") || !!nodeOf(state.nodeId)?.showSubmit);
-  // re-open submit if current or past had it
-  if (pack.show.nodes[state.nodeId]?.showSubmit) els.submitRow.classList.add("open");
-  paintShowForm();
+  if (state.boardOnly) renderBoard({ highlight: nodeOf(state.nodeId)?.boardHighlight || [] });
+  else buildShowForm();
   renderNode({ fromPrev: true });
 }
 
 function restartShow() {
   state.typeToken += 1;
   state.nodeId = pack.show.start;
-  state.values = {};
+  seedGraphFromDemo();
+  // for demo.values-only packs, clear main values for show typing
+  if (!pack.demo?.docs) {
+    const form = activeForm();
+    state.docs.main.values = { [form.statusField]: "草稿" };
+  }
+  loadActiveDocValues();
   state.unlocked = new Set();
   state.openSections = new Set([firstSectionId()]);
   state.history = [];
   state.chat = [];
   state.busy = false;
+  state.boardOnly = false;
   els.submitRow.classList.remove("open");
   clearSummary();
   buildShowForm();
-  document.getElementById("sec-apply")?.classList.add("open");
   paintShowForm();
   renderNode();
 }
 
-/* ——— Real form ——— */
+/* ——— Real form / board ——— */
+
+function renderFormTabs() {
+  const host = document.getElementById("form-type-tabs");
+  if (!host) return;
+  if (!isGraphPack()) {
+    host.innerHTML = "";
+    host.hidden = true;
+    return;
+  }
+  host.hidden = false;
+  host.innerHTML = forms()
+    .map(
+      (f) =>
+        `<button type="button" class="role-tab ${f.id === state.formId ? "active" : ""}" data-form="${f.id}">${escapeHtml(f.level || "")} ${escapeHtml(f.label)}</button>`
+    )
+    .join("");
+  host.querySelectorAll("[data-form]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const formId = btn.getAttribute("data-form");
+      const existing = Object.values(state.docs).find((d) => d.formId === formId);
+      if (existing) switchContext(formId, existing.id, { rebuild: false });
+      else {
+        const id = `${formId}-${Date.now().toString(36).slice(-4)}`;
+        ensureDoc({ id, formId, title: `新${formById(formId).label}` });
+        switchContext(formId, id, { rebuild: false });
+      }
+      buildRealForm();
+    });
+  });
+}
+
+function renderDocList() {
+  const host = document.getElementById("doc-list");
+  if (!host) return;
+  if (!isGraphPack()) {
+    host.innerHTML = "";
+    host.hidden = true;
+    return;
+  }
+  host.hidden = false;
+  const same = Object.values(state.docs).filter((d) => d.formId === state.formId);
+  host.innerHTML = `
+    <div class="doc-list-head">
+      <span>此表單的單據（同級獨立）</span>
+      <button type="button" class="ghost-btn" id="btn-new-doc">＋ 新建</button>
+    </div>
+    <div class="doc-chips">
+      ${same
+        .map(
+          (d) =>
+            `<button type="button" class="doc-chip ${d.id === state.docId ? "active" : ""}" data-doc="${d.id}">
+              ${escapeHtml(docTitle(d))} <small>${escapeHtml(statusOf(d))}</small>
+            </button>`
+        )
+        .join("")}
+    </div>
+    <div class="link-panel">
+      <div class="doc-list-head"><span>連結（可多對多）</span>
+        <button type="button" class="ghost-btn" id="btn-add-link">＋ 連到…</button>
+      </div>
+      <ul class="link-ul">
+        ${linkedFrom(state.docId)
+          .map((l) => {
+            const t = state.docs[l.to];
+            return `<li>→ ${escapeHtml(l.label || "")} <strong>${escapeHtml(docTitle(t) || l.to)}</strong> <span class="muted">(${escapeHtml(formById(t?.formId)?.level || "")})</span></li>`;
+          })
+          .join("") || "<li class='muted'>尚未連出</li>"}
+        ${linkedTo(state.docId)
+          .map((l) => {
+            const t = state.docs[l.from];
+            return `<li>← 來自 <strong>${escapeHtml(docTitle(t) || l.from)}</strong></li>`;
+          })
+          .join("")}
+      </ul>
+    </div>`;
+  host.querySelectorAll("[data-doc]").forEach((b) =>
+    b.addEventListener("click", () => {
+      switchContext(state.formId, b.getAttribute("data-doc"), { rebuild: false });
+      buildRealForm();
+    })
+  );
+  document.getElementById("btn-new-doc")?.addEventListener("click", () => {
+    const form = activeForm();
+    const id = `${form.id}-${Date.now().toString(36).slice(-4)}`;
+    ensureDoc({ id, formId: form.id, title: `新${form.label}` });
+    switchContext(form.id, id, { rebuild: false });
+    persistGraph();
+    buildRealForm();
+  });
+  document.getElementById("btn-add-link")?.addEventListener("click", () => {
+    const targets = Object.values(state.docs).filter((d) => d.id !== state.docId);
+    if (!targets.length) {
+      toast("請先建立其他表單的單據");
+      return;
+    }
+    const labels = targets.map((d, i) => `${i + 1}. [${formById(d.formId)?.level}] ${docTitle(d)}`).join("\n");
+    const pick = prompt(`連到哪一張？輸入序號：\n${labels}`, "1");
+    const idx = Number(pick) - 1;
+    if (!targets[idx]) return;
+    const label = prompt("連結說明（例如：需要備料）", "") || "";
+    addLink({ from: state.docId, to: targets[idx].id, label });
+    persistGraph();
+    buildRealForm();
+    toast("已建立連結");
+  });
+}
 
 function buildRealForm() {
-  const doc = loadDoc();
-  state.values = { ...doc.values };
-  if (!state.values[pack.form.statusField]) state.values[pack.form.statusField] = "草稿";
+  loadActiveDocValues();
+  const form = activeForm();
+  if (!state.values[form.statusField]) state.values[form.statusField] = "草稿";
 
-  els.formTitle.textContent = pack.form.title;
-  els.formSub.textContent = "真實表單 · 依角色 ACL 顯示／編輯";
-  els.sections.innerHTML = pack.form.sections
+  els.formSheet.hidden = false;
+  els.formTitle.textContent = `${form.level ? form.level + " · " : ""}${form.title}`;
+  els.formSub.textContent = isGraphPack()
+    ? "獨立表單 · 用連結組成圖 · 依角色 ACL"
+    : "真實表單 · 依角色 ACL 顯示／編輯";
+  renderFormTabs();
+  renderDocList();
+
+  els.sections.innerHTML = form.sections
     .map((sec) => {
       const visibleFields = sec.fields.filter((f) => canRead(f, state.roleId));
       if (!visibleFields.length) return "";
@@ -553,7 +1017,11 @@ function buildRealForm() {
   els.sections.querySelectorAll("[data-input]").forEach((input) => {
     const sync = () => {
       state.values[input.getAttribute("data-input")] = input.value;
-      persistDoc();
+      const tField = activeForm().titleField;
+      if (tField && input.getAttribute("data-input") === tField && state.docs[state.docId]) {
+        state.docs[state.docId].title = input.value;
+      }
+      persistGraph();
       els.statusPill.textContent = status();
     };
     input.addEventListener("input", sync);
@@ -582,6 +1050,7 @@ function renderRoleTabs() {
 }
 
 function actionAvailable(action) {
+  if (action.form && action.form !== state.formId) return false;
   if (action.role !== state.roleId) return false;
   const st = status();
   const when = action.whenStatus || [];
@@ -594,24 +1063,21 @@ function renderActions() {
   els.actionRow.classList.add("open");
   if (!acts.length) {
     els.actionRow.innerHTML = `<span class="progress">目前角色在「${escapeHtml(status())}」沒有可做的動作</span>
-      <button type="button" class="ghost-btn" id="btn-reset-doc">清空重填</button>`;
+      <button type="button" class="ghost-btn" id="btn-reset-doc">清空此單</button>`;
   } else {
     els.actionRow.innerHTML =
-      acts
-        .map(
-          (a) =>
-            `<button type="button" class="primary-btn" data-action-id="${a.id}">${escapeHtml(a.label)}</button>`
-        )
-        .join("") +
-      `<button type="button" class="ghost-btn" id="btn-reset-doc">清空重填</button>`;
+      acts.map((a) => `<button type="button" class="primary-btn" data-action-id="${a.id}">${escapeHtml(a.label)}</button>`).join("") +
+      `<button type="button" class="ghost-btn" id="btn-reset-doc">清空此單</button>`;
   }
   els.actionRow.querySelectorAll("[data-action-id]").forEach((btn) => {
     btn.addEventListener("click", () => runAction(btn.getAttribute("data-action-id")));
   });
   document.getElementById("btn-reset-doc")?.addEventListener("click", () => {
     if (!confirm("清空這張單，從頭開始？")) return;
-    state.values = { [pack.form.statusField]: "草稿" };
-    persistDoc();
+    const form = activeForm();
+    state.values = { [form.statusField]: "草稿" };
+    flushActiveDoc();
+    persistGraph();
     buildRealForm();
     toast("已清空");
   });
@@ -628,15 +1094,6 @@ function runAction(actionId) {
       return;
     }
   }
-  // also enforce ACL requiredFrom for current role on require list already; extra check:
-  for (const f of allFields()) {
-    if (isRequired(f, state.roleId) && canWrite(f, state.roleId)) {
-      if ((action.require || []).includes(f.id) && !String(state.values[f.id] || "").trim()) {
-        toast(`「${f.label}」為必填`);
-        return;
-      }
-    }
-  }
   const persona = pack.demo?.persona?.[state.roleId] || roleOf(state.roleId)?.label || "";
   for (const id of action.autoPersona || []) state.values[id] = persona;
   for (const id of action.autoToday || []) state.values[id] = today();
@@ -646,40 +1103,50 @@ function runAction(actionId) {
       state.values[to] = state.values[from];
     }
   }
-  persistDoc();
+  flushActiveDoc();
+  persistGraph();
   buildRealForm();
   toast(action.message || "已完成");
 }
 
-/* ——— Settings ACL ——— */
-
 function buildSettings() {
   els.formTitle.textContent = "欄位設定";
-  els.formSub.textContent = "誰必填 · 誰可看 · 誰可編 · 改完可匯出 JSON";
+  els.formSub.textContent = "依「獨立表單」分開設定 · 誰必填／可看／可編 · 可匯出";
   els.statusPill.textContent = pack.meta.title;
   els.submitRow.classList.remove("open");
   els.actionRow.classList.remove("open");
   els.actionRow.innerHTML = "";
+  document.getElementById("doc-list") && (document.getElementById("doc-list").hidden = true);
+  document.getElementById("form-type-tabs") && (document.getElementById("form-type-tabs").hidden = true);
 
   els.sections.innerHTML = `<div class="settings-list">
-    ${allFields()
-      .map((f) => {
-        const acl = aclOf(f);
-        const checks = (key) =>
-          pack.roles
-            .map(
-              (r) => `<label><input type="checkbox" data-acl="${f.id}:${key}:${r.id}" ${(acl[key] || []).includes(r.id) ? "checked" : ""}/> ${escapeHtml(r.label)}</label>`
-            )
-            .join("");
-        return `<article class="acl-card" data-field-acl="${f.id}">
-          <h3>${escapeHtml(f.label)} <span class="progress">(${escapeHtml(f.id)})</span></h3>
-          <p class="meaning">${escapeHtml(f.meaning || "")}</p>
-          <div class="acl-grid">
-            <div class="acl-row"><span>必填</span><div class="acl-checks">${checks("requiredFrom")}</div></div>
-            <div class="acl-row"><span>可看</span><div class="acl-checks">${checks("read")}</div></div>
-            <div class="acl-row"><span>可編</span><div class="acl-checks">${checks("write")}</div></div>
-          </div>
-        </article>`;
+    ${forms()
+      .map((form) => {
+        const fields = allFields(form);
+        return `<div class="settings-form-block">
+          <h2 class="settings-form-title">${escapeHtml(form.level || "")} · ${escapeHtml(form.label)}</h2>
+          ${fields
+            .map((f) => {
+              const acl = aclOf(f);
+              const checks = (key) =>
+                pack.roles
+                  .map(
+                    (r) =>
+                      `<label><input type="checkbox" data-acl="${form.id}:${f.id}:${key}:${r.id}" ${(acl[key] || []).includes(r.id) ? "checked" : ""}/> ${escapeHtml(r.label)}</label>`
+                  )
+                  .join("");
+              return `<article class="acl-card">
+                <h3>${escapeHtml(f.label)} <span class="progress">(${escapeHtml(f.id)})</span></h3>
+                <p class="meaning">${escapeHtml(f.meaning || "")}</p>
+                <div class="acl-grid">
+                  <div class="acl-row"><span>必填</span><div class="acl-checks">${checks("requiredFrom")}</div></div>
+                  <div class="acl-row"><span>可看</span><div class="acl-checks">${checks("read")}</div></div>
+                  <div class="acl-row"><span>可編</span><div class="acl-checks">${checks("write")}</div></div>
+                </div>
+              </article>`;
+            })
+            .join("")}
+        </div>`;
       })
       .join("")}
     <div class="settings-actions">
@@ -690,13 +1157,16 @@ function buildSettings() {
 
   els.sections.querySelectorAll("[data-acl]").forEach((input) => {
     input.addEventListener("change", () => {
-      const [fieldId, key, roleId] = input.getAttribute("data-acl").split(":");
-      const field = fieldById(fieldId);
+      const [formId, fieldId, key, roleId] = input.getAttribute("data-acl").split(":");
+      const field = fieldById(fieldId, formById(formId));
       if (!field.acl) field.acl = { requiredFrom: [], read: [], write: [] };
-      const set = new Set(field.acl[key] || []);
+      // mutate source field in pack.forms
+      const src = formById(formId).sections.flatMap((s) => s.fields).find((x) => x.id === fieldId);
+      if (!src.acl) src.acl = { requiredFrom: [], read: [], write: [] };
+      const set = new Set(src.acl[key] || []);
       if (input.checked) set.add(roleId);
       else set.delete(roleId);
-      field.acl[key] = [...set];
+      src.acl[key] = [...set];
     });
   });
 
@@ -709,13 +1179,26 @@ function buildSettings() {
 }
 
 function exportPack() {
-  const blob = new Blob([JSON.stringify(pack, null, 2)], { type: "application/json" });
+  flushActiveDoc();
+  const out = {
+    ...pack,
+    demo: {
+      ...(pack.demo || {}),
+      values: pack.demo?.values || {},
+      persona: pack.demo?.persona || {},
+      docs: Object.values(state.docs),
+      links: state.links,
+    },
+  };
+  // keep legacy form mirror for single-form
+  if (out.forms?.length === 1) out.form = { ...out.forms[0] };
+  const blob = new Blob([JSON.stringify(out, null, 2)], { type: "application/json" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
   a.download = `${pack.meta.id || "system"}.json`;
   a.click();
   URL.revokeObjectURL(a.href);
-  toast("已匯出 JSON");
+  toast("已匯出 JSON（含單據與連結）");
 }
 
 function importPackFile(file) {
@@ -728,6 +1211,7 @@ function importPackFile(file) {
       packLibrary[pack.meta.id] = structuredClone(normalized);
       syncPackSelect();
       localStorage.removeItem(storageKeyPack());
+      localStorage.removeItem(storageKeyGraph());
       persistPackEdits();
       bootPack();
       toast(`已載入：${pack.meta.title}`);
@@ -765,43 +1249,47 @@ function switchPack(id) {
   toast(`切換：${pack.meta.title}`);
 }
 
-/** Accept new split format; light shim for older root-level cast/nodes */
-function normalizePack(raw) {
-  if (raw.meta && raw.form && raw.show) return raw;
-  if (raw.form && raw.nodes) {
-    return {
-      meta: { id: raw.id || "system", title: raw.title || "未命名系統", subtitle: raw.subtitle || "" },
-      roles: raw.roles || [],
-      form: raw.form,
-      actions: raw.actions || [],
-      tables: raw.tables || [],
-      show: {
-        cast: raw.cast || [],
-        start: raw.start,
-        nodes: raw.nodes,
-      },
-      demo: raw.demo || { values: {}, persona: {} },
-    };
-  }
-  throw new Error("缺少 meta/form/show");
-}
-
 function setMode(mode) {
   state.mode = mode;
-  els.app.dataset.mode = mode;
+  els.app.dataset.mode = mode === "board" ? "form" : mode;
+  if (mode === "board") els.app.dataset.board = "1";
+  else delete els.app.dataset.board;
+
   document.querySelectorAll(".mode-tab[data-mode]").forEach((btn) => {
     btn.classList.toggle("active", btn.getAttribute("data-mode") === mode);
   });
   clearSummary();
   els.actionRow.classList.remove("open");
+  state.boardOnly = mode === "board";
 
   if (mode === "show") {
     els.eyebrow.textContent = "Show · LINE 對話";
     restartShow();
   } else if (mode === "form") {
-    els.eyebrow.textContent = "真實表單";
+    els.eyebrow.textContent = isGraphPack() ? "獨立表單 · 圖狀連結" : "真實表單";
     state.roleId = state.roleId || pack.roles[0].id;
+    if (!Object.keys(state.docs || {}).length) loadGraph();
+    else {
+      flushActiveDoc();
+      persistGraph();
+    }
+    state.boardOnly = false;
     buildRealForm();
+  } else if (mode === "board") {
+    els.eyebrow.textContent = "關聯總表";
+    state.roleId = state.roleId || pack.roles[0].id;
+    if (!Object.keys(state.docs || {}).length) loadGraph();
+    else {
+      flushActiveDoc();
+      persistGraph();
+    }
+    renderFormTabs();
+    const dl = document.getElementById("doc-list");
+    if (dl) dl.hidden = true;
+    const ft = document.getElementById("form-type-tabs");
+    if (ft) ft.hidden = true;
+    renderBoard();
+    renderRoleTabs();
   } else if (mode === "settings") {
     els.eyebrow.textContent = "欄位設定";
     state.roleId = state.roleId || pack.roles[0].id;
@@ -824,10 +1312,13 @@ function bindChrome() {
   els.btnNext?.addEventListener("click", () => goNext());
   document.getElementById("btn-restart")?.addEventListener("click", () => {
     if (state.mode === "show") restartShow();
-    else if (state.mode === "form") {
-      state.values = { [pack.form.statusField]: "草稿" };
-      persistDoc();
-      buildRealForm();
+    else if (state.mode === "form" || state.mode === "board") {
+      if (!confirm("重設所有單據與連結為示範資料？")) return;
+      localStorage.removeItem(storageKeyGraph());
+      seedGraphFromDemo();
+      persistGraph();
+      if (state.mode === "board") renderBoard();
+      else buildRealForm();
       toast("已重來");
     } else toast("設定請用儲存／匯出");
   });
@@ -858,10 +1349,16 @@ function bindChrome() {
 
 function bootPack() {
   pack = loadPackEdits(pack);
+  pack = normalizePack(pack);
   els.title.textContent = pack.meta.title;
   state.roleId = pack.roles[0]?.id;
   const bootMode = new URLSearchParams(location.search).get("mode");
-  const mode = ["show", "form", "settings"].includes(bootMode) ? bootMode : "show";
+  const mode = ["show", "form", "settings", "board"].includes(bootMode)
+    ? bootMode
+    : "show";
+  // show board tab only for graph packs
+  const boardTab = document.querySelector('.mode-tab[data-mode="board"]');
+  if (boardTab) boardTab.hidden = !isGraphPack() && forms().length < 2;
   setMode(mode);
 }
 
