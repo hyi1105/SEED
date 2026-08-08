@@ -9,7 +9,7 @@ const ACTION_COLORS = {
 };
 
 const MODE_COPY = {
-  guide: { eyebrow: "Q&A Guide", hint: "問答學習：先想、再選、再揭曉欄位與權限" },
+  guide: { eyebrow: "Build Guide", hint: "漸進拼圖：先想、再選、再長出名稱與用途" },
   map: { eyebrow: "Map Dashboard", hint: "拖地圖、縮放，看欄位怎麼連" },
   slide: { eyebrow: "Paper Slide", hint: "一情境一張作業紙，①②③ 照順序填" },
   demo: { eyebrow: "Live Demo", hint: "模擬真人填寫，阿嬤照做就會" },
@@ -88,11 +88,15 @@ const els = {
   guideTitle: document.getElementById("guide-phase-title"),
   guideGoal: document.getElementById("guide-phase-goal"),
   guideStory: document.getElementById("guide-story"),
+  guideStage: document.getElementById("guide-stage"),
+  guideStageTitle: document.getElementById("guide-stage-title"),
+  guideStageHint: document.getElementById("guide-stage-hint"),
+  guideStageBanner: document.getElementById("guide-stage-banner"),
+  guideZones: document.getElementById("guide-zones"),
   guideQuiz: document.getElementById("guide-quiz"),
   guideFeedback: document.getElementById("guide-feedback"),
   guideReveal: document.getElementById("guide-reveal"),
   guideTurns: document.getElementById("guide-turns"),
-  guideBoard: document.getElementById("guide-board"),
   guideAcl: document.getElementById("guide-acl"),
   guideFile: document.getElementById("guide-file"),
   guideTip: document.getElementById("guide-tip"),
@@ -785,7 +789,10 @@ function currentGuidePhase() {
 
 function isGuidePhaseAnswered(phase) {
   if (!phase?.quiz) return true;
-  return Boolean(state.guideAnswers[phase.id]);
+  const id = state.guideAnswers[phase.id];
+  if (!id) return false;
+  // 答對才算過關／才長出拼圖
+  return Boolean(phase.quiz.choices?.find((c) => c.id === id && c.correct));
 }
 
 function isGuidePhaseUnlocked(index) {
@@ -796,6 +803,107 @@ function isGuidePhaseUnlocked(index) {
   return true;
 }
 
+/** 累積已解鎖的拼圖零件（含當關答完才長出的） */
+function collectGuidePieces({ includeCurrent = false } = {}) {
+  const phases = state.guide?.phases || [];
+  const byZone = {};
+  const grownZones = new Set();
+  let newestIds = new Set();
+
+  phases.forEach((p, i) => {
+    const done = i < state.guidePhase || (includeCurrent && i === state.guidePhase && isGuidePhaseAnswered(p));
+    if (!done || !p.reveal) return;
+    const defaultZone = p.reveal.zone;
+    if (defaultZone) grownZones.add(defaultZone);
+    (p.reveal.alsoUnlock || []).forEach((z) => grownZones.add(z));
+    (p.reveal.pieces || []).forEach((piece) => {
+      const zone = piece.zone || defaultZone || "pack";
+      grownZones.add(zone);
+      if (!byZone[zone]) byZone[zone] = [];
+      byZone[zone].push({ ...piece, fromPhase: p.id, isNew: i === state.guidePhase && includeCurrent });
+      if (i === state.guidePhase && includeCurrent) newestIds.add(piece.id);
+    });
+  });
+
+  return { byZone, grownZones, newestIds };
+}
+
+function renderGuideStage(phase, answered) {
+  if (!els.guideZones) return;
+  const build = state.guide.build || {};
+  if (els.guideStageTitle) els.guideStageTitle.textContent = build.title || "系統拼圖";
+  if (els.guideStageHint) {
+    els.guideStageHint.textContent =
+      build.hint || "一塊一塊長出來：名稱掛在它所屬的區塊上。";
+  }
+
+  const { byZone, grownZones, newestIds } = collectGuidePieces({ includeCurrent: answered });
+  const activeZone = phase?.reveal?.zone || null;
+  const zones = build.zones || [];
+
+  if (els.guideStageBanner) {
+    if (answered && phase?.reveal?.banner) {
+      els.guideStageBanner.hidden = false;
+      els.guideStageBanner.textContent = phase.reveal.banner;
+    } else {
+      els.guideStageBanner.hidden = true;
+      els.guideStageBanner.textContent = "";
+    }
+  }
+
+  els.guideZones.innerHTML = "";
+  zones.forEach((zone) => {
+    const pieces = byZone[zone.id] || [];
+    const grown = grownZones.has(zone.id);
+    const isActive = answered && activeZone === zone.id;
+    const box = document.createElement("div");
+    box.className = "guide-zone";
+    box.dataset.zone = zone.id;
+    if (!grown && !isActive) box.classList.add("is-locked");
+    if (grown) box.classList.add("is-grown");
+    if (isActive) box.classList.add("is-active");
+
+    const head = document.createElement("div");
+    head.className = "guide-zone-label";
+    head.innerHTML = `<strong>${escapeHtml(zone.label)}</strong><span>${escapeHtml(zone.role || "")}</span>`;
+    box.appendChild(head);
+
+    if (!pieces.length) {
+      const empty = document.createElement("div");
+      empty.className = "guide-zone-empty";
+      if (!answered && activeZone === zone.id) {
+        empty.innerHTML = `<span class="q">？</span>答對這一關，這裡會長出名稱`;
+      } else if (!grown) {
+        empty.textContent = "尚未長出";
+      } else {
+        empty.textContent = "（空）";
+      }
+      box.appendChild(empty);
+    } else {
+      const wrap = document.createElement("div");
+      wrap.className = "guide-pieces";
+      pieces.forEach((piece, idx) => {
+        const el = document.createElement("div");
+        const kind = piece.kind || "field";
+        el.className = `guide-piece kind-${kind}`;
+        if (piece.tag === "新增" || piece.note?.includes("新增")) el.classList.add("is-added");
+        if (piece.isNew || newestIds.has(piece.id)) {
+          el.classList.add("is-new");
+          el.style.animationDelay = `${Math.min(idx, 8) * 0.05}s`;
+        }
+        if (piece.tag) el.dataset.tag = piece.tag;
+        el.innerHTML = `<span class="piece-label">${escapeHtml(piece.label)}</span>${
+          piece.note ? `<span class="piece-note">${escapeHtml(piece.note)}</span>` : ""
+        }`;
+        wrap.appendChild(el);
+      });
+      box.appendChild(wrap);
+    }
+
+    els.guideZones.appendChild(box);
+  });
+}
+
 function renderGuide() {
   if (!state.guide || !els.guideQuiz) return;
   const phases = state.guide.phases || [];
@@ -803,8 +911,9 @@ function renderGuide() {
   if (!phase) return;
 
   const answeredId = state.guideAnswers[phase.id];
-  const answered = isGuidePhaseAnswered(phase);
   const picked = phase.quiz?.choices?.find((c) => c.id === answeredId) || null;
+  const cleared = isGuidePhaseAnswered(phase); // 答對才算過關
+  const triedWrong = Boolean(picked && !picked.correct);
 
   els.guidePhases.innerHTML = phases
     .map((p, i) => {
@@ -823,6 +932,7 @@ function renderGuide() {
 
   els.guideTitle.textContent = phase.title;
   els.guideGoal.textContent = phase.goal || "";
+  renderGuideStage(phase, cleared);
 
   if (els.guideStory) {
     if (phase.story) {
@@ -838,7 +948,7 @@ function renderGuide() {
   if (phase.quiz) {
     const wrap = document.createElement("div");
     wrap.innerHTML = `
-      <div class="guide-q-label">想一想</div>
+      <div class="guide-q-label">想一想 · 下一塊長什麼</div>
       <p class="guide-q-prompt">${escapeHtml(phase.quiz.ask || "")}</p>
     `;
     els.guideQuiz.appendChild(wrap);
@@ -850,10 +960,13 @@ function renderGuide() {
       btn.type = "button";
       btn.className = "guide-choice";
       btn.textContent = c.text;
-      btn.disabled = answered;
-      if (answered) {
-        if (c.id === answeredId) btn.classList.add(c.correct ? "is-correct" : "is-wrong");
+      // 答對才鎖住；答錯可重選
+      btn.disabled = cleared;
+      if (cleared) {
+        if (c.id === answeredId) btn.classList.add("is-correct");
         else if (c.correct) btn.classList.add("is-answer");
+      } else if (triedWrong && c.id === answeredId) {
+        btn.classList.add("is-wrong");
       }
       btn.addEventListener("click", () => {
         state.guideAnswers[phase.id] = c.id;
@@ -865,7 +978,7 @@ function renderGuide() {
   }
 
   if (els.guideFeedback) {
-    if (answered && picked && phase.quiz) {
+    if (picked && phase.quiz) {
       const ok = Boolean(picked.correct);
       els.guideFeedback.hidden = false;
       els.guideFeedback.className = `guide-feedback ${ok ? "ok" : "no"}`;
@@ -873,7 +986,7 @@ function renderGuide() {
         ? phase.quiz.explainCorrect || picked.explain || ""
         : phase.quiz.explainWrong || picked.explain || "";
       els.guideFeedback.innerHTML = `
-        <div class="guide-feedback-badge">${ok ? "對了" : "再想一下"}</div>
+        <div class="guide-feedback-badge">${ok ? "長出來了" : "還沒長出 · 再選一次"}</div>
         <p>${escapeHtml(explain)}</p>
       `;
     } else {
@@ -883,7 +996,7 @@ function renderGuide() {
     }
   }
 
-  const reveal = answered;
+  const reveal = cleared;
   if (els.guideReveal) els.guideReveal.hidden = !reveal;
 
   if (els.guideTurns) {
@@ -897,21 +1010,6 @@ function renderGuide() {
       : "";
   }
 
-  if (reveal && phase.board?.fields?.length) {
-    els.guideBoard.hidden = false;
-    els.guideBoard.innerHTML = `<h3>${escapeHtml(phase.board.headline || "欄位板")}</h3>
-      <div class="field-chips">${phase.board.fields
-        .map((f) => {
-          const cls = f.source === "guide" ? "guide-added" : "";
-          const tag = f.tag ? `<span class="tag">${escapeHtml(f.tag)}</span>` : "";
-          return `<span class="field-chip ${cls}">${escapeHtml(f.label)}${tag}</span>`;
-        })
-        .join("")}</div>`;
-  } else {
-    els.guideBoard.hidden = true;
-    els.guideBoard.innerHTML = "";
-  }
-
   if (reveal && phase.acl?.rows?.length) {
     els.guideAcl.hidden = false;
     els.guideAcl.innerHTML = `<h3>權限：${escapeHtml(phase.acl.role || "")}</h3>
@@ -923,7 +1021,7 @@ function renderGuide() {
         )
         .join("")}
       </tbody></table>`;
-  } else {
+  } else if (els.guideAcl) {
     els.guideAcl.hidden = true;
     els.guideAcl.innerHTML = "";
   }
@@ -934,7 +1032,7 @@ function renderGuide() {
       .map((b) => `<li>${escapeHtml(b)}</li>`)
       .join("");
     els.guideFile.innerHTML = `<h3>產出檔：${escapeHtml(phase.filePreview.name || "")}</h3><ul>${bullets}</ul>`;
-  } else {
+  } else if (els.guideFile) {
     els.guideFile.hidden = true;
     els.guideFile.innerHTML = "";
   }
@@ -942,15 +1040,15 @@ function renderGuide() {
   if (reveal && phase.tip) {
     els.guideTip.hidden = false;
     els.guideTip.textContent = phase.tip;
-  } else {
+  } else if (els.guideTip) {
     els.guideTip.hidden = true;
     els.guideTip.textContent = "";
   }
 
   els.guidePrev.disabled = state.guidePhase <= 0;
   const atEnd = state.guidePhase >= phases.length - 1;
-  els.guideNext.disabled = !answered || atEnd;
-  els.guideNext.textContent = !answered && phase.quiz ? "先選一個答案" : "下一關";
+  els.guideNext.disabled = !cleared || atEnd;
+  els.guideNext.textContent = !cleared && phase.quiz ? "答對才會長出下一塊" : "下一關";
 
   const cta = phase.cta;
   if (reveal && cta) {

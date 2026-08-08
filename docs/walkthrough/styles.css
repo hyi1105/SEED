@@ -1172,6 +1172,217 @@ button:disabled {
   line-height: 1.45;
 }
 
+.guide-stage {
+  margin: 0 0 0.95rem;
+  padding: 0.75rem 0.8rem 0.85rem;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--brand) 20%, white);
+  background:
+    radial-gradient(120% 90% at 10% 0%, rgba(46, 125, 98, 0.1), transparent 50%),
+    linear-gradient(160deg, #f7fbf9 0%, #eef4f1 55%, #e7efe9 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.guide-stage-head h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  letter-spacing: -0.01em;
+}
+
+.guide-stage-head p {
+  margin: 0.2rem 0 0.65rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.guide-stage-banner {
+  margin: 0 0 0.65rem;
+  padding: 0.45rem 0.65rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: #1f6b52;
+  color: #fff;
+  font-family: var(--font-display);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  animation: guide-banner-in 0.45s ease both;
+}
+
+@keyframes guide-banner-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.guide-zones {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.5rem;
+}
+
+@media (min-width: 720px) {
+  .guide-zones {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .guide-zone[data-zone="pack"] {
+    grid-column: 1 / -1;
+  }
+}
+
+.guide-zone {
+  position: relative;
+  min-height: 5.5rem;
+  padding: 0.55rem 0.6rem 0.65rem;
+  border-radius: 12px;
+  border: 1px dashed #c5d4cc;
+  background: rgba(255, 255, 255, 0.55);
+  transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+
+.guide-zone.is-locked {
+  opacity: 0.55;
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.guide-zone.is-active {
+  border-style: solid;
+  border-color: color-mix(in srgb, var(--brand) 45%, white);
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 0 0 3px rgba(46, 125, 98, 0.08);
+}
+
+.guide-zone.is-grown {
+  border-style: solid;
+  border-color: #b7cdc2;
+  background: #fff;
+}
+
+.guide-zone-label {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.4rem;
+  margin-bottom: 0.45rem;
+}
+
+.guide-zone-label strong {
+  font-family: var(--font-display);
+  font-size: 0.92rem;
+}
+
+.guide-zone-label span {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.guide-zone-empty {
+  font-size: 0.8rem;
+  color: #8a9a92;
+  padding: 0.35rem 0;
+}
+
+.guide-zone-empty .q {
+  display: inline-block;
+  margin-right: 0.25rem;
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--brand);
+}
+
+.guide-pieces {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.guide-piece {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.1rem;
+  padding: 0.4rem 0.55rem;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: #f4f8f6;
+  max-width: 100%;
+  animation: guide-piece-grow 0.42s cubic-bezier(0.2, 0.85, 0.25, 1.15) both;
+}
+
+.guide-piece.is-new {
+  animation-name: guide-piece-pop;
+}
+
+.guide-piece .piece-label {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  color: var(--ink);
+}
+
+.guide-piece .piece-note {
+  font-size: 0.68rem;
+  color: var(--muted);
+  line-height: 1.25;
+}
+
+.guide-piece.kind-field {
+  background: #f7faf8;
+}
+
+.guide-piece.kind-field.is-added,
+.guide-piece[data-tag="新增"] {
+  background: #e7f6f1;
+  border-color: color-mix(in srgb, var(--brand) 35%, white);
+}
+
+.guide-piece.kind-acl {
+  background: #fff8e8;
+  border-color: #f0dfb0;
+}
+
+.guide-piece.kind-pack {
+  background: #eef3ff;
+  border-color: #c9d4f0;
+}
+
+@keyframes guide-piece-grow {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes guide-piece-pop {
+  0% {
+    opacity: 0;
+    transform: translateY(14px) scale(0.7);
+  }
+  70% {
+    opacity: 1;
+    transform: translateY(-2px) scale(1.04);
+  }
+  100% {
+    transform: none;
+  }
+}
+
 .guide-story {
   margin: 0 0 0.85rem;
 }

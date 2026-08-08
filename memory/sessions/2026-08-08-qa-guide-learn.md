@@ -25,6 +25,6 @@ status: active
 
 ## 待續
 
-- [ ] 若 Reel 另有節奏（例如倒數／連續錯題），再微調 UI
+- [x] 升級為四合院式漸進拼圖（見 [2026-08-08-build-puzzle-learn.md](./2026-08-08-build-puzzle-learn.md)）
 - [ ] 導引可接真實對話輸入
 - [ ] 答題紀錄可匯出／複習錯題
