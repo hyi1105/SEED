@@ -9,15 +9,30 @@ const ACTION_COLORS = {
 };
 
 const MODE_COPY = {
+  guide: { eyebrow: "Design Guide", hint: "從聊需求 → 欄位 → 權限 → 成檔 → 可用系統" },
   map: { eyebrow: "Map Dashboard", hint: "拖地圖、縮放，看欄位怎麼連" },
   slide: { eyebrow: "Paper Slide", hint: "一情境一張作業紙，①②③ 照順序填" },
   demo: { eyebrow: "Live Demo", hint: "模擬真人填寫，阿嬤照做就會" },
+};
+
+const SYSTEM_CATALOG = {
+  resignation: {
+    id: "resignation",
+    label: "離職單",
+    paths: ["./system.json", "https://cdn.jsdelivr.net/gh/hyi1105/SEED@main/docs/walkthrough/system.json"],
+  },
+  collection: {
+    id: "collection",
+    label: "催收單",
+    paths: ["./systems/collection.json", "https://cdn.jsdelivr.net/gh/hyi1105/SEED@main/docs/walkthrough/systems/collection.json"],
+  },
 };
 
 const WORLD = { w: 1400, h: 900 };
 
 const state = {
   data: null,
+  systemId: "resignation",
   mode: "map",
   roleId: null,
   scenarioId: null,
@@ -31,6 +46,8 @@ const state = {
     timer: null,
     token: 0,
   },
+  guide: null,
+  guidePhase: 0,
 };
 
 const els = {
@@ -64,6 +81,19 @@ const els = {
   demoPlay: document.getElementById("demo-play"),
   demoRestart: document.getElementById("demo-restart"),
   demoLive: document.getElementById("demo-live"),
+  viewGuide: document.getElementById("view-guide"),
+  guidePhases: document.getElementById("guide-phases"),
+  guideTitle: document.getElementById("guide-phase-title"),
+  guideGoal: document.getElementById("guide-phase-goal"),
+  guideTurns: document.getElementById("guide-turns"),
+  guideBoard: document.getElementById("guide-board"),
+  guideAcl: document.getElementById("guide-acl"),
+  guideFile: document.getElementById("guide-file"),
+  guideTip: document.getElementById("guide-tip"),
+  guidePrev: document.getElementById("guide-prev"),
+  guideNext: document.getElementById("guide-next"),
+  guideCta: document.getElementById("guide-cta"),
+  systemSelect: document.getElementById("system-select"),
 };
 
 function storageKey() {
@@ -715,6 +745,167 @@ function setDemoLive(text) {
   els.demoLive.textContent = text || "";
 }
 
+
+/* ---------- Guide ---------- */
+
+async function fetchJson(urls) {
+  let lastErr;
+  for (const url of urls) {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`${url} → ${res.status}`);
+      return await res.json();
+    } catch (err) {
+      lastErr = err;
+    }
+  }
+  throw lastErr || new Error("無法載入 JSON");
+}
+
+async function loadGuide() {
+  const embedded = document.getElementById("guide-data");
+  if (embedded?.textContent?.trim()) {
+    return JSON.parse(embedded.textContent);
+  }
+  return fetchJson([
+    "./guide.json",
+    "https://cdn.jsdelivr.net/gh/hyi1105/SEED@main/docs/walkthrough/guide.json",
+  ]);
+}
+
+function currentGuidePhase() {
+  return state.guide?.phases?.[state.guidePhase] ?? null;
+}
+
+function renderGuide() {
+  if (!state.guide || !els.guideTurns) return;
+  const phases = state.guide.phases || [];
+  els.guidePhases.innerHTML = phases
+    .map(
+      (p, i) =>
+        `<li><button type="button" class="guide-phase-btn ${i === state.guidePhase ? "active" : ""}" data-guide-phase="${i}">${p.title}</button></li>`
+    )
+    .join("");
+
+  const phase = currentGuidePhase();
+  if (!phase) return;
+  els.guideTitle.textContent = phase.title;
+  els.guideGoal.textContent = phase.goal || "";
+
+  els.guideTurns.innerHTML = (phase.turns || [])
+    .map((t) => {
+      const who = t.who === "user" ? "使用者" : "顧問導引";
+      return `<div class="bubble ${t.who}"><span class="who">${who}</span>${escapeHtml(t.text)}</div>`;
+    })
+    .join("");
+
+  if (phase.board?.fields?.length) {
+    els.guideBoard.hidden = false;
+    els.guideBoard.innerHTML = `<h3>${escapeHtml(phase.board.headline || "欄位板")}</h3>
+      <div class="field-chips">${phase.board.fields
+        .map((f) => {
+          const cls = f.source === "guide" ? "guide-added" : "";
+          const tag = f.tag ? `<span class="tag">${escapeHtml(f.tag)}</span>` : "";
+          return `<span class="field-chip ${cls}">${escapeHtml(f.label)}${tag}</span>`;
+        })
+        .join("")}</div>`;
+  } else {
+    els.guideBoard.hidden = true;
+    els.guideBoard.innerHTML = "";
+  }
+
+  if (phase.acl?.rows?.length) {
+    els.guideAcl.hidden = false;
+    els.guideAcl.innerHTML = `<h3>權限：${escapeHtml(phase.acl.role || "")}</h3>
+      <table class="acl-table"><thead><tr><th>欄位</th><th>看</th><th>編</th></tr></thead><tbody>
+      ${phase.acl.rows
+        .map(
+          (r) =>
+            `<tr><td>${escapeHtml(r.field)}</td><td>${escapeHtml(r.view)}</td><td>${escapeHtml(r.edit)}</td></tr>`
+        )
+        .join("")}
+      </tbody></table>`;
+  } else {
+    els.guideAcl.hidden = true;
+    els.guideAcl.innerHTML = "";
+  }
+
+  if (phase.filePreview) {
+    els.guideFile.hidden = false;
+    const bullets = (phase.filePreview.bullets || [])
+      .map((b) => `<li>${escapeHtml(b)}</li>`)
+      .join("");
+    els.guideFile.innerHTML = `<h3>產出檔：${escapeHtml(phase.filePreview.name || "")}</h3><ul>${bullets}</ul>`;
+  } else {
+    els.guideFile.hidden = true;
+    els.guideFile.innerHTML = "";
+  }
+
+  if (phase.tip) {
+    els.guideTip.hidden = false;
+    els.guideTip.textContent = phase.tip;
+  } else {
+    els.guideTip.hidden = true;
+    els.guideTip.textContent = "";
+  }
+
+  els.guidePrev.disabled = state.guidePhase <= 0;
+  els.guideNext.disabled = state.guidePhase >= phases.length - 1;
+  const cta = phase.cta;
+  if (cta) {
+    els.guideCta.hidden = false;
+    els.guideCta.textContent = cta.label || "打開系統導覽";
+    els.guideCta.dataset.system = cta.system || "collection";
+    els.guideCta.dataset.mode = cta.mode || "map";
+  } else {
+    els.guideCta.hidden = true;
+  }
+}
+
+function setGuidePhase(index) {
+  if (!state.guide) return;
+  const max = state.guide.phases.length - 1;
+  state.guidePhase = Math.max(0, Math.min(index, max));
+  renderGuide();
+}
+
+async function switchSystem(systemId, { mode } = {}) {
+  const meta = SYSTEM_CATALOG[systemId];
+  if (!meta) return;
+  stopDemo();
+  state.systemId = systemId;
+  if (els.systemSelect) els.systemSelect.value = systemId;
+
+  if (systemId === "resignation") {
+    const embedded = document.getElementById("system-data");
+    if (embedded?.textContent?.trim()) {
+      state.data = JSON.parse(embedded.textContent);
+    } else {
+      state.data = await fetchJson(meta.paths);
+    }
+  } else {
+    state.data = await fetchJson(meta.paths);
+  }
+
+  els.title.textContent = state.data.system;
+  state.roleId = state.data.roles[0].id;
+  state.scenarioId = scenariosForRole(state.roleId)[0]?.id ?? null;
+  state.stepIndex = 0;
+  loadLayout();
+  const hasSavedCam = loadCamera();
+  fillRoles();
+  els.role.value = state.roleId;
+  fillLegend();
+  renderCanvasStructure();
+  refresh(true);
+  if (!hasSavedCam && state.mode === "map") {
+    requestAnimationFrame(() => fitCamera({ persist: true }));
+  } else {
+    applyCamera();
+  }
+  if (mode) setMode(mode);
+}
+
 function setMode(mode) {
   state.mode = mode;
   stopDemo();
@@ -726,21 +917,38 @@ function setMode(mode) {
 
   const isMap = mode === "map";
   const isPaper = mode === "slide" || mode === "demo";
+  const isGuide = mode === "guide";
   els.viewMap.hidden = !isMap;
   els.viewMap.dataset.active = isMap ? "true" : "false";
   els.viewPaper.hidden = !isPaper;
   els.viewPaper.dataset.active = isPaper ? "true" : "false";
+  if (els.viewGuide) {
+    els.viewGuide.hidden = !isGuide;
+    els.viewGuide.dataset.active = isGuide ? "true" : "false";
+  }
   els.demoControls.hidden = mode !== "demo";
   els.demoLive.hidden = mode !== "demo";
   if (els.coverageBlock) {
     els.coverageBlock.style.display = mode === "map" ? "" : "none";
   }
+  // 導引時完全隱藏底部面板，避免擋住「下一階段」
+  if (els.sheet) {
+    if (isGuide) {
+      els.sheet.hidden = true;
+      els.sheet.setAttribute("data-open", "false");
+      els.sheetToggle?.setAttribute("aria-expanded", "false");
+    } else {
+      els.sheet.hidden = false;
+    }
+  }
 
-  const copy = MODE_COPY[mode];
+  const copy = MODE_COPY[mode] || MODE_COPY.map;
   if (els.modeEyebrow) els.modeEyebrow.textContent = copy.eyebrow;
   if (els.sub) els.sub.textContent = copy.hint;
 
-  if (isMap) {
+  if (isGuide) {
+    renderGuide();
+  } else if (isMap) {
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         drawEdges();
@@ -756,7 +964,7 @@ function setMode(mode) {
     setDemoLive("按「播放演示」，看系統一步步幫你填");
   }
 
-  refresh(false);
+  if (!isGuide) refresh(false);
 }
 
 function refresh(resetPaper = true) {
@@ -1017,6 +1225,26 @@ function bindUi() {
     setDemoLive("已重來，按播放開始");
   });
 
+  els.systemSelect?.addEventListener("change", () => {
+    switchSystem(els.systemSelect.value).catch((err) => {
+      if (els.summary) els.summary.textContent = `切換系統失敗：${err.message}`;
+      console.error(err);
+    });
+  });
+
+  els.guidePrev?.addEventListener("click", () => setGuidePhase(state.guidePhase - 1));
+  els.guideNext?.addEventListener("click", () => setGuidePhase(state.guidePhase + 1));
+  els.guidePhases?.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-guide-phase]");
+    if (!btn) return;
+    setGuidePhase(Number(btn.getAttribute("data-guide-phase")));
+  });
+  els.guideCta?.addEventListener("click", () => {
+    const system = els.guideCta.dataset.system || "collection";
+    const mode = els.guideCta.dataset.mode || "map";
+    switchSystem(system, { mode }).catch(console.error);
+  });
+
   els.sheetToggle?.addEventListener("click", () => {
     const open = els.sheet.getAttribute("data-open") === "true";
     els.sheet.setAttribute("data-open", open ? "false" : "true");
@@ -1060,10 +1288,17 @@ async function loadSystemData() {
 
 async function boot() {
   state.data = await loadSystemData();
+  try {
+    state.guide = await loadGuide();
+  } catch (err) {
+    console.warn("guide load failed", err);
+    state.guide = null;
+  }
   els.title.textContent = state.data.system;
   els.sub.textContent = MODE_COPY.map.hint;
   state.roleId = state.data.roles[0].id;
   state.scenarioId = scenariosForRole(state.roleId)[0]?.id ?? null;
+  if (els.systemSelect) els.systemSelect.value = state.systemId;
 
   loadLayout();
   const hasSavedCam = loadCamera();

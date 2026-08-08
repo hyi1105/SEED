@@ -1,0 +1,314 @@
+{
+  "system": "催收單",
+  "subtitle": "從申請到一／二／三催再到結案——看每個欄位誰能填",
+  "roles": [
+    { "id": "applicant", "label": "申請人" },
+    { "id": "c1", "label": "一催" },
+    { "id": "c2", "label": "二催" },
+    { "id": "c3", "label": "三催" },
+    { "id": "closer", "label": "結案" }
+  ],
+  "actions": [
+    { "id": "write", "label": "人手填寫" },
+    { "id": "lookup", "label": "查閱帶出" },
+    { "id": "sync", "label": "同步寫入" },
+    { "id": "auto", "label": "自動產生" },
+    { "id": "validate", "label": "檢核" },
+    { "id": "approve", "label": "簽核" },
+    { "id": "notify", "label": "通知" }
+  ],
+  "entities": [
+    {
+      "id": "collection",
+      "label": "催收單主檔",
+      "kind": "table",
+      "fields": [
+        { "id": "id", "label": "單號", "auto": true },
+        { "id": "name", "label": "姓名" },
+        { "id": "dept", "label": "部門" },
+        { "id": "job_title", "label": "職位" },
+        { "id": "system_name", "label": "系統名稱" },
+        { "id": "expect_date", "label": "預計催收日" },
+        { "id": "area", "label": "區域" },
+        { "id": "c1_status", "label": "一催狀態" },
+        { "id": "c1_date", "label": "一催日期" },
+        { "id": "c2_status", "label": "二催狀態" },
+        { "id": "c2_date", "label": "二催日期" },
+        { "id": "c3_status", "label": "三催狀態" },
+        { "id": "c3_date", "label": "三催日期" },
+        { "id": "final_delivery", "label": "最終交付日" },
+        { "id": "done_date", "label": "催收完成日" },
+        { "id": "status", "label": "單據狀態" },
+        { "id": "old_note", "label": "舊備註欄", "note": "疑似舊欄位" }
+      ]
+    }
+  ],
+  "edges": [],
+  "scenarios": [
+    {
+      "id": "apply",
+      "title": "申請人開催收單",
+      "role": "applicant",
+      "next": "round1",
+      "summary": "填基本資料後送出；送出後基本欄位鎖定。",
+      "steps": [
+        {
+          "n": 1,
+          "action": "write",
+          "fields": ["collection.name", "collection.dept", "collection.job_title"],
+          "fill": {
+            "collection.name": "王小明",
+            "collection.dept": "業務部",
+            "collection.job_title": "專員"
+          },
+          "note": "填寫姓名、部門、職位。"
+        },
+        {
+          "n": 2,
+          "action": "write",
+          "fields": ["collection.system_name", "collection.expect_date", "collection.area"],
+          "fill": {
+            "collection.system_name": "訂單系統",
+            "collection.expect_date": "2026-08-15",
+            "collection.area": "北區"
+          },
+          "note": "填系統名稱、預計催收日、區域。"
+        },
+        {
+          "n": 3,
+          "action": "auto",
+          "fields": ["collection.id", "collection.status"],
+          "fill": {
+            "collection.id": "C-20260808-001",
+            "collection.status": "待一催"
+          },
+          "note": "送出後產生單號，狀態變待一催；申請欄位鎖定。",
+          "risks": ["送出後申請人不可再改基本資料"]
+        },
+        {
+          "n": 4,
+          "action": "notify",
+          "fields": ["collection.status"],
+          "fill": { "collection.status": "待一催" },
+          "note": "通知一催人員接手。"
+        }
+      ]
+    },
+    {
+      "id": "round1",
+      "title": "第一次催收",
+      "role": "c1",
+      "next": "round2",
+      "summary": "一催只能改一催狀態與日期。",
+      "demoSeed": {
+        "collection.id": "C-20260808-001",
+        "collection.name": "王小明",
+        "collection.dept": "業務部",
+        "collection.job_title": "專員",
+        "collection.system_name": "訂單系統",
+        "collection.expect_date": "2026-08-15",
+        "collection.area": "北區",
+        "collection.status": "待一催"
+      },
+      "steps": [
+        {
+          "n": 1,
+          "action": "lookup",
+          "fields": ["collection.name", "collection.system_name", "collection.expect_date", "collection.area"],
+          "fill": {
+            "collection.name": "王小明",
+            "collection.system_name": "訂單系統",
+            "collection.expect_date": "2026-08-15",
+            "collection.area": "北區"
+          },
+          "note": "查看申請人填的基本資料（不可改）。"
+        },
+        {
+          "n": 2,
+          "action": "write",
+          "fields": ["collection.c1_status", "collection.c1_date"],
+          "fill": {
+            "collection.c1_status": "已聯繫／待補件",
+            "collection.c1_date": "2026-08-10"
+          },
+          "note": "只填一催狀態與一催日期。"
+        },
+        {
+          "n": 3,
+          "action": "approve",
+          "fields": ["collection.status"],
+          "fill": { "collection.status": "待二催" },
+          "note": "一催完成，狀態轉待二催。"
+        },
+        {
+          "n": 4,
+          "action": "notify",
+          "fields": ["collection.status"],
+          "fill": { "collection.status": "待二催" },
+          "note": "通知二催人員。"
+        }
+      ]
+    },
+    {
+      "id": "round2",
+      "title": "第二次催收",
+      "role": "c2",
+      "next": "round3",
+      "summary": "二催只能改二催欄位；一催結果只讀。",
+      "demoSeed": {
+        "collection.id": "C-20260808-001",
+        "collection.name": "王小明",
+        "collection.system_name": "訂單系統",
+        "collection.c1_status": "已聯繫／待補件",
+        "collection.c1_date": "2026-08-10",
+        "collection.status": "待二催"
+      },
+      "steps": [
+        {
+          "n": 1,
+          "action": "lookup",
+          "fields": ["collection.c1_status", "collection.c1_date", "collection.system_name"],
+          "fill": {
+            "collection.c1_status": "已聯繫／待補件",
+            "collection.c1_date": "2026-08-10",
+            "collection.system_name": "訂單系統"
+          },
+          "note": "先看一催結果（不可改一催欄位）。"
+        },
+        {
+          "n": 2,
+          "action": "write",
+          "fields": ["collection.c2_status", "collection.c2_date"],
+          "fill": {
+            "collection.c2_status": "已催／部分完成",
+            "collection.c2_date": "2026-08-18"
+          },
+          "note": "只填二催狀態與日期。"
+        },
+        {
+          "n": 3,
+          "action": "approve",
+          "fields": ["collection.status"],
+          "fill": { "collection.status": "待三催" },
+          "note": "轉待三催並通知。"
+        }
+      ]
+    },
+    {
+      "id": "round3",
+      "title": "第三次催收",
+      "role": "c3",
+      "next": "close",
+      "summary": "三催填自己的欄位，準備交給結案。",
+      "demoSeed": {
+        "collection.id": "C-20260808-001",
+        "collection.c1_status": "已聯繫／待補件",
+        "collection.c2_status": "已催／部分完成",
+        "collection.status": "待三催"
+      },
+      "steps": [
+        {
+          "n": 1,
+          "action": "lookup",
+          "fields": ["collection.c1_status", "collection.c2_status"],
+          "fill": {
+            "collection.c1_status": "已聯繫／待補件",
+            "collection.c2_status": "已催／部分完成"
+          },
+          "note": "檢視前兩次催收結果。"
+        },
+        {
+          "n": 2,
+          "action": "write",
+          "fields": ["collection.c3_status", "collection.c3_date"],
+          "fill": {
+            "collection.c3_status": "已結案前確認",
+            "collection.c3_date": "2026-08-25"
+          },
+          "note": "填三催狀態與日期。"
+        },
+        {
+          "n": 3,
+          "action": "approve",
+          "fields": ["collection.status"],
+          "fill": { "collection.status": "待結案" },
+          "note": "轉待結案。"
+        }
+      ]
+    },
+    {
+      "id": "close",
+      "title": "結案交付",
+      "role": "closer",
+      "summary": "結案角色填最終交付日與催收完成日。",
+      "demoSeed": {
+        "collection.id": "C-20260808-001",
+        "collection.c1_status": "已聯繫／待補件",
+        "collection.c2_status": "已催／部分完成",
+        "collection.c3_status": "已結案前確認",
+        "collection.status": "待結案"
+      },
+      "steps": [
+        {
+          "n": 1,
+          "action": "lookup",
+          "fields": ["collection.c1_status", "collection.c2_status", "collection.c3_status"],
+          "fill": {
+            "collection.c1_status": "已聯繫／待補件",
+            "collection.c2_status": "已催／部分完成",
+            "collection.c3_status": "已結案前確認"
+          },
+          "note": "核對三次催收是否齊備。"
+        },
+        {
+          "n": 2,
+          "action": "write",
+          "fields": ["collection.final_delivery", "collection.done_date"],
+          "fill": {
+            "collection.final_delivery": "2026-08-28",
+            "collection.done_date": "2026-08-28"
+          },
+          "note": "填最終交付日與催收完成日。"
+        },
+        {
+          "n": 3,
+          "action": "approve",
+          "fields": ["collection.status"],
+          "fill": { "collection.status": "已結案" },
+          "note": "結案完成。"
+        },
+        {
+          "n": 4,
+          "action": "notify",
+          "fields": ["collection.status"],
+          "fill": { "collection.status": "已結案" },
+          "note": "通知申請人已結案。"
+        }
+      ]
+    }
+  ],
+  "demo": {
+    "persona": {
+      "applicant": "王小明",
+      "c1": "一催・小陳",
+      "c2": "二催・小美",
+      "c3": "三催・阿強",
+      "closer": "結案・主管林"
+    },
+    "values": {
+      "collection.name": "王小明",
+      "collection.dept": "業務部",
+      "collection.job_title": "專員",
+      "collection.system_name": "訂單系統",
+      "collection.expect_date": "2026-08-15",
+      "collection.area": "北區",
+      "collection.id": "C-20260808-001",
+      "collection.status": "待一催"
+    }
+  },
+  "layout": {
+    "entities": {
+      "collection": { "x": 80, "y": 40, "w": 300 }
+    }
+  }
+}

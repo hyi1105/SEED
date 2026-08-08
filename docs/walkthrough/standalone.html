@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
-  <title>離職單 · 系統導覽 — SEED</title>
+  <title>系統導覽 — SEED</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
@@ -737,6 +737,11 @@ body {
   transition: transform 0.28s ease;
 }
 
+.sheet[hidden] {
+  display: none !important;
+  pointer-events: none !important;
+}
+
 .sheet[data-open="true"] {
   transform: translateY(0);
 }
@@ -1116,6 +1121,261 @@ button:disabled {
   }
 }
 
+/* —— 導引模式 —— */
+.controls {
+  grid-template-columns: 1fr 1fr;
+}
+
+.controls .ctrl:first-child {
+  grid-column: 1 / -1;
+}
+
+.view-guide[data-active="true"] {
+  display: flex !important;
+  flex-direction: column;
+  height: 100%;
+  background:
+    radial-gradient(900px 420px at 10% 0%, rgba(26, 168, 143, 0.12), transparent 55%),
+    linear-gradient(180deg, #f7faf8, #eef3f1);
+}
+
+.guide-layout {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+  overflow: hidden;
+}
+
+.guide-rail {
+  display: none;
+}
+
+.guide-main {
+  overflow: auto;
+  padding: 0.85rem 1rem 1.4rem;
+  -webkit-overflow-scrolling: touch;
+}
+
+.guide-kicker {
+  margin: 0 0 0.35rem;
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--brand);
+  font-weight: 600;
+}
+
+.guide-main h2 {
+  margin: 0 0 0.35rem;
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  letter-spacing: -0.02em;
+}
+
+.guide-goal {
+  margin: 0 0 0.85rem;
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+.guide-turns {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  margin-bottom: 0.9rem;
+}
+
+.bubble {
+  max-width: min(100%, 520px);
+  padding: 0.7rem 0.85rem;
+  border-radius: 14px;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  border: 1px solid var(--line);
+}
+
+.bubble.user {
+  align-self: flex-start;
+  background: #fff;
+  border-color: #d5ddd8;
+}
+
+.bubble.guide {
+  align-self: stretch;
+  background: var(--brand-soft);
+  border-color: color-mix(in srgb, var(--brand) 25%, white);
+}
+
+.bubble .who {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  margin-bottom: 0.25rem;
+}
+
+.guide-board,
+.guide-acl,
+.guide-file {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 0.75rem 0.85rem;
+  margin-bottom: 0.75rem;
+}
+
+.guide-board h3,
+.guide-acl h3,
+.guide-file h3 {
+  margin: 0 0 0.55rem;
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+}
+
+.field-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.field-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.35rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: #f7faf8;
+  font-size: 0.82rem;
+}
+
+.field-chip.guide-added {
+  background: #e7f6f1;
+  border-color: color-mix(in srgb, var(--brand) 35%, white);
+}
+
+.field-chip .tag {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  color: var(--brand);
+  font-weight: 700;
+}
+
+.acl-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.acl-table th,
+.acl-table td {
+  border-top: 1px dashed #e2ebe6;
+  padding: 0.4rem 0.25rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.acl-table th {
+  color: var(--muted);
+  font-weight: 600;
+  border-top: 0;
+}
+
+.guide-file ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: var(--ink);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.guide-tip {
+  margin: 0 0 0.85rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: 10px;
+  background: #fff8e8;
+  border: 1px solid #f0dfb0;
+  color: #7a5a10;
+  font-size: 0.86rem;
+}
+
+.guide-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  padding: 0.65rem 0 0.85rem;
+  background: linear-gradient(180deg, transparent, #eef3f1 28%);
+}
+
+.guide-phases {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.guide-phase-btn {
+  width: 100%;
+  text-align: left;
+  border: 1px solid transparent;
+  background: transparent;
+  border-radius: 10px;
+  padding: 0.5rem 0.55rem;
+  font: inherit;
+  font-size: 0.82rem;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.guide-phase-btn.active {
+  background: var(--brand-soft);
+  color: var(--brand);
+  border-color: color-mix(in srgb, var(--brand) 25%, white);
+  font-weight: 600;
+}
+
+.guide-rail-title {
+  margin: 0 0 0.55rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+@media (min-width: 900px) {
+  .controls {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .guide-layout {
+    grid-template-columns: 220px minmax(0, 1fr);
+  }
+
+  .guide-rail {
+    display: block;
+    border-right: 1px solid var(--line);
+    padding: 0.85rem 0.7rem;
+    overflow: auto;
+    background: rgba(255, 255, 255, 0.55);
+  }
+
+  .view-guide {
+    grid-column: 1;
+    grid-row: 2;
+  }
+}
+
   </style>
 </head>
 <body>
@@ -1127,6 +1387,7 @@ button:disabled {
         <h1 id="sys-title">離職單</h1>
       </div>
       <div class="mode-tabs" role="tablist" aria-label="認識方式">
+        <button type="button" class="mode-tab" data-mode="guide" role="tab" aria-selected="false">導引</button>
         <button type="button" class="mode-tab active" data-mode="map" role="tab" aria-selected="true">地圖</button>
         <button type="button" class="mode-tab" data-mode="slide" role="tab" aria-selected="false">簡報</button>
         <button type="button" class="mode-tab" data-mode="demo" role="tab" aria-selected="false">演示</button>
@@ -1169,6 +1430,30 @@ button:disabled {
       <p class="demo-live" id="demo-live" hidden aria-live="polite"></p>
     </div>
 
+    <div class="view view-guide" id="view-guide" data-active="false" hidden>
+      <div class="guide-layout">
+        <aside class="guide-rail">
+          <p class="guide-rail-title">教學階段</p>
+          <ol class="guide-phases" id="guide-phases"></ol>
+        </aside>
+        <div class="guide-main">
+          <p class="guide-kicker" id="guide-kicker">需求 → 欄位 → 權限 → 成檔 → 可用系統</p>
+          <h2 id="guide-phase-title">導引</h2>
+          <p class="guide-goal" id="guide-phase-goal"></p>
+          <div class="guide-turns" id="guide-turns"></div>
+          <div class="guide-board" id="guide-board" hidden></div>
+          <div class="guide-acl" id="guide-acl" hidden></div>
+          <div class="guide-file" id="guide-file" hidden></div>
+          <p class="guide-tip" id="guide-tip" hidden></p>
+          <div class="guide-nav">
+            <button type="button" id="guide-prev" class="ghost">上一階段</button>
+            <button type="button" id="guide-next" class="primary">下一階段</button>
+            <button type="button" id="guide-cta" class="primary" hidden>打開催收系統導覽</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <section class="sheet" id="sheet" data-open="true">
       <button type="button" class="sheet-handle" id="sheet-toggle" aria-expanded="true">
         <span class="grip" aria-hidden="true"></span>
@@ -1176,8 +1461,15 @@ button:disabled {
       </button>
 
       <div class="sheet-body">
-        <p class="top-sub sheet-sub" id="sys-sub">地圖認識 · 簡報全覽 · 演示照做</p>
+        <p class="top-sub sheet-sub" id="sys-sub">導引設計 · 地圖認識 · 簡報全覽 · 演示照做</p>
         <div class="controls">
+          <label class="ctrl">
+            <span>系統</span>
+            <select id="system-select">
+              <option value="resignation">離職單</option>
+              <option value="collection">催收單</option>
+            </select>
+          </label>
           <label class="ctrl">
             <span>角色</span>
             <select id="role-select"></select>
@@ -1765,6 +2057,177 @@ button:disabled {
   }
 }
   </script>
+  <script type="application/json" id="guide-data">
+{
+  "title": "從需求對話到可用系統",
+  "subtitle": "教學導引：怎麼把「我想做催收系統」變成欄位、權限與可上手流程",
+  "example": "催收系統",
+  "targetSystem": "systems/collection.json",
+  "phases": [
+    {
+      "id": "hear",
+      "title": "1. 聽需求",
+      "goal": "先聽使用者要做什麼，不要急著開表。",
+      "turns": [
+        {
+          "who": "user",
+          "text": "我想做一個催收系統。申請人要填：姓名、部門、職位、系統名稱、預計催收日、區域。"
+        },
+        {
+          "who": "guide",
+          "text": "收到。這是「申請端」會填的基本資料。接下來我會問：催收本身要不要分階段？通常會。"
+        }
+      ],
+      "board": {
+        "headline": "使用者先提出的欄位",
+        "fields": [
+          { "id": "name", "label": "姓名", "source": "user" },
+          { "id": "dept", "label": "部門", "source": "user" },
+          { "id": "title", "label": "職位", "source": "user" },
+          { "id": "system_name", "label": "系統名稱", "source": "user" },
+          { "id": "expect_date", "label": "預計催收日", "source": "user" },
+          { "id": "area", "label": "區域", "source": "user" }
+        ]
+      }
+    },
+    {
+      "id": "enrich",
+      "title": "2. 補齊催收欄位",
+      "goal": "因為是催收，顧問會補上「第幾次催收」的狀態與日期——使用者沒講，但實務一定要。",
+      "turns": [
+        {
+          "who": "guide",
+          "text": "催收通常不是一次結束。我建議加上：第一次／第二次／第三次催收的狀態與日期。這樣才追得動。"
+        },
+        {
+          "who": "user",
+          "text": "對，要有一催、二催、三催。"
+        },
+        {
+          "who": "guide",
+          "text": "再加兩個結果欄位：最終交付日、催收完成日。這樣結案才有依據。"
+        }
+      ],
+      "board": {
+        "headline": "顧問補上的催收欄位",
+        "fields": [
+          { "id": "name", "label": "姓名", "source": "user" },
+          { "id": "dept", "label": "部門", "source": "user" },
+          { "id": "title", "label": "職位", "source": "user" },
+          { "id": "system_name", "label": "系統名稱", "source": "user" },
+          { "id": "expect_date", "label": "預計催收日", "source": "user" },
+          { "id": "area", "label": "區域", "source": "user" },
+          { "id": "c1_status", "label": "一催狀態", "source": "guide", "tag": "新增" },
+          { "id": "c1_date", "label": "一催日期", "source": "guide", "tag": "新增" },
+          { "id": "c2_status", "label": "二催狀態", "source": "guide", "tag": "新增" },
+          { "id": "c2_date", "label": "二催日期", "source": "guide", "tag": "新增" },
+          { "id": "c3_status", "label": "三催狀態", "source": "guide", "tag": "新增" },
+          { "id": "c3_date", "label": "三催日期", "source": "guide", "tag": "新增" },
+          { "id": "final_delivery", "label": "最終交付日", "source": "guide", "tag": "新增" },
+          { "id": "done_date", "label": "催收完成日", "source": "guide", "tag": "新增" }
+        ]
+      },
+      "tip": "教學重點：使用者講「要什麼」；顧問補「催收這種流程一定會漏的欄位」。"
+    },
+    {
+      "id": "acl-applicant",
+      "title": "3. 問申請人權限",
+      "goal": "申請人送出後：哪些能看、哪些不能改、哪些根本不該看見。",
+      "turns": [
+        {
+          "who": "guide",
+          "text": "申請人送單之後：哪些欄位不能再改？哪些催收狀態他不該看到？"
+        },
+        {
+          "who": "user",
+          "text": "基本資料送出後就不能改。一催／二催／三催的狀態與日期，申請人只能看結果，不能改。"
+        }
+      ],
+      "acl": {
+        "role": "申請人",
+        "rows": [
+          { "field": "姓名／部門／職位／系統／預計日／區域", "view": "可看", "edit": "送出前可編；送出後鎖定" },
+          { "field": "一催／二催／三催 狀態與日期", "view": "可看結果", "edit": "不可編" },
+          { "field": "最終交付日／催收完成日", "view": "可看", "edit": "不可編" }
+        ]
+      }
+    },
+    {
+      "id": "acl-collectors",
+      "title": "4. 問催收人權限",
+      "goal": "一催、二催、三催各自能動哪一欄——這就是「反對／簽核／分工」的起點。",
+      "turns": [
+        {
+          "who": "guide",
+          "text": "一催的人只能填一催狀態與日期嗎？二催、三催呢？"
+        },
+        {
+          "who": "user",
+          "text": "對。一催只能改一催欄位；二催改二催；三催改三催。別人的催收欄位只能看、不能改。"
+        },
+        {
+          "who": "guide",
+          "text": "主管或結案角色再填最終交付日、催收完成日。這樣就有完整對立流程：申請 → 催收 → 結案。"
+        }
+      ],
+      "acl": {
+        "role": "催收人／結案",
+        "rows": [
+          { "field": "申請基本資料", "view": "可看", "edit": "不可編" },
+          { "field": "一催狀態／日期", "view": "全員可看", "edit": "僅一催可編" },
+          { "field": "二催狀態／日期", "view": "全員可看", "edit": "僅二催可編" },
+          { "field": "三催狀態／日期", "view": "全員可看", "edit": "僅三催可編" },
+          { "field": "最終交付日／催收完成日", "view": "可看", "edit": "僅結案角色可編" }
+        ]
+      }
+    },
+    {
+      "id": "pack",
+      "title": "5. 收成檔案",
+      "goal": "把對話變成統一的 system.json——欄位、角色、情境、步驟都在裡面。",
+      "turns": [
+        {
+          "who": "guide",
+          "text": "討論結束後，我會依 SKILL／Schema 產出一份 JSON：表、欄位、角色、情境步驟、演示假資料。"
+        },
+        {
+          "who": "guide",
+          "text": "這份檔就是「可攜系統包」。換平台也能播：地圖認識、簡報全覽、演示照做。"
+        }
+      ],
+      "filePreview": {
+        "name": "systems/collection.json",
+        "bullets": [
+          "entities：催收單主檔（含一～三催與結案欄位）",
+          "roles：申請人／一催／二催／三催／結案",
+          "scenarios：申請開單 → 一催 → 二催 → 三催 → 結案（可接龍）",
+          "每步附 fill，演示模式可模擬真人填寫"
+        ]
+      }
+    },
+    {
+      "id": "ready",
+      "title": "6. 變成可用系統",
+      "goal": "檔案進播放器＝可上手系統：看地圖、走簡報、播演示；也看得到對立流程。",
+      "turns": [
+        {
+          "who": "guide",
+          "text": "現在可以打開「催收系統」導覽：用角色×情境看每個欄位實際在哪一步被填、被鎖、被帶出。"
+        },
+        {
+          "who": "guide",
+          "text": "這就是教學網站的導引功能：從聊天需求 → 欄位管理 → 每欄要做什麼 → 可播放的系統。"
+        }
+      ],
+      "cta": {
+        "label": "打開催收系統導覽",
+        "system": "collection",
+        "mode": "map"
+      }
+    }
+  ]
+}
+  </script>
   <script type="module">
 const ACTION_COLORS = {
   write: "var(--write)",
@@ -1777,15 +2240,30 @@ const ACTION_COLORS = {
 };
 
 const MODE_COPY = {
+  guide: { eyebrow: "Design Guide", hint: "從聊需求 → 欄位 → 權限 → 成檔 → 可用系統" },
   map: { eyebrow: "Map Dashboard", hint: "拖地圖、縮放，看欄位怎麼連" },
   slide: { eyebrow: "Paper Slide", hint: "一情境一張作業紙，①②③ 照順序填" },
   demo: { eyebrow: "Live Demo", hint: "模擬真人填寫，阿嬤照做就會" },
+};
+
+const SYSTEM_CATALOG = {
+  resignation: {
+    id: "resignation",
+    label: "離職單",
+    paths: ["./system.json", "https://cdn.jsdelivr.net/gh/hyi1105/SEED@main/docs/walkthrough/system.json"],
+  },
+  collection: {
+    id: "collection",
+    label: "催收單",
+    paths: ["./systems/collection.json", "https://cdn.jsdelivr.net/gh/hyi1105/SEED@main/docs/walkthrough/systems/collection.json"],
+  },
 };
 
 const WORLD = { w: 1400, h: 900 };
 
 const state = {
   data: null,
+  systemId: "resignation",
   mode: "map",
   roleId: null,
   scenarioId: null,
@@ -1799,6 +2277,8 @@ const state = {
     timer: null,
     token: 0,
   },
+  guide: null,
+  guidePhase: 0,
 };
 
 const els = {
@@ -1832,6 +2312,19 @@ const els = {
   demoPlay: document.getElementById("demo-play"),
   demoRestart: document.getElementById("demo-restart"),
   demoLive: document.getElementById("demo-live"),
+  viewGuide: document.getElementById("view-guide"),
+  guidePhases: document.getElementById("guide-phases"),
+  guideTitle: document.getElementById("guide-phase-title"),
+  guideGoal: document.getElementById("guide-phase-goal"),
+  guideTurns: document.getElementById("guide-turns"),
+  guideBoard: document.getElementById("guide-board"),
+  guideAcl: document.getElementById("guide-acl"),
+  guideFile: document.getElementById("guide-file"),
+  guideTip: document.getElementById("guide-tip"),
+  guidePrev: document.getElementById("guide-prev"),
+  guideNext: document.getElementById("guide-next"),
+  guideCta: document.getElementById("guide-cta"),
+  systemSelect: document.getElementById("system-select"),
 };
 
 function storageKey() {
@@ -2483,6 +2976,167 @@ function setDemoLive(text) {
   els.demoLive.textContent = text || "";
 }
 
+
+/* ---------- Guide ---------- */
+
+async function fetchJson(urls) {
+  let lastErr;
+  for (const url of urls) {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`${url} → ${res.status}`);
+      return await res.json();
+    } catch (err) {
+      lastErr = err;
+    }
+  }
+  throw lastErr || new Error("無法載入 JSON");
+}
+
+async function loadGuide() {
+  const embedded = document.getElementById("guide-data");
+  if (embedded?.textContent?.trim()) {
+    return JSON.parse(embedded.textContent);
+  }
+  return fetchJson([
+    "./guide.json",
+    "https://cdn.jsdelivr.net/gh/hyi1105/SEED@main/docs/walkthrough/guide.json",
+  ]);
+}
+
+function currentGuidePhase() {
+  return state.guide?.phases?.[state.guidePhase] ?? null;
+}
+
+function renderGuide() {
+  if (!state.guide || !els.guideTurns) return;
+  const phases = state.guide.phases || [];
+  els.guidePhases.innerHTML = phases
+    .map(
+      (p, i) =>
+        `<li><button type="button" class="guide-phase-btn ${i === state.guidePhase ? "active" : ""}" data-guide-phase="${i}">${p.title}</button></li>`
+    )
+    .join("");
+
+  const phase = currentGuidePhase();
+  if (!phase) return;
+  els.guideTitle.textContent = phase.title;
+  els.guideGoal.textContent = phase.goal || "";
+
+  els.guideTurns.innerHTML = (phase.turns || [])
+    .map((t) => {
+      const who = t.who === "user" ? "使用者" : "顧問導引";
+      return `<div class="bubble ${t.who}"><span class="who">${who}</span>${escapeHtml(t.text)}</div>`;
+    })
+    .join("");
+
+  if (phase.board?.fields?.length) {
+    els.guideBoard.hidden = false;
+    els.guideBoard.innerHTML = `<h3>${escapeHtml(phase.board.headline || "欄位板")}</h3>
+      <div class="field-chips">${phase.board.fields
+        .map((f) => {
+          const cls = f.source === "guide" ? "guide-added" : "";
+          const tag = f.tag ? `<span class="tag">${escapeHtml(f.tag)}</span>` : "";
+          return `<span class="field-chip ${cls}">${escapeHtml(f.label)}${tag}</span>`;
+        })
+        .join("")}</div>`;
+  } else {
+    els.guideBoard.hidden = true;
+    els.guideBoard.innerHTML = "";
+  }
+
+  if (phase.acl?.rows?.length) {
+    els.guideAcl.hidden = false;
+    els.guideAcl.innerHTML = `<h3>權限：${escapeHtml(phase.acl.role || "")}</h3>
+      <table class="acl-table"><thead><tr><th>欄位</th><th>看</th><th>編</th></tr></thead><tbody>
+      ${phase.acl.rows
+        .map(
+          (r) =>
+            `<tr><td>${escapeHtml(r.field)}</td><td>${escapeHtml(r.view)}</td><td>${escapeHtml(r.edit)}</td></tr>`
+        )
+        .join("")}
+      </tbody></table>`;
+  } else {
+    els.guideAcl.hidden = true;
+    els.guideAcl.innerHTML = "";
+  }
+
+  if (phase.filePreview) {
+    els.guideFile.hidden = false;
+    const bullets = (phase.filePreview.bullets || [])
+      .map((b) => `<li>${escapeHtml(b)}</li>`)
+      .join("");
+    els.guideFile.innerHTML = `<h3>產出檔：${escapeHtml(phase.filePreview.name || "")}</h3><ul>${bullets}</ul>`;
+  } else {
+    els.guideFile.hidden = true;
+    els.guideFile.innerHTML = "";
+  }
+
+  if (phase.tip) {
+    els.guideTip.hidden = false;
+    els.guideTip.textContent = phase.tip;
+  } else {
+    els.guideTip.hidden = true;
+    els.guideTip.textContent = "";
+  }
+
+  els.guidePrev.disabled = state.guidePhase <= 0;
+  els.guideNext.disabled = state.guidePhase >= phases.length - 1;
+  const cta = phase.cta;
+  if (cta) {
+    els.guideCta.hidden = false;
+    els.guideCta.textContent = cta.label || "打開系統導覽";
+    els.guideCta.dataset.system = cta.system || "collection";
+    els.guideCta.dataset.mode = cta.mode || "map";
+  } else {
+    els.guideCta.hidden = true;
+  }
+}
+
+function setGuidePhase(index) {
+  if (!state.guide) return;
+  const max = state.guide.phases.length - 1;
+  state.guidePhase = Math.max(0, Math.min(index, max));
+  renderGuide();
+}
+
+async function switchSystem(systemId, { mode } = {}) {
+  const meta = SYSTEM_CATALOG[systemId];
+  if (!meta) return;
+  stopDemo();
+  state.systemId = systemId;
+  if (els.systemSelect) els.systemSelect.value = systemId;
+
+  if (systemId === "resignation") {
+    const embedded = document.getElementById("system-data");
+    if (embedded?.textContent?.trim()) {
+      state.data = JSON.parse(embedded.textContent);
+    } else {
+      state.data = await fetchJson(meta.paths);
+    }
+  } else {
+    state.data = await fetchJson(meta.paths);
+  }
+
+  els.title.textContent = state.data.system;
+  state.roleId = state.data.roles[0].id;
+  state.scenarioId = scenariosForRole(state.roleId)[0]?.id ?? null;
+  state.stepIndex = 0;
+  loadLayout();
+  const hasSavedCam = loadCamera();
+  fillRoles();
+  els.role.value = state.roleId;
+  fillLegend();
+  renderCanvasStructure();
+  refresh(true);
+  if (!hasSavedCam && state.mode === "map") {
+    requestAnimationFrame(() => fitCamera({ persist: true }));
+  } else {
+    applyCamera();
+  }
+  if (mode) setMode(mode);
+}
+
 function setMode(mode) {
   state.mode = mode;
   stopDemo();
@@ -2494,21 +3148,38 @@ function setMode(mode) {
 
   const isMap = mode === "map";
   const isPaper = mode === "slide" || mode === "demo";
+  const isGuide = mode === "guide";
   els.viewMap.hidden = !isMap;
   els.viewMap.dataset.active = isMap ? "true" : "false";
   els.viewPaper.hidden = !isPaper;
   els.viewPaper.dataset.active = isPaper ? "true" : "false";
+  if (els.viewGuide) {
+    els.viewGuide.hidden = !isGuide;
+    els.viewGuide.dataset.active = isGuide ? "true" : "false";
+  }
   els.demoControls.hidden = mode !== "demo";
   els.demoLive.hidden = mode !== "demo";
   if (els.coverageBlock) {
     els.coverageBlock.style.display = mode === "map" ? "" : "none";
   }
+  // 導引時完全隱藏底部面板，避免擋住「下一階段」
+  if (els.sheet) {
+    if (isGuide) {
+      els.sheet.hidden = true;
+      els.sheet.setAttribute("data-open", "false");
+      els.sheetToggle?.setAttribute("aria-expanded", "false");
+    } else {
+      els.sheet.hidden = false;
+    }
+  }
 
-  const copy = MODE_COPY[mode];
+  const copy = MODE_COPY[mode] || MODE_COPY.map;
   if (els.modeEyebrow) els.modeEyebrow.textContent = copy.eyebrow;
   if (els.sub) els.sub.textContent = copy.hint;
 
-  if (isMap) {
+  if (isGuide) {
+    renderGuide();
+  } else if (isMap) {
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         drawEdges();
@@ -2524,7 +3195,7 @@ function setMode(mode) {
     setDemoLive("按「播放演示」，看系統一步步幫你填");
   }
 
-  refresh(false);
+  if (!isGuide) refresh(false);
 }
 
 function refresh(resetPaper = true) {
@@ -2785,6 +3456,26 @@ function bindUi() {
     setDemoLive("已重來，按播放開始");
   });
 
+  els.systemSelect?.addEventListener("change", () => {
+    switchSystem(els.systemSelect.value).catch((err) => {
+      if (els.summary) els.summary.textContent = `切換系統失敗：${err.message}`;
+      console.error(err);
+    });
+  });
+
+  els.guidePrev?.addEventListener("click", () => setGuidePhase(state.guidePhase - 1));
+  els.guideNext?.addEventListener("click", () => setGuidePhase(state.guidePhase + 1));
+  els.guidePhases?.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-guide-phase]");
+    if (!btn) return;
+    setGuidePhase(Number(btn.getAttribute("data-guide-phase")));
+  });
+  els.guideCta?.addEventListener("click", () => {
+    const system = els.guideCta.dataset.system || "collection";
+    const mode = els.guideCta.dataset.mode || "map";
+    switchSystem(system, { mode }).catch(console.error);
+  });
+
   els.sheetToggle?.addEventListener("click", () => {
     const open = els.sheet.getAttribute("data-open") === "true";
     els.sheet.setAttribute("data-open", open ? "false" : "true");
@@ -2828,10 +3519,17 @@ async function loadSystemData() {
 
 async function boot() {
   state.data = await loadSystemData();
+  try {
+    state.guide = await loadGuide();
+  } catch (err) {
+    console.warn("guide load failed", err);
+    state.guide = null;
+  }
   els.title.textContent = state.data.system;
   els.sub.textContent = MODE_COPY.map.hint;
   state.roleId = state.data.roles[0].id;
   state.scenarioId = scenariosForRole(state.roleId)[0]?.id ?? null;
+  if (els.systemSelect) els.systemSelect.value = state.systemId;
 
   loadLayout();
   const hasSavedCam = loadCamera();

@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
-  <title>離職單 · 系統導覽 — SEED</title>
+  <title>系統導覽 — SEED</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=camPersist8" />
+  <link rel="stylesheet" href="styles.css?v=guide11" />
 </head>
 <body>
   <div class="dash">
@@ -18,6 +18,7 @@
         <h1 id="sys-title">離職單</h1>
       </div>
       <div class="mode-tabs" role="tablist" aria-label="認識方式">
+        <button type="button" class="mode-tab" data-mode="guide" role="tab" aria-selected="false">導引</button>
         <button type="button" class="mode-tab active" data-mode="map" role="tab" aria-selected="true">地圖</button>
         <button type="button" class="mode-tab" data-mode="slide" role="tab" aria-selected="false">簡報</button>
         <button type="button" class="mode-tab" data-mode="demo" role="tab" aria-selected="false">演示</button>
@@ -60,6 +61,30 @@
       <p class="demo-live" id="demo-live" hidden aria-live="polite"></p>
     </div>
 
+    <div class="view view-guide" id="view-guide" data-active="false" hidden>
+      <div class="guide-layout">
+        <aside class="guide-rail">
+          <p class="guide-rail-title">教學階段</p>
+          <ol class="guide-phases" id="guide-phases"></ol>
+        </aside>
+        <div class="guide-main">
+          <p class="guide-kicker" id="guide-kicker">需求 → 欄位 → 權限 → 成檔 → 可用系統</p>
+          <h2 id="guide-phase-title">導引</h2>
+          <p class="guide-goal" id="guide-phase-goal"></p>
+          <div class="guide-turns" id="guide-turns"></div>
+          <div class="guide-board" id="guide-board" hidden></div>
+          <div class="guide-acl" id="guide-acl" hidden></div>
+          <div class="guide-file" id="guide-file" hidden></div>
+          <p class="guide-tip" id="guide-tip" hidden></p>
+          <div class="guide-nav">
+            <button type="button" id="guide-prev" class="ghost">上一階段</button>
+            <button type="button" id="guide-next" class="primary">下一階段</button>
+            <button type="button" id="guide-cta" class="primary" hidden>打開催收系統導覽</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <section class="sheet" id="sheet" data-open="true">
       <button type="button" class="sheet-handle" id="sheet-toggle" aria-expanded="true">
         <span class="grip" aria-hidden="true"></span>
@@ -67,8 +92,15 @@
       </button>
 
       <div class="sheet-body">
-        <p class="top-sub sheet-sub" id="sys-sub">地圖認識 · 簡報全覽 · 演示照做</p>
+        <p class="top-sub sheet-sub" id="sys-sub">導引設計 · 地圖認識 · 簡報全覽 · 演示照做</p>
         <div class="controls">
+          <label class="ctrl">
+            <span>系統</span>
+            <select id="system-select">
+              <option value="resignation">離職單</option>
+              <option value="collection">催收單</option>
+            </select>
+          </label>
           <label class="ctrl">
             <span>角色</span>
             <select id="role-select"></select>
@@ -656,6 +688,177 @@
   }
 }
   </script>
-  <script src="app.js?v=camPersist8" type="module"></script>
+  <script type="application/json" id="guide-data">
+{
+  "title": "從需求對話到可用系統",
+  "subtitle": "教學導引：怎麼把「我想做催收系統」變成欄位、權限與可上手流程",
+  "example": "催收系統",
+  "targetSystem": "systems/collection.json",
+  "phases": [
+    {
+      "id": "hear",
+      "title": "1. 聽需求",
+      "goal": "先聽使用者要做什麼，不要急著開表。",
+      "turns": [
+        {
+          "who": "user",
+          "text": "我想做一個催收系統。申請人要填：姓名、部門、職位、系統名稱、預計催收日、區域。"
+        },
+        {
+          "who": "guide",
+          "text": "收到。這是「申請端」會填的基本資料。接下來我會問：催收本身要不要分階段？通常會。"
+        }
+      ],
+      "board": {
+        "headline": "使用者先提出的欄位",
+        "fields": [
+          { "id": "name", "label": "姓名", "source": "user" },
+          { "id": "dept", "label": "部門", "source": "user" },
+          { "id": "title", "label": "職位", "source": "user" },
+          { "id": "system_name", "label": "系統名稱", "source": "user" },
+          { "id": "expect_date", "label": "預計催收日", "source": "user" },
+          { "id": "area", "label": "區域", "source": "user" }
+        ]
+      }
+    },
+    {
+      "id": "enrich",
+      "title": "2. 補齊催收欄位",
+      "goal": "因為是催收，顧問會補上「第幾次催收」的狀態與日期——使用者沒講，但實務一定要。",
+      "turns": [
+        {
+          "who": "guide",
+          "text": "催收通常不是一次結束。我建議加上：第一次／第二次／第三次催收的狀態與日期。這樣才追得動。"
+        },
+        {
+          "who": "user",
+          "text": "對，要有一催、二催、三催。"
+        },
+        {
+          "who": "guide",
+          "text": "再加兩個結果欄位：最終交付日、催收完成日。這樣結案才有依據。"
+        }
+      ],
+      "board": {
+        "headline": "顧問補上的催收欄位",
+        "fields": [
+          { "id": "name", "label": "姓名", "source": "user" },
+          { "id": "dept", "label": "部門", "source": "user" },
+          { "id": "title", "label": "職位", "source": "user" },
+          { "id": "system_name", "label": "系統名稱", "source": "user" },
+          { "id": "expect_date", "label": "預計催收日", "source": "user" },
+          { "id": "area", "label": "區域", "source": "user" },
+          { "id": "c1_status", "label": "一催狀態", "source": "guide", "tag": "新增" },
+          { "id": "c1_date", "label": "一催日期", "source": "guide", "tag": "新增" },
+          { "id": "c2_status", "label": "二催狀態", "source": "guide", "tag": "新增" },
+          { "id": "c2_date", "label": "二催日期", "source": "guide", "tag": "新增" },
+          { "id": "c3_status", "label": "三催狀態", "source": "guide", "tag": "新增" },
+          { "id": "c3_date", "label": "三催日期", "source": "guide", "tag": "新增" },
+          { "id": "final_delivery", "label": "最終交付日", "source": "guide", "tag": "新增" },
+          { "id": "done_date", "label": "催收完成日", "source": "guide", "tag": "新增" }
+        ]
+      },
+      "tip": "教學重點：使用者講「要什麼」；顧問補「催收這種流程一定會漏的欄位」。"
+    },
+    {
+      "id": "acl-applicant",
+      "title": "3. 問申請人權限",
+      "goal": "申請人送出後：哪些能看、哪些不能改、哪些根本不該看見。",
+      "turns": [
+        {
+          "who": "guide",
+          "text": "申請人送單之後：哪些欄位不能再改？哪些催收狀態他不該看到？"
+        },
+        {
+          "who": "user",
+          "text": "基本資料送出後就不能改。一催／二催／三催的狀態與日期，申請人只能看結果，不能改。"
+        }
+      ],
+      "acl": {
+        "role": "申請人",
+        "rows": [
+          { "field": "姓名／部門／職位／系統／預計日／區域", "view": "可看", "edit": "送出前可編；送出後鎖定" },
+          { "field": "一催／二催／三催 狀態與日期", "view": "可看結果", "edit": "不可編" },
+          { "field": "最終交付日／催收完成日", "view": "可看", "edit": "不可編" }
+        ]
+      }
+    },
+    {
+      "id": "acl-collectors",
+      "title": "4. 問催收人權限",
+      "goal": "一催、二催、三催各自能動哪一欄——這就是「反對／簽核／分工」的起點。",
+      "turns": [
+        {
+          "who": "guide",
+          "text": "一催的人只能填一催狀態與日期嗎？二催、三催呢？"
+        },
+        {
+          "who": "user",
+          "text": "對。一催只能改一催欄位；二催改二催；三催改三催。別人的催收欄位只能看、不能改。"
+        },
+        {
+          "who": "guide",
+          "text": "主管或結案角色再填最終交付日、催收完成日。這樣就有完整對立流程：申請 → 催收 → 結案。"
+        }
+      ],
+      "acl": {
+        "role": "催收人／結案",
+        "rows": [
+          { "field": "申請基本資料", "view": "可看", "edit": "不可編" },
+          { "field": "一催狀態／日期", "view": "全員可看", "edit": "僅一催可編" },
+          { "field": "二催狀態／日期", "view": "全員可看", "edit": "僅二催可編" },
+          { "field": "三催狀態／日期", "view": "全員可看", "edit": "僅三催可編" },
+          { "field": "最終交付日／催收完成日", "view": "可看", "edit": "僅結案角色可編" }
+        ]
+      }
+    },
+    {
+      "id": "pack",
+      "title": "5. 收成檔案",
+      "goal": "把對話變成統一的 system.json——欄位、角色、情境、步驟都在裡面。",
+      "turns": [
+        {
+          "who": "guide",
+          "text": "討論結束後，我會依 SKILL／Schema 產出一份 JSON：表、欄位、角色、情境步驟、演示假資料。"
+        },
+        {
+          "who": "guide",
+          "text": "這份檔就是「可攜系統包」。換平台也能播：地圖認識、簡報全覽、演示照做。"
+        }
+      ],
+      "filePreview": {
+        "name": "systems/collection.json",
+        "bullets": [
+          "entities：催收單主檔（含一～三催與結案欄位）",
+          "roles：申請人／一催／二催／三催／結案",
+          "scenarios：申請開單 → 一催 → 二催 → 三催 → 結案（可接龍）",
+          "每步附 fill，演示模式可模擬真人填寫"
+        ]
+      }
+    },
+    {
+      "id": "ready",
+      "title": "6. 變成可用系統",
+      "goal": "檔案進播放器＝可上手系統：看地圖、走簡報、播演示；也看得到對立流程。",
+      "turns": [
+        {
+          "who": "guide",
+          "text": "現在可以打開「催收系統」導覽：用角色×情境看每個欄位實際在哪一步被填、被鎖、被帶出。"
+        },
+        {
+          "who": "guide",
+          "text": "這就是教學網站的導引功能：從聊天需求 → 欄位管理 → 每欄要做什麼 → 可播放的系統。"
+        }
+      ],
+      "cta": {
+        "label": "打開催收系統導覽",
+        "system": "collection",
+        "mode": "map"
+      }
+    }
+  ]
+}
+  </script>
+  <script src="app.js?v=guide11" type="module"></script>
 </body>
 </html>
