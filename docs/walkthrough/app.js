@@ -9,7 +9,7 @@ const ACTION_COLORS = {
 };
 
 const MODE_COPY = {
-  guide: { eyebrow: "Design Guide", hint: "從聊需求 → 欄位 → 權限 → 成檔 → 可用系統" },
+  guide: { eyebrow: "Q&A Guide", hint: "問答學習：先想、再選、再揭曉欄位與權限" },
   map: { eyebrow: "Map Dashboard", hint: "拖地圖、縮放，看欄位怎麼連" },
   slide: { eyebrow: "Paper Slide", hint: "一情境一張作業紙，①②③ 照順序填" },
   demo: { eyebrow: "Live Demo", hint: "模擬真人填寫，阿嬤照做就會" },
@@ -48,6 +48,8 @@ const state = {
   },
   guide: null,
   guidePhase: 0,
+  /** @type {Record<string, string>} phaseId -> choiceId */
+  guideAnswers: {},
 };
 
 const els = {
@@ -85,6 +87,10 @@ const els = {
   guidePhases: document.getElementById("guide-phases"),
   guideTitle: document.getElementById("guide-phase-title"),
   guideGoal: document.getElementById("guide-phase-goal"),
+  guideStory: document.getElementById("guide-story"),
+  guideQuiz: document.getElementById("guide-quiz"),
+  guideFeedback: document.getElementById("guide-feedback"),
+  guideReveal: document.getElementById("guide-reveal"),
   guideTurns: document.getElementById("guide-turns"),
   guideBoard: document.getElementById("guide-board"),
   guideAcl: document.getElementById("guide-acl"),
@@ -777,29 +783,121 @@ function currentGuidePhase() {
   return state.guide?.phases?.[state.guidePhase] ?? null;
 }
 
-function renderGuide() {
-  if (!state.guide || !els.guideTurns) return;
-  const phases = state.guide.phases || [];
-  els.guidePhases.innerHTML = phases
-    .map(
-      (p, i) =>
-        `<li><button type="button" class="guide-phase-btn ${i === state.guidePhase ? "active" : ""}" data-guide-phase="${i}">${p.title}</button></li>`
-    )
-    .join("");
+function isGuidePhaseAnswered(phase) {
+  if (!phase?.quiz) return true;
+  return Boolean(state.guideAnswers[phase.id]);
+}
 
+function isGuidePhaseUnlocked(index) {
+  const phases = state.guide?.phases || [];
+  for (let i = 0; i < index; i++) {
+    if (!isGuidePhaseAnswered(phases[i])) return false;
+  }
+  return true;
+}
+
+function renderGuide() {
+  if (!state.guide || !els.guideQuiz) return;
+  const phases = state.guide.phases || [];
   const phase = currentGuidePhase();
   if (!phase) return;
-  els.guideTitle.textContent = phase.title;
-  els.guideGoal.textContent = phase.goal || "";
 
-  els.guideTurns.innerHTML = (phase.turns || [])
-    .map((t) => {
-      const who = t.who === "user" ? "使用者" : "顧問導引";
-      return `<div class="bubble ${t.who}"><span class="who">${who}</span>${escapeHtml(t.text)}</div>`;
+  const answeredId = state.guideAnswers[phase.id];
+  const answered = isGuidePhaseAnswered(phase);
+  const picked = phase.quiz?.choices?.find((c) => c.id === answeredId) || null;
+
+  els.guidePhases.innerHTML = phases
+    .map((p, i) => {
+      const unlocked = isGuidePhaseUnlocked(i);
+      const done = isGuidePhaseAnswered(p);
+      const cls = [
+        "guide-phase-btn",
+        i === state.guidePhase ? "active" : "",
+        done ? "is-done" : "",
+      ]
+        .filter(Boolean)
+        .join(" ");
+      return `<li><button type="button" class="${cls}" data-guide-phase="${i}" ${unlocked ? "" : "disabled"}>${p.title}</button></li>`;
     })
     .join("");
 
-  if (phase.board?.fields?.length) {
+  els.guideTitle.textContent = phase.title;
+  els.guideGoal.textContent = phase.goal || "";
+
+  if (els.guideStory) {
+    if (phase.story) {
+      els.guideStory.hidden = false;
+      els.guideStory.innerHTML = `<div class="guide-story-card"><p>${escapeHtml(phase.story)}</p></div>`;
+    } else {
+      els.guideStory.hidden = true;
+      els.guideStory.innerHTML = "";
+    }
+  }
+
+  els.guideQuiz.innerHTML = "";
+  if (phase.quiz) {
+    const wrap = document.createElement("div");
+    wrap.innerHTML = `
+      <div class="guide-q-label">想一想</div>
+      <p class="guide-q-prompt">${escapeHtml(phase.quiz.ask || "")}</p>
+    `;
+    els.guideQuiz.appendChild(wrap);
+
+    const choices = document.createElement("div");
+    choices.className = "guide-choices";
+    (phase.quiz.choices || []).forEach((c) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "guide-choice";
+      btn.textContent = c.text;
+      btn.disabled = answered;
+      if (answered) {
+        if (c.id === answeredId) btn.classList.add(c.correct ? "is-correct" : "is-wrong");
+        else if (c.correct) btn.classList.add("is-answer");
+      }
+      btn.addEventListener("click", () => {
+        state.guideAnswers[phase.id] = c.id;
+        renderGuide();
+      });
+      choices.appendChild(btn);
+    });
+    els.guideQuiz.appendChild(choices);
+  }
+
+  if (els.guideFeedback) {
+    if (answered && picked && phase.quiz) {
+      const ok = Boolean(picked.correct);
+      els.guideFeedback.hidden = false;
+      els.guideFeedback.className = `guide-feedback ${ok ? "ok" : "no"}`;
+      const explain = ok
+        ? phase.quiz.explainCorrect || picked.explain || ""
+        : phase.quiz.explainWrong || picked.explain || "";
+      els.guideFeedback.innerHTML = `
+        <div class="guide-feedback-badge">${ok ? "對了" : "再想一下"}</div>
+        <p>${escapeHtml(explain)}</p>
+      `;
+    } else {
+      els.guideFeedback.hidden = true;
+      els.guideFeedback.innerHTML = "";
+      els.guideFeedback.className = "guide-feedback";
+    }
+  }
+
+  const reveal = answered;
+  if (els.guideReveal) els.guideReveal.hidden = !reveal;
+
+  if (els.guideTurns) {
+    els.guideTurns.innerHTML = reveal
+      ? (phase.turns || [])
+          .map((t) => {
+            const who = t.who === "user" ? "使用者" : "顧問導引";
+            return `<div class="bubble ${t.who}"><span class="who">${who}</span>${escapeHtml(t.text)}</div>`;
+          })
+          .join("")
+      : "";
+  }
+
+  if (reveal && phase.board?.fields?.length) {
     els.guideBoard.hidden = false;
     els.guideBoard.innerHTML = `<h3>${escapeHtml(phase.board.headline || "欄位板")}</h3>
       <div class="field-chips">${phase.board.fields
@@ -814,7 +912,7 @@ function renderGuide() {
     els.guideBoard.innerHTML = "";
   }
 
-  if (phase.acl?.rows?.length) {
+  if (reveal && phase.acl?.rows?.length) {
     els.guideAcl.hidden = false;
     els.guideAcl.innerHTML = `<h3>權限：${escapeHtml(phase.acl.role || "")}</h3>
       <table class="acl-table"><thead><tr><th>欄位</th><th>看</th><th>編</th></tr></thead><tbody>
@@ -830,7 +928,7 @@ function renderGuide() {
     els.guideAcl.innerHTML = "";
   }
 
-  if (phase.filePreview) {
+  if (reveal && phase.filePreview) {
     els.guideFile.hidden = false;
     const bullets = (phase.filePreview.bullets || [])
       .map((b) => `<li>${escapeHtml(b)}</li>`)
@@ -841,7 +939,7 @@ function renderGuide() {
     els.guideFile.innerHTML = "";
   }
 
-  if (phase.tip) {
+  if (reveal && phase.tip) {
     els.guideTip.hidden = false;
     els.guideTip.textContent = phase.tip;
   } else {
@@ -850,9 +948,12 @@ function renderGuide() {
   }
 
   els.guidePrev.disabled = state.guidePhase <= 0;
-  els.guideNext.disabled = state.guidePhase >= phases.length - 1;
+  const atEnd = state.guidePhase >= phases.length - 1;
+  els.guideNext.disabled = !answered || atEnd;
+  els.guideNext.textContent = !answered && phase.quiz ? "先選一個答案" : "下一關";
+
   const cta = phase.cta;
-  if (cta) {
+  if (reveal && cta) {
     els.guideCta.hidden = false;
     els.guideCta.textContent = cta.label || "打開系統導覽";
     els.guideCta.dataset.system = cta.system || "collection";
@@ -865,7 +966,9 @@ function renderGuide() {
 function setGuidePhase(index) {
   if (!state.guide) return;
   const max = state.guide.phases.length - 1;
-  state.guidePhase = Math.max(0, Math.min(index, max));
+  const next = Math.max(0, Math.min(index, max));
+  if (!isGuidePhaseUnlocked(next)) return;
+  state.guidePhase = next;
   renderGuide();
 }
 
@@ -1236,7 +1339,7 @@ function bindUi() {
   els.guideNext?.addEventListener("click", () => setGuidePhase(state.guidePhase + 1));
   els.guidePhases?.addEventListener("click", (e) => {
     const btn = e.target.closest("[data-guide-phase]");
-    if (!btn) return;
+    if (!btn || btn.disabled) return;
     setGuidePhase(Number(btn.getAttribute("data-guide-phase")));
   });
   els.guideCta?.addEventListener("click", () => {

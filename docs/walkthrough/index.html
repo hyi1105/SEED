@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=guide11" />
+  <link rel="stylesheet" href="styles.css?v=qa12" />
 </head>
 <body>
   <div class="dash">
@@ -68,17 +68,22 @@
           <ol class="guide-phases" id="guide-phases"></ol>
         </aside>
         <div class="guide-main">
-          <p class="guide-kicker" id="guide-kicker">需求 → 欄位 → 權限 → 成檔 → 可用系統</p>
+          <p class="guide-kicker" id="guide-kicker">問答學習 · 先想再選再揭曉</p>
           <h2 id="guide-phase-title">導引</h2>
           <p class="guide-goal" id="guide-phase-goal"></p>
-          <div class="guide-turns" id="guide-turns"></div>
-          <div class="guide-board" id="guide-board" hidden></div>
-          <div class="guide-acl" id="guide-acl" hidden></div>
-          <div class="guide-file" id="guide-file" hidden></div>
-          <p class="guide-tip" id="guide-tip" hidden></p>
+          <div class="guide-story" id="guide-story"></div>
+          <div class="guide-quiz" id="guide-quiz"></div>
+          <div class="guide-feedback" id="guide-feedback" hidden></div>
+          <div class="guide-reveal" id="guide-reveal" hidden>
+            <div class="guide-turns" id="guide-turns"></div>
+            <div class="guide-board" id="guide-board" hidden></div>
+            <div class="guide-acl" id="guide-acl" hidden></div>
+            <div class="guide-file" id="guide-file" hidden></div>
+            <p class="guide-tip" id="guide-tip" hidden></p>
+          </div>
           <div class="guide-nav">
-            <button type="button" id="guide-prev" class="ghost">上一階段</button>
-            <button type="button" id="guide-next" class="primary">下一階段</button>
+            <button type="button" id="guide-prev" class="ghost">上一關</button>
+            <button type="button" id="guide-next" class="primary">下一關</button>
             <button type="button" id="guide-cta" class="primary" hidden>打開催收系統導覽</button>
           </div>
         </div>
@@ -691,24 +696,38 @@
   <script type="application/json" id="guide-data">
 {
   "title": "從需求對話到可用系統",
-  "subtitle": "教學導引：怎麼把「我想做催收系統」變成欄位、權限與可上手流程",
+  "subtitle": "問答學習：先想、再選、再揭曉——把催收需求練成系統設計直覺",
   "example": "催收系統",
   "targetSystem": "systems/collection.json",
+  "style": "qa",
   "phases": [
     {
       "id": "hear",
       "title": "1. 聽需求",
       "goal": "先聽使用者要做什麼，不要急著開表。",
-      "turns": [
-        {
-          "who": "user",
-          "text": "我想做一個催收系統。申請人要填：姓名、部門、職位、系統名稱、預計催收日、區域。"
-        },
-        {
-          "who": "guide",
-          "text": "收到。這是「申請端」會填的基本資料。接下來我會問：催收本身要不要分階段？通常會。"
-        }
-      ],
+      "story": "有人跟你說：「我想做一個催收系統。申請人要填姓名、部門、職位、系統名稱、預計催收日、區域。」",
+      "quiz": {
+        "ask": "這一步你先該抓住什麼？",
+        "choices": [
+          {
+            "id": "a",
+            "text": "先把申請人會填的基本欄位記下來，當「使用者原話清單」",
+            "correct": true
+          },
+          {
+            "id": "b",
+            "text": "立刻設計資料庫、API 與所有權限",
+            "correct": false
+          },
+          {
+            "id": "c",
+            "text": "先做漂亮畫面，欄位之後再說",
+            "correct": false
+          }
+        ],
+        "explainCorrect": "對。先原樣記下他要的欄位，才有基準去「補漏」與問權限。",
+        "explainWrong": "太早進技術或畫面，容易漏掉他真正要追的業務欄位。先記原話。"
+      },
       "board": {
         "headline": "使用者先提出的欄位",
         "fields": [
@@ -719,28 +738,47 @@
           { "id": "expect_date", "label": "預計催收日", "source": "user" },
           { "id": "area", "label": "區域", "source": "user" }
         ]
-      }
+      },
+      "turns": [
+        {
+          "who": "user",
+          "text": "我想做一個催收系統。申請人要填：姓名、部門、職位、系統名稱、預計催收日、區域。"
+        },
+        {
+          "who": "guide",
+          "text": "收到。這是「申請端」會填的基本資料。接下來要問：催收本身要不要分階段？"
+        }
+      ]
     },
     {
       "id": "enrich",
       "title": "2. 補齊催收欄位",
-      "goal": "因為是催收，顧問會補上「第幾次催收」的狀態與日期——使用者沒講，但實務一定要。",
-      "turns": [
-        {
-          "who": "guide",
-          "text": "催收通常不是一次結束。我建議加上：第一次／第二次／第三次催收的狀態與日期。這樣才追得動。"
-        },
-        {
-          "who": "user",
-          "text": "對，要有一催、二催、三催。"
-        },
-        {
-          "who": "guide",
-          "text": "再加兩個結果欄位：最終交付日、催收完成日。這樣結案才有依據。"
-        }
-      ],
+      "goal": "使用者沒講完的，顧問要補「催收實務一定會用到」的欄位。",
+      "story": "他只講了申請欄位。但催收很少一次結束——通常有一催、二催、三催，最後還要交付／完成日。",
+      "quiz": {
+        "ask": "若你是顧問，接下來最該主動補哪些欄位？",
+        "choices": [
+          {
+            "id": "a",
+            "text": "一／二／三催的狀態與日期，再加上最終交付日、催收完成日",
+            "correct": true
+          },
+          {
+            "id": "b",
+            "text": "只要再加一個「備註」就夠了",
+            "correct": false
+          },
+          {
+            "id": "c",
+            "text": "把預計催收日刪掉，改成自由文字描述",
+            "correct": false
+          }
+        ],
+        "explainCorrect": "對。分次催收＋結案日期，才追得動進度，也才有對立流程可簽。",
+        "explainWrong": "只有備註或刪掉日期，之後無法分工、無法結案對帳。催收要「次數 × 狀態／日期」。"
+      },
       "board": {
-        "headline": "顧問補上的催收欄位",
+        "headline": "顧問補上的催收欄位（標「新增」）",
         "fields": [
           { "id": "name", "label": "姓名", "source": "user" },
           { "id": "dept", "label": "部門", "source": "user" },
@@ -758,22 +796,41 @@
           { "id": "done_date", "label": "催收完成日", "source": "guide", "tag": "新增" }
         ]
       },
-      "tip": "教學重點：使用者講「要什麼」；顧問補「催收這種流程一定會漏的欄位」。"
+      "tip": "使用者講「要什麼」；顧問補「這種流程一定會漏的欄位」。",
+      "turns": [
+        {
+          "who": "guide",
+          "text": "催收通常不是一次結束。建議加上一／二／三催的狀態與日期，以及最終交付日、催收完成日。"
+        }
+      ]
     },
     {
       "id": "acl-applicant",
       "title": "3. 問申請人權限",
-      "goal": "申請人送出後：哪些能看、哪些不能改、哪些根本不該看見。",
-      "turns": [
-        {
-          "who": "guide",
-          "text": "申請人送單之後：哪些欄位不能再改？哪些催收狀態他不該看到？"
-        },
-        {
-          "who": "user",
-          "text": "基本資料送出後就不能改。一催／二催／三催的狀態與日期，申請人只能看結果，不能改。"
-        }
-      ],
+      "goal": "送出之後：申請人能看什麼、不能改什麼。",
+      "story": "申請人把基本資料送出了。一催狀態開始有人填。你要問清楚權限。",
+      "quiz": {
+        "ask": "申請人送出後，比較合理的權限是？",
+        "choices": [
+          {
+            "id": "a",
+            "text": "基本資料鎖定；催收狀態／日期可看結果但不能改",
+            "correct": true
+          },
+          {
+            "id": "b",
+            "text": "申請人隨時可改所有催收狀態，方便自己結案",
+            "correct": false
+          },
+          {
+            "id": "c",
+            "text": "申請人完全看不到催收進度",
+            "correct": false
+          }
+        ],
+        "explainCorrect": "對。送出後鎖定申請欄，避免事後改口；催收進度可看、不可編，才分得清責任。",
+        "explainWrong": "讓申請人改催收狀態會亂帳；完全看不到又無法對進度。關鍵是「可看結果、不可改」。"
+      },
       "acl": {
         "role": "申請人",
         "rows": [
@@ -781,26 +838,45 @@
           { "field": "一催／二催／三催 狀態與日期", "view": "可看結果", "edit": "不可編" },
           { "field": "最終交付日／催收完成日", "view": "可看", "edit": "不可編" }
         ]
-      }
+      },
+      "turns": [
+        {
+          "who": "guide",
+          "text": "申請人送單之後：哪些不能再改？哪些催收欄位只能看？"
+        },
+        {
+          "who": "user",
+          "text": "基本資料送出後鎖定。一／二／三催狀態與日期只能看、不能改。"
+        }
+      ]
     },
     {
       "id": "acl-collectors",
       "title": "4. 問催收人權限",
-      "goal": "一催、二催、三催各自能動哪一欄——這就是「反對／簽核／分工」的起點。",
-      "turns": [
-        {
-          "who": "guide",
-          "text": "一催的人只能填一催狀態與日期嗎？二催、三催呢？"
-        },
-        {
-          "who": "user",
-          "text": "對。一催只能改一催欄位；二催改二催；三催改三催。別人的催收欄位只能看、不能改。"
-        },
-        {
-          "who": "guide",
-          "text": "主管或結案角色再填最終交付日、催收完成日。這樣就有完整對立流程：申請 → 催收 → 結案。"
-        }
-      ],
+      "goal": "一催、二催、三催各自能動哪一欄——對立／分工從這裡來。",
+      "story": "現在有一催、二催、三催三位角色要接力。若權限沒切開，大家會互相改欄位。",
+      "quiz": {
+        "ask": "催收人的編輯權，哪一種最像「可用的對立流程」？",
+        "choices": [
+          {
+            "id": "a",
+            "text": "一催只編一催欄；二催只編二催；三催只編三催；結案才編交付／完成日",
+            "correct": true
+          },
+          {
+            "id": "b",
+            "text": "三位催收人都可改全部催收欄位，比較快",
+            "correct": false
+          },
+          {
+            "id": "c",
+            "text": "只有申請人能改催收狀態",
+            "correct": false
+          }
+        ],
+        "explainCorrect": "對。每關只動自己的欄位，才有清楚責任與反對／接龍空間。",
+        "explainWrong": "全都能改＝無法追責；申請人改催收＝角色錯位。要「各催各欄、結案收尾」。"
+      },
       "acl": {
         "role": "催收人／結案",
         "rows": [
@@ -810,55 +886,103 @@
           { "field": "三催狀態／日期", "view": "全員可看", "edit": "僅三催可編" },
           { "field": "最終交付日／催收完成日", "view": "可看", "edit": "僅結案角色可編" }
         ]
-      }
+      },
+      "turns": [
+        {
+          "who": "guide",
+          "text": "一催只能填一催欄位嗎？二催、三催呢？結案誰填？"
+        },
+        {
+          "who": "user",
+          "text": "一催改一催、二催改二催、三催改三催；結案填最終交付日與完成日。"
+        }
+      ]
     },
     {
       "id": "pack",
       "title": "5. 收成檔案",
-      "goal": "把對話變成統一的 system.json——欄位、角色、情境、步驟都在裡面。",
-      "turns": [
-        {
-          "who": "guide",
-          "text": "討論結束後，我會依 SKILL／Schema 產出一份 JSON：表、欄位、角色、情境步驟、演示假資料。"
-        },
-        {
-          "who": "guide",
-          "text": "這份檔就是「可攜系統包」。換平台也能播：地圖認識、簡報全覽、演示照做。"
-        }
-      ],
+      "goal": "對話要收成可攜的 system.json，才能變成網站／播放器。",
+      "story": "欄位與權限都談完了。下一步不是直接寫死一個畫面，而是先產出「系統包」。",
+      "quiz": {
+        "ask": "這份檔案最該帶走哪些東西？",
+        "choices": [
+          {
+            "id": "a",
+            "text": "表／欄位、角色、情境步驟（含誰在哪步動哪欄）、演示假資料",
+            "correct": true
+          },
+          {
+            "id": "b",
+            "text": "只要一張截圖就夠交接",
+            "correct": false
+          },
+          {
+            "id": "c",
+            "text": "只留程式碼，不要欄位說明",
+            "correct": false
+          }
+        ],
+        "explainCorrect": "對。JSON 系統包＝可驗證、可播放、可換平台的統一語言。",
+        "explainWrong": "截圖與裸程式不好問「誰能改哪欄」。要帶 entities／roles／scenarios／steps。"
+      },
       "filePreview": {
         "name": "systems/collection.json",
         "bullets": [
           "entities：催收單主檔（含一～三催與結案欄位）",
           "roles：申請人／一催／二催／三催／結案",
-          "scenarios：申請開單 → 一催 → 二催 → 三催 → 結案（可接龍）",
+          "scenarios：申請開單 → 一催 → 二催 → 三催 → 結案",
           "每步附 fill，演示模式可模擬真人填寫"
         ]
-      }
+      },
+      "turns": [
+        {
+          "who": "guide",
+          "text": "依 SKILL／Schema 產出 JSON：表、欄位、角色、情境步驟、演示假資料——這就是可攜系統包。"
+        }
+      ]
     },
     {
       "id": "ready",
       "title": "6. 變成可用系統",
-      "goal": "檔案進播放器＝可上手系統：看地圖、走簡報、播演示；也看得到對立流程。",
-      "turns": [
-        {
-          "who": "guide",
-          "text": "現在可以打開「催收系統」導覽：用角色×情境看每個欄位實際在哪一步被填、被鎖、被帶出。"
-        },
-        {
-          "who": "guide",
-          "text": "這就是教學網站的導引功能：從聊天需求 → 欄位管理 → 每欄要做什麼 → 可播放的系統。"
-        }
-      ],
+      "goal": "檔案進播放器＝可上手系統：地圖／簡報／演示，看每個欄位實際怎麼動。",
+      "story": "系統包已就緒。最後一步：用角色×情境走一遍，確認欄位不是「長得像」，而是「用得出來」。",
+      "quiz": {
+        "ask": "打開催收導覽後，你最該先驗證哪件事？",
+        "choices": [
+          {
+            "id": "a",
+            "text": "換角色走情境：看每欄在哪一步被填、被鎖、被接龍",
+            "correct": true
+          },
+          {
+            "id": "b",
+            "text": "只看顏色好不好看",
+            "correct": false
+          },
+          {
+            "id": "c",
+            "text": "立刻加十個新欄位，不要先跑流程",
+            "correct": false
+          }
+        ],
+        "explainCorrect": "對。先用情境驗證欄位用途與權限，才知道系統能不能上手。",
+        "explainWrong": "外觀與狂加欄位都不能證明流程可跑。先走申請→一催→二催→三催→結案。"
+      },
       "cta": {
         "label": "打開催收系統導覽",
         "system": "collection",
         "mode": "map"
-      }
+      },
+      "turns": [
+        {
+          "who": "guide",
+          "text": "打開催收系統：用地圖／簡報／演示，確認每個欄位在對的步驟被對的人使用。"
+        }
+      ]
     }
   ]
 }
   </script>
-  <script src="app.js?v=guide11" type="module"></script>
+  <script src="app.js?v=qa12" type="module"></script>
 </body>
 </html>
