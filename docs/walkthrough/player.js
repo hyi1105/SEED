@@ -35,13 +35,20 @@ const state = {
   nodeId: null,
   values: {},
   unlocked: new Set(),
-  openSections: new Set(["apply"]),
+  openSections: new Set(),
   busy: false,
   typeToken: 0,
   roleId: null,
   history: [], // node ids visited for prev
   chat: [], // {id, speaker, line, side}
 };
+
+/** @type {Record<string, any>} */
+let packLibrary = {};
+
+function firstSectionId() {
+  return pack?.form?.sections?.[0]?.id || "apply";
+}
 
 function storageKeyDoc() {
   return `seed-form:${pack.meta.id}`;
@@ -478,7 +485,7 @@ function restartShow() {
   state.nodeId = pack.show.start;
   state.values = {};
   state.unlocked = new Set();
-  state.openSections = new Set(["apply"]);
+  state.openSections = new Set([firstSectionId()]);
   state.history = [];
   state.chat = [];
   state.busy = false;
@@ -634,6 +641,11 @@ function runAction(actionId) {
   for (const id of action.autoPersona || []) state.values[id] = persona;
   for (const id of action.autoToday || []) state.values[id] = today();
   Object.assign(state.values, action.set || {});
+  for (const [from, to] of Object.entries(action.copy || {})) {
+    if (state.values[from] != null && state.values[from] !== "") {
+      state.values[to] = state.values[from];
+    }
+  }
   persistDoc();
   buildRealForm();
   toast(action.message || "已完成");
@@ -713,6 +725,8 @@ function importPackFile(file) {
       const json = JSON.parse(String(reader.result));
       const normalized = normalizePack(json);
       pack = normalized;
+      packLibrary[pack.meta.id] = structuredClone(normalized);
+      syncPackSelect();
       localStorage.removeItem(storageKeyPack());
       persistPackEdits();
       bootPack();
@@ -723,6 +737,32 @@ function importPackFile(file) {
     }
   };
   reader.readAsText(file);
+}
+
+function syncPackSelect() {
+  const sel = document.getElementById("pack-select");
+  if (!sel) return;
+  const ids = Object.keys(packLibrary);
+  sel.innerHTML = ids
+    .map((id) => {
+      const p = packLibrary[id];
+      const label = p?.meta?.title || id;
+      return `<option value="${escapeHtml(id)}">${escapeHtml(label)}</option>`;
+    })
+    .join("");
+  if (pack?.meta?.id) sel.value = pack.meta.id;
+  sel.hidden = ids.length < 2;
+}
+
+function switchPack(id) {
+  const base = packLibrary[id];
+  if (!base) return;
+  pack = normalizePack(structuredClone(base));
+  const url = new URL(location.href);
+  url.searchParams.set("system", id);
+  history.replaceState(null, "", url);
+  bootPack();
+  toast(`切換：${pack.meta.title}`);
 }
 
 /** Accept new split format; light shim for older root-level cast/nodes */
@@ -797,6 +837,9 @@ function bindChrome() {
     if (file) importPackFile(file);
     els.fileImport.value = "";
   });
+  document.getElementById("pack-select")?.addEventListener("change", (e) => {
+    switchPack(e.target.value);
+  });
   document.addEventListener("keydown", (e) => {
     if (state.mode !== "show" || state.busy) return;
     if (e.key === "ArrowRight" || e.key === "Enter") {
@@ -823,9 +866,25 @@ function bootPack() {
 }
 
 function boot() {
+  const libraryEl = document.getElementById("vn-library");
   const embedded = document.getElementById("vn-data");
-  pack = normalizePack(JSON.parse(embedded.textContent));
+  if (libraryEl?.textContent?.trim()) {
+    const lib = JSON.parse(libraryEl.textContent);
+    packLibrary = {};
+    for (const [id, raw] of Object.entries(lib)) {
+      packLibrary[id] = normalizePack(raw);
+    }
+  } else {
+    const one = normalizePack(JSON.parse(embedded.textContent));
+    packLibrary = { [one.meta.id]: one };
+  }
+  const want =
+    new URLSearchParams(location.search).get("system") ||
+    embedded?.dataset?.default ||
+    Object.keys(packLibrary)[0];
+  pack = normalizePack(structuredClone(packLibrary[want] || Object.values(packLibrary)[0]));
   bindChrome();
+  syncPackSelect();
   bootPack();
 }
 

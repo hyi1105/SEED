@@ -10,6 +10,7 @@
 
 ## 場次
 
+- 2026-08-08 — AFON／BFON 儀器校正試玩包（假資料熟悉系統） — 標籤：產品、walkthrough、AFON、BFON、儀器、校正 — [sessions/2026-08-08-abfon-bfon-walkthrough.md](sessions/2026-08-08-abfon-bfon-walkthrough.md)
 - 2026-08-08 — LINE 對話＋三層 JSON＋事後 ACL — 標籤：產品、walkthrough、LINE、JSON、ACL、Skill — [sessions/2026-08-08-line-json-acl.md](sessions/2026-08-08-line-json-acl.md)
 - 2026-08-08 — 導覽改視覺小說式 show（點下一步，不要答題） — 標籤：產品、學習、VN、show、選項 — [sessions/2026-08-08-vn-show-guide.md](sessions/2026-08-08-vn-show-guide.md)
 - 2026-08-08 — 學習／導覽偏好：漸進拼圖（四合院式） — 標籤：產品、學習、導覽、漸進拼圖、偏好 — [sessions/2026-08-08-progressive-puzzle-guide.md](sessions/2026-08-08-progressive-puzzle-guide.md)

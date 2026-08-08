@@ -23,7 +23,8 @@
 - **主入口：** [`docs/walkthrough/index.html`](docs/walkthrough/index.html) · 合併後 https://hyi1105.github.io/SEED/walkthrough/
 - **立刻預覽：** https://htmlpreview.github.io/?https://github.com/hyi1105/SEED/blob/main/docs/walkthrough/index.html
 - **模式：** Show（LINE 對話＋上一步／下一步）／表單／設定（必填·可看·可編）／地圖（可選）
-- **契約：** [`docs/walkthrough/SKILL.md`](docs/walkthrough/SKILL.md) · 範例 [`vn/leave.json`](docs/walkthrough/vn/leave.json) · 源碼 [`player.js`](docs/walkthrough/player.js)
+- **契約：** [`docs/walkthrough/SKILL.md`](docs/walkthrough/SKILL.md) · 範例 [`vn/abfon.json`](docs/walkthrough/vn/abfon.json)（儀器校正）、[`vn/leave.json`](docs/walkthrough/vn/leave.json) · 源碼 [`player.js`](docs/walkthrough/player.js)
+- **組裝：** 改 `player.*`／`vn/*.json` 後跑 `python3 docs/walkthrough/build-index.py`
 - **構想：** [`memory/topics/blank-origin-map.md`](memory/topics/blank-origin-map.md)
 
 已拿掉：導引／簡報／演示。

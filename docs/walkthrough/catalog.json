@@ -1,6 +1,12 @@
 {
   "systems": [
     {
+      "id": "abfon",
+      "label": "AFON／BFON 儀器校正",
+      "path": "./vn/abfon.json",
+      "cdn": "https://cdn.jsdelivr.net/gh/hyi1105/SEED@main/docs/walkthrough/vn/abfon.json"
+    },
+    {
       "id": "leave",
       "label": "請假單",
       "path": "./vn/leave.json",

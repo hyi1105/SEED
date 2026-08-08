@@ -458,6 +458,29 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
   gap: 0.4rem;
   align-items: center;
 }
+.pack-pick {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: var(--font-ui);
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+.pack-pick-label {
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+.pack-pick select {
+  max-width: 11rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.28rem 0.65rem;
+  background: #fff;
+  color: var(--ink);
+  font-family: var(--font-b);
+  font-size: 0.82rem;
+}
 .toast {
   position: fixed;
   left: 50%;

@@ -20,6 +20,8 @@
 | **B** | **事件**（每次校正報告）：Submit 前必須 link 到 A；Completed → 回寫 A 的下次校正日 |
 | **C** | 後續申請：查 **A** 是否合格／未過期（也可再要求最近 B completed） |
 
+試玩包（walkthrough，假資料、AFON／BFON 命名）：[`docs/walkthrough/vn/abfon.json`](../../docs/walkthrough/vn/abfon.json) · 場次 [2026-08-08-abfon-bfon-walkthrough](../sessions/2026-08-08-abfon-bfon-walkthrough.md)。
+
 這樣 C 不必每次追整條鏈；「認證狀態」住在主檔上。
 
 ### 純流程鏈

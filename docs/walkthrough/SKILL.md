@@ -10,7 +10,7 @@
 
 ## 產出什麼
 
-只產出一個 JSON（建議 `vn/<id>.json`），結構對齊 [`vn/leave.json`](./vn/leave.json)。
+只產出一個 JSON（建議 `vn/<id>.json`），結構對齊 [`vn/leave.json`](./vn/leave.json) 或跨單範例 [`vn/abfon.json`](./vn/abfon.json)（AFON 儀器主檔 × BFON 校正報告）。
 
 ### 三層分開（務必遵守）
 
