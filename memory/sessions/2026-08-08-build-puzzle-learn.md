@@ -27,6 +27,10 @@ status: active
 - 偏好**漸進拼圖記憶**勝過單向腳本或只問不長結構
 - 目標：降低陌生系統的認知負荷（名稱×用途×需求一次釘牢）
 
+## 跨專案怎麼說
+
+可複製 brief 見 [topics/progressive-puzzle-brief.md](../topics/progressive-puzzle-brief.md)。
+
 ## 待續
 
 - [ ] 地圖模式也可「一步長一表／一欄」同節奏
