@@ -73,7 +73,9 @@ status: active
 ## 待續
 
 - [x] 導引腳本改成腳本／台詞表（speaker、line、reveal、choice）— 請假 VN
-- [x] UI：背景舞台＋立繪位＋下方對話框＋下一步；選項面板
+- [x] UI：底下 LINE 式對話＋上一步／下一步（選項在對話列）
 - [x] 請假示範主線＋選項分歧（退回 vs 直接拒絕）
-- [ ] 立繪換成真圖／更多系統的 show 腳本
-- [ ] Schema／Skill 正式收 `vn` 節點（目前獨立 JSON）
+- [x] JSON 三層＋ACL 設定頁＋匯入／匯出（契約見 `docs/walkthrough/SKILL.md`）
+- [ ] 更多系統的 `vn/*.json`（catalog 擴充）
+- [ ] 播放器內建系統切換（目前靠匯入；catalog 僅 stub）
+- [ ] Schema 正式對齊三層契約（目前以 SKILL + leave.json 為準）
