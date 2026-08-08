@@ -1,0 +1,172 @@
+{
+  "system": "請假單",
+  "subtitle": "從空白起源長出的請假流程（show 驗證用）",
+  "roles": [
+    { "id": "employee", "label": "申請人" },
+    { "id": "manager", "label": "主管" },
+    { "id": "hr", "label": "HR" }
+  ],
+  "actions": [
+    { "id": "write", "label": "人手填寫" },
+    { "id": "approve", "label": "簽核" },
+    { "id": "auto", "label": "自動產生" },
+    { "id": "notify", "label": "通知" }
+  ],
+  "entities": [
+    {
+      "id": "leave",
+      "label": "請假主檔",
+      "kind": "table",
+      "fields": [
+        { "id": "id", "label": "單號", "auto": true },
+        { "id": "name", "label": "姓名" },
+        { "id": "phone", "label": "電話" },
+        { "id": "last_day", "label": "最後一天" },
+        { "id": "status", "label": "結案狀態" }
+      ]
+    },
+    {
+      "id": "sign",
+      "label": "簽核歷程",
+      "kind": "table",
+      "fields": [
+        { "id": "level", "label": "關卡" },
+        { "id": "signer", "label": "簽核人姓名" },
+        { "id": "date", "label": "日期" },
+        { "id": "status", "label": "狀態" },
+        { "id": "comment", "label": "意見" }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "from": "leave.id",
+      "to": "sign.level",
+      "kind": "lookup",
+      "label": "一單多關"
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "apply-leave",
+      "title": "提出請假",
+      "role": "employee",
+      "next": "manager-review",
+      "steps": [
+        {
+          "n": 1,
+          "action": "write",
+          "fields": ["leave.name", "leave.phone", "leave.last_day"],
+          "note": "申請人填姓名、電話、最後一天",
+          "fill": {
+            "leave.name": "林小華",
+            "leave.phone": "0912-345-678",
+            "leave.last_day": "2026-08-15"
+          }
+        },
+        {
+          "n": 2,
+          "action": "auto",
+          "fields": ["leave.id", "leave.status"],
+          "note": "送出後產生單號，狀態變待一簽",
+          "fill": {
+            "leave.id": "L-20260808-001",
+            "leave.status": "待一簽"
+          }
+        },
+        {
+          "n": 3,
+          "action": "notify",
+          "fields": ["leave.status"],
+          "note": "通知主管有單待簽"
+        }
+      ]
+    },
+    {
+      "id": "manager-review",
+      "title": "主管一簽",
+      "role": "manager",
+      "next": "hr-close",
+      "demoSeed": {
+        "leave.id": "L-20260808-001",
+        "leave.name": "林小華",
+        "leave.phone": "0912-345-678",
+        "leave.last_day": "2026-08-15",
+        "leave.status": "待一簽"
+      },
+      "steps": [
+        {
+          "n": 1,
+          "action": "approve",
+          "fields": ["sign.signer", "sign.date", "sign.status", "sign.comment"],
+          "note": "主管填一簽：姓名、日期、狀態、意見",
+          "fill": {
+            "sign.level": "一簽",
+            "sign.signer": "陳主管",
+            "sign.date": "2026-08-09",
+            "sign.status": "同意",
+            "sign.comment": "辛苦了，准假"
+          }
+        },
+        {
+          "n": 2,
+          "action": "auto",
+          "fields": ["leave.status"],
+          "note": "同意後狀態變待二簽（HR）",
+          "fill": { "leave.status": "待二簽" }
+        }
+      ]
+    },
+    {
+      "id": "hr-close",
+      "title": "HR 二簽結案",
+      "role": "hr",
+      "demoSeed": {
+        "leave.id": "L-20260808-001",
+        "leave.name": "林小華",
+        "leave.status": "待二簽",
+        "sign.signer": "陳主管",
+        "sign.status": "同意"
+      },
+      "steps": [
+        {
+          "n": 1,
+          "action": "approve",
+          "fields": ["sign.signer", "sign.date", "sign.status", "sign.comment"],
+          "note": "HR 填二簽並處理",
+          "fill": {
+            "sign.level": "二簽",
+            "sign.signer": "王人事",
+            "sign.date": "2026-08-10",
+            "sign.status": "完成",
+            "sign.comment": "假別已登錄"
+          }
+        },
+        {
+          "n": 2,
+          "action": "auto",
+          "fields": ["leave.status"],
+          "note": "結案狀態＝已核准",
+          "fill": { "leave.status": "已核准" }
+        }
+      ]
+    }
+  ],
+  "demo": {
+    "values": {
+      "leave.name": "林小華",
+      "leave.phone": "0912-345-678",
+      "leave.last_day": "2026-08-15"
+    },
+    "persona": {
+      "employee": "林小華",
+      "manager": "陳主管",
+      "hr": "王人事"
+    }
+  },
+  "layout": {
+    "leave": { "x": 80, "y": 120, "w": 280 },
+    "sign": { "x": 480, "y": 120, "w": 280 }
+  }
+}

@@ -119,10 +119,17 @@ status: active
 - 導覽＝**漸進拼圖舞台 ＋ VN show**：下一步為主、選項為輔；**不要答題過關**
 - 示範優先請假主線＋至少一個選項分歧
 
+## 已落地（2026-08-08）
+
+- Show 頁：`docs/walkthrough/show.html`（請假故事線，點下一步長空白）
+- 腳本：`docs/walkthrough/vn/leave.json`
+- 結局 → `index.html?mode=map&system=leave` 地圖驗證
+- 系統包：`docs/walkthrough/systems/leave.json`
+
 ## 待續
 
-- [ ] 請假 VN 腳本（台詞表＋五分區 reveal＋一個 Choices 分歧）
-- [ ] UI：背景舞台＋立繪位＋下方對話框＋下一步／選項
-- [ ] 拼圖完成 → 真實畫面／流程驗證
-- [ ] Schema／Skill 是否加 `vn` 腳本節點（先用 JSON 註解驗證）
-- [ ] （可選）相簿關鍵幀入 `assets/`
+- [x] 請假 VN 腳本（台詞表＋五分區 reveal＋ Choices）
+- [x] UI：空舞台＋對話框＋下一步／選項
+- [x] 拼圖完成 → 地圖驗證
+- [ ] Schema／Skill 正式收 `vn` 節點
+- [ ] （可選）相簿關鍵幀／真立繪入 `assets/`

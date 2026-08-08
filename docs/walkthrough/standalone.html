@@ -127,6 +127,9 @@ body {
   font-size: 0.82rem;
   font-weight: 600;
   cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
 }
 
 .mode-tab.active {
@@ -1387,6 +1390,7 @@ button:disabled {
         <h1 id="sys-title">離職單</h1>
       </div>
       <div class="mode-tabs" role="tablist" aria-label="認識方式">
+        <a class="mode-tab" href="./show.html" data-mode="show">Show</a>
         <button type="button" class="mode-tab" data-mode="guide" role="tab" aria-selected="false">導引</button>
         <button type="button" class="mode-tab active" data-mode="map" role="tab" aria-selected="true">地圖</button>
         <button type="button" class="mode-tab" data-mode="slide" role="tab" aria-selected="false">簡報</button>
@@ -1468,6 +1472,7 @@ button:disabled {
             <select id="system-select">
               <option value="resignation">離職單</option>
               <option value="collection">催收單</option>
+              <option value="leave">請假單</option>
             </select>
           </label>
           <label class="ctrl">
@@ -2256,6 +2261,11 @@ const SYSTEM_CATALOG = {
     id: "collection",
     label: "催收單",
     paths: ["./systems/collection.json", "https://cdn.jsdelivr.net/gh/hyi1105/SEED@main/docs/walkthrough/systems/collection.json"],
+  },
+  leave: {
+    id: "leave",
+    label: "請假單",
+    paths: ["./systems/leave.json", "https://cdn.jsdelivr.net/gh/hyi1105/SEED@main/docs/walkthrough/systems/leave.json"],
   },
 };
 
@@ -3420,7 +3430,11 @@ function bindMap() {
 
 function bindUi() {
   document.querySelectorAll(".mode-tab").forEach((btn) => {
-    btn.addEventListener("click", () => setMode(btn.getAttribute("data-mode")));
+    btn.addEventListener("click", (e) => {
+      if (btn.tagName === "A") return;
+      e.preventDefault();
+      setMode(btn.getAttribute("data-mode"));
+    });
   });
 
   els.role.addEventListener("change", () => setRole(els.role.value));

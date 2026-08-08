@@ -9,6 +9,7 @@ const ACTION_COLORS = {
 };
 
 const MODE_COPY = {
+  show: { eyebrow: "Visual Novel Show", hint: "點下一步，看空白一塊塊長出來" },
   guide: { eyebrow: "Design Guide", hint: "從聊需求 → 欄位 → 權限 → 成檔 → 可用系統" },
   map: { eyebrow: "Map Dashboard", hint: "拖地圖、縮放，看欄位怎麼連" },
   slide: { eyebrow: "Paper Slide", hint: "一情境一張作業紙，①②③ 照順序填" },
@@ -25,6 +26,11 @@ const SYSTEM_CATALOG = {
     id: "collection",
     label: "催收單",
     paths: ["./systems/collection.json", "https://cdn.jsdelivr.net/gh/hyi1105/SEED@main/docs/walkthrough/systems/collection.json"],
+  },
+  leave: {
+    id: "leave",
+    label: "請假單",
+    paths: ["./systems/leave.json", "https://cdn.jsdelivr.net/gh/hyi1105/SEED@main/docs/walkthrough/systems/leave.json"],
   },
 };
 
@@ -884,6 +890,7 @@ async function switchSystem(systemId, { mode } = {}) {
       state.data = await fetchJson(meta.paths);
     }
   } else {
+    // leave／collection：優先 fetch；失敗時 resignation 才有 embedded fallback
     state.data = await fetchJson(meta.paths);
   }
 
@@ -1189,7 +1196,12 @@ function bindMap() {
 
 function bindUi() {
   document.querySelectorAll(".mode-tab").forEach((btn) => {
-    btn.addEventListener("click", () => setMode(btn.getAttribute("data-mode")));
+    btn.addEventListener("click", (e) => {
+      // <a href="show.html"> 讓瀏覽器導頁，不要攔截
+      if (btn.tagName === "A") return;
+      e.preventDefault();
+      setMode(btn.getAttribute("data-mode"));
+    });
   });
 
   els.role.addEventListener("change", () => setRole(els.role.value));
@@ -1286,8 +1298,26 @@ async function loadSystemData() {
   throw lastErr || new Error("無法載入 system.json");
 }
 
+function readBootQuery() {
+  const q = new URLSearchParams(location.search);
+  const system = q.get("system");
+  const mode = q.get("mode");
+  return {
+    system: system && SYSTEM_CATALOG[system] ? system : null,
+    mode: mode && MODE_COPY[mode] && mode !== "show" ? mode : null,
+  };
+}
+
 async function boot() {
-  state.data = await loadSystemData();
+  const bootQ = readBootQuery();
+  if (bootQ.system) state.systemId = bootQ.system;
+
+  if (state.systemId === "resignation") {
+    state.data = await loadSystemData();
+  } else {
+    state.data = await fetchJson(SYSTEM_CATALOG[state.systemId].paths);
+  }
+
   try {
     state.guide = await loadGuide();
   } catch (err) {
@@ -1310,6 +1340,10 @@ async function boot() {
   bindUi();
   refresh(true);
 
+  if (bootQ.mode) {
+    setMode(bootQ.mode);
+  }
+
   if (window.matchMedia("(max-width: 899px)").matches) {
     els.sheet.setAttribute("data-open", "false");
     els.sheetToggle?.setAttribute("aria-expanded", "false");
@@ -1317,6 +1351,7 @@ async function boot() {
 
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
+      if (state.mode !== "map") return;
       if (hasSavedCam) {
         applyCamera();
       } else {

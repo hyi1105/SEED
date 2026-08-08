@@ -90,7 +90,8 @@
 
 播放器模式讀同一份 JSON：`地圖`／`簡報`／`演示`。  
 另有教學模式 `導引`（`guide.json`）：示範「聊需求 → 補欄位 → 問權限 → 成檔 → 打開系統」。  
-第二套示範系統：`systems/collection.json`（催收單）。
+另有 **Show**（視覺小說）：`show.html` + `vn/leave.json`——空舞台五分區，點下一步長「名稱＋用途」，關鍵選項分歧，結局列出幾張表。  
+示範系統：`system.json`（離職）、`systems/collection.json`（催收）、`systems/leave.json`（請假，Show 驗證用）。
 
 ## 驗收清單
 

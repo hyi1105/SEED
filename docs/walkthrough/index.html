@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=guide11" />
+  <link rel="stylesheet" href="styles.css?v=show1" />
 </head>
 <body>
   <div class="dash">
@@ -18,6 +18,7 @@
         <h1 id="sys-title">離職單</h1>
       </div>
       <div class="mode-tabs" role="tablist" aria-label="認識方式">
+        <a class="mode-tab" href="./show.html" data-mode="show">Show</a>
         <button type="button" class="mode-tab" data-mode="guide" role="tab" aria-selected="false">導引</button>
         <button type="button" class="mode-tab active" data-mode="map" role="tab" aria-selected="true">地圖</button>
         <button type="button" class="mode-tab" data-mode="slide" role="tab" aria-selected="false">簡報</button>
@@ -99,6 +100,7 @@
             <select id="system-select">
               <option value="resignation">離職單</option>
               <option value="collection">催收單</option>
+              <option value="leave">請假單</option>
             </select>
           </label>
           <label class="ctrl">
@@ -859,6 +861,6 @@
   ]
 }
   </script>
-  <script src="app.js?v=guide11" type="module"></script>
+  <script src="app.js?v=show1" type="module"></script>
 </body>
 </html>

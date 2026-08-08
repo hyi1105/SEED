@@ -41,9 +41,17 @@ status: active
 - 不要做成測驗關卡
 - 拼圖生長＝演出事件，跟在台詞後面，不是考完才解鎖
 
+## 實作（同日後續）
+
+- 可玩頁：[`docs/walkthrough/show.html`](../../docs/walkthrough/show.html)
+- 腳本：[`docs/walkthrough/vn/leave.json`](../../docs/walkthrough/vn/leave.json)
+- 驗證用地圖包：[`docs/walkthrough/systems/leave.json`](../../docs/walkthrough/systems/leave.json)
+- 播放器頂部加 Show 連結；系統下拉加「請假單」；`?mode=map&system=leave` 可直達
+
 ## 待續
 
-- [ ] 導引腳本改成腳本／台詞表（speaker、line、reveal、choice）
-- [ ] UI：背景舞台＋立繪位＋下方對話框＋下一步；選項面板
-- [ ] 請假示範寫成一條主線＋至少一個選項分歧（退回 vs 其他）
-- [ ] 廢除／改寫先前「答對才長出」相關待續表述
+- [x] 導引腳本改成腳本／台詞表（speaker、line、reveal、choice）— 請假 VN
+- [x] UI：背景舞台＋立繪位＋下方對話框＋下一步；選項面板
+- [x] 請假示範主線＋選項分歧（退回 vs 直接拒絕）
+- [ ] 立繪換成真圖／更多系統的 show 腳本
+- [ ] Schema／Skill 正式收 `vn` 節點（目前獨立 JSON）

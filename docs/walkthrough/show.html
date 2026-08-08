@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
+  <title>請假系統 · Show — SEED</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ink: #12241f;
+      --muted: #5c7169;
+      --line: rgba(18, 36, 31, 0.12);
+      --brand: #0d6b5a;
+      --brand-2: #1a9a7e;
+      --sand: #f3f7f4;
+      --panel: rgba(255, 255, 255, 0.72);
+      --user: #1f6fbf;
+      --guide: #0d6b5a;
+      --manager: #b86a12;
+      --hr: #6b4f9a;
+      --soft: #d8efe8;
+      --font-d: "Outfit", "Noto Sans TC", sans-serif;
+      --font-b: "Noto Sans TC", sans-serif;
+      --dialog-h: minmax(168px, auto);
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0; height: 100%;
+      font-family: var(--font-b);
+      color: var(--ink);
+      background: #dfeae4;
+      overflow: hidden;
+    }
+    .app {
+      height: 100dvh;
+      display: grid;
+      grid-template-rows: auto 1fr var(--dialog-h);
+    }
+    .top {
+      z-index: 5;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.55rem 0.85rem;
+      background: rgba(243, 247, 244, 0.9);
+      border-bottom: 1px solid var(--line);
+      backdrop-filter: blur(10px);
+    }
+    .top a {
+      text-decoration: none;
+      color: var(--brand);
+      font-family: var(--font-d);
+      font-weight: 700;
+      font-size: 0.9rem;
+      padding: 0.3rem 0.55rem;
+      border-radius: 999px;
+      background: var(--soft);
+    }
+    .brand { min-width: 0; flex: 1; }
+    .brand .eyebrow {
+      margin: 0;
+      font-family: var(--font-d);
+      font-size: 0.65rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--brand);
+      font-weight: 600;
+    }
+    .brand h1 {
+      margin: 0;
+      font-family: var(--font-d);
+      font-size: 1.15rem;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+    }
+    .top-actions { display: flex; gap: 0.35rem; }
+    .top-actions button {
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 999px;
+      padding: 0.3rem 0.7rem;
+      font: inherit;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+    }
+
+    .stage-wrap {
+      position: relative;
+      min-height: 0;
+      overflow: hidden;
+      background:
+        radial-gradient(900px 420px at 15% 10%, rgba(26, 154, 126, 0.18), transparent 55%),
+        radial-gradient(700px 380px at 90% 80%, rgba(31, 111, 191, 0.1), transparent 50%),
+        linear-gradient(165deg, #e7f1ec 0%, #d5e4dc 45%, #c9dcd2 100%);
+    }
+    .stage-wrap::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(18, 36, 31, 0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(18, 36, 31, 0.035) 1px, transparent 1px);
+      background-size: 36px 36px;
+      mask-image: radial-gradient(ellipse at center, #000 35%, transparent 80%);
+      pointer-events: none;
+    }
+    .stage {
+      height: 100%;
+      display: grid;
+      grid-template-columns: 1.1fr 1fr 0.9fr;
+      grid-template-rows: 1.15fr 0.85fr;
+      gap: 0.55rem;
+      padding: 0.7rem;
+      position: relative;
+    }
+    .zone {
+      position: relative;
+      border: 1.5px dashed rgba(13, 107, 90, 0.28);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.28);
+      padding: 0.55rem 0.6rem 0.65rem;
+      overflow: hidden;
+      transition: border-color 0.35s, background 0.35s, box-shadow 0.35s;
+      min-height: 0;
+    }
+    .zone[data-zone="apply"] { grid-column: 1; grid-row: 1 / span 2; }
+    .zone[data-zone="process"] { grid-column: 2; grid-row: 1; }
+    .zone[data-zone="close"] { grid-column: 3; grid-row: 1; }
+    .zone[data-zone="acl"] { grid-column: 2; grid-row: 2; }
+    .zone[data-zone="output"] { grid-column: 3; grid-row: 2; }
+    .zone.active {
+      border-style: solid;
+      border-color: rgba(13, 107, 90, 0.55);
+      background: rgba(255, 255, 255, 0.55);
+      box-shadow: 0 10px 28px rgba(13, 107, 90, 0.1);
+    }
+    .zone-label {
+      margin: 0 0 0.15rem;
+      font-family: var(--font-d);
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: color-mix(in srgb, var(--brand) 70%, var(--muted));
+    }
+    .zone-hint {
+      margin: 0 0 0.45rem;
+      font-size: 0.68rem;
+      color: var(--muted);
+      opacity: 0.85;
+    }
+    .zone-empty {
+      margin: 1.2rem 0 0;
+      text-align: center;
+      font-size: 0.72rem;
+      color: rgba(92, 113, 105, 0.55);
+      letter-spacing: 0.06em;
+    }
+    .zone.has-pieces .zone-empty { display: none; }
+    .pieces {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      align-content: start;
+      overflow: auto;
+      max-height: 100%;
+      padding-right: 0.1rem;
+    }
+    .piece {
+      display: grid;
+      gap: 0.1rem;
+      padding: 0.4rem 0.5rem;
+      border-radius: 12px;
+      background: #fff;
+      border: 1px solid rgba(13, 107, 90, 0.18);
+      box-shadow: 0 4px 12px rgba(18, 36, 31, 0.06);
+      transform-origin: 50% 80%;
+      animation: piece-in 0.45s cubic-bezier(0.2, 0.9, 0.2, 1) both;
+    }
+    .piece.kind-button {
+      border-color: rgba(184, 106, 18, 0.35);
+      background: linear-gradient(180deg, #fff9f1, #fff);
+    }
+    .piece.kind-table {
+      border-color: rgba(31, 111, 191, 0.3);
+      background: linear-gradient(180deg, #f3f8ff, #fff);
+    }
+    .piece-name {
+      font-family: var(--font-d);
+      font-weight: 700;
+      font-size: 0.92rem;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+    }
+    .piece-purpose {
+      font-size: 0.72rem;
+      color: var(--muted);
+      line-height: 1.35;
+    }
+    @keyframes piece-in {
+      from { opacity: 0; transform: translateY(12px) scale(0.92); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .actor {
+      position: absolute;
+      right: 0.85rem;
+      bottom: 0.65rem;
+      width: min(120px, 22vw);
+      pointer-events: none;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.35s, transform 0.35s;
+      z-index: 2;
+    }
+    .actor.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .actor-body {
+      width: 100%;
+      aspect-ratio: 3 / 4;
+      border-radius: 18px 18px 8px 8px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.55), transparent 40%),
+        linear-gradient(160deg, var(--actor, var(--guide)), color-mix(in srgb, var(--actor, var(--guide)) 40%, #fff));
+      border: 2px solid rgba(255,255,255,0.65);
+      box-shadow: 0 12px 28px rgba(18, 36, 31, 0.18);
+      display: grid;
+      place-items: end center;
+      padding-bottom: 0.55rem;
+      font-family: var(--font-d);
+      font-weight: 700;
+      font-size: 0.78rem;
+      color: #fff;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.25);
+    }
+
+    .dialog {
+      z-index: 6;
+      display: grid;
+      grid-template-rows: auto auto auto;
+      gap: 0.35rem;
+      padding: 0.65rem 0.85rem 0.75rem;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.96), rgba(245,250,247,0.98));
+      border-top: 1px solid var(--line);
+      box-shadow: 0 -8px 28px rgba(18, 36, 31, 0.08);
+      max-height: 46dvh;
+      overflow: auto;
+    }
+    .dialog-speaker {
+      margin: 0;
+      font-family: var(--font-d);
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: var(--speaker, var(--guide));
+    }
+    .dialog-line {
+      margin: 0;
+      font-size: 0.98rem;
+      line-height: 1.5;
+      min-height: 2.9em;
+      animation: line-in 0.28s ease both;
+    }
+    @keyframes line-in {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: none; }
+    }
+    .dialog-foot {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .progress {
+      font-size: 0.72rem;
+      color: var(--muted);
+      font-family: var(--font-d);
+    }
+    .choices {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      width: 100%;
+    }
+    .choice-btn, .next-btn, .cta-btn {
+      border: 0;
+      border-radius: 12px;
+      padding: 0.65rem 0.9rem;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: left;
+    }
+    .next-btn {
+      margin-left: auto;
+      background: var(--brand);
+      color: #fff;
+      min-width: 7.5rem;
+      text-align: center;
+      box-shadow: 0 6px 16px rgba(13, 107, 90, 0.25);
+    }
+    .next-btn:active { transform: translateY(1px); }
+    .choice-btn {
+      background: #fff;
+      border: 1.5px solid color-mix(in srgb, var(--brand) 35%, white);
+      color: var(--ink);
+    }
+    .choice-btn:hover {
+      background: var(--soft);
+      border-color: var(--brand);
+    }
+    .cta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      width: 100%;
+    }
+    .cta-btn {
+      background: var(--brand);
+      color: #fff;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .cta-btn.ghost {
+      background: #fff;
+      color: var(--brand);
+      border: 1.5px solid color-mix(in srgb, var(--brand) 35%, white);
+    }
+
+    .summary {
+      position: absolute;
+      inset: 0.7rem;
+      z-index: 4;
+      overflow: auto;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid var(--line);
+      padding: 0.85rem 1rem;
+      box-shadow: 0 16px 40px rgba(18, 36, 31, 0.12);
+      display: none;
+      animation: line-in 0.35s ease both;
+    }
+    .summary.show { display: block; }
+    .summary h2 {
+      margin: 0 0 0.35rem;
+      font-family: var(--font-d);
+      font-size: 1.15rem;
+    }
+    .summary p {
+      margin: 0 0 0.75rem;
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+    .table-card {
+      margin-bottom: 0.7rem;
+      padding: 0.65rem 0.75rem;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: #f7faf8;
+    }
+    .table-card h3 {
+      margin: 0 0 0.4rem;
+      font-family: var(--font-d);
+      font-size: 0.95rem;
+    }
+    .table-card ul {
+      margin: 0;
+      padding-left: 1.1rem;
+      font-size: 0.84rem;
+      line-height: 1.45;
+    }
+    .table-card li strong { font-weight: 700; }
+    .table-card .origin {
+      color: var(--muted);
+      font-size: 0.78rem;
+    }
+
+    .tap-catch {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      cursor: pointer;
+      background: transparent;
+      border: 0;
+    }
+    .tap-catch[hidden] { display: none; }
+
+    @media (max-width: 720px) {
+      :root { --dialog-h: minmax(190px, auto); }
+      .stage {
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: 1.2fr 1fr 0.9fr;
+        gap: 0.4rem;
+        padding: 0.5rem;
+      }
+      .zone[data-zone="apply"] { grid-column: 1 / span 2; grid-row: 1; }
+      .zone[data-zone="process"] { grid-column: 1; grid-row: 2; }
+      .zone[data-zone="close"] { grid-column: 2; grid-row: 2; }
+      .zone[data-zone="acl"] { grid-column: 1; grid-row: 3; }
+      .zone[data-zone="output"] { grid-column: 2; grid-row: 3; }
+      .piece-name { font-size: 0.82rem; }
+      .piece-purpose { font-size: 0.66rem; }
+      .actor { width: 72px; bottom: 0.4rem; right: 0.45rem; }
+      .zone-empty { margin-top: 0.35rem; }
+      .dialog-line { font-size: 0.92rem; min-height: 2.6em; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="top">
+      <a href="./index.html">SEED</a>
+      <div class="brand">
+        <p class="eyebrow">Visual Novel Show</p>
+        <h1 id="title">請假系統</h1>
+      </div>
+      <div class="top-actions">
+        <button type="button" id="btn-restart">重來</button>
+        <a href="./index.html?mode=map&system=leave" style="font-size:0.78rem;font-weight:600;padding:0.3rem 0.7rem;border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--muted)">地圖</a>
+      </div>
+    </header>
+
+    <div class="stage-wrap" id="stage-wrap">
+      <button type="button" class="tap-catch" id="tap-catch" aria-label="下一步"></button>
+      <div class="stage" id="stage"></div>
+      <div class="actor" id="actor" aria-hidden="true"><div class="actor-body" id="actor-body">顧問</div></div>
+      <aside class="summary" id="summary" hidden></aside>
+    </div>
+
+    <section class="dialog" id="dialog" aria-live="polite">
+      <p class="dialog-speaker" id="speaker">旁白</p>
+      <p class="dialog-line" id="line">載入中…</p>
+      <div class="dialog-foot" id="foot">
+        <span class="progress" id="progress">—</span>
+        <button type="button" class="next-btn" id="btn-next">下一步 ▸</button>
+      </div>
+    </section>
+  </div>
+
+  <script type="application/json" id="vn-data">
+  {
+    "id": "leave-show",
+    "title": "請假系統",
+    "subtitle": "從空舞台長出整套系統 · 視覺小說式導覽",
+    "zones": [
+      { "id": "apply", "label": "申請端", "hint": "誰填、填什麼" },
+      { "id": "process", "label": "處理中段", "hint": "誰審、審什麼" },
+      { "id": "close", "label": "結案", "hint": "怎樣算結束" },
+      { "id": "acl", "label": "權限", "hint": "誰能動哪些" },
+      { "id": "output", "label": "產出物", "hint": "留下什麼紀錄" }
+    ],
+    "cast": [
+      { "id": "narrator", "label": "旁白", "tone": "soft" },
+      { "id": "you", "label": "你", "tone": "user" },
+      { "id": "guide", "label": "系統顧問", "tone": "guide" },
+      { "id": "manager", "label": "主管", "tone": "manager" },
+      { "id": "hr", "label": "HR", "tone": "hr" }
+    ],
+    "start": "s01",
+    "nodes": {
+      "s01": { "speaker": "narrator", "line": "舞台是空的。等一下，名稱會一塊一塊長出來。你只要點「下一步」。", "next": "s02" },
+      "s02": { "speaker": "guide", "line": "我們來蓋一套請假系統。先聽你要什麼——別急著畫資料表。", "next": "s03" },
+      "s03": { "speaker": "you", "line": "我要請假系統。要有姓名、電話，還有最後一天。", "next": "s04" },
+      "s04": {
+        "speaker": "guide",
+        "line": "好。申請端先長出三個空白——這是申請人自己填的。",
+        "reveal": [
+          { "id": "applicant_name", "zone": "apply", "label": "姓名", "purpose": "知道是誰要請假" },
+          { "id": "applicant_phone", "zone": "apply", "label": "電話", "purpose": "請假期間聯絡得到人" },
+          { "id": "last_day", "zone": "apply", "label": "最後一天", "purpose": "請假要休到哪一天" }
+        ],
+        "next": "s05"
+      },
+      "s05": {
+        "speaker": "guide",
+        "line": "申請人還需要一個動作：送出。送出後，單子才進處理中段。",
+        "reveal": [
+          { "id": "btn_submit", "zone": "apply", "label": "送出", "purpose": "把請假單交給主管", "kind": "button" }
+        ],
+        "next": "s06"
+      },
+      "s06": { "speaker": "you", "line": "送出之後，要給主管簽。", "next": "s07" },
+      "s07": {
+        "speaker": "guide",
+        "line": "處理中段長出第一簽核人的空白：誰簽、何時、結果、說了什麼。",
+        "reveal": [
+          { "id": "m_name", "zone": "process", "label": "一簽姓名", "purpose": "留下是哪位主管處理" },
+          { "id": "m_date", "zone": "process", "label": "一簽日期", "purpose": "記錄何時決定" },
+          { "id": "m_status", "zone": "process", "label": "一簽狀態", "purpose": "同意或不同意" },
+          { "id": "m_comment", "zone": "process", "label": "一簽意見", "purpose": "不同意時要寫原因" }
+        ],
+        "next": "s08"
+      },
+      "s08": { "speaker": "manager", "line": "我看過了。同意就往下；不同意……你等等自己選。", "next": "s09" },
+      "s09": { "speaker": "you", "line": "同意之後，還要給 HR 處理。", "next": "s10" },
+      "s10": {
+        "speaker": "guide",
+        "line": "第二簽核人也一樣：姓名、日期、狀態、意見——掛在處理中段。",
+        "reveal": [
+          { "id": "h_name", "zone": "process", "label": "二簽姓名", "purpose": "HR 是誰處理這張" },
+          { "id": "h_date", "zone": "process", "label": "二簽日期", "purpose": "HR 何時處理" },
+          { "id": "h_status", "zone": "process", "label": "二簽狀態", "purpose": "HR 是否完成處理" },
+          { "id": "h_comment", "zone": "process", "label": "二簽意見", "purpose": "備註或補件說明" }
+        ],
+        "next": "s11"
+      },
+      "s11": { "speaker": "hr", "line": "人事這邊確認假別與天數後，就可以結案了。", "next": "s12" },
+      "s12": {
+        "speaker": "guide",
+        "line": "結案區長出狀態——整張單的最終結果。",
+        "reveal": [
+          { "id": "final_status", "zone": "close", "label": "結案狀態", "purpose": "核准／退回／拒絕，一眼看完" }
+        ],
+        "next": "s13"
+      },
+      "s13": {
+        "speaker": "guide",
+        "line": "現在談權限。誰能動申請端？誰能動一簽？",
+        "reveal": [
+          { "id": "acl_applicant", "zone": "acl", "label": "申請人可寫申請欄", "purpose": "只有本人能改自己的請假內容" },
+          { "id": "acl_manager", "zone": "acl", "label": "主管可寫一簽", "purpose": "一簽空白只有主管能動" },
+          { "id": "acl_hr", "zone": "acl", "label": "HR 可寫二簽與結案", "purpose": "結案由 HR 收尾" }
+        ],
+        "next": "s14"
+      },
+      "s14": {
+        "speaker": "guide",
+        "line": "關鍵分歧來了——主管若不同意，系統該怎麼走？",
+        "choices": [
+          { "id": "return", "label": "退回申請人，讓他改完再送", "next": "b_return" },
+          { "id": "reject", "label": "直接拒絕結案，不能再改", "next": "b_reject" }
+        ]
+      },
+      "b_return": {
+        "speaker": "guide",
+        "line": "你選了退回。申請端多一顆「撤回／退回後可改」的按鈕；結案狀態會變成待修改。",
+        "reveal": [
+          { "id": "btn_return", "zone": "apply", "label": "退回可改", "purpose": "一簽不同意時退回申請端", "kind": "button" },
+          { "id": "status_revise", "zone": "close", "label": "待修改", "purpose": "退回後的結案狀態" }
+        ],
+        "next": "s15"
+      },
+      "b_reject": {
+        "speaker": "guide",
+        "line": "你選了直接拒絕。結案狀態多一個「已拒絕」；申請端不再開放修改。",
+        "reveal": [
+          { "id": "status_rejected", "zone": "close", "label": "已拒絕", "purpose": "一簽不同意且不給改" }
+        ],
+        "next": "s15"
+      },
+      "s15": {
+        "speaker": "guide",
+        "line": "最後，產出物——系統至少留下兩張表的紀錄，之後才查得到。",
+        "reveal": [
+          { "id": "tbl_leave", "zone": "output", "label": "請假主檔", "purpose": "申請內容＋結案狀態", "kind": "table" },
+          { "id": "tbl_sign", "zone": "output", "label": "簽核歷程", "purpose": "每一關的人／日／狀態／意見", "kind": "table" }
+        ],
+        "next": "s16"
+      },
+      "s16": {
+        "speaker": "narrator",
+        "line": "拼圖齊了。你現在可以指著舞台說：有哪些名稱、在哪一區、誰能動、用來完成什麼。",
+        "next": "end"
+      },
+      "end": {
+        "speaker": "guide",
+        "line": "模型走完。下一步去真實畫面／地圖驗證——看欄位怎麼連、流程怎麼跑。",
+        "ending": true,
+        "summary": true,
+        "cta": [
+          { "label": "打開地圖驗證", "action": "open-map", "system": "leave" },
+          { "label": "再看一次 show", "action": "restart" }
+        ]
+      }
+    },
+    "tables": [
+      {
+        "id": "leave",
+        "label": "請假主檔",
+        "fields": [
+          { "label": "姓名", "origin": "申請人要請假" },
+          { "label": "電話", "origin": "請假期間要聯絡" },
+          { "label": "最後一天", "origin": "知道休到哪天" },
+          { "label": "結案狀態", "origin": "整張單的最終結果" }
+        ]
+      },
+      {
+        "id": "sign",
+        "label": "簽核歷程",
+        "fields": [
+          { "label": "關卡（一簽／二簽）", "origin": "主管與 HR 兩關" },
+          { "label": "簽核人姓名", "origin": "留下是誰處理" },
+          { "label": "日期", "origin": "何時決定" },
+          { "label": "狀態", "origin": "同意／不同意／完成" },
+          { "label": "意見", "origin": "原因或備註" }
+        ]
+      }
+    ]
+  }
+  </script>
+  <script>
+    const TONE = {
+      soft: "#5c7169",
+      user: "#1f6fbf",
+      guide: "#0d6b5a",
+      manager: "#b86a12",
+      hr: "#6b4f9a",
+    };
+
+    const data = JSON.parse(document.getElementById("vn-data").textContent);
+    const els = {
+      title: document.getElementById("title"),
+      stage: document.getElementById("stage"),
+      speaker: document.getElementById("speaker"),
+      line: document.getElementById("line"),
+      foot: document.getElementById("foot"),
+      progress: document.getElementById("progress"),
+      btnNext: document.getElementById("btn-next"),
+      tap: document.getElementById("tap-catch"),
+      actor: document.getElementById("actor"),
+      actorBody: document.getElementById("actor-body"),
+      summary: document.getElementById("summary"),
+      restart: document.getElementById("btn-restart"),
+    };
+
+    const state = {
+      nodeId: data.start,
+      revealed: new Map(), // id -> piece
+      history: [],
+      stepCount: 0,
+    };
+
+    function castOf(id) {
+      return data.cast.find((c) => c.id === id) || { id, label: id, tone: "guide" };
+    }
+
+    function escapeHtml(s) {
+      return String(s)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;");
+    }
+
+    function buildStage() {
+      els.stage.innerHTML = data.zones
+        .map(
+          (z) => `
+        <section class="zone" data-zone="${z.id}" id="zone-${z.id}">
+          <p class="zone-label">${escapeHtml(z.label)}</p>
+          <p class="zone-hint">${escapeHtml(z.hint || "")}</p>
+          <p class="zone-empty">尚無名稱</p>
+          <div class="pieces" data-pieces="${z.id}"></div>
+        </section>`
+        )
+        .join("");
+    }
+
+    function renderPieces() {
+      data.zones.forEach((z) => {
+        const zoneEl = document.getElementById(`zone-${z.id}`);
+        const box = zoneEl.querySelector("[data-pieces]");
+        const pieces = [...state.revealed.values()].filter((p) => p.zone === z.id);
+        zoneEl.classList.toggle("has-pieces", pieces.length > 0);
+        box.innerHTML = pieces
+          .map((p, i) => {
+            const kind = p.kind ? `kind-${p.kind}` : "";
+            return `<article class="piece ${kind}" style="animation-delay:${i * 0.04}s">
+              <div class="piece-name">${escapeHtml(p.label)}</div>
+              <div class="piece-purpose">${escapeHtml(p.purpose || "")}</div>
+            </article>`;
+          })
+          .join("");
+      });
+    }
+
+    function setActor(speakerId) {
+      const c = castOf(speakerId);
+      const color = TONE[c.tone] || TONE.guide;
+      els.actor.style.setProperty("--actor", color);
+      els.actorBody.textContent = c.label;
+      els.actor.classList.toggle("show", c.id !== "narrator");
+    }
+
+    function renderSummary() {
+      els.summary.hidden = false;
+      els.summary.classList.add("show");
+      els.summary.innerHTML = `
+        <h2>這個系統有 ${data.tables.length} 張表</h2>
+        <p>每張表的空白，以及它們為什麼存在：</p>
+        ${data.tables
+          .map(
+            (t) => `<div class="table-card">
+              <h3>${escapeHtml(t.label)}</h3>
+              <ul>${t.fields
+                .map(
+                  (f) =>
+                    `<li><strong>${escapeHtml(f.label)}</strong> <span class="origin">— ${escapeHtml(f.origin)}</span></li>`
+                )
+                .join("")}</ul>
+            </div>`
+          )
+          .join("")}`;
+    }
+
+    function clearSummary() {
+      els.summary.classList.remove("show");
+      els.summary.hidden = true;
+      els.summary.innerHTML = "";
+    }
+
+    function renderNode() {
+      const node = data.nodes[state.nodeId];
+      if (!node) return;
+
+      const cast = castOf(node.speaker);
+      const color = TONE[cast.tone] || TONE.guide;
+      els.speaker.textContent = cast.label;
+      els.speaker.style.setProperty("--speaker", color);
+      els.line.style.animation = "none";
+      void els.line.offsetWidth;
+      els.line.style.animation = "";
+      els.line.textContent = node.line;
+      setActor(node.speaker);
+
+      document.querySelectorAll(".zone").forEach((z) => z.classList.remove("active"));
+      if (node.reveal?.length) {
+        node.reveal.forEach((p) => {
+          if (!state.revealed.has(p.id)) state.revealed.set(p.id, p);
+          document.getElementById(`zone-${p.zone}`)?.classList.add("active");
+        });
+        renderPieces();
+      }
+
+      if (node.summary) renderSummary();
+      else clearSummary();
+
+      const totalHint = Object.keys(data.nodes).length;
+      els.progress.textContent = `第 ${state.stepCount + 1} 幕 · 已長出 ${state.revealed.size} 個名稱`;
+
+      if (node.choices?.length) {
+        els.tap.hidden = true;
+        els.foot.innerHTML = `<span class="progress">${els.progress.textContent}</span>
+          <div class="choices">
+            ${node.choices
+              .map(
+                (c) =>
+                  `<button type="button" class="choice-btn" data-next="${escapeHtml(c.next)}">${escapeHtml(c.label)}</button>`
+              )
+              .join("")}
+          </div>`;
+        els.foot.querySelectorAll(".choice-btn").forEach((btn) => {
+          btn.addEventListener("click", () => go(btn.getAttribute("data-next")));
+        });
+      } else if (node.ending && node.cta?.length) {
+        els.tap.hidden = true;
+        els.foot.innerHTML = `<span class="progress">結局</span>
+          <div class="cta-row">
+            ${node.cta
+              .map((c) => {
+                if (c.action === "open-map") {
+                  return `<a class="cta-btn" href="./index.html?mode=map&system=leave">${escapeHtml(c.label)}</a>`;
+                }
+                return `<button type="button" class="cta-btn ghost" data-action="${escapeHtml(c.action)}">${escapeHtml(c.label)}</button>`;
+              })
+              .join("")}
+          </div>`;
+        els.foot.querySelectorAll("[data-action=restart]").forEach((btn) => {
+          btn.addEventListener("click", restart);
+        });
+      } else {
+        els.tap.hidden = false;
+        els.foot.innerHTML = `<span class="progress" id="progress">${els.progress.textContent}</span>
+          <button type="button" class="next-btn" id="btn-next">下一步 ▸</button>`;
+        document.getElementById("btn-next")?.addEventListener("click", advance);
+      }
+    }
+
+    function go(nextId) {
+      if (!nextId || !data.nodes[nextId]) return;
+      state.history.push(state.nodeId);
+      state.nodeId = nextId;
+      state.stepCount += 1;
+      renderNode();
+    }
+
+    function advance() {
+      const node = data.nodes[state.nodeId];
+      if (!node || node.choices?.length || node.ending) return;
+      if (node.next) go(node.next);
+    }
+
+    function restart() {
+      state.nodeId = data.start;
+      state.revealed.clear();
+      state.history = [];
+      state.stepCount = 0;
+      clearSummary();
+      renderPieces();
+      renderNode();
+    }
+
+    els.title.textContent = data.title;
+    buildStage();
+    renderNode();
+
+    els.tap.addEventListener("click", advance);
+    els.restart.addEventListener("click", restart);
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " " || e.key === "ArrowRight") {
+        const node = data.nodes[state.nodeId];
+        if (!node?.choices && !node?.ending) {
+          e.preventDefault();
+          advance();
+        }
+      }
+    });
+  </script>
+</body>
+</html>

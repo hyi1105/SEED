@@ -21,11 +21,13 @@
 用「角色 × 情境 × 步驟」高亮資料血緣，快速認識陌生系統：
 
 - **手機／公開：** https://hyi1105.github.io/SEED/walkthrough/（合併 `main` 後；檔在 `docs/walkthrough/`）
-- **單檔立刻可開（不必等 Pages）：** https://htmlpreview.github.io/?https://github.com/hyi1105/SEED/blob/main/docs/walkthrough/standalone.html
+- **Show（視覺小說式，點下一步長空白）：** [`docs/walkthrough/show.html`](docs/walkthrough/show.html) · 合併後 https://hyi1105.github.io/SEED/walkthrough/show.html
+- **單檔立刻可開（不必等 Pages）：** https://htmlpreview.github.io/?https://github.com/hyi1105/SEED/blob/main/docs/walkthrough/standalone.html  
+  Show 預覽：https://htmlpreview.github.io/?https://github.com/hyi1105/SEED/blob/main/docs/walkthrough/show.html
 - **AI 產資料契約：** [`docs/walkthrough/SKILL.md`](docs/walkthrough/SKILL.md) + [`docs/walkthrough/schema.json`](docs/walkthrough/schema.json)
-- 構想筆記：[`memory/topics/scenario-system-walkthrough.md`](memory/topics/scenario-system-walkthrough.md)
+- 構想筆記：[`memory/topics/blank-origin-map.md`](memory/topics/blank-origin-map.md) · [`memory/topics/scenario-system-walkthrough.md`](memory/topics/scenario-system-walkthrough.md)
 
-四種模式：導引（需求→欄位→權限→成檔）／地圖／簡報／演示。可切換離職單或催收單系統包。
+模式：Show（VN）／導引／地圖／簡報／演示。系統包：離職單／催收單／請假單。
 
 ## 第一次啟用 Pages（若網址 404／沒綠勾）
 
