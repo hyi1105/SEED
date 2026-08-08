@@ -39,7 +39,6 @@ html, body {
   display: grid;
   grid-template-rows: auto 1fr;
 }
-.app[data-mode="show"] { grid-template-rows: auto 1fr minmax(150px, auto); }
 .top {
   z-index: 5;
   display: flex;
@@ -129,6 +128,7 @@ html, body {
   box-shadow: 0 18px 40px rgba(26, 36, 32, 0.14);
   padding: 1.15rem 1.2rem 1.35rem;
   position: relative;
+  z-index: 2;
   animation: sheet-in 0.45s ease both;
 }
 @keyframes sheet-in {
@@ -268,32 +268,6 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.04); }
 }
-.actor {
-  float: right;
-  width: 72px;
-  margin: -0.2rem 0 0.4rem 0.5rem;
-  opacity: 0;
-  transform: translateY(8px);
-  transition: opacity 0.3s, transform 0.3s;
-  pointer-events: none;
-}
-.actor.show { opacity: 1; transform: none; }
-.actor-body {
-  aspect-ratio: 3/4;
-  border-radius: 14px 14px 6px 6px;
-  background:
-    linear-gradient(180deg, rgba(255,255,255,0.5), transparent 45%),
-    linear-gradient(160deg, var(--actor, var(--guide)), color-mix(in srgb, var(--actor, var(--guide)) 45%, #fff));
-  border: 2px solid rgba(255,255,255,0.7);
-  box-shadow: 0 10px 22px rgba(26, 36, 32, 0.16);
-  display: grid;
-  place-items: end center;
-  padding-bottom: 0.4rem;
-  font-family: var(--font-ui);
-  font-weight: 700;
-  font-size: 0.68rem;
-  color: #fff;
-}
 .summary {
   display: none;
   width: min(560px, 100%);
@@ -302,6 +276,8 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
   border: 1px solid var(--line);
   border-radius: 14px;
   padding: 0.85rem 1rem;
+  position: relative;
+  z-index: 2;
 }
 .summary.show { display: block; animation: fade-up 0.35s ease both; }
 .summary h2 { margin: 0 0 0.3rem; font-family: var(--font-d); font-size: 1.1rem; }
@@ -316,40 +292,12 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
 .table-card h3 { margin: 0 0 0.3rem; font-family: var(--font-ui); font-size: 0.9rem; }
 .table-card ul { margin: 0; padding-left: 1.05rem; font-size: 0.82rem; line-height: 1.45; }
 .table-card .origin { color: var(--muted); font-size: 0.76rem; }
-.dialog {
-  z-index: 6;
-  display: none;
-  grid-template-rows: auto auto auto;
-  gap: 0.3rem;
-  padding: 0.65rem 0.85rem 0.75rem;
-  background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(245,249,247,0.98));
-  border-top: 1px solid var(--line);
-  box-shadow: 0 -10px 28px rgba(26, 36, 32, 0.08);
-  max-height: 42dvh;
-  overflow: auto;
-}
-.app[data-mode="show"] .dialog { display: grid; }
-.dialog-speaker {
-  margin: 0;
-  font-family: var(--font-ui);
-  font-size: 0.76rem;
-  font-weight: 700;
-  color: var(--speaker, var(--guide));
-}
-.dialog-line { margin: 0; font-size: 0.98rem; line-height: 1.55; min-height: 2.8em; }
-.dialog-foot {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
 .progress { font-size: 0.72rem; color: var(--muted); font-family: var(--font-ui); }
 .choices { display: flex; flex-direction: column; gap: 0.4rem; width: 100%; }
 .choice-btn, .next-btn, .cta-btn {
   border: 0;
   border-radius: 12px;
-  padding: 0.65rem 0.9rem;
+  padding: 0.55rem 0.85rem;
   font: inherit;
   font-weight: 700;
   cursor: pointer;
@@ -359,7 +307,7 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
   margin-left: auto;
   background: var(--brand);
   color: #fff;
-  min-width: 7.5rem;
+  min-width: 6.5rem;
   text-align: center;
 }
 .next-btn:disabled { opacity: 0.55; cursor: wait; }
@@ -381,6 +329,62 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
   color: var(--brand);
   border: 1.5px solid color-mix(in srgb, var(--brand) 35%, white);
 }
+
+/* 欄位旁對話：注意力只在一點 */
+.field-callout {
+  display: none;
+  margin: 0.05rem 0 0.55rem;
+  position: relative;
+  animation: fade-up 0.28s ease both;
+  z-index: 3;
+}
+.field-callout.show { display: block; }
+.field-callout .callout-arrow {
+  width: 0; height: 0;
+  margin-left: 6.2rem;
+  border-left: 9px solid transparent;
+  border-right: 9px solid transparent;
+  border-bottom: 10px solid color-mix(in srgb, var(--speaker, var(--guide)) 55%, white);
+}
+.field-callout .callout-card {
+  border: 1.5px solid color-mix(in srgb, var(--speaker, var(--guide)) 40%, white);
+  background: #fff;
+  border-radius: 14px;
+  padding: 0.65rem 0.75rem 0.7rem;
+  box-shadow: 0 10px 24px rgba(26, 36, 32, 0.1);
+}
+.field-callout .callout-speaker {
+  margin: 0 0 0.25rem;
+  font-family: var(--font-ui);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: var(--speaker, var(--guide));
+}
+.field-callout .callout-line {
+  margin: 0 0 0.55rem;
+  font-size: 0.94rem;
+  line-height: 1.5;
+}
+.field-callout .callout-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+.callout-anchor {
+  margin: 0.35rem 0 0.55rem;
+}
+.callout-anchor .callout-arrow { margin-left: 1.2rem; }
+.field.focus {
+  position: relative;
+}
+.field.focus .field-value {
+  border-color: color-mix(in srgb, var(--speaker, var(--brand)) 50%, white);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--speaker, var(--brand)) 16%, transparent);
+}
+.app[data-mode="form"] .field-callout { display: none !important; }
 .tap-catch {
   position: absolute;
   inset: 0;
@@ -400,7 +404,6 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
   justify-content: space-between;
 }
 .app[data-mode="form"] .form-toolbar { display: flex; }
-.app[data-mode="form"] .actor { display: none; }
 .toast {
   position: fixed;
   left: 50%;
@@ -429,8 +432,8 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
   .form-sheet { padding: 1rem 0.85rem 1.15rem; }
   .form-title { font-size: 1.25rem; }
   .field { grid-template-columns: 4.4rem minmax(0, 1fr); }
-  .dialog-line { font-size: 0.92rem; }
-  .actor { width: 58px; }
+  .field-callout .callout-line { font-size: 0.9rem; }
+  .field-callout .callout-arrow { margin-left: 5rem; }
 }
 
   </style>
@@ -458,9 +461,9 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
         <span class="progress">資料存在此瀏覽器（localStorage）</span>
       </div>
       <article class="form-sheet" id="form-sheet">
-        <div class="actor" id="actor" aria-hidden="true"><div class="actor-body" id="actor-body">顧問</div></div>
         <h2 class="form-title" id="form-title">請假申請單</h2>
         <p class="form-sub" id="form-sub">空白開始 · 一欄一欄填進去</p>
+        <div id="sheet-callout" class="callout-anchor"></div>
         <div class="status-wrap"><span class="status-pill" id="status-pill">草稿</span></div>
         <div id="sections"></div>
         <div class="submit-row" id="submit-row">
@@ -472,14 +475,6 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
       <p class="form-note">任意系統只要換成同一份 JSON（form + show 腳本 + actions），就能邊講邊填、也能真的辦單。</p>
     </div>
 
-    <section class="dialog" id="dialog" aria-live="polite">
-      <p class="dialog-speaker" id="speaker">旁白</p>
-      <p class="dialog-line" id="line">載入中…</p>
-      <div class="dialog-foot" id="foot">
-        <span class="progress">—</span>
-        <button type="button" class="next-btn">下一步 ▸</button>
-      </div>
-    </section>
   </div>
   <div class="toast" id="toast" role="status"></div>
 
@@ -947,12 +942,8 @@ const els = {
   submitBtn: document.getElementById("submit-btn"),
   actionRow: document.getElementById("action-row"),
   statusPill: document.getElementById("status-pill"),
-  speaker: document.getElementById("speaker"),
-  line: document.getElementById("line"),
-  foot: document.getElementById("foot"),
+  sheetCallout: document.getElementById("sheet-callout"),
   tap: document.getElementById("tap-catch"),
-  actor: document.getElementById("actor"),
-  actorBody: document.getElementById("actor-body"),
   summary: document.getElementById("summary"),
   toast: document.getElementById("toast"),
   roleTabs: document.getElementById("role-tabs"),
@@ -1068,21 +1059,63 @@ function paintShowForm() {
   }
 }
 
+function clearCallouts() {
+  document.querySelectorAll(".field-callout").forEach((el) => el.remove());
+  if (els.sheetCallout) els.sheetCallout.innerHTML = "";
+}
+
 function setFocus(fieldId) {
   document.querySelectorAll(".field").forEach((el) => el.classList.remove("focus"));
   if (!fieldId || fieldId === "btn_submit") return;
   const el = document.getElementById(`field-${fieldId}`);
   if (el) {
     el.classList.add("focus");
-    el.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    el.scrollIntoView({ block: "center", behavior: "smooth" });
   }
 }
 
-function setActor(speakerId) {
-  const c = castOf(speakerId);
-  els.actor.style.setProperty("--actor", TONE[c.tone] || TONE.guide);
-  els.actorBody.textContent = c.label;
-  els.actor.classList.toggle("show", c.id !== "narrator");
+function calloutAnchor(node) {
+  const focus = node.focus;
+  if (focus && focus !== "btn_submit") {
+    const field = document.getElementById(`field-${focus}`);
+    if (field) return { parent: field, mode: "field" };
+  }
+  if (focus === "btn_submit" && els.submitRow) {
+    return { parent: els.submitRow, mode: "after" };
+  }
+  // 旁白／無欄位：掛在表單標題下
+  return { parent: els.sheetCallout, mode: "host" };
+}
+
+function placeCallout(node, controlsHtml) {
+  clearCallouts();
+  const cast = castOf(node.speaker);
+  const color = TONE[cast.tone] || TONE.guide;
+  const anchor = calloutAnchor(node);
+  const box = document.createElement("div");
+  box.className = "field-callout show";
+  if (anchor.mode !== "field") box.classList.add("callout-anchor");
+  box.style.setProperty("--speaker", color);
+  box.innerHTML = `
+    <div class="callout-arrow" aria-hidden="true"></div>
+    <div class="callout-card">
+      <p class="callout-speaker">${escapeHtml(cast.label)}</p>
+      <p class="callout-line">${escapeHtml(node.line)}</p>
+      <div class="callout-foot">${controlsHtml}</div>
+    </div>`;
+  if (anchor.mode === "field") {
+    // 緊貼欄位下方，箭頭指向上方正在填的那一格
+    anchor.parent.insertAdjacentElement("afterend", box);
+  } else if (anchor.mode === "after") {
+    anchor.parent.insertAdjacentElement("afterend", box);
+  } else {
+    anchor.parent.appendChild(box);
+  }
+  // 欄位＋氣泡一起進視野，不要上下跳
+  const focusEl =
+    anchor.mode === "field" ? anchor.parent : box;
+  focusEl.scrollIntoView({ block: "center", behavior: "smooth" });
+  return box;
 }
 
 function sleep(ms) {
@@ -1113,9 +1146,10 @@ async function typeValue(fieldId, text) {
   state.values[fieldId] = text;
 }
 
-async function applyFills(node) {
+function prepareReveal(node) {
   if (node.unlockSection) state.openSections.add(node.unlockSection);
   (node.unlock || []).forEach((id) => state.unlocked.add(id));
+  Object.keys(node.fill || {}).forEach((id) => state.unlocked.add(id));
   if (node.showSubmit) els.submitRow.classList.add("open");
   paintShowForm();
   if (node.focus) setFocus(node.focus);
@@ -1124,6 +1158,9 @@ async function applyFills(node) {
     void els.submitBtn.offsetWidth;
     els.submitBtn.classList.add("flash");
   }
+}
+
+async function applyFills(node) {
   const fills = node.fill || {};
   const keys = Object.keys(fills);
   if (!keys.length) return;
@@ -1170,29 +1207,26 @@ function clearSummary() {
 
 function setBusy(busy) {
   state.busy = busy;
-  const next = els.foot.querySelector(".next-btn");
-  if (next) next.disabled = busy;
+  document.querySelectorAll(".field-callout .next-btn").forEach((next) => {
+    next.disabled = busy;
+  });
 }
 
-async function renderNode() {
-  const node = data.nodes[state.nodeId];
-  if (!node) return;
-  const cast = castOf(node.speaker);
-  els.speaker.textContent = cast.label;
-  els.speaker.style.setProperty("--speaker", TONE[cast.tone] || TONE.guide);
-  els.line.textContent = node.line;
-  setActor(node.speaker);
-  if (node.summary) renderSummary();
-  else clearSummary();
+function bindCalloutControls(box) {
+  box.querySelectorAll(".choice-btn").forEach((btn) => {
+    btn.addEventListener("click", () => go(btn.getAttribute("data-next")));
+  });
+  box.querySelectorAll("[data-action=restart]").forEach((b) => b.addEventListener("click", restartShow));
+  box.querySelectorAll("[data-action=open-form]").forEach((b) =>
+    b.addEventListener("click", () => setMode("form"))
+  );
+  box.querySelector(".next-btn")?.addEventListener("click", advance);
+}
 
-  const progressText = `第 ${state.stepCount + 1} 幕 · 已填 ${Object.keys(state.values).length} 欄`;
-  setBusy(true);
-  await applyFills(node);
-  setBusy(false);
-
+function controlsHtmlFor(node, progressText) {
   if (node.choices?.length) {
     els.tap.hidden = true;
-    els.foot.innerHTML = `<span class="progress">${progressText}</span>
+    return `<span class="progress">${progressText}</span>
       <div class="choices">
         ${node.choices
           .map(
@@ -1201,12 +1235,10 @@ async function renderNode() {
           )
           .join("")}
       </div>`;
-    els.foot.querySelectorAll(".choice-btn").forEach((btn) => {
-      btn.addEventListener("click", () => go(btn.getAttribute("data-next")));
-    });
-  } else if (node.ending && node.cta?.length) {
+  }
+  if (node.ending && node.cta?.length) {
     els.tap.hidden = true;
-    els.foot.innerHTML = `<span class="progress">結局</span>
+    return `<span class="progress">結局</span>
       <div class="cta-row">
         ${node.cta
           .map((c) => {
@@ -1220,16 +1252,26 @@ async function renderNode() {
           })
           .join("")}
       </div>`;
-    els.foot.querySelectorAll("[data-action=restart]").forEach((b) => b.addEventListener("click", restartShow));
-    els.foot.querySelectorAll("[data-action=open-form]").forEach((b) =>
-      b.addEventListener("click", () => setMode("form"))
-    );
-  } else {
-    els.tap.hidden = false;
-    els.foot.innerHTML = `<span class="progress">${progressText}</span>
-      <button type="button" class="next-btn">下一步 ▸</button>`;
-    els.foot.querySelector(".next-btn")?.addEventListener("click", advance);
   }
+  els.tap.hidden = false;
+  return `<span class="progress">${progressText}</span>
+    <button type="button" class="next-btn">下一步 ▸</button>`;
+}
+
+async function renderNode() {
+  const node = data.nodes[state.nodeId];
+  if (!node) return;
+  if (node.summary) renderSummary();
+  else clearSummary();
+
+  const progressText = `第 ${state.stepCount + 1} 幕 · 已填 ${Object.keys(state.values).length} 欄`;
+  // 先開欄位＋掛氣泡（注意力先落在要講的那一點），再打字
+  prepareReveal(node);
+  const box = placeCallout(node, controlsHtmlFor(node, progressText));
+  bindCalloutControls(box);
+  setBusy(true);
+  await applyFills(node);
+  setBusy(false);
 }
 
 function go(nextId) {
@@ -1257,6 +1299,7 @@ function restartShow() {
   els.submitRow.classList.remove("open");
   els.submitBtn.classList.remove("flash");
   clearSummary();
+  clearCallouts();
   paintShowForm();
   setFocus(null);
   renderNode();
@@ -1447,7 +1490,7 @@ function setMode(mode) {
     renderNode();
   } else {
     els.eyebrow.textContent = "真實表單 · 統一系統";
-    els.actor.classList.remove("show");
+    clearCallouts();
     els.submitRow.classList.remove("open");
     buildRealForm();
   }
