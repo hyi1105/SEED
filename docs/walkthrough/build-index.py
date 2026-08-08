@@ -71,16 +71,18 @@ def main() -> None:
       </div>
       <div id="form-type-tabs" class="mode-tabs" aria-label="獨立表單種類" hidden></div>
       <div id="doc-list" hidden></div>
-      <article class="form-sheet" id="form-sheet">
-        <h2 class="form-title" id="form-title">表單</h2>
-        <p class="form-sub" id="form-sub">空白開始 · 一欄一欄填進去</p>
-        <div class="status-wrap"><span class="status-pill" id="status-pill">草稿</span></div>
-        <div id="sections"></div>
-        <div class="submit-row" id="submit-row">
-          <button type="button" class="submit-btn" id="submit-btn">送出</button>
-        </div>
-        <div class="action-row" id="action-row"></div>
-      </article>
+      <div class="stage-fit" id="stage-fit">
+        <article class="form-sheet" id="form-sheet">
+          <h2 class="form-title" id="form-title">表單</h2>
+          <p class="form-sub" id="form-sub">空白開始 · 一欄一欄填進去</p>
+          <div class="status-wrap"><span class="status-pill" id="status-pill">草稿</span></div>
+          <div id="sections"></div>
+          <div class="submit-row" id="submit-row">
+            <button type="button" class="submit-btn" id="submit-btn">送出</button>
+          </div>
+          <div class="action-row" id="action-row"></div>
+        </article>
+      </div>
       <aside class="summary" id="summary"></aside>
       <p class="form-note">JSON：forms[] 同級獨立表單 · links 圖狀關聯 · show 腳本 · demo 單據／範例。畫面只是播放器。</p>
     </div>

@@ -33,6 +33,8 @@ const els = {
   fileImport: document.getElementById("file-import"),
   formSheet: document.getElementById("form-sheet"),
   formToolbar: document.getElementById("form-toolbar"),
+  stageWrap: document.getElementById("stage-wrap"),
+  stageFit: document.getElementById("stage-fit"),
 };
 
 const state = {
@@ -464,10 +466,89 @@ function paintShowForm() {
   els.statusPill.textContent = `${form.level || ""} ${status()}`.trim();
 }
 
+function stepFieldIds(node) {
+  if (!node) return [];
+  const ids = new Set();
+  if (node.focus && node.focus !== "btn_submit") ids.add(node.focus);
+  (node.reveal || []).forEach((id) => ids.add(id));
+  Object.keys(resolveFills(node)).forEach((id) => ids.add(id));
+  return [...ids];
+}
+
+function resetStudyFit() {
+  const host = els.stageFit;
+  if (!host) return;
+  host.style.transform = "";
+  host.style.marginBottom = "";
+  host.dataset.scale = "1";
+}
+
+/** Show：自動縮放，讓當步重點欄位落在同一可視範圍（學習不斷斷續續） */
+function fitStudyView(node, focusId) {
+  const stage = els.stageWrap;
+  const host = els.stageFit;
+  if (!stage || !host || state.mode !== "show" || state.boardOnly) {
+    resetStudyFit();
+    return;
+  }
+
+  const ids = stepFieldIds(node);
+  const nodes = ids
+    .map((id) => document.getElementById(`field-${id}`))
+    .filter((el) => el && el.classList.contains("open"));
+
+  resetStudyFit();
+  if (!nodes.length) {
+    if (focusId === "btn_submit") {
+      els.submitRow?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }
+    return;
+  }
+
+  // 先量自然尺寸，再決定要縮多少
+  requestAnimationFrame(() => {
+    const stageRect = stage.getBoundingClientRect();
+    const hostRect = host.getBoundingClientRect();
+    if (stageRect.height < 40 || hostRect.width < 40) return;
+
+    let top = Infinity;
+    let bottom = -Infinity;
+    nodes.forEach((el) => {
+      const r = el.getBoundingClientRect();
+      top = Math.min(top, r.top);
+      bottom = Math.max(bottom, r.bottom);
+    });
+    // 帶一點區塊標題上下文
+    const first = nodes[0].closest(".section");
+    const label = first?.querySelector(".section-label");
+    if (label) top = Math.min(top, label.getBoundingClientRect().top);
+
+    const clusterH = Math.max(48, bottom - top);
+    const viewH = Math.max(120, stage.clientHeight);
+    // 只縮小、不放大；留一點邊，避免貼邊
+    const scale = Math.min(1, Math.max(0.62, (viewH * 0.9) / clusterH));
+
+    host.style.transformOrigin = "top center";
+    host.style.transform = `scale(${scale})`;
+    host.dataset.scale = String(scale);
+    // transform 不佔版面：補負 margin，捲動高度才對
+    const naturalH = host.offsetHeight;
+    host.style.marginBottom = `${Math.min(0, naturalH * (scale - 1))}px`;
+
+    const targetId = focusId && focusId !== "btn_submit" ? focusId : ids[0];
+    const target = document.getElementById(`field-${targetId}`) || nodes[0];
+    requestAnimationFrame(() => {
+      target?.scrollIntoView({ block: "center", behavior: "smooth" });
+    });
+  });
+}
+
 function setFocus(fieldId) {
   document.querySelectorAll(".field").forEach((el) => el.classList.remove("focus"));
   if (!fieldId || fieldId === "btn_submit") {
-    if (fieldId === "btn_submit") {
+    if (state.mode === "show") {
+      fitStudyView(nodeOf(state.nodeId), fieldId);
+    } else if (fieldId === "btn_submit") {
       els.submitRow.scrollIntoView({ block: "nearest", behavior: "smooth" });
     }
     return;
@@ -475,7 +556,11 @@ function setFocus(fieldId) {
   const el = document.getElementById(`field-${fieldId}`);
   if (el) {
     el.classList.add("focus");
-    el.scrollIntoView({ block: "center", behavior: "smooth" });
+    if (state.mode === "show") {
+      fitStudyView(nodeOf(state.nodeId), fieldId);
+    } else {
+      el.scrollIntoView({ block: "center", behavior: "smooth" });
+    }
   }
 }
 
@@ -512,6 +597,7 @@ function prepareReveal(node) {
   if (node.showSubmit) els.submitRow.classList.add("open");
   paintShowForm();
   if (node.focus) setFocus(node.focus);
+  else fitStudyView(node, null);
   if (node.flashSubmit) {
     els.submitBtn.classList.remove("flash");
     void els.submitBtn.offsetWidth;
@@ -1261,6 +1347,8 @@ function setMode(mode) {
   clearSummary();
   els.actionRow.classList.remove("open");
   state.boardOnly = mode === "board";
+  // 離開 Show 時還原縮放，避免表單／設定被壓扁
+  if (mode !== "show") resetStudyFit();
 
   if (mode === "show") {
     els.eyebrow.textContent = "Show · LINE 對話";
@@ -1344,6 +1432,15 @@ function bindChrome() {
       e.preventDefault();
       goPrev();
     }
+  });
+  window.addEventListener("resize", () => {
+    clearTimeout(window.__studyFitResize);
+    window.__studyFitResize = setTimeout(() => {
+      if (state.mode === "show" && !state.boardOnly) {
+        const node = nodeOf(state.nodeId);
+        if (node) fitStudyView(node, node.focus || null);
+      }
+    }, 120);
   });
 }
 

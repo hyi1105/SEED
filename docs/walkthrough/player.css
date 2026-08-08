@@ -112,6 +112,21 @@ html, body {
     radial-gradient(800px 360px at 12% 0%, rgba(23, 143, 114, 0.16), transparent 55%),
     linear-gradient(165deg, #e4efe9, #d2e0d8 55%, #c5d6cc);
 }
+/* Show 學習用：把表單當地圖縮放，一次看見當步重點欄位範圍 */
+.stage-fit {
+  width: min(560px, 100%);
+  margin: 0 auto;
+  transform-origin: top center;
+  transition: transform 0.28s ease;
+  will-change: transform;
+}
+.app[data-mode="settings"] .stage-fit {
+  width: min(720px, 100%);
+}
+.stage-fit .form-sheet {
+  width: 100%;
+  margin: 0;
+}
 .form-toolbar {
   display: none;
   width: min(720px, 100%);
@@ -134,7 +149,67 @@ html, body {
   position: relative;
   z-index: 2;
 }
-.app[data-mode="settings"] .form-sheet { width: min(720px, 100%); }
+/* Show：展示用欄位盡量小，一屏能連貫看懂 */
+.app[data-mode="show"] .form-sheet {
+  padding: 0.65rem 0.7rem 0.8rem;
+  box-shadow: 0 10px 24px rgba(26, 36, 32, 0.1);
+}
+.app[data-mode="show"] .form-title {
+  font-size: 1.05rem;
+  margin: 0;
+}
+.app[data-mode="show"] .form-sub {
+  margin: 0.15rem 0 0.45rem;
+  font-size: 0.68rem;
+}
+.app[data-mode="show"] .status-pill {
+  margin: 0 auto 0.45rem;
+  padding: 0.12rem 0.5rem;
+  font-size: 0.68rem;
+}
+.app[data-mode="show"] .section {
+  margin-bottom: 0.45rem;
+  padding-bottom: 0.35rem;
+}
+.app[data-mode="show"] .section-label {
+  margin: 0 0 0.25rem;
+  font-size: 0.62rem;
+}
+.app[data-mode="show"] .fields {
+  gap: 0.18rem;
+}
+.app[data-mode="show"] .field {
+  grid-template-columns: 3.8rem minmax(0, 1fr);
+  gap: 0.25rem;
+  padding: 0.12rem 0.28rem;
+  border-radius: 6px;
+  border-width: 1px;
+}
+.app[data-mode="show"] .field.focus {
+  box-shadow: 0 0 0 2px rgba(12, 92, 77, 0.1);
+}
+.app[data-mode="show"] .field-label {
+  font-size: 0.68rem;
+  padding-top: 0.18rem;
+  line-height: 1.2;
+}
+.app[data-mode="show"] .field-value {
+  min-height: 1.2rem;
+  padding: 0.18rem 0.35rem;
+  border-radius: 5px;
+  font-size: 0.78rem;
+  line-height: 1.25;
+}
+.app[data-mode="show"] .field-value.empty {
+  font-size: 0.72rem;
+}
+.app[data-mode="show"] .form-note {
+  display: none;
+}
+.app[data-mode="show"] .submit-btn {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.78rem;
+}
 .form-title {
   margin: 0.15rem 0 0.15rem;
   font-family: var(--font-d);
@@ -585,5 +660,90 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
   .form-sheet { padding: 1rem 0.85rem 1.15rem; }
   .form-title { font-size: 1.25rem; }
   .field { grid-template-columns: 4.4rem minmax(0, 1fr); }
-  .app[data-mode="show"] { grid-template-rows: auto 1fr minmax(240px, 42dvh); }
+  /* Show：頂欄／聊天都讓路，表單一屏多看一點 */
+  .app[data-mode="show"] {
+    grid-template-rows: auto 1fr minmax(140px, 26dvh);
+  }
+  .app[data-mode="show"] .top {
+    gap: 0.3rem;
+    padding: 0.35rem 0.5rem;
+  }
+  .app[data-mode="show"] .brand .eyebrow {
+    display: none;
+  }
+  .app[data-mode="show"] .brand h1 {
+    font-size: 0.95rem;
+  }
+  .app[data-mode="show"] .top a.seed {
+    padding: 0.2rem 0.4rem;
+    font-size: 0.78rem;
+  }
+  .app[data-mode="show"] .pack-pick-label {
+    display: none;
+  }
+  .app[data-mode="show"] .pack-pick select {
+    max-width: 7.5rem;
+    font-size: 0.72rem;
+    padding: 0.2rem 0.45rem;
+  }
+  .app[data-mode="show"] .mode-tab,
+  .app[data-mode="show"] .top .ghost-btn,
+  .app[data-mode="show"] .top .import-row {
+    padding: 0.22rem 0.5rem;
+    font-size: 0.68rem;
+  }
+  /* 學習時少用：匯入／匯出／重來收到第二視覺層 */
+  .app[data-mode="show"] .top > .import-row,
+  .app[data-mode="show"] .top > #btn-export-top,
+  .app[data-mode="show"] .top > #btn-restart {
+    display: none;
+  }
+  .app[data-mode="show"] .stage-wrap {
+    padding: 0.35rem 0.4rem 0.45rem;
+  }
+  .app[data-mode="show"] .form-sheet {
+    padding: 0.4rem 0.45rem 0.5rem;
+  }
+  .app[data-mode="show"] .form-title {
+    font-size: 0.9rem;
+  }
+  .app[data-mode="show"] .form-sub {
+    display: none;
+  }
+  .app[data-mode="show"] .field {
+    grid-template-columns: 3.2rem minmax(0, 1fr);
+    gap: 0.2rem;
+    padding: 0.08rem 0.22rem;
+  }
+  .app[data-mode="show"] .field-label {
+    font-size: 0.62rem;
+    padding-top: 0.12rem;
+  }
+  .app[data-mode="show"] .field-value {
+    min-height: 1.1rem;
+    padding: 0.12rem 0.28rem;
+    font-size: 0.72rem;
+  }
+  .app[data-mode="show"] .chat-log {
+    padding: 0.4rem 0.5rem;
+    gap: 0.3rem;
+  }
+  .app[data-mode="show"] .bubble {
+    padding: 0.35rem 0.5rem;
+    font-size: 0.78rem;
+    line-height: 1.3;
+  }
+  .app[data-mode="show"] .bubble-who,
+  .app[data-mode="show"] .who {
+    font-size: 0.62rem;
+  }
+  .app[data-mode="show"] .chat-bar {
+    padding: 0.3rem 0.5rem 0.45rem;
+    gap: 0.25rem;
+  }
+  .app[data-mode="show"] .nav-btn,
+  .app[data-mode="show"] .choice-btn {
+    padding: 0.35rem 0.55rem;
+    font-size: 0.75rem;
+  }
 }
