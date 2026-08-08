@@ -121,11 +121,12 @@ status: active
 
 ## 已落地（2026-08-08）
 
-- **統一入口** `docs/walkthrough/index.html`：`Show` + `表單`（導引／簡報／演示已拿掉）
-- 同一份 `vn/leave.json`：邊講邊填腳本 ＋ 真實欄位／角色／actions 狀態機
-- 表單可切申請人／主管／HR，送出／同意／退回／拒絕／核准；存 localStorage
+- **統一入口** `docs/walkthrough/index.html`：`Show` + `表單` + `設定`（導引／簡報／演示已拿掉）
+- **畫面／資料分開**：播放器只讀 JSON；`form+acl+actions`（人讀）／`show`（腳本）／`demo`（範例）三層
+- Show：底下 LINE 式對話＋上一步／下一步；上方表單跟著填
+- 設定：事後改必填／可看／可編，可匯入／匯出 JSON
 - 地圖改掛 `map.html`（可選）
-- 契約：`docs/walkthrough/SKILL.md`（任意系統統一成這份 JSON）
+- 契約：`docs/walkthrough/SKILL.md` · 源碼 `player.js` / `player.css`
 
 ## 待續
 

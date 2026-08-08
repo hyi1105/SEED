@@ -21,7 +21,7 @@
   --guide: #0c5c4d;
   --manager: #b45309;
   --hr: #6d4a9e;
-  --danger: #b42318;
+  --chat-bg: #74b89a;
   --font-d: "Fraunces", "Noto Sans TC", serif;
   --font-b: "Noto Sans TC", sans-serif;
   --font-ui: "Outfit", "Noto Sans TC", sans-serif;
@@ -38,6 +38,9 @@ html, body {
   height: 100dvh;
   display: grid;
   grid-template-rows: auto 1fr;
+}
+.app[data-mode="show"] {
+  grid-template-rows: auto 1fr minmax(220px, 38dvh);
 }
 .top {
   z-index: 5;
@@ -77,12 +80,12 @@ html, body {
   letter-spacing: -0.02em;
   line-height: 1.15;
 }
-.mode-tabs, .sys-tabs {
+.mode-tabs {
   display: flex;
   gap: 0.3rem;
   flex-wrap: wrap;
 }
-.mode-tab, .sys-tab, .role-tab, .ghost-btn, .primary-btn {
+.mode-tab, .role-tab, .ghost-btn, .primary-btn {
   border: 1px solid var(--line);
   background: #fff;
   border-radius: 999px;
@@ -96,7 +99,7 @@ html, body {
   display: inline-flex;
   align-items: center;
 }
-.mode-tab.active, .sys-tab.active, .role-tab.active {
+.mode-tab.active, .role-tab.active {
   background: var(--brand);
   border-color: var(--brand);
   color: #fff;
@@ -119,6 +122,17 @@ html, body {
     radial-gradient(800px 360px at 12% 0%, rgba(23, 143, 114, 0.16), transparent 55%),
     linear-gradient(165deg, #e4efe9, #d2e0d8 55%, #c5d6cc);
 }
+.form-toolbar {
+  display: none;
+  width: min(720px, 100%);
+  margin: 0 auto 0.65rem;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+}
+.app[data-mode="form"] .form-toolbar,
+.app[data-mode="settings"] .form-toolbar { display: flex; }
 .form-sheet {
   width: min(560px, 100%);
   margin: 0 auto;
@@ -129,20 +143,8 @@ html, body {
   padding: 1.15rem 1.2rem 1.35rem;
   position: relative;
   z-index: 2;
-  animation: sheet-in 0.45s ease both;
 }
-@keyframes sheet-in {
-  from { opacity: 0; transform: translateY(10px) scale(0.985); }
-  to { opacity: 1; transform: none; }
-}
-.form-sheet::before {
-  content: "";
-  position: absolute;
-  left: 0; right: 0; top: 0;
-  height: 5px;
-  background: linear-gradient(90deg, var(--brand), var(--brand-2));
-  border-radius: 4px 4px 0 0;
-}
+.app[data-mode="settings"] .form-sheet { width: min(720px, 100%); }
 .form-title {
   margin: 0.15rem 0 0.15rem;
   font-family: var(--font-d);
@@ -155,6 +157,7 @@ html, body {
   font-size: 0.78rem;
   color: var(--muted);
 }
+.status-wrap { text-align: center; }
 .status-pill {
   display: inline-flex;
   margin: 0 auto 0.85rem;
@@ -166,14 +169,13 @@ html, body {
   font-weight: 700;
   font-family: var(--font-ui);
 }
-.status-wrap { text-align: center; }
 .section {
   display: none;
   margin-bottom: 0.95rem;
   padding-bottom: 0.75rem;
   border-bottom: 1px dashed rgba(26, 36, 32, 0.12);
 }
-.section.open { display: block; animation: fade-up 0.3s ease both; }
+.section.open { display: block; }
 .section-label {
   margin: 0 0 0.5rem;
   font-family: var(--font-ui);
@@ -192,8 +194,9 @@ html, body {
   padding: 0.4rem 0.5rem;
   border-radius: 10px;
   border: 1.5px solid transparent;
+  transition: border-color 0.25s, background 0.25s, box-shadow 0.25s;
 }
-.field.open { display: grid; animation: fade-up 0.3s ease both; }
+.field.open { display: grid; }
 .field.focus {
   border-color: color-mix(in srgb, var(--brand) 55%, white);
   background: rgba(12, 92, 77, 0.06);
@@ -229,6 +232,7 @@ html, body {
   animation: blink 0.8s step-end infinite;
   color: var(--brand);
 }
+@keyframes blink { 50% { opacity: 0; } }
 .field-input:disabled, .field-input[readonly] {
   background: #f3f6f4;
   color: var(--muted);
@@ -240,11 +244,6 @@ html, body {
   margin-top: -0.15rem;
 }
 textarea.field-input { min-height: 4rem; resize: vertical; }
-@keyframes blink { 50% { opacity: 0; } }
-@keyframes fade-up {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: none; }
-}
 .submit-row, .action-row {
   display: none;
   flex-wrap: wrap;
@@ -279,7 +278,7 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
   position: relative;
   z-index: 2;
 }
-.summary.show { display: block; animation: fade-up 0.35s ease both; }
+.summary.show { display: block; }
 .summary h2 { margin: 0 0 0.3rem; font-family: var(--font-d); font-size: 1.1rem; }
 .summary > p { margin: 0 0 0.7rem; color: var(--muted); font-size: 0.86rem; }
 .table-card {
@@ -292,118 +291,183 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
 .table-card h3 { margin: 0 0 0.3rem; font-family: var(--font-ui); font-size: 0.9rem; }
 .table-card ul { margin: 0; padding-left: 1.05rem; font-size: 0.82rem; line-height: 1.45; }
 .table-card .origin { color: var(--muted); font-size: 0.76rem; }
+.form-note {
+  width: min(720px, 100%);
+  margin: 0.65rem auto 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+  text-align: center;
+}
 .progress { font-size: 0.72rem; color: var(--muted); font-family: var(--font-ui); }
-.choices { display: flex; flex-direction: column; gap: 0.4rem; width: 100%; }
-.choice-btn, .next-btn, .cta-btn {
+
+/* LINE-like chat */
+.chat {
+  display: none;
+  grid-template-rows: 1fr auto;
+  background: var(--chat-bg);
+  border-top: 1px solid rgba(0,0,0,0.08);
+  z-index: 6;
+  min-height: 0;
+}
+.app[data-mode="show"] .chat { display: grid; }
+.chat-log {
+  overflow: auto;
+  padding: 0.75rem 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  -webkit-overflow-scrolling: touch;
+}
+.bubble-row {
+  display: flex;
+  flex-direction: column;
+  max-width: min(92%, 420px);
+  animation: fade-up 0.25s ease both;
+}
+.bubble-row.me { align-self: flex-end; align-items: flex-end; }
+.bubble-row.them { align-self: flex-start; align-items: flex-start; }
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+.bubble-who {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: rgba(0,0,0,0.55);
+  margin: 0 0.35rem 0.15rem;
+  font-family: var(--font-ui);
+}
+.bubble {
+  padding: 0.55rem 0.75rem;
+  border-radius: 16px;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+  word-break: break-word;
+}
+.bubble-row.me .bubble {
+  background: #d8f5a2;
+  border-bottom-right-radius: 6px;
+}
+.bubble-row.them .bubble { border-bottom-left-radius: 6px; }
+.bubble-row.active .bubble {
+  outline: 2px solid rgba(12, 92, 77, 0.45);
+}
+.chat-bar {
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.55rem 0.75rem 0.7rem;
+  background: rgba(255,255,255,0.92);
+  border-top: 1px solid rgba(0,0,0,0.06);
+}
+.chat-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.choice-btn, .cta-btn, .nav-btn {
   border: 0;
   border-radius: 12px;
   padding: 0.55rem 0.85rem;
   font: inherit;
   font-weight: 700;
   cursor: pointer;
-  text-align: left;
 }
-.next-btn {
-  margin-left: auto;
-  background: var(--brand);
-  color: #fff;
-  min-width: 6.5rem;
-  text-align: center;
-}
-.next-btn:disabled { opacity: 0.55; cursor: wait; }
 .choice-btn {
   background: #fff;
   border: 1.5px solid color-mix(in srgb, var(--brand) 35%, white);
+  text-align: left;
 }
-.choice-btn:hover { background: var(--soft); border-color: var(--brand); }
-.cta-row { display: flex; flex-wrap: wrap; gap: 0.4rem; width: 100%; }
+.choice-btn:hover { background: var(--soft); }
+.cta-row { display: flex; flex-wrap: wrap; gap: 0.4rem; }
 .cta-btn {
   background: var(--brand);
   color: #fff;
-  text-align: center;
   text-decoration: none;
   display: inline-block;
+  text-align: center;
 }
 .cta-btn.ghost {
   background: #fff;
   color: var(--brand);
   border: 1.5px solid color-mix(in srgb, var(--brand) 35%, white);
 }
-
-/* 欄位旁對話：注意力只在一點 */
-.field-callout {
-  display: none;
-  margin: 0.05rem 0 0.55rem;
-  position: relative;
-  animation: fade-up 0.28s ease both;
-  z-index: 3;
-}
-.field-callout.show { display: block; }
-.field-callout .callout-arrow {
-  width: 0; height: 0;
-  margin-left: 6.2rem;
-  border-left: 9px solid transparent;
-  border-right: 9px solid transparent;
-  border-bottom: 10px solid color-mix(in srgb, var(--speaker, var(--guide)) 55%, white);
-}
-.field-callout .callout-card {
-  border: 1.5px solid color-mix(in srgb, var(--speaker, var(--guide)) 40%, white);
-  background: #fff;
-  border-radius: 14px;
-  padding: 0.65rem 0.75rem 0.7rem;
-  box-shadow: 0 10px 24px rgba(26, 36, 32, 0.1);
-}
-.field-callout .callout-speaker {
-  margin: 0 0 0.25rem;
-  font-family: var(--font-ui);
-  font-size: 0.74rem;
-  font-weight: 700;
-  letter-spacing: 0.03em;
-  color: var(--speaker, var(--guide));
-}
-.field-callout .callout-line {
-  margin: 0 0 0.55rem;
-  font-size: 0.94rem;
-  line-height: 1.5;
-}
-.field-callout .callout-foot {
+.chat-nav {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
   gap: 0.45rem;
+  align-items: center;
+}
+.nav-btn {
+  flex: 1;
+  background: #fff;
+  border: 1.5px solid var(--line);
+  color: var(--ink);
+}
+.nav-btn.primary {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #fff;
+}
+.nav-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Settings ACL */
+.settings-list { display: grid; gap: 0.65rem; }
+.acl-card {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 0.7rem 0.8rem;
+  background: #fff;
+}
+.acl-card h3 {
+  margin: 0 0 0.2rem;
+  font-family: var(--font-ui);
+  font-size: 0.95rem;
+}
+.acl-card .meaning {
+  margin: 0 0 0.55rem;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+.acl-grid {
+  display: grid;
+  gap: 0.35rem;
+}
+.acl-row {
+  display: grid;
+  grid-template-columns: 4.5rem 1fr;
+  gap: 0.4rem;
+  align-items: center;
+  font-size: 0.8rem;
+}
+.acl-row span { color: var(--muted); font-weight: 700; }
+.acl-checks {
+  display: flex;
   flex-wrap: wrap;
+  gap: 0.35rem 0.65rem;
 }
-.callout-anchor {
-  margin: 0.35rem 0 0.55rem;
-}
-.callout-anchor .callout-arrow { margin-left: 1.2rem; }
-.field.focus {
-  position: relative;
-}
-.field.focus .field-value {
-  border-color: color-mix(in srgb, var(--speaker, var(--brand)) 50%, white);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--speaker, var(--brand)) 16%, transparent);
-}
-.app[data-mode="form"] .field-callout { display: none !important; }
-.tap-catch {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  border: 0;
-  background: transparent;
+.acl-checks label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
   cursor: pointer;
 }
-.tap-catch[hidden] { display: none; }
-.form-toolbar {
-  display: none;
-  width: min(560px, 100%);
-  margin: 0 auto 0.65rem;
-  gap: 0.45rem;
+.settings-actions {
+  display: flex;
   flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
+  gap: 0.4rem;
+  justify-content: flex-end;
+  margin-top: 0.85rem;
 }
-.app[data-mode="form"] .form-toolbar { display: flex; }
+.import-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+}
 .toast {
   position: fixed;
   left: 50%;
@@ -421,19 +485,11 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
   max-width: min(90vw, 420px);
 }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-.form-note {
-  width: min(560px, 100%);
-  margin: 0.65rem auto 0;
-  font-size: 0.8rem;
-  color: var(--muted);
-  text-align: center;
-}
 @media (max-width: 640px) {
   .form-sheet { padding: 1rem 0.85rem 1.15rem; }
   .form-title { font-size: 1.25rem; }
   .field { grid-template-columns: 4.4rem minmax(0, 1fr); }
-  .field-callout .callout-line { font-size: 0.9rem; }
-  .field-callout .callout-arrow { margin-left: 5rem; }
+  .app[data-mode="show"] { grid-template-rows: auto 1fr minmax(240px, 42dvh); }
 }
 
   </style>
@@ -443,27 +499,31 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
     <header class="top">
       <a class="seed" href="../index.html">SEED</a>
       <div class="brand">
-        <p class="eyebrow" id="eyebrow">邊講邊填 · Show</p>
+        <p class="eyebrow" id="eyebrow">Show · LINE 對話</p>
         <h1 id="title">請假系統</h1>
       </div>
       <div class="mode-tabs" role="tablist" aria-label="模式">
         <button type="button" class="mode-tab active" data-mode="show">Show</button>
         <button type="button" class="mode-tab" data-mode="form">表單</button>
+        <button type="button" class="mode-tab" data-mode="settings">設定</button>
         <a class="mode-tab" href="./map.html?system=leave">地圖</a>
       </div>
+      <label class="ghost-btn import-row" style="border-radius:999px;padding:0.3rem 0.75rem;cursor:pointer">
+        匯入 JSON
+        <input type="file" id="file-import" accept="application/json,.json" hidden />
+      </label>
+      <button type="button" class="ghost-btn" id="btn-export-top" style="border-radius:999px;padding:0.3rem 0.75rem">匯出</button>
       <button type="button" class="ghost-btn" id="btn-restart" style="border-radius:999px;padding:0.3rem 0.75rem">重來</button>
     </header>
 
     <div class="stage-wrap" id="stage-wrap">
-      <button type="button" class="tap-catch" id="tap-catch" aria-label="下一步"></button>
       <div class="form-toolbar" id="form-toolbar">
         <div class="mode-tabs" id="role-tabs" aria-label="角色"></div>
-        <span class="progress">資料存在此瀏覽器（localStorage）</span>
+        <span class="progress">資料／設定存在此瀏覽器；可匯出 JSON 帶走</span>
       </div>
       <article class="form-sheet" id="form-sheet">
         <h2 class="form-title" id="form-title">請假申請單</h2>
         <p class="form-sub" id="form-sub">空白開始 · 一欄一欄填進去</p>
-        <div id="sheet-callout" class="callout-anchor"></div>
         <div class="status-wrap"><span class="status-pill" id="status-pill">草稿</span></div>
         <div id="sections"></div>
         <div class="submit-row" id="submit-row">
@@ -472,28 +532,33 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
         <div class="action-row" id="action-row"></div>
       </article>
       <aside class="summary" id="summary"></aside>
-      <p class="form-note">任意系統只要換成同一份 JSON（form + show 腳本 + actions），就能邊講邊填、也能真的辦單。</p>
+      <p class="form-note">JSON 分三層：form／actions（人讀設定）· show（教學腳本）· demo（範例值）。畫面只是播放器。</p>
     </div>
 
+    <section class="chat" id="chat" aria-label="對話">
+      <div class="chat-log" id="chat-log"></div>
+      <div class="chat-bar" id="chat-bar">
+        <div id="chat-extra"></div>
+        <div class="chat-nav">
+          <button type="button" class="nav-btn" id="btn-prev">〈 上一步</button>
+          <button type="button" class="nav-btn primary" id="btn-next">下一步 〉</button>
+        </div>
+      </div>
+    </section>
   </div>
   <div class="toast" id="toast" role="status"></div>
 
   <script type="application/json" id="vn-data">
 {
-  "id": "leave",
-  "title": "請假系統",
-  "subtitle": "邊講邊填 · 同一份資料也能自己辦單",
-  "cast": [
-    { "id": "narrator", "label": "旁白", "tone": "soft" },
-    { "id": "you", "label": "林小華", "tone": "user" },
-    { "id": "guide", "label": "系統顧問", "tone": "guide" },
-    { "id": "manager", "label": "陳主管", "tone": "manager" },
-    { "id": "hr", "label": "王人事", "tone": "hr" }
-  ],
+  "meta": {
+    "id": "leave",
+    "title": "請假系統",
+    "subtitle": "畫面與資料分開 · 邊講邊填也能真的辦單"
+  },
   "roles": [
-    { "id": "applicant", "label": "申請人", "persona": "林小華" },
-    { "id": "manager", "label": "主管", "persona": "陳主管" },
-    { "id": "hr", "label": "HR", "persona": "王人事" }
+    { "id": "applicant", "label": "申請人" },
+    { "id": "manager", "label": "主管" },
+    { "id": "hr", "label": "HR" }
   ],
   "form": {
     "title": "請假申請單",
@@ -508,36 +573,48 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
             "label": "姓名",
             "type": "text",
             "placeholder": "請輸入姓名",
-            "required": true,
-            "write": ["applicant"],
-            "meaning": "這張單的主人"
+            "meaning": "這張單的主人",
+            "acl": {
+              "requiredFrom": ["applicant"],
+              "read": ["applicant", "manager", "hr"],
+              "write": ["applicant"]
+            }
           },
           {
             "id": "phone",
             "label": "電話",
             "type": "tel",
             "placeholder": "請假期間聯絡電話",
-            "required": true,
-            "write": ["applicant"],
-            "meaning": "請假期間找得到人"
+            "meaning": "請假期間找得到人",
+            "acl": {
+              "requiredFrom": ["applicant"],
+              "read": ["applicant", "manager", "hr"],
+              "write": ["applicant"]
+            }
           },
           {
             "id": "address",
             "label": "地址",
             "type": "text",
             "placeholder": "休假時的聯絡地址",
-            "required": false,
-            "write": ["applicant"],
-            "meaning": "休假時的聯絡地點"
+            "meaning": "休假時的聯絡地點",
+            "acl": {
+              "requiredFrom": [],
+              "read": ["applicant", "manager", "hr"],
+              "write": ["applicant"]
+            }
           },
           {
             "id": "last_day",
             "label": "最後一天",
             "type": "date",
             "placeholder": "請假結束日",
-            "required": true,
-            "write": ["applicant"],
-            "meaning": "假單結束點、方便排班"
+            "meaning": "假單結束點、方便排班",
+            "acl": {
+              "requiredFrom": ["applicant"],
+              "read": ["applicant", "manager", "hr"],
+              "write": ["applicant"]
+            }
           }
         ]
       },
@@ -550,33 +627,49 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
             "label": "簽核人",
             "type": "text",
             "placeholder": "主管姓名",
-            "write": ["manager"],
+            "meaning": "留下是誰在簽",
             "autoPersona": true,
-            "meaning": "留下是誰在簽"
+            "acl": {
+              "requiredFrom": ["manager"],
+              "read": ["applicant", "manager", "hr"],
+              "write": ["manager"]
+            }
           },
           {
             "id": "m_date",
             "label": "日期",
             "type": "date",
-            "write": ["manager"],
+            "meaning": "何時看過這張單",
             "autoToday": true,
-            "meaning": "何時看過這張單"
+            "acl": {
+              "requiredFrom": ["manager"],
+              "read": ["applicant", "manager", "hr"],
+              "write": ["manager"]
+            }
           },
           {
             "id": "m_status",
             "label": "狀態",
             "type": "select",
             "options": ["同意", "不同意"],
-            "write": ["manager"],
-            "meaning": "推動或停住流程"
+            "meaning": "推動或停住流程",
+            "acl": {
+              "requiredFrom": ["manager"],
+              "read": ["applicant", "manager", "hr"],
+              "write": ["manager"]
+            }
           },
           {
             "id": "m_comment",
             "label": "意見",
             "type": "textarea",
             "placeholder": "同意或不同意的原因",
-            "write": ["manager"],
-            "meaning": "為什麼這樣決定"
+            "meaning": "為什麼這樣決定",
+            "acl": {
+              "requiredFrom": ["manager"],
+              "read": ["applicant", "manager", "hr"],
+              "write": ["manager"]
+            }
           }
         ]
       },
@@ -588,33 +681,49 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
             "id": "h_name",
             "label": "處理人",
             "type": "text",
-            "write": ["hr"],
+            "meaning": "誰登錄假別",
             "autoPersona": true,
-            "meaning": "誰登錄假別"
+            "acl": {
+              "requiredFrom": ["hr"],
+              "read": ["applicant", "manager", "hr"],
+              "write": ["hr"]
+            }
           },
           {
             "id": "h_date",
             "label": "日期",
             "type": "date",
-            "write": ["hr"],
+            "meaning": "何時處理",
             "autoToday": true,
-            "meaning": "何時處理"
+            "acl": {
+              "requiredFrom": ["hr"],
+              "read": ["applicant", "manager", "hr"],
+              "write": ["hr"]
+            }
           },
           {
             "id": "h_status",
             "label": "狀態",
             "type": "select",
             "options": ["完成", "補件"],
-            "write": ["hr"],
-            "meaning": "HR 處理結果"
+            "meaning": "HR 處理結果",
+            "acl": {
+              "requiredFrom": ["hr"],
+              "read": ["applicant", "manager", "hr"],
+              "write": ["hr"]
+            }
           },
           {
             "id": "h_comment",
             "label": "意見",
             "type": "textarea",
             "placeholder": "備註",
-            "write": ["hr"],
-            "meaning": "假別或補件說明"
+            "meaning": "假別或補件說明",
+            "acl": {
+              "requiredFrom": [],
+              "read": ["applicant", "manager", "hr"],
+              "write": ["hr"]
+            }
           }
         ]
       },
@@ -626,8 +735,12 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
             "id": "final_status",
             "label": "結案狀態",
             "type": "text",
-            "write": [],
-            "meaning": "整張單目前走到哪"
+            "meaning": "整張單目前走到哪",
+            "acl": {
+              "requiredFrom": [],
+              "read": ["applicant", "manager", "hr"],
+              "write": []
+            }
           }
         ]
       }
@@ -649,10 +762,7 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
       "role": "manager",
       "whenStatus": ["待一簽"],
       "require": ["m_comment"],
-      "set": {
-        "m_status": "同意",
-        "final_status": "待二簽"
-      },
+      "set": { "m_status": "同意", "final_status": "待二簽" },
       "autoPersona": ["m_name"],
       "autoToday": ["m_date"],
       "message": "已同意。輪到 HR 處理。"
@@ -663,10 +773,7 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
       "role": "manager",
       "whenStatus": ["待一簽"],
       "require": ["m_comment"],
-      "set": {
-        "m_status": "不同意",
-        "final_status": "待修改"
-      },
+      "set": { "m_status": "不同意", "final_status": "待修改" },
       "autoPersona": ["m_name"],
       "autoToday": ["m_date"],
       "message": "已退回。申請人可修改後再送。"
@@ -677,10 +784,7 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
       "role": "manager",
       "whenStatus": ["待一簽"],
       "require": ["m_comment"],
-      "set": {
-        "m_status": "不同意",
-        "final_status": "已拒絕"
-      },
+      "set": { "m_status": "不同意", "final_status": "已拒絕" },
       "autoPersona": ["m_name"],
       "autoToday": ["m_date"],
       "message": "已拒絕結案。若要請假需重開一張。"
@@ -690,209 +794,12 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
       "label": "完成並核准",
       "role": "hr",
       "whenStatus": ["待二簽"],
-      "set": {
-        "h_status": "完成",
-        "final_status": "已核准"
-      },
+      "set": { "h_status": "完成", "final_status": "已核准" },
       "autoPersona": ["h_name"],
       "autoToday": ["h_date"],
       "message": "已核准結案。特休可登錄。"
     }
   ],
-  "start": "s01",
-  "nodes": {
-    "s01": {
-      "speaker": "narrator",
-      "line": "桌上放著一張空白的請假單。今天我們不講資料庫——我們直接填給你看。",
-      "next": "s02"
-    },
-    "s02": {
-      "speaker": "you",
-      "line": "下週要請假。系統總得知道是誰請的吧？",
-      "next": "s03"
-    },
-    "s03": {
-      "speaker": "guide",
-      "line": "對。所以第一欄是「姓名」——不是裝飾，是這張單的主人。我先幫你填上：林小華。",
-      "focus": "name",
-      "unlock": ["name"],
-      "fill": { "name": "林小華" },
-      "typewriter": true,
-      "next": "s04"
-    },
-    "s04": {
-      "speaker": "guide",
-      "line": "請假期間人可能不在座位。若有急事，要用電話找得到你——所以下一欄是「電話」。",
-      "focus": "phone",
-      "unlock": ["phone"],
-      "fill": { "phone": "0912-345-678" },
-      "typewriter": true,
-      "next": "s05"
-    },
-    "s05": {
-      "speaker": "you",
-      "line": "對了，休假時我可能回老家。要不要留個地址？",
-      "next": "s06"
-    },
-    "s06": {
-      "speaker": "guide",
-      "line": "好主意。「地址」不是多餘欄位——是請假期間的聯絡地點。我填上你老家的地址。",
-      "focus": "address",
-      "unlock": ["address"],
-      "fill": { "address": "台南市中西區民生路一段 88 號" },
-      "typewriter": true,
-      "next": "s07"
-    },
-    "s07": {
-      "speaker": "guide",
-      "line": "還差最關鍵的：你要請到哪一天？「最後一天」決定假單的結束點，也方便排班。",
-      "focus": "last_day",
-      "unlock": ["last_day"],
-      "fill": { "last_day": "2026-08-15" },
-      "typewriter": true,
-      "next": "s08"
-    },
-    "s08": {
-      "speaker": "guide",
-      "line": "申請內容齊了。按下「送出」——單子才會離開你的手，交給主管。",
-      "focus": "btn_submit",
-      "showSubmit": true,
-      "flashSubmit": true,
-      "fill": { "final_status": "待一簽" },
-      "unlock": ["final_status"],
-      "next": "s09"
-    },
-    "s09": {
-      "speaker": "manager",
-      "line": "我是陳主管。單子到我這裡了——系統要留下「是誰在簽」，不是 anonymous。",
-      "focus": "m_name",
-      "unlockSection": "manager",
-      "unlock": ["m_name"],
-      "fill": { "m_name": "陳主管" },
-      "typewriter": true,
-      "next": "s10"
-    },
-    "s10": {
-      "speaker": "manager",
-      "line": "「日期」記下我何時看過這張單。以後若有爭議，時間軸要對得起來。",
-      "focus": "m_date",
-      "unlock": ["m_date"],
-      "fill": { "m_date": "2026-08-09" },
-      "typewriter": true,
-      "next": "s11"
-    },
-    "s11": {
-      "speaker": "manager",
-      "line": "「狀態」是我的決定：同意，或不同意。這一行會推著流程往下走——或停住。",
-      "focus": "m_status",
-      "unlock": ["m_status"],
-      "next": "s12"
-    },
-    "s12": {
-      "speaker": "guide",
-      "line": "關鍵選擇來了：若主管不同意，這張單該怎麼收場？",
-      "choices": [
-        {
-          "id": "approve",
-          "label": "先看「同意」這條路（繼續給 HR）",
-          "next": "b_approve"
-        },
-        {
-          "id": "return",
-          "label": "不同意 → 退回給林小華改",
-          "next": "b_return"
-        },
-        {
-          "id": "reject",
-          "label": "不同意 → 直接拒絕結案",
-          "next": "b_reject"
-        }
-      ]
-    },
-    "b_approve": {
-      "speaker": "manager",
-      "line": "我填「同意」。意見寫一句：准假，好好休息。單子往 HR 流。",
-      "focus": "m_comment",
-      "unlock": ["m_comment"],
-      "fill": {
-        "m_status": "同意",
-        "m_comment": "准假，好好休息",
-        "final_status": "待二簽"
-      },
-      "typewriter": true,
-      "next": "s13"
-    },
-    "b_return": {
-      "speaker": "manager",
-      "line": "我填「不同意」。意見：最後一天跟專案衝期，請改日期再送。狀態變「待修改」——你可以改完再送。",
-      "focus": "m_comment",
-      "unlock": ["m_comment"],
-      "fill": {
-        "m_status": "不同意",
-        "m_comment": "跟專案衝期，請改日期再送",
-        "final_status": "待修改"
-      },
-      "typewriter": true,
-      "next": "s_end_early"
-    },
-    "b_reject": {
-      "speaker": "manager",
-      "line": "我填「不同意」，並直接結案為「已拒絕」。這次不能再改——若要請假，得重開一張。",
-      "focus": "m_comment",
-      "unlock": ["m_comment"],
-      "fill": {
-        "m_status": "不同意",
-        "m_comment": "人力不足，本次不核准",
-        "final_status": "已拒絕"
-      },
-      "typewriter": true,
-      "next": "s_end_early"
-    },
-    "s13": {
-      "speaker": "hr",
-      "line": "我是王人事。主管准了之後，輪到我登錄假別——所以也要留下「處理人」是誰。",
-      "focus": "h_name",
-      "unlockSection": "hr",
-      "unlock": ["h_name"],
-      "fill": { "h_name": "王人事" },
-      "typewriter": true,
-      "next": "s14"
-    },
-    "s14": {
-      "speaker": "hr",
-      "line": "日期、狀態、意見——跟主管區一樣的道理：誰、何時、結果、為什麼。我標「完成」，並結案為「已核准」。",
-      "focus": "h_comment",
-      "unlock": ["h_date", "h_status", "h_comment"],
-      "fill": {
-        "h_date": "2026-08-10",
-        "h_status": "完成",
-        "h_comment": "特休已登錄",
-        "final_status": "已核准"
-      },
-      "typewriter": true,
-      "next": "s15"
-    },
-    "s15": {
-      "speaker": "narrator",
-      "line": "你剛才親手看過：每一欄都是因為「有人要做一件事」才出現的。不是先畫表，是先過日子。",
-      "next": "end"
-    },
-    "s_end_early": {
-      "speaker": "narrator",
-      "line": "這條路在主管關就停了。你仍然看得到：不同意時，意見欄與結案狀態為什麼重要。",
-      "next": "end"
-    },
-    "end": {
-      "speaker": "guide",
-      "line": "故事看完了。同一張單，現在換你自己填——申請人、主管、HR 都能切換角色真的辦單。",
-      "ending": true,
-      "summary": true,
-      "cta": [
-        { "label": "自己填一張真表單", "action": "open-form" },
-        { "label": "再看一次故事", "action": "restart" }
-      ]
-    }
-  },
   "tables": [
     {
       "id": "leave",
@@ -916,7 +823,228 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
         { "label": "意見", "origin": "為什麼這樣決定" }
       ]
     }
-  ]
+  ],
+  "show": {
+    "cast": [
+      { "id": "narrator", "label": "旁白", "tone": "soft" },
+      { "id": "you", "label": "申請人", "tone": "user" },
+      { "id": "guide", "label": "系統顧問", "tone": "guide" },
+      { "id": "manager", "label": "主管", "tone": "manager" },
+      { "id": "hr", "label": "HR", "tone": "hr" }
+    ],
+    "start": "s01",
+    "nodes": {
+      "s01": {
+        "speaker": "narrator",
+        "line": "桌上放著一張空白的請假單。今天我們不講資料庫——直接填給你看。",
+        "next": "s02"
+      },
+      "s02": {
+        "speaker": "you",
+        "line": "下週要請假。系統總得知道是誰請的吧？",
+        "next": "s03"
+      },
+      "s03": {
+        "speaker": "guide",
+        "line": "對。所以第一欄是「姓名」——不是裝飾，是這張單的主人。我先幫你填上示範值。",
+        "focus": "name",
+        "reveal": ["name"],
+        "fillFromDemo": ["name"],
+        "typewriter": true,
+        "next": "s04"
+      },
+      "s04": {
+        "speaker": "guide",
+        "line": "請假期間人可能不在座位。若有急事要找得到你——所以下一欄是「電話」。",
+        "focus": "phone",
+        "reveal": ["phone"],
+        "fillFromDemo": ["phone"],
+        "typewriter": true,
+        "next": "s05"
+      },
+      "s05": {
+        "speaker": "you",
+        "line": "對了，休假時我可能回老家。要不要留個地址？",
+        "next": "s06"
+      },
+      "s06": {
+        "speaker": "guide",
+        "line": "好主意。「地址」不是多餘欄位——是請假期間的聯絡地點。",
+        "focus": "address",
+        "reveal": ["address"],
+        "fillFromDemo": ["address"],
+        "typewriter": true,
+        "next": "s07"
+      },
+      "s07": {
+        "speaker": "guide",
+        "line": "還差最關鍵的：你要請到哪一天？「最後一天」決定假單結束點，也方便排班。",
+        "focus": "last_day",
+        "reveal": ["last_day"],
+        "fillFromDemo": ["last_day"],
+        "typewriter": true,
+        "next": "s08"
+      },
+      "s08": {
+        "speaker": "guide",
+        "line": "申請內容齊了。按下「送出」——單子才會離開你的手，交給主管。",
+        "focus": "btn_submit",
+        "showSubmit": true,
+        "flashSubmit": true,
+        "reveal": ["final_status"],
+        "fillFromDemo": ["final_status_pending"],
+        "mapFill": { "final_status_pending": "final_status" },
+        "next": "s09"
+      },
+      "s09": {
+        "speaker": "manager",
+        "line": "我是主管。單子到我這裡了——系統要留下「是誰在簽」，不是 anonymous。",
+        "focus": "m_name",
+        "unlockSection": "manager",
+        "reveal": ["m_name"],
+        "fillFromDemo": ["m_name"],
+        "typewriter": true,
+        "next": "s10"
+      },
+      "s10": {
+        "speaker": "manager",
+        "line": "「日期」記下我何時看過這張單。以後若有爭議，時間軸要對得起來。",
+        "focus": "m_date",
+        "reveal": ["m_date"],
+        "fillFromDemo": ["m_date"],
+        "typewriter": true,
+        "next": "s11"
+      },
+      "s11": {
+        "speaker": "manager",
+        "line": "「狀態」是我的決定：同意，或不同意。這一行會推著流程往下走——或停住。",
+        "focus": "m_status",
+        "reveal": ["m_status"],
+        "next": "s12"
+      },
+      "s12": {
+        "speaker": "guide",
+        "line": "關鍵選擇來了：若主管不同意，這張單該怎麼收場？",
+        "choices": [
+          { "id": "approve", "label": "先看「同意」這條路（繼續給 HR）", "next": "b_approve" },
+          { "id": "return", "label": "不同意 → 退回給申請人改", "next": "b_return" },
+          { "id": "reject", "label": "不同意 → 直接拒絕結案", "next": "b_reject" }
+        ]
+      },
+      "b_approve": {
+        "speaker": "manager",
+        "line": "我填「同意」。意見寫一句：准假，好好休息。單子往 HR 流。",
+        "focus": "m_comment",
+        "reveal": ["m_comment"],
+        "fillFromDemo": ["m_comment_ok", "m_status_ok", "final_status_hr"],
+        "mapFill": {
+          "m_comment_ok": "m_comment",
+          "m_status_ok": "m_status",
+          "final_status_hr": "final_status"
+        },
+        "typewriter": true,
+        "next": "s13"
+      },
+      "b_return": {
+        "speaker": "manager",
+        "line": "我填「不同意」。請改日期再送。狀態變「待修改」——可以改完再送。",
+        "focus": "m_comment",
+        "reveal": ["m_comment"],
+        "fillFromDemo": ["m_comment_return", "m_status_no", "final_status_revise"],
+        "mapFill": {
+          "m_comment_return": "m_comment",
+          "m_status_no": "m_status",
+          "final_status_revise": "final_status"
+        },
+        "typewriter": true,
+        "next": "s_end_early"
+      },
+      "b_reject": {
+        "speaker": "manager",
+        "line": "我填「不同意」，並直接結案為「已拒絕」。這次不能再改——若要請假，得重開一張。",
+        "focus": "m_comment",
+        "reveal": ["m_comment"],
+        "fillFromDemo": ["m_comment_reject", "m_status_no", "final_status_rejected"],
+        "mapFill": {
+          "m_comment_reject": "m_comment",
+          "m_status_no": "m_status",
+          "final_status_rejected": "final_status"
+        },
+        "typewriter": true,
+        "next": "s_end_early"
+      },
+      "s13": {
+        "speaker": "hr",
+        "line": "我是人事。主管准了之後，輪到我登錄假別——所以也要留下「處理人」是誰。",
+        "focus": "h_name",
+        "unlockSection": "hr",
+        "reveal": ["h_name"],
+        "fillFromDemo": ["h_name"],
+        "typewriter": true,
+        "next": "s14"
+      },
+      "s14": {
+        "speaker": "hr",
+        "line": "日期、狀態、意見——跟主管區一樣的道理。我標「完成」，並結案為「已核准」。",
+        "focus": "h_comment",
+        "reveal": ["h_date", "h_status", "h_comment"],
+        "fillFromDemo": ["h_date", "h_status", "h_comment", "final_status_done"],
+        "mapFill": { "final_status_done": "final_status" },
+        "typewriter": true,
+        "next": "s15"
+      },
+      "s15": {
+        "speaker": "narrator",
+        "line": "你剛才看過：每一欄都是因為「有人要做一件事」才出現。不是先畫表，是先過日子。",
+        "next": "end"
+      },
+      "s_end_early": {
+        "speaker": "narrator",
+        "line": "這條路在主管關就停了。你仍然看得到：不同意時，意見欄與結案狀態為什麼重要。",
+        "next": "end"
+      },
+      "end": {
+        "speaker": "guide",
+        "line": "故事看完了。可到「表單」自己辦單，或到「設定」調整誰必填／誰能看／誰能編，再匯出 JSON。",
+        "ending": true,
+        "summary": true,
+        "cta": [
+          { "label": "自己填一張真表單", "action": "open-form" },
+          { "label": "調整欄位權限", "action": "open-settings" },
+          { "label": "再看一次故事", "action": "restart" }
+        ]
+      }
+    }
+  },
+  "demo": {
+    "persona": {
+      "applicant": "林小華",
+      "manager": "陳主管",
+      "hr": "王人事"
+    },
+    "values": {
+      "name": "林小華",
+      "phone": "0912-345-678",
+      "address": "台南市中西區民生路一段 88 號",
+      "last_day": "2026-08-15",
+      "final_status_pending": "待一簽",
+      "m_name": "陳主管",
+      "m_date": "2026-08-09",
+      "m_status_ok": "同意",
+      "m_status_no": "不同意",
+      "m_comment_ok": "准假，好好休息",
+      "m_comment_return": "跟專案衝期，請改日期再送",
+      "m_comment_reject": "人力不足，本次不核准",
+      "final_status_hr": "待二簽",
+      "final_status_revise": "待修改",
+      "final_status_rejected": "已拒絕",
+      "h_name": "王人事",
+      "h_date": "2026-08-10",
+      "h_status": "完成",
+      "h_comment": "特休已登錄",
+      "final_status_done": "已核准"
+    }
+  }
 }
 
   </script>
@@ -929,7 +1057,8 @@ const TONE = {
   hr: "#6d4a9e",
 };
 
-const data = JSON.parse(document.getElementById("vn-data").textContent);
+/** @type {any} */
+let pack = null;
 
 const els = {
   app: document.getElementById("app"),
@@ -942,40 +1071,45 @@ const els = {
   submitBtn: document.getElementById("submit-btn"),
   actionRow: document.getElementById("action-row"),
   statusPill: document.getElementById("status-pill"),
-  sheetCallout: document.getElementById("sheet-callout"),
-  tap: document.getElementById("tap-catch"),
   summary: document.getElementById("summary"),
   toast: document.getElementById("toast"),
   roleTabs: document.getElementById("role-tabs"),
-  formToolbar: document.getElementById("form-toolbar"),
+  chatLog: document.getElementById("chat-log"),
+  chatBar: document.getElementById("chat-bar"),
+  btnPrev: document.getElementById("btn-prev"),
+  btnNext: document.getElementById("btn-next"),
+  fileImport: document.getElementById("file-import"),
 };
 
 const state = {
-  mode: "show", // show | form
-  nodeId: data.start,
+  mode: "show",
+  nodeId: null,
   values: {},
   unlocked: new Set(),
   openSections: new Set(["apply"]),
-  stepCount: 0,
   busy: false,
   typeToken: 0,
-  roleId: data.roles?.[0]?.id || "applicant",
+  roleId: null,
+  history: [], // node ids visited for prev
+  chat: [], // {id, speaker, line, side}
 };
 
-function storageKey() {
-  return `seed-form:${data.id || "system"}`;
+function storageKeyDoc() {
+  return `seed-form:${pack.meta.id}`;
+}
+function storageKeyPack() {
+  return `seed-pack:${pack.meta.id}`;
 }
 
-function castOf(id) {
-  return data.cast.find((c) => c.id === id) || { id, label: id, tone: "guide" };
-}
-
-function roleOf(id) {
-  return data.roles.find((r) => r.id === id);
+function toast(msg) {
+  els.toast.textContent = msg;
+  els.toast.classList.add("show");
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => els.toast.classList.remove("show"), 2400);
 }
 
 function escapeHtml(s) {
-  return String(s)
+  return String(s ?? "")
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
@@ -986,33 +1120,135 @@ function today() {
   return new Date().toISOString().slice(0, 10);
 }
 
+function castOf(id) {
+  return pack.show.cast.find((c) => c.id === id) || { id, label: id, tone: "guide" };
+}
+
+function roleOf(id) {
+  return pack.roles.find((r) => r.id === id);
+}
+
 function allFields() {
-  return data.form.sections.flatMap((s) => s.fields.map((f) => ({ ...f, sectionId: s.id })));
+  return pack.form.sections.flatMap((s) =>
+    s.fields.map((f) => ({ ...f, sectionId: s.id }))
+  );
 }
 
 function fieldById(id) {
   return allFields().find((f) => f.id === id);
 }
 
-function status() {
-  return state.values[data.form.statusField] || "草稿";
-}
-
-function toast(msg) {
-  els.toast.textContent = msg;
-  els.toast.classList.add("show");
-  clearTimeout(toast._t);
-  toast._t = setTimeout(() => els.toast.classList.remove("show"), 2400);
+function aclOf(field) {
+  return (
+    field.acl || {
+      requiredFrom: field.required ? ["applicant"] : [],
+      read: pack.roles.map((r) => r.id),
+      write: field.write || [],
+    }
+  );
 }
 
 function canWrite(field, roleId) {
-  const w = field.write || [];
-  return w.includes(roleId);
+  return (aclOf(field).write || []).includes(roleId);
+}
+
+function canRead(field, roleId) {
+  const read = aclOf(field).read;
+  if (!read || !read.length) return true;
+  return read.includes(roleId);
+}
+
+function isRequired(field, roleId) {
+  return (aclOf(field).requiredFrom || []).includes(roleId);
+}
+
+function status() {
+  return state.values[pack.form.statusField] || "草稿";
+}
+
+function demoValue(key) {
+  return pack.demo?.values?.[key];
+}
+
+function nodeOf(id) {
+  return pack.show.nodes[id];
+}
+
+function sleep(ms) {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
+function persistDoc() {
+  localStorage.setItem(
+    storageKeyDoc(),
+    JSON.stringify({ values: state.values, updatedAt: new Date().toISOString() })
+  );
+}
+
+function loadDoc() {
+  try {
+    const raw = localStorage.getItem(storageKeyDoc());
+    if (raw) return JSON.parse(raw);
+  } catch (_) {}
+  return { values: { [pack.form.statusField]: "草稿" } };
+}
+
+function persistPackEdits() {
+  localStorage.setItem(storageKeyPack(), JSON.stringify(pack));
+}
+
+function loadPackEdits(base) {
+  try {
+    const raw = localStorage.getItem(`seed-pack:${base.meta.id}`);
+    if (!raw) return base;
+    const edited = JSON.parse(raw);
+    // keep show/demo from base if missing; prefer edited form/actions/roles
+    return {
+      ...base,
+      ...edited,
+      show: edited.show || base.show,
+      demo: edited.demo || base.demo,
+      form: edited.form || base.form,
+      actions: edited.actions || base.actions,
+      roles: edited.roles || base.roles,
+      tables: edited.tables || base.tables,
+      meta: { ...base.meta, ...edited.meta },
+    };
+  } catch (_) {
+    return base;
+  }
+}
+
+function snapshotShow() {
+  return {
+    values: { ...state.values },
+    unlocked: [...state.unlocked],
+    openSections: [...state.openSections],
+  };
+}
+
+function restoreShow(snap) {
+  state.values = { ...snap.values };
+  state.unlocked = new Set(snap.unlocked);
+  state.openSections = new Set(snap.openSections);
+}
+
+function resolveFills(node) {
+  const out = {};
+  const map = node.mapFill || {};
+  for (const demoKey of node.fillFromDemo || []) {
+    const fieldId = map[demoKey] || demoKey;
+    const val = demoValue(demoKey);
+    if (val != null) out[fieldId] = String(val);
+  }
+  Object.assign(out, node.fill || {});
+  return out;
 }
 
 function buildShowForm() {
-  els.formTitle.textContent = data.form.title;
-  els.sections.innerHTML = data.form.sections
+  els.formTitle.textContent = pack.form.title;
+  els.formSub.textContent = "Show · 上方表單隨對話填入";
+  els.sections.innerHTML = pack.form.sections
     .map(
       (sec) => `<section class="section" data-section="${sec.id}" id="sec-${sec.id}">
         <p class="section-label">${escapeHtml(sec.label)}</p>
@@ -1032,14 +1268,15 @@ function buildShowForm() {
 }
 
 function paintShowForm() {
-  data.form.sections.forEach((sec) => {
+  pack.form.sections.forEach((sec) => {
     const secEl = document.getElementById(`sec-${sec.id}`);
     const showSec =
       state.openSections.has(sec.id) ||
       sec.fields.some((f) => state.unlocked.has(f.id));
-    secEl.classList.toggle("open", showSec);
+    secEl?.classList.toggle("open", showSec);
     sec.fields.forEach((f) => {
       const el = document.getElementById(`field-${f.id}`);
+      if (!el) return;
       const valEl = el.querySelector("[data-value]");
       el.classList.toggle("open", state.unlocked.has(f.id));
       const val = state.values[f.id];
@@ -1054,72 +1291,22 @@ function paintShowForm() {
       }
     });
   });
-  if (els.statusPill) {
-    els.statusPill.textContent = status();
-  }
-}
-
-function clearCallouts() {
-  document.querySelectorAll(".field-callout").forEach((el) => el.remove());
-  if (els.sheetCallout) els.sheetCallout.innerHTML = "";
+  els.statusPill.textContent = status();
 }
 
 function setFocus(fieldId) {
   document.querySelectorAll(".field").forEach((el) => el.classList.remove("focus"));
-  if (!fieldId || fieldId === "btn_submit") return;
+  if (!fieldId || fieldId === "btn_submit") {
+    if (fieldId === "btn_submit") {
+      els.submitRow.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }
+    return;
+  }
   const el = document.getElementById(`field-${fieldId}`);
   if (el) {
     el.classList.add("focus");
     el.scrollIntoView({ block: "center", behavior: "smooth" });
   }
-}
-
-function calloutAnchor(node) {
-  const focus = node.focus;
-  if (focus && focus !== "btn_submit") {
-    const field = document.getElementById(`field-${focus}`);
-    if (field) return { parent: field, mode: "field" };
-  }
-  if (focus === "btn_submit" && els.submitRow) {
-    return { parent: els.submitRow, mode: "after" };
-  }
-  // 旁白／無欄位：掛在表單標題下
-  return { parent: els.sheetCallout, mode: "host" };
-}
-
-function placeCallout(node, controlsHtml) {
-  clearCallouts();
-  const cast = castOf(node.speaker);
-  const color = TONE[cast.tone] || TONE.guide;
-  const anchor = calloutAnchor(node);
-  const box = document.createElement("div");
-  box.className = "field-callout show";
-  if (anchor.mode !== "field") box.classList.add("callout-anchor");
-  box.style.setProperty("--speaker", color);
-  box.innerHTML = `
-    <div class="callout-arrow" aria-hidden="true"></div>
-    <div class="callout-card">
-      <p class="callout-speaker">${escapeHtml(cast.label)}</p>
-      <p class="callout-line">${escapeHtml(node.line)}</p>
-      <div class="callout-foot">${controlsHtml}</div>
-    </div>`;
-  if (anchor.mode === "field") {
-    // 緊貼欄位下方，箭頭指向上方正在填的那一格
-    anchor.parent.insertAdjacentElement("afterend", box);
-  } else if (anchor.mode === "after") {
-    anchor.parent.insertAdjacentElement("afterend", box);
-  } else {
-    anchor.parent.appendChild(box);
-  }
-  // 欄位＋氣泡一起進視野，不要上下跳
-  const focusEl =
-    anchor.mode === "field" ? anchor.parent : box;
-  focusEl.scrollIntoView({ block: "center", behavior: "smooth" });
-  return box;
-}
-
-function sleep(ms) {
-  return new Promise((r) => setTimeout(r, ms));
 }
 
 async function typeValue(fieldId, text) {
@@ -1139,7 +1326,7 @@ async function typeValue(fieldId, text) {
   for (let i = 1; i <= text.length; i++) {
     if (token !== state.typeToken) return;
     valEl.textContent = text.slice(0, i);
-    await sleep(text.length > 18 ? 28 : 42);
+    await sleep(text.length > 18 ? 24 : 36);
   }
   if (token !== state.typeToken) return;
   valEl.classList.remove("typing");
@@ -1148,8 +1335,8 @@ async function typeValue(fieldId, text) {
 
 function prepareReveal(node) {
   if (node.unlockSection) state.openSections.add(node.unlockSection);
-  (node.unlock || []).forEach((id) => state.unlocked.add(id));
-  Object.keys(node.fill || {}).forEach((id) => state.unlocked.add(id));
+  (node.reveal || []).forEach((id) => state.unlocked.add(id));
+  Object.keys(resolveFills(node)).forEach((id) => state.unlocked.add(id));
   if (node.showSubmit) els.submitRow.classList.add("open");
   paintShowForm();
   if (node.focus) setFocus(node.focus);
@@ -1161,7 +1348,7 @@ function prepareReveal(node) {
 }
 
 async function applyFills(node) {
-  const fills = node.fill || {};
+  const fills = resolveFills(node);
   const keys = Object.keys(fills);
   if (!keys.length) return;
   if (node.typewriter) {
@@ -1169,7 +1356,7 @@ async function applyFills(node) {
       state.unlocked.add(key);
       paintShowForm();
       await typeValue(key, String(fills[key]));
-      await sleep(100);
+      await sleep(80);
     }
   } else {
     for (const key of keys) {
@@ -1183,9 +1370,9 @@ async function applyFills(node) {
 function renderSummary() {
   els.summary.classList.add("show");
   els.summary.innerHTML = `
-    <h2>這個系統收成 ${data.tables.length} 張表</h2>
-    <p>每一欄都能追回剛才填表時說的那句話：</p>
-    ${data.tables
+    <h2>這個系統收成 ${(pack.tables || []).length} 張表</h2>
+    <p>每一欄都能追回剛才對話裡說的那句話：</p>
+    ${(pack.tables || [])
       .map(
         (t) => `<div class="table-card">
           <h3>${escapeHtml(t.label)}</h3>
@@ -1205,137 +1392,181 @@ function clearSummary() {
   els.summary.innerHTML = "";
 }
 
-function setBusy(busy) {
-  state.busy = busy;
-  document.querySelectorAll(".field-callout .next-btn").forEach((next) => {
-    next.disabled = busy;
-  });
+function appendChat(node, { replaceLast = false } = {}) {
+  const cast = castOf(node.speaker);
+  const side = cast.tone === "user" ? "me" : "them";
+  const item = {
+    id: `${state.nodeId}-${state.chat.length}`,
+    speaker: cast.label,
+    line: node.line,
+    side,
+    tone: cast.tone,
+  };
+  if (replaceLast && state.chat.length) state.chat.pop();
+  state.chat.push(item);
+  paintChat(item.id);
 }
 
-function bindCalloutControls(box) {
-  box.querySelectorAll(".choice-btn").forEach((btn) => {
-    btn.addEventListener("click", () => go(btn.getAttribute("data-next")));
-  });
-  box.querySelectorAll("[data-action=restart]").forEach((b) => b.addEventListener("click", restartShow));
-  box.querySelectorAll("[data-action=open-form]").forEach((b) =>
-    b.addEventListener("click", () => setMode("form"))
-  );
-  box.querySelector(".next-btn")?.addEventListener("click", advance);
+function paintChat(activeId) {
+  els.chatLog.innerHTML = state.chat
+    .map(
+      (m) => `<div class="bubble-row ${m.side} ${m.id === activeId ? "active" : ""}" data-bubble="${m.id}">
+        <div class="bubble-who">${escapeHtml(m.speaker)}</div>
+        <div class="bubble">${escapeHtml(m.line)}</div>
+      </div>`
+    )
+    .join("");
+  const last = els.chatLog.lastElementChild;
+  last?.scrollIntoView({ block: "end", behavior: "smooth" });
 }
 
-function controlsHtmlFor(node, progressText) {
+function paintChatBar(node) {
+  const atStart = state.history.length === 0;
+  els.btnPrev.disabled = atStart || state.busy;
+  els.btnNext.disabled = state.busy || !!(node.choices?.length) || !!node.ending;
+
+  let extra = "";
   if (node.choices?.length) {
-    els.tap.hidden = true;
-    return `<span class="progress">${progressText}</span>
-      <div class="choices">
-        ${node.choices
-          .map(
-            (c) =>
-              `<button type="button" class="choice-btn" data-next="${escapeHtml(c.next)}">${escapeHtml(c.label)}</button>`
-          )
-          .join("")}
-      </div>`;
+    extra = `<div class="chat-choices">
+      ${node.choices
+        .map(
+          (c) =>
+            `<button type="button" class="choice-btn" data-next="${escapeHtml(c.next)}">${escapeHtml(c.label)}</button>`
+        )
+        .join("")}
+    </div>`;
+  } else if (node.ending && node.cta?.length) {
+    els.btnNext.disabled = true;
+    extra = `<div class="cta-row">
+      ${node.cta
+        .map((c) => {
+          if (c.action === "open-form")
+            return `<button type="button" class="cta-btn" data-action="open-form">${escapeHtml(c.label)}</button>`;
+          if (c.action === "open-settings")
+            return `<button type="button" class="cta-btn" data-action="open-settings">${escapeHtml(c.label)}</button>`;
+          if (c.action === "restart")
+            return `<button type="button" class="cta-btn ghost" data-action="restart">${escapeHtml(c.label)}</button>`;
+          return "";
+        })
+        .join("")}
+    </div>`;
   }
-  if (node.ending && node.cta?.length) {
-    els.tap.hidden = true;
-    return `<span class="progress">結局</span>
-      <div class="cta-row">
-        ${node.cta
-          .map((c) => {
-            if (c.action === "open-form") {
-              return `<button type="button" class="cta-btn" data-action="open-form">${escapeHtml(c.label)}</button>`;
-            }
-            if (c.action === "open-map") {
-              return `<a class="cta-btn ghost" href="./map.html?system=leave">${escapeHtml(c.label)}</a>`;
-            }
-            return `<button type="button" class="cta-btn ghost" data-action="${escapeHtml(c.action)}">${escapeHtml(c.label)}</button>`;
-          })
-          .join("")}
-      </div>`;
+
+  const slot = document.getElementById("chat-extra");
+  if (slot) {
+    slot.innerHTML = extra;
+    slot.querySelectorAll(".choice-btn").forEach((btn) => {
+      btn.addEventListener("click", () => goNext(btn.getAttribute("data-next")));
+    });
+    slot.querySelectorAll("[data-action=open-form]").forEach((b) =>
+      b.addEventListener("click", () => setMode("form"))
+    );
+    slot.querySelectorAll("[data-action=open-settings]").forEach((b) =>
+      b.addEventListener("click", () => setMode("settings"))
+    );
+    slot.querySelectorAll("[data-action=restart]").forEach((b) =>
+      b.addEventListener("click", restartShow)
+    );
   }
-  els.tap.hidden = false;
-  return `<span class="progress">${progressText}</span>
-    <button type="button" class="next-btn">下一步 ▸</button>`;
 }
 
-async function renderNode() {
-  const node = data.nodes[state.nodeId];
+async function renderNode({ fromPrev = false } = {}) {
+  const node = nodeOf(state.nodeId);
   if (!node) return;
   if (node.summary) renderSummary();
   else clearSummary();
 
-  const progressText = `第 ${state.stepCount + 1} 幕 · 已填 ${Object.keys(state.values).length} 欄`;
-  // 先開欄位＋掛氣泡（注意力先落在要講的那一點），再打字
   prepareReveal(node);
-  const box = placeCallout(node, controlsHtmlFor(node, progressText));
-  bindCalloutControls(box);
-  setBusy(true);
-  await applyFills(node);
-  setBusy(false);
+  if (!fromPrev) appendChat(node);
+  else {
+    // prev: keep chat history trimmed already
+    paintChat(state.chat[state.chat.length - 1]?.id);
+  }
+  paintChatBar(node);
+
+  state.busy = true;
+  els.btnPrev.disabled = true;
+  els.btnNext.disabled = true;
+  if (!fromPrev) await applyFills(node);
+  else paintShowForm();
+  state.busy = false;
+  paintChatBar(node);
 }
 
-function go(nextId) {
-  if (state.busy || !nextId || !data.nodes[nextId]) return;
+function goNext(explicitNext) {
+  if (state.busy) return;
+  const node = nodeOf(state.nodeId);
+  if (!node) return;
+  if (node.choices?.length && !explicitNext) return;
+  if (node.ending && !explicitNext) return;
+  const nextId = explicitNext || node.next;
+  if (!nextId || !nodeOf(nextId)) return;
+  state.history.push({
+    nodeId: state.nodeId,
+    snap: snapshotShow(),
+    chatLen: state.chat.length,
+  });
   state.nodeId = nextId;
-  state.stepCount += 1;
   renderNode();
 }
 
-function advance() {
-  if (state.busy) return;
-  const node = data.nodes[state.nodeId];
-  if (!node || node.choices?.length || node.ending) return;
-  if (node.next) go(node.next);
+function goPrev() {
+  if (state.busy || !state.history.length) return;
+  const prev = state.history.pop();
+  state.typeToken += 1;
+  state.nodeId = prev.nodeId;
+  restoreShow(prev.snap);
+  state.chat = state.chat.slice(0, prev.chatLen);
+  els.submitRow.classList.toggle("open", state.unlocked.has("final_status") || !!nodeOf(state.nodeId)?.showSubmit);
+  // re-open submit if current or past had it
+  if (pack.show.nodes[state.nodeId]?.showSubmit) els.submitRow.classList.add("open");
+  paintShowForm();
+  renderNode({ fromPrev: true });
 }
 
 function restartShow() {
   state.typeToken += 1;
-  state.nodeId = data.start;
+  state.nodeId = pack.show.start;
   state.values = {};
   state.unlocked = new Set();
   state.openSections = new Set(["apply"]);
-  state.stepCount = 0;
+  state.history = [];
+  state.chat = [];
   state.busy = false;
   els.submitRow.classList.remove("open");
-  els.submitBtn.classList.remove("flash");
   clearSummary();
-  clearCallouts();
+  buildShowForm();
+  document.getElementById("sec-apply")?.classList.add("open");
   paintShowForm();
-  setFocus(null);
   renderNode();
 }
 
 /* ——— Real form ——— */
 
-function loadDoc() {
-  try {
-    const raw = localStorage.getItem(storageKey());
-    if (raw) return JSON.parse(raw);
-  } catch (_) {}
-  return { values: { final_status: "草稿" }, updatedAt: null };
-}
-
-function saveDoc(doc) {
-  localStorage.setItem(storageKey(), JSON.stringify(doc));
-}
-
 function buildRealForm() {
   const doc = loadDoc();
   state.values = { ...doc.values };
-  if (!state.values.final_status) state.values.final_status = "草稿";
+  if (!state.values[pack.form.statusField]) state.values[pack.form.statusField] = "草稿";
 
-  els.formTitle.textContent = data.form.title;
-  els.formSub.textContent = "同一份系統定義 · 可切角色真的辦單";
-  els.sections.innerHTML = data.form.sections
-    .map(
-      (sec) => `<section class="section open" data-section="${sec.id}">
+  els.formTitle.textContent = pack.form.title;
+  els.formSub.textContent = "真實表單 · 依角色 ACL 顯示／編輯";
+  els.sections.innerHTML = pack.form.sections
+    .map((sec) => {
+      const visibleFields = sec.fields.filter((f) => canRead(f, state.roleId));
+      if (!visibleFields.length) return "";
+      return `<section class="section open" data-section="${sec.id}">
         <p class="section-label">${escapeHtml(sec.label)}</p>
         <div class="fields">
-          ${sec.fields
+          ${visibleFields
             .map((f) => {
               const writable = canWrite(f, state.roleId);
+              const req = isRequired(f, state.roleId);
               const val = state.values[f.id] ?? "";
-              const meaning = f.meaning ? `<div class="field-hint">${escapeHtml(f.meaning)}</div>` : "";
+              const meaning = f.meaning
+                ? `<div class="field-hint">${escapeHtml(f.meaning)}${req ? " · 必填" : ""}</div>`
+                : req
+                  ? `<div class="field-hint">必填</div>`
+                  : "";
               let control = "";
               if (f.type === "select") {
                 const opts = (f.options || [])
@@ -1352,43 +1583,34 @@ function buildRealForm() {
                 control = `<input class="field-input" data-input="${f.id}" type="${escapeHtml(f.type || "text")}" value="${escapeHtml(val)}" placeholder="${escapeHtml(f.placeholder || "")}" ${writable ? "" : "readonly"} />`;
               }
               return `<div class="field open" data-field="${f.id}">
-                <div class="field-label">${escapeHtml(f.label)}</div>
+                <div class="field-label">${escapeHtml(f.label)}${req ? " *" : ""}</div>
                 ${control}
                 ${meaning}
               </div>`;
             })
             .join("")}
         </div>
-      </section>`
-    )
+      </section>`;
+    })
     .join("");
 
   els.sections.querySelectorAll("[data-input]").forEach((input) => {
     const sync = () => {
       state.values[input.getAttribute("data-input")] = input.value;
-      persist();
-      paintStatus();
-      // 不在此重繪 action-row：blur→change 會拆掉正在點的按鈕
+      persistDoc();
+      els.statusPill.textContent = status();
     };
     input.addEventListener("input", sync);
     input.addEventListener("change", sync);
   });
 
-  paintStatus();
-  renderActions();
-  renderRoleTabs();
-}
-
-function persist() {
-  saveDoc({ values: state.values, updatedAt: new Date().toISOString() });
-}
-
-function paintStatus() {
   els.statusPill.textContent = status();
+  renderRoleTabs();
+  renderActions();
 }
 
 function renderRoleTabs() {
-  els.roleTabs.innerHTML = (data.roles || [])
+  els.roleTabs.innerHTML = pack.roles
     .map(
       (r) =>
         `<button type="button" class="role-tab ${r.id === state.roleId ? "active" : ""}" data-role="${r.id}">${escapeHtml(r.label)}</button>`
@@ -1397,7 +1619,8 @@ function renderRoleTabs() {
   els.roleTabs.querySelectorAll("[data-role]").forEach((btn) => {
     btn.addEventListener("click", () => {
       state.roleId = btn.getAttribute("data-role");
-      buildRealForm();
+      if (state.mode === "form") buildRealForm();
+      else if (state.mode === "settings") buildSettings();
     });
   });
 }
@@ -1410,38 +1633,37 @@ function actionAvailable(action) {
 }
 
 function renderActions() {
-  const acts = (data.actions || []).filter(actionAvailable);
+  const acts = (pack.actions || []).filter(actionAvailable);
   els.submitRow.classList.remove("open");
-  if (!acts.length) {
-    els.actionRow.classList.remove("open");
-    els.actionRow.innerHTML = `<span class="progress">目前角色在「${escapeHtml(status())}」沒有可做的動作</span>`;
-    els.actionRow.classList.add("open");
-    return;
-  }
   els.actionRow.classList.add("open");
-  els.actionRow.innerHTML = acts
-    .map(
-      (a) =>
-        `<button type="button" class="primary-btn" data-action-id="${a.id}">${escapeHtml(a.label)}</button>`
-    )
-    .join("") +
-    `<button type="button" class="ghost-btn" id="btn-reset-doc">清空重填</button>`;
+  if (!acts.length) {
+    els.actionRow.innerHTML = `<span class="progress">目前角色在「${escapeHtml(status())}」沒有可做的動作</span>
+      <button type="button" class="ghost-btn" id="btn-reset-doc">清空重填</button>`;
+  } else {
+    els.actionRow.innerHTML =
+      acts
+        .map(
+          (a) =>
+            `<button type="button" class="primary-btn" data-action-id="${a.id}">${escapeHtml(a.label)}</button>`
+        )
+        .join("") +
+      `<button type="button" class="ghost-btn" id="btn-reset-doc">清空重填</button>`;
+  }
   els.actionRow.querySelectorAll("[data-action-id]").forEach((btn) => {
     btn.addEventListener("click", () => runAction(btn.getAttribute("data-action-id")));
   });
   document.getElementById("btn-reset-doc")?.addEventListener("click", () => {
     if (!confirm("清空這張單，從頭開始？")) return;
-    state.values = { final_status: "草稿" };
-    persist();
+    state.values = { [pack.form.statusField]: "草稿" };
+    persistDoc();
     buildRealForm();
     toast("已清空");
   });
 }
 
 function runAction(actionId) {
-  const action = data.actions.find((a) => a.id === actionId);
+  const action = pack.actions.find((a) => a.id === actionId);
   if (!action || !actionAvailable(action)) return;
-
   for (const req of action.require || []) {
     if (!String(state.values[req] || "").trim()) {
       const f = fieldById(req);
@@ -1450,18 +1672,129 @@ function runAction(actionId) {
       return;
     }
   }
-
-  const role = roleOf(state.roleId);
-  for (const id of action.autoPersona || []) {
-    state.values[id] = role?.persona || role?.label || "";
+  // also enforce ACL requiredFrom for current role on require list already; extra check:
+  for (const f of allFields()) {
+    if (isRequired(f, state.roleId) && canWrite(f, state.roleId)) {
+      if ((action.require || []).includes(f.id) && !String(state.values[f.id] || "").trim()) {
+        toast(`「${f.label}」為必填`);
+        return;
+      }
+    }
   }
-  for (const id of action.autoToday || []) {
-    state.values[id] = today();
-  }
+  const persona = pack.demo?.persona?.[state.roleId] || roleOf(state.roleId)?.label || "";
+  for (const id of action.autoPersona || []) state.values[id] = persona;
+  for (const id of action.autoToday || []) state.values[id] = today();
   Object.assign(state.values, action.set || {});
-  persist();
+  persistDoc();
   buildRealForm();
   toast(action.message || "已完成");
+}
+
+/* ——— Settings ACL ——— */
+
+function buildSettings() {
+  els.formTitle.textContent = "欄位設定";
+  els.formSub.textContent = "誰必填 · 誰可看 · 誰可編 · 改完可匯出 JSON";
+  els.statusPill.textContent = pack.meta.title;
+  els.submitRow.classList.remove("open");
+  els.actionRow.classList.remove("open");
+  els.actionRow.innerHTML = "";
+
+  els.sections.innerHTML = `<div class="settings-list">
+    ${allFields()
+      .map((f) => {
+        const acl = aclOf(f);
+        const checks = (key) =>
+          pack.roles
+            .map(
+              (r) => `<label><input type="checkbox" data-acl="${f.id}:${key}:${r.id}" ${(acl[key] || []).includes(r.id) ? "checked" : ""}/> ${escapeHtml(r.label)}</label>`
+            )
+            .join("");
+        return `<article class="acl-card" data-field-acl="${f.id}">
+          <h3>${escapeHtml(f.label)} <span class="progress">(${escapeHtml(f.id)})</span></h3>
+          <p class="meaning">${escapeHtml(f.meaning || "")}</p>
+          <div class="acl-grid">
+            <div class="acl-row"><span>必填</span><div class="acl-checks">${checks("requiredFrom")}</div></div>
+            <div class="acl-row"><span>可看</span><div class="acl-checks">${checks("read")}</div></div>
+            <div class="acl-row"><span>可編</span><div class="acl-checks">${checks("write")}</div></div>
+          </div>
+        </article>`;
+      })
+      .join("")}
+    <div class="settings-actions">
+      <button type="button" class="ghost-btn" id="btn-export">匯出 JSON</button>
+      <button type="button" class="primary-btn" id="btn-save-acl">儲存設定</button>
+    </div>
+  </div>`;
+
+  els.sections.querySelectorAll("[data-acl]").forEach((input) => {
+    input.addEventListener("change", () => {
+      const [fieldId, key, roleId] = input.getAttribute("data-acl").split(":");
+      const field = fieldById(fieldId);
+      if (!field.acl) field.acl = { requiredFrom: [], read: [], write: [] };
+      const set = new Set(field.acl[key] || []);
+      if (input.checked) set.add(roleId);
+      else set.delete(roleId);
+      field.acl[key] = [...set];
+    });
+  });
+
+  document.getElementById("btn-save-acl")?.addEventListener("click", () => {
+    persistPackEdits();
+    toast("已儲存設定（此瀏覽器）");
+  });
+  document.getElementById("btn-export")?.addEventListener("click", exportPack);
+  renderRoleTabs();
+}
+
+function exportPack() {
+  const blob = new Blob([JSON.stringify(pack, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `${pack.meta.id || "system"}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast("已匯出 JSON");
+}
+
+function importPackFile(file) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const json = JSON.parse(String(reader.result));
+      const normalized = normalizePack(json);
+      pack = normalized;
+      localStorage.removeItem(storageKeyPack());
+      persistPackEdits();
+      bootPack();
+      toast(`已載入：${pack.meta.title}`);
+    } catch (err) {
+      console.error(err);
+      toast("JSON 格式不正確");
+    }
+  };
+  reader.readAsText(file);
+}
+
+/** Accept new split format; light shim for older root-level cast/nodes */
+function normalizePack(raw) {
+  if (raw.meta && raw.form && raw.show) return raw;
+  if (raw.form && raw.nodes) {
+    return {
+      meta: { id: raw.id || "system", title: raw.title || "未命名系統", subtitle: raw.subtitle || "" },
+      roles: raw.roles || [],
+      form: raw.form,
+      actions: raw.actions || [],
+      tables: raw.tables || [],
+      show: {
+        cast: raw.cast || [],
+        start: raw.start,
+        nodes: raw.nodes,
+      },
+      demo: raw.demo || { values: {}, persona: {} },
+    };
+  }
+  throw new Error("缺少 meta/form/show");
 }
 
 function setMode(mode) {
@@ -1470,29 +1803,20 @@ function setMode(mode) {
   document.querySelectorAll(".mode-tab[data-mode]").forEach((btn) => {
     btn.classList.toggle("active", btn.getAttribute("data-mode") === mode);
   });
-  els.tap.hidden = mode !== "show";
   clearSummary();
+  els.actionRow.classList.remove("open");
 
   if (mode === "show") {
-    els.eyebrow.textContent = "邊講邊填 · Show";
-    els.formSub.textContent = "空白開始 · 一欄一欄填進去";
-    els.actionRow.classList.remove("open");
-    els.actionRow.innerHTML = "";
-    state.typeToken += 1;
-    state.nodeId = data.start;
-    state.values = {};
-    state.unlocked = new Set();
-    state.openSections = new Set(["apply"]);
-    state.stepCount = 0;
-    buildShowForm();
-    document.getElementById("sec-apply")?.classList.add("open");
-    paintShowForm();
-    renderNode();
-  } else {
-    els.eyebrow.textContent = "真實表單 · 統一系統";
-    clearCallouts();
-    els.submitRow.classList.remove("open");
+    els.eyebrow.textContent = "Show · LINE 對話";
+    restartShow();
+  } else if (mode === "form") {
+    els.eyebrow.textContent = "真實表單";
+    state.roleId = state.roleId || pack.roles[0].id;
     buildRealForm();
+  } else if (mode === "settings") {
+    els.eyebrow.textContent = "欄位設定";
+    state.roleId = state.roleId || pack.roles[0].id;
+    buildSettings();
   }
 
   const url = new URL(location.href);
@@ -1507,32 +1831,56 @@ function bindChrome() {
       setMode(btn.getAttribute("data-mode"));
     });
   });
-  els.tap.addEventListener("click", advance);
+  els.btnPrev?.addEventListener("click", goPrev);
+  els.btnNext?.addEventListener("click", () => goNext());
   document.getElementById("btn-restart")?.addEventListener("click", () => {
     if (state.mode === "show") restartShow();
-    else {
-      state.values = { final_status: "草稿" };
-      persist();
+    else if (state.mode === "form") {
+      state.values = { [pack.form.statusField]: "草稿" };
+      persistDoc();
       buildRealForm();
       toast("已重來");
-    }
+    } else toast("設定請用儲存／匯出");
+  });
+  document.getElementById("btn-export-top")?.addEventListener("click", exportPack);
+  els.fileImport?.addEventListener("change", () => {
+    const file = els.fileImport.files?.[0];
+    if (file) importPackFile(file);
+    els.fileImport.value = "";
   });
   document.addEventListener("keydown", (e) => {
-    if (state.mode !== "show") return;
-    if (e.key === "Enter" || e.key === " " || e.key === "ArrowRight") {
-      const node = data.nodes[state.nodeId];
-      if (!node?.choices && !node?.ending && !state.busy) {
+    if (state.mode !== "show" || state.busy) return;
+    if (e.key === "ArrowRight" || e.key === "Enter") {
+      const node = nodeOf(state.nodeId);
+      if (!node?.choices && !node?.ending) {
         e.preventDefault();
-        advance();
+        goNext();
       }
+    }
+    if (e.key === "ArrowLeft") {
+      e.preventDefault();
+      goPrev();
     }
   });
 }
 
-els.title.textContent = data.title;
-const bootMode = new URLSearchParams(location.search).get("mode");
-bindChrome();
-setMode(bootMode === "form" ? "form" : "show");
+function bootPack() {
+  pack = loadPackEdits(pack);
+  els.title.textContent = pack.meta.title;
+  state.roleId = pack.roles[0]?.id;
+  const bootMode = new URLSearchParams(location.search).get("mode");
+  const mode = ["show", "form", "settings"].includes(bootMode) ? bootMode : "show";
+  setMode(mode);
+}
+
+function boot() {
+  const embedded = document.getElementById("vn-data");
+  pack = normalizePack(JSON.parse(embedded.textContent));
+  bindChrome();
+  bootPack();
+}
+
+boot();
 
   </script>
 </body>

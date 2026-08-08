@@ -1,18 +1,13 @@
 {
-  "id": "leave",
-  "title": "請假系統",
-  "subtitle": "邊講邊填 · 同一份資料也能自己辦單",
-  "cast": [
-    { "id": "narrator", "label": "旁白", "tone": "soft" },
-    { "id": "you", "label": "林小華", "tone": "user" },
-    { "id": "guide", "label": "系統顧問", "tone": "guide" },
-    { "id": "manager", "label": "陳主管", "tone": "manager" },
-    { "id": "hr", "label": "王人事", "tone": "hr" }
-  ],
+  "meta": {
+    "id": "leave",
+    "title": "請假系統",
+    "subtitle": "畫面與資料分開 · 邊講邊填也能真的辦單"
+  },
   "roles": [
-    { "id": "applicant", "label": "申請人", "persona": "林小華" },
-    { "id": "manager", "label": "主管", "persona": "陳主管" },
-    { "id": "hr", "label": "HR", "persona": "王人事" }
+    { "id": "applicant", "label": "申請人" },
+    { "id": "manager", "label": "主管" },
+    { "id": "hr", "label": "HR" }
   ],
   "form": {
     "title": "請假申請單",
@@ -27,36 +22,48 @@
             "label": "姓名",
             "type": "text",
             "placeholder": "請輸入姓名",
-            "required": true,
-            "write": ["applicant"],
-            "meaning": "這張單的主人"
+            "meaning": "這張單的主人",
+            "acl": {
+              "requiredFrom": ["applicant"],
+              "read": ["applicant", "manager", "hr"],
+              "write": ["applicant"]
+            }
           },
           {
             "id": "phone",
             "label": "電話",
             "type": "tel",
             "placeholder": "請假期間聯絡電話",
-            "required": true,
-            "write": ["applicant"],
-            "meaning": "請假期間找得到人"
+            "meaning": "請假期間找得到人",
+            "acl": {
+              "requiredFrom": ["applicant"],
+              "read": ["applicant", "manager", "hr"],
+              "write": ["applicant"]
+            }
           },
           {
             "id": "address",
             "label": "地址",
             "type": "text",
             "placeholder": "休假時的聯絡地址",
-            "required": false,
-            "write": ["applicant"],
-            "meaning": "休假時的聯絡地點"
+            "meaning": "休假時的聯絡地點",
+            "acl": {
+              "requiredFrom": [],
+              "read": ["applicant", "manager", "hr"],
+              "write": ["applicant"]
+            }
           },
           {
             "id": "last_day",
             "label": "最後一天",
             "type": "date",
             "placeholder": "請假結束日",
-            "required": true,
-            "write": ["applicant"],
-            "meaning": "假單結束點、方便排班"
+            "meaning": "假單結束點、方便排班",
+            "acl": {
+              "requiredFrom": ["applicant"],
+              "read": ["applicant", "manager", "hr"],
+              "write": ["applicant"]
+            }
           }
         ]
       },
@@ -69,33 +76,49 @@
             "label": "簽核人",
             "type": "text",
             "placeholder": "主管姓名",
-            "write": ["manager"],
+            "meaning": "留下是誰在簽",
             "autoPersona": true,
-            "meaning": "留下是誰在簽"
+            "acl": {
+              "requiredFrom": ["manager"],
+              "read": ["applicant", "manager", "hr"],
+              "write": ["manager"]
+            }
           },
           {
             "id": "m_date",
             "label": "日期",
             "type": "date",
-            "write": ["manager"],
+            "meaning": "何時看過這張單",
             "autoToday": true,
-            "meaning": "何時看過這張單"
+            "acl": {
+              "requiredFrom": ["manager"],
+              "read": ["applicant", "manager", "hr"],
+              "write": ["manager"]
+            }
           },
           {
             "id": "m_status",
             "label": "狀態",
             "type": "select",
             "options": ["同意", "不同意"],
-            "write": ["manager"],
-            "meaning": "推動或停住流程"
+            "meaning": "推動或停住流程",
+            "acl": {
+              "requiredFrom": ["manager"],
+              "read": ["applicant", "manager", "hr"],
+              "write": ["manager"]
+            }
           },
           {
             "id": "m_comment",
             "label": "意見",
             "type": "textarea",
             "placeholder": "同意或不同意的原因",
-            "write": ["manager"],
-            "meaning": "為什麼這樣決定"
+            "meaning": "為什麼這樣決定",
+            "acl": {
+              "requiredFrom": ["manager"],
+              "read": ["applicant", "manager", "hr"],
+              "write": ["manager"]
+            }
           }
         ]
       },
@@ -107,33 +130,49 @@
             "id": "h_name",
             "label": "處理人",
             "type": "text",
-            "write": ["hr"],
+            "meaning": "誰登錄假別",
             "autoPersona": true,
-            "meaning": "誰登錄假別"
+            "acl": {
+              "requiredFrom": ["hr"],
+              "read": ["applicant", "manager", "hr"],
+              "write": ["hr"]
+            }
           },
           {
             "id": "h_date",
             "label": "日期",
             "type": "date",
-            "write": ["hr"],
+            "meaning": "何時處理",
             "autoToday": true,
-            "meaning": "何時處理"
+            "acl": {
+              "requiredFrom": ["hr"],
+              "read": ["applicant", "manager", "hr"],
+              "write": ["hr"]
+            }
           },
           {
             "id": "h_status",
             "label": "狀態",
             "type": "select",
             "options": ["完成", "補件"],
-            "write": ["hr"],
-            "meaning": "HR 處理結果"
+            "meaning": "HR 處理結果",
+            "acl": {
+              "requiredFrom": ["hr"],
+              "read": ["applicant", "manager", "hr"],
+              "write": ["hr"]
+            }
           },
           {
             "id": "h_comment",
             "label": "意見",
             "type": "textarea",
             "placeholder": "備註",
-            "write": ["hr"],
-            "meaning": "假別或補件說明"
+            "meaning": "假別或補件說明",
+            "acl": {
+              "requiredFrom": [],
+              "read": ["applicant", "manager", "hr"],
+              "write": ["hr"]
+            }
           }
         ]
       },
@@ -145,8 +184,12 @@
             "id": "final_status",
             "label": "結案狀態",
             "type": "text",
-            "write": [],
-            "meaning": "整張單目前走到哪"
+            "meaning": "整張單目前走到哪",
+            "acl": {
+              "requiredFrom": [],
+              "read": ["applicant", "manager", "hr"],
+              "write": []
+            }
           }
         ]
       }
@@ -168,10 +211,7 @@
       "role": "manager",
       "whenStatus": ["待一簽"],
       "require": ["m_comment"],
-      "set": {
-        "m_status": "同意",
-        "final_status": "待二簽"
-      },
+      "set": { "m_status": "同意", "final_status": "待二簽" },
       "autoPersona": ["m_name"],
       "autoToday": ["m_date"],
       "message": "已同意。輪到 HR 處理。"
@@ -182,10 +222,7 @@
       "role": "manager",
       "whenStatus": ["待一簽"],
       "require": ["m_comment"],
-      "set": {
-        "m_status": "不同意",
-        "final_status": "待修改"
-      },
+      "set": { "m_status": "不同意", "final_status": "待修改" },
       "autoPersona": ["m_name"],
       "autoToday": ["m_date"],
       "message": "已退回。申請人可修改後再送。"
@@ -196,10 +233,7 @@
       "role": "manager",
       "whenStatus": ["待一簽"],
       "require": ["m_comment"],
-      "set": {
-        "m_status": "不同意",
-        "final_status": "已拒絕"
-      },
+      "set": { "m_status": "不同意", "final_status": "已拒絕" },
       "autoPersona": ["m_name"],
       "autoToday": ["m_date"],
       "message": "已拒絕結案。若要請假需重開一張。"
@@ -209,209 +243,12 @@
       "label": "完成並核准",
       "role": "hr",
       "whenStatus": ["待二簽"],
-      "set": {
-        "h_status": "完成",
-        "final_status": "已核准"
-      },
+      "set": { "h_status": "完成", "final_status": "已核准" },
       "autoPersona": ["h_name"],
       "autoToday": ["h_date"],
       "message": "已核准結案。特休可登錄。"
     }
   ],
-  "start": "s01",
-  "nodes": {
-    "s01": {
-      "speaker": "narrator",
-      "line": "桌上放著一張空白的請假單。今天我們不講資料庫——我們直接填給你看。",
-      "next": "s02"
-    },
-    "s02": {
-      "speaker": "you",
-      "line": "下週要請假。系統總得知道是誰請的吧？",
-      "next": "s03"
-    },
-    "s03": {
-      "speaker": "guide",
-      "line": "對。所以第一欄是「姓名」——不是裝飾，是這張單的主人。我先幫你填上：林小華。",
-      "focus": "name",
-      "unlock": ["name"],
-      "fill": { "name": "林小華" },
-      "typewriter": true,
-      "next": "s04"
-    },
-    "s04": {
-      "speaker": "guide",
-      "line": "請假期間人可能不在座位。若有急事，要用電話找得到你——所以下一欄是「電話」。",
-      "focus": "phone",
-      "unlock": ["phone"],
-      "fill": { "phone": "0912-345-678" },
-      "typewriter": true,
-      "next": "s05"
-    },
-    "s05": {
-      "speaker": "you",
-      "line": "對了，休假時我可能回老家。要不要留個地址？",
-      "next": "s06"
-    },
-    "s06": {
-      "speaker": "guide",
-      "line": "好主意。「地址」不是多餘欄位——是請假期間的聯絡地點。我填上你老家的地址。",
-      "focus": "address",
-      "unlock": ["address"],
-      "fill": { "address": "台南市中西區民生路一段 88 號" },
-      "typewriter": true,
-      "next": "s07"
-    },
-    "s07": {
-      "speaker": "guide",
-      "line": "還差最關鍵的：你要請到哪一天？「最後一天」決定假單的結束點，也方便排班。",
-      "focus": "last_day",
-      "unlock": ["last_day"],
-      "fill": { "last_day": "2026-08-15" },
-      "typewriter": true,
-      "next": "s08"
-    },
-    "s08": {
-      "speaker": "guide",
-      "line": "申請內容齊了。按下「送出」——單子才會離開你的手，交給主管。",
-      "focus": "btn_submit",
-      "showSubmit": true,
-      "flashSubmit": true,
-      "fill": { "final_status": "待一簽" },
-      "unlock": ["final_status"],
-      "next": "s09"
-    },
-    "s09": {
-      "speaker": "manager",
-      "line": "我是陳主管。單子到我這裡了——系統要留下「是誰在簽」，不是 anonymous。",
-      "focus": "m_name",
-      "unlockSection": "manager",
-      "unlock": ["m_name"],
-      "fill": { "m_name": "陳主管" },
-      "typewriter": true,
-      "next": "s10"
-    },
-    "s10": {
-      "speaker": "manager",
-      "line": "「日期」記下我何時看過這張單。以後若有爭議，時間軸要對得起來。",
-      "focus": "m_date",
-      "unlock": ["m_date"],
-      "fill": { "m_date": "2026-08-09" },
-      "typewriter": true,
-      "next": "s11"
-    },
-    "s11": {
-      "speaker": "manager",
-      "line": "「狀態」是我的決定：同意，或不同意。這一行會推著流程往下走——或停住。",
-      "focus": "m_status",
-      "unlock": ["m_status"],
-      "next": "s12"
-    },
-    "s12": {
-      "speaker": "guide",
-      "line": "關鍵選擇來了：若主管不同意，這張單該怎麼收場？",
-      "choices": [
-        {
-          "id": "approve",
-          "label": "先看「同意」這條路（繼續給 HR）",
-          "next": "b_approve"
-        },
-        {
-          "id": "return",
-          "label": "不同意 → 退回給林小華改",
-          "next": "b_return"
-        },
-        {
-          "id": "reject",
-          "label": "不同意 → 直接拒絕結案",
-          "next": "b_reject"
-        }
-      ]
-    },
-    "b_approve": {
-      "speaker": "manager",
-      "line": "我填「同意」。意見寫一句：准假，好好休息。單子往 HR 流。",
-      "focus": "m_comment",
-      "unlock": ["m_comment"],
-      "fill": {
-        "m_status": "同意",
-        "m_comment": "准假，好好休息",
-        "final_status": "待二簽"
-      },
-      "typewriter": true,
-      "next": "s13"
-    },
-    "b_return": {
-      "speaker": "manager",
-      "line": "我填「不同意」。意見：最後一天跟專案衝期，請改日期再送。狀態變「待修改」——你可以改完再送。",
-      "focus": "m_comment",
-      "unlock": ["m_comment"],
-      "fill": {
-        "m_status": "不同意",
-        "m_comment": "跟專案衝期，請改日期再送",
-        "final_status": "待修改"
-      },
-      "typewriter": true,
-      "next": "s_end_early"
-    },
-    "b_reject": {
-      "speaker": "manager",
-      "line": "我填「不同意」，並直接結案為「已拒絕」。這次不能再改——若要請假，得重開一張。",
-      "focus": "m_comment",
-      "unlock": ["m_comment"],
-      "fill": {
-        "m_status": "不同意",
-        "m_comment": "人力不足，本次不核准",
-        "final_status": "已拒絕"
-      },
-      "typewriter": true,
-      "next": "s_end_early"
-    },
-    "s13": {
-      "speaker": "hr",
-      "line": "我是王人事。主管准了之後，輪到我登錄假別——所以也要留下「處理人」是誰。",
-      "focus": "h_name",
-      "unlockSection": "hr",
-      "unlock": ["h_name"],
-      "fill": { "h_name": "王人事" },
-      "typewriter": true,
-      "next": "s14"
-    },
-    "s14": {
-      "speaker": "hr",
-      "line": "日期、狀態、意見——跟主管區一樣的道理：誰、何時、結果、為什麼。我標「完成」，並結案為「已核准」。",
-      "focus": "h_comment",
-      "unlock": ["h_date", "h_status", "h_comment"],
-      "fill": {
-        "h_date": "2026-08-10",
-        "h_status": "完成",
-        "h_comment": "特休已登錄",
-        "final_status": "已核准"
-      },
-      "typewriter": true,
-      "next": "s15"
-    },
-    "s15": {
-      "speaker": "narrator",
-      "line": "你剛才親手看過：每一欄都是因為「有人要做一件事」才出現的。不是先畫表，是先過日子。",
-      "next": "end"
-    },
-    "s_end_early": {
-      "speaker": "narrator",
-      "line": "這條路在主管關就停了。你仍然看得到：不同意時，意見欄與結案狀態為什麼重要。",
-      "next": "end"
-    },
-    "end": {
-      "speaker": "guide",
-      "line": "故事看完了。同一張單，現在換你自己填——申請人、主管、HR 都能切換角色真的辦單。",
-      "ending": true,
-      "summary": true,
-      "cta": [
-        { "label": "自己填一張真表單", "action": "open-form" },
-        { "label": "再看一次故事", "action": "restart" }
-      ]
-    }
-  },
   "tables": [
     {
       "id": "leave",
@@ -435,5 +272,226 @@
         { "label": "意見", "origin": "為什麼這樣決定" }
       ]
     }
-  ]
+  ],
+  "show": {
+    "cast": [
+      { "id": "narrator", "label": "旁白", "tone": "soft" },
+      { "id": "you", "label": "申請人", "tone": "user" },
+      { "id": "guide", "label": "系統顧問", "tone": "guide" },
+      { "id": "manager", "label": "主管", "tone": "manager" },
+      { "id": "hr", "label": "HR", "tone": "hr" }
+    ],
+    "start": "s01",
+    "nodes": {
+      "s01": {
+        "speaker": "narrator",
+        "line": "桌上放著一張空白的請假單。今天我們不講資料庫——直接填給你看。",
+        "next": "s02"
+      },
+      "s02": {
+        "speaker": "you",
+        "line": "下週要請假。系統總得知道是誰請的吧？",
+        "next": "s03"
+      },
+      "s03": {
+        "speaker": "guide",
+        "line": "對。所以第一欄是「姓名」——不是裝飾，是這張單的主人。我先幫你填上示範值。",
+        "focus": "name",
+        "reveal": ["name"],
+        "fillFromDemo": ["name"],
+        "typewriter": true,
+        "next": "s04"
+      },
+      "s04": {
+        "speaker": "guide",
+        "line": "請假期間人可能不在座位。若有急事要找得到你——所以下一欄是「電話」。",
+        "focus": "phone",
+        "reveal": ["phone"],
+        "fillFromDemo": ["phone"],
+        "typewriter": true,
+        "next": "s05"
+      },
+      "s05": {
+        "speaker": "you",
+        "line": "對了，休假時我可能回老家。要不要留個地址？",
+        "next": "s06"
+      },
+      "s06": {
+        "speaker": "guide",
+        "line": "好主意。「地址」不是多餘欄位——是請假期間的聯絡地點。",
+        "focus": "address",
+        "reveal": ["address"],
+        "fillFromDemo": ["address"],
+        "typewriter": true,
+        "next": "s07"
+      },
+      "s07": {
+        "speaker": "guide",
+        "line": "還差最關鍵的：你要請到哪一天？「最後一天」決定假單結束點，也方便排班。",
+        "focus": "last_day",
+        "reveal": ["last_day"],
+        "fillFromDemo": ["last_day"],
+        "typewriter": true,
+        "next": "s08"
+      },
+      "s08": {
+        "speaker": "guide",
+        "line": "申請內容齊了。按下「送出」——單子才會離開你的手，交給主管。",
+        "focus": "btn_submit",
+        "showSubmit": true,
+        "flashSubmit": true,
+        "reveal": ["final_status"],
+        "fillFromDemo": ["final_status_pending"],
+        "mapFill": { "final_status_pending": "final_status" },
+        "next": "s09"
+      },
+      "s09": {
+        "speaker": "manager",
+        "line": "我是主管。單子到我這裡了——系統要留下「是誰在簽」，不是 anonymous。",
+        "focus": "m_name",
+        "unlockSection": "manager",
+        "reveal": ["m_name"],
+        "fillFromDemo": ["m_name"],
+        "typewriter": true,
+        "next": "s10"
+      },
+      "s10": {
+        "speaker": "manager",
+        "line": "「日期」記下我何時看過這張單。以後若有爭議，時間軸要對得起來。",
+        "focus": "m_date",
+        "reveal": ["m_date"],
+        "fillFromDemo": ["m_date"],
+        "typewriter": true,
+        "next": "s11"
+      },
+      "s11": {
+        "speaker": "manager",
+        "line": "「狀態」是我的決定：同意，或不同意。這一行會推著流程往下走——或停住。",
+        "focus": "m_status",
+        "reveal": ["m_status"],
+        "next": "s12"
+      },
+      "s12": {
+        "speaker": "guide",
+        "line": "關鍵選擇來了：若主管不同意，這張單該怎麼收場？",
+        "choices": [
+          { "id": "approve", "label": "先看「同意」這條路（繼續給 HR）", "next": "b_approve" },
+          { "id": "return", "label": "不同意 → 退回給申請人改", "next": "b_return" },
+          { "id": "reject", "label": "不同意 → 直接拒絕結案", "next": "b_reject" }
+        ]
+      },
+      "b_approve": {
+        "speaker": "manager",
+        "line": "我填「同意」。意見寫一句：准假，好好休息。單子往 HR 流。",
+        "focus": "m_comment",
+        "reveal": ["m_comment"],
+        "fillFromDemo": ["m_comment_ok", "m_status_ok", "final_status_hr"],
+        "mapFill": {
+          "m_comment_ok": "m_comment",
+          "m_status_ok": "m_status",
+          "final_status_hr": "final_status"
+        },
+        "typewriter": true,
+        "next": "s13"
+      },
+      "b_return": {
+        "speaker": "manager",
+        "line": "我填「不同意」。請改日期再送。狀態變「待修改」——可以改完再送。",
+        "focus": "m_comment",
+        "reveal": ["m_comment"],
+        "fillFromDemo": ["m_comment_return", "m_status_no", "final_status_revise"],
+        "mapFill": {
+          "m_comment_return": "m_comment",
+          "m_status_no": "m_status",
+          "final_status_revise": "final_status"
+        },
+        "typewriter": true,
+        "next": "s_end_early"
+      },
+      "b_reject": {
+        "speaker": "manager",
+        "line": "我填「不同意」，並直接結案為「已拒絕」。這次不能再改——若要請假，得重開一張。",
+        "focus": "m_comment",
+        "reveal": ["m_comment"],
+        "fillFromDemo": ["m_comment_reject", "m_status_no", "final_status_rejected"],
+        "mapFill": {
+          "m_comment_reject": "m_comment",
+          "m_status_no": "m_status",
+          "final_status_rejected": "final_status"
+        },
+        "typewriter": true,
+        "next": "s_end_early"
+      },
+      "s13": {
+        "speaker": "hr",
+        "line": "我是人事。主管准了之後，輪到我登錄假別——所以也要留下「處理人」是誰。",
+        "focus": "h_name",
+        "unlockSection": "hr",
+        "reveal": ["h_name"],
+        "fillFromDemo": ["h_name"],
+        "typewriter": true,
+        "next": "s14"
+      },
+      "s14": {
+        "speaker": "hr",
+        "line": "日期、狀態、意見——跟主管區一樣的道理。我標「完成」，並結案為「已核准」。",
+        "focus": "h_comment",
+        "reveal": ["h_date", "h_status", "h_comment"],
+        "fillFromDemo": ["h_date", "h_status", "h_comment", "final_status_done"],
+        "mapFill": { "final_status_done": "final_status" },
+        "typewriter": true,
+        "next": "s15"
+      },
+      "s15": {
+        "speaker": "narrator",
+        "line": "你剛才看過：每一欄都是因為「有人要做一件事」才出現。不是先畫表，是先過日子。",
+        "next": "end"
+      },
+      "s_end_early": {
+        "speaker": "narrator",
+        "line": "這條路在主管關就停了。你仍然看得到：不同意時，意見欄與結案狀態為什麼重要。",
+        "next": "end"
+      },
+      "end": {
+        "speaker": "guide",
+        "line": "故事看完了。可到「表單」自己辦單，或到「設定」調整誰必填／誰能看／誰能編，再匯出 JSON。",
+        "ending": true,
+        "summary": true,
+        "cta": [
+          { "label": "自己填一張真表單", "action": "open-form" },
+          { "label": "調整欄位權限", "action": "open-settings" },
+          { "label": "再看一次故事", "action": "restart" }
+        ]
+      }
+    }
+  },
+  "demo": {
+    "persona": {
+      "applicant": "林小華",
+      "manager": "陳主管",
+      "hr": "王人事"
+    },
+    "values": {
+      "name": "林小華",
+      "phone": "0912-345-678",
+      "address": "台南市中西區民生路一段 88 號",
+      "last_day": "2026-08-15",
+      "final_status_pending": "待一簽",
+      "m_name": "陳主管",
+      "m_date": "2026-08-09",
+      "m_status_ok": "同意",
+      "m_status_no": "不同意",
+      "m_comment_ok": "准假，好好休息",
+      "m_comment_return": "跟專案衝期，請改日期再送",
+      "m_comment_reject": "人力不足，本次不核准",
+      "final_status_hr": "待二簽",
+      "final_status_revise": "待修改",
+      "final_status_rejected": "已拒絕",
+      "h_name": "王人事",
+      "h_date": "2026-08-10",
+      "h_status": "完成",
+      "h_comment": "特休已登錄",
+      "final_status_done": "已核准"
+    }
+  }
 }

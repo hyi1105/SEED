@@ -16,14 +16,14 @@
 
 詳見 [`approval/README.md`](approval/README.md)、[`approval/學習約定.md`](approval/學習約定.md)。
 
-## 統一表單系統（邊講邊填 → 真實辦單）
+## 統一表單系統（畫面與資料分開）
 
-任意系統收成**同一份 JSON**（`vn/*.json`）：Show 邊講邊填，表單模式真的送出／簽核。
+任意系統收成**一份 JSON**（`vn/*.json`）丟進播放器即可。JSON 分三層：人讀欄位／ACL／動作、Show 腳本、demo 範例值。
 
 - **主入口：** [`docs/walkthrough/index.html`](docs/walkthrough/index.html) · 合併後 https://hyi1105.github.io/SEED/walkthrough/
 - **立刻預覽：** https://htmlpreview.github.io/?https://github.com/hyi1105/SEED/blob/main/docs/walkthrough/index.html
-- **模式：** Show（故事填單）／表單（切角色辦單）／地圖（可選結構）
-- **契約：** [`docs/walkthrough/SKILL.md`](docs/walkthrough/SKILL.md) · 範例 [`vn/leave.json`](docs/walkthrough/vn/leave.json)
+- **模式：** Show（LINE 對話＋上一步／下一步）／表單／設定（必填·可看·可編）／地圖（可選）
+- **契約：** [`docs/walkthrough/SKILL.md`](docs/walkthrough/SKILL.md) · 範例 [`vn/leave.json`](docs/walkthrough/vn/leave.json) · 源碼 [`player.js`](docs/walkthrough/player.js)
 - **構想：** [`memory/topics/blank-origin-map.md`](memory/topics/blank-origin-map.md)
 
 已拿掉：導引／簡報／演示。
