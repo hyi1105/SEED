@@ -415,6 +415,7 @@ function buildShowForm() {
   const form = activeForm();
   const doc = state.docs[state.docId];
   els.formSheet.hidden = false;
+  els.formSheet.classList.remove("is-schema");
   els.formTitle.textContent = `${form.level ? form.level + " · " : ""}${form.title}`;
   els.formSub.textContent = `Show · 獨立表單「${form.label}」· 單據 ${docTitle(doc) || doc?.id || ""}`;
   els.sections.innerHTML = form.sections
@@ -634,50 +635,68 @@ function linkedTo(docId) {
   return state.links.filter((l) => l.to === docId);
 }
 
-/** 多表單開場：先畫「表單種類」關係圖，不露空白欄位 */
+/** 多表單開場：同一套紙本外型（A 摺），縮小唯讀，不改成按鈕塊 */
 function renderFormSchema({ highlightLevels = [], highlightRules = [] } = {}) {
   const hiLv = new Set(highlightLevels.map(String));
   const hiRule = new Set(highlightRules.map(String));
   const list = forms();
   els.formSheet.hidden = false;
-  els.formTitle.textContent = "表單關係（虛擬圖）";
-  els.formSub.textContent = "先看大張怎麼連，再進每一張的欄位";
-  els.statusPill.textContent = `${list.length} 種表單 · 尚不填空白`;
+  els.formSheet.classList.add("is-schema");
+  els.formTitle.textContent = pack.meta?.title || "表單關係";
+  els.formSub.textContent = "先看幾張紙怎麼連；外型與後面填寫同一張紙，只是現在唯讀、字小一點";
+  els.statusPill.textContent = `${list.length} 張同級表單 · 唯讀預覽`;
   els.submitRow.classList.remove("open");
   els.actionRow.classList.remove("open");
   els.actionRow.innerHTML = "";
 
-  const cards = list
+  const sheets = list
     .map((f) => {
       const on = !hiLv.size || hiLv.has(f.level) || hiLv.has(f.id);
-      return `<div class="schema-card ${on ? "hi" : "dim"}" data-form="${escapeHtml(f.id)}">
-        <span class="lvl">${escapeHtml(f.level || "?")}</span>
-        <strong>${escapeHtml(f.label || f.title || f.id)}</strong>
-        <small>獨立表單</small>
-      </div>`;
-    })
-    .join("");
-
-  const edges = (pack.linkRules || [])
-    .map((r, idx) => {
-      const key = r.id || `${r.from}->${r.to}`;
-      const from = formById(r.from);
-      const to = formById(r.to);
-      const on = !hiRule.size || hiRule.has(key) || hiRule.has(String(idx));
-      return `<div class="schema-edge ${on ? "hi" : ""}" data-rule="${escapeHtml(key)}">
-        <span class="edge-a"><span class="lvl">${escapeHtml(from?.level || "?")}</span> ${escapeHtml(from?.label || r.from)}</span>
-        <span class="edge-arrow">→</span>
-        <span class="edge-b"><span class="lvl">${escapeHtml(to?.level || "?")}</span> ${escapeHtml(to?.label || r.to)}</span>
-        <span class="edge-label">${escapeHtml(r.cardinality || "")} ${escapeHtml(r.label || "")}</span>
-      </div>`;
+      const fields = (f.sections || [])
+        .flatMap((sec) => sec.fields || [])
+        .slice(0, 3);
+      const rows = fields
+        .map(
+          (field) => `<div class="field open readonly">
+            <div class="field-label">${escapeHtml(field.label)}</div>
+            <div class="field-value empty">尚空白</div>
+          </div>`
+        )
+        .join("");
+      const more =
+        (f.sections || []).flatMap((sec) => sec.fields || []).length > fields.length
+          ? `<p class="schema-more">…其餘欄位稍後再進這張紙</p>`
+          : "";
+      const outs = (pack.linkRules || []).filter((r) => r.from === f.id);
+      const linkNote = outs.length
+        ? `<p class="schema-link-note">${outs
+            .map((r) => {
+              const to = formById(r.to);
+              const key = r.id || `${r.from}->${r.to}`;
+              const hot = !hiRule.size || hiRule.has(key);
+              return `<span class="${hot ? "hot" : ""}">${escapeHtml(f.level || "")} → ${escapeHtml(
+                to?.level || "?"
+              )} ${escapeHtml(r.cardinality || "")} ${escapeHtml(r.label || "")}</span>`;
+            })
+            .join("")}</p>`
+        : "";
+      return `<article class="mini-sheet ${on ? "hi" : "dim"}" data-form="${escapeHtml(f.id)}">
+        <h3 class="form-title">${escapeHtml(f.level ? `${f.level} · ${f.title || f.label}` : f.title || f.label)}</h3>
+        <div class="status-wrap"><span class="status-pill">${escapeHtml(f.level || "")} 草稿</span></div>
+        <div class="section open">
+          <p class="section-label">${escapeHtml(f.sections?.[0]?.label || "欄位")}</p>
+          <div class="fields">${rows}</div>
+          ${more}
+        </div>
+        ${linkNote}
+      </article>`;
     })
     .join("");
 
   els.sections.innerHTML = `
     <div class="schema-map">
-      <p class="board-lead">多張表單時：先看<strong>誰連誰</strong>。空白欄位等進到某一張再出現——比較不會斷斷續續。</p>
-      <div class="schema-cards">${cards}</div>
-      <div class="schema-edges">${edges || `<p class="muted">尚未定義 linkRules</p>`}</div>
+      <p class="board-lead">同一種紙本外型：只縮字、唯讀。多張時先看<strong>誰連誰</strong>，再進某一張填寫。</p>
+      <div class="schema-sheets">${sheets}</div>
     </div>`;
 }
 
@@ -690,6 +709,7 @@ function renderBoard({ highlight = [] } = {}) {
   });
   const doneCount = rows.filter(isDone).length;
   els.formSheet.hidden = false;
+  els.formSheet.classList.remove("is-schema");
   els.formTitle.textContent = "關聯總表";
   els.formSub.textContent = `圖狀關聯 · ${doneCount}/${rows.length} 張已完成狀態`;
   els.statusPill.textContent = `${state.links.length} 條連結`;
