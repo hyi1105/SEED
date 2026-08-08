@@ -35,6 +35,9 @@ const els = {
   formToolbar: document.getElementById("form-toolbar"),
   stageWrap: document.getElementById("stage-wrap"),
   stageFit: document.getElementById("stage-fit"),
+  storyStage: document.getElementById("story-stage"),
+  storyLanes: document.getElementById("story-lanes"),
+  storyKicker: document.getElementById("story-kicker"),
 };
 
 const state = {
@@ -55,6 +58,8 @@ const state = {
   history: [],
   chat: [],
   boardOnly: false,
+  /** @type {{id:string,lane:string,label:string,kind:string,edgeTo?:string,hot?:boolean}[]} */
+  storyBeats: [],
 };
 
 function toast(msg) {
@@ -341,6 +346,7 @@ function snapshotShow() {
     unlocked: [...state.unlocked],
     openSections: [...state.openSections],
     boardOnly: state.boardOnly,
+    storyBeats: structuredClone(state.storyBeats),
   };
 }
 
@@ -353,6 +359,7 @@ function restoreShow(snap) {
   state.unlocked = new Set(snap.unlocked);
   state.openSections = new Set(snap.openSections);
   state.boardOnly = !!snap.boardOnly;
+  state.storyBeats = structuredClone(snap.storyBeats || []);
 }
 
 function resolveFills(node) {
@@ -633,6 +640,136 @@ function linkedFrom(docId) {
 
 function linkedTo(docId) {
   return state.links.filter((l) => l.to === docId);
+}
+
+function useStoryStage() {
+  return isGraphPack() && forms().length > 1;
+}
+
+function hideStoryStage() {
+  if (els.storyStage) els.storyStage.hidden = true;
+  els.app?.classList.remove("story-on");
+}
+
+function showStoryStageShell() {
+  if (!els.storyStage || !els.storyLanes) return;
+  els.storyStage.hidden = false;
+  els.app?.classList.add("story-on");
+  const list = forms();
+  els.storyLanes.style.setProperty("--lane-count", String(Math.max(1, list.length)));
+  els.storyLanes.innerHTML = list
+    .map(
+      (f) => `<div class="story-lane" data-lane="${escapeHtml(f.level || f.id)}">
+        <div class="story-lane-head">
+          <span class="lvl">${escapeHtml(f.level || "?")}</span>
+          <span class="story-lane-title">${escapeHtml(f.label || f.title || f.id)}</span>
+        </div>
+        <div class="story-lane-flow" data-flow="${escapeHtml(f.level || f.id)}"></div>
+      </div>`
+    )
+    .join("");
+}
+
+function paintStoryStage({ hotId } = {}) {
+  if (!useStoryStage() || !els.storyLanes) return;
+  showStoryStageShell();
+  const flows = {};
+  forms().forEach((f) => {
+    const key = f.level || f.id;
+    flows[key] = els.storyLanes.querySelector(`[data-flow="${key}"]`);
+    if (flows[key]) flows[key].innerHTML = "";
+  });
+  state.storyBeats.forEach((beat, idx) => {
+    const host = flows[beat.lane];
+    if (!host) return;
+    const kind = beat.kind || "action";
+    const hot = beat.id === hotId || beat.hot;
+    const el = document.createElement("div");
+    el.className = `story-oval kind-${kind}${hot ? " hot" : ""}${beat.ghost ? " ghost" : ""}`;
+    el.dataset.beat = beat.id;
+    el.innerHTML = `<span class="oval-text">${escapeHtml(beat.label)}</span>`;
+    if (beat.edgeTo) {
+      const tip = document.createElement("div");
+      tip.className = "story-edge-tip";
+      tip.textContent = `→ ${beat.edgeTo}`;
+      el.appendChild(tip);
+    }
+    host.appendChild(el);
+    if (idx > 0 && hot) {
+      requestAnimationFrame(() => el.scrollIntoView({ block: "nearest", behavior: "smooth" }));
+    }
+  });
+  if (els.storyKicker) {
+    els.storyKicker.textContent = state.storyBeats.length
+      ? `故事進行中 · ${state.storyBeats.length} 個情節`
+      : "空舞台 · 左→右是四張表 · 下一步會慢慢長出橢圓";
+  }
+}
+
+function normalizeStoryBeats(node) {
+  if (!node) return [];
+  const raw = node.story;
+  if (!raw) return [];
+  const list = Array.isArray(raw) ? raw : [raw];
+  return list.map((b, i) => ({
+    id: b.id || `${state.nodeId}-${i}`,
+    lane: String(b.lane || formById(node.form)?.level || "A"),
+    label: b.label || node.line?.slice(0, 18) || "…",
+    kind: b.kind || (node.choices?.length ? "choice" : "action"),
+    edgeTo: b.edgeTo,
+    ghost: !!b.ghost,
+    hot: true,
+  }));
+}
+
+function applyStoryBeats(node, { fromPrev = false } = {}) {
+  if (!useStoryStage()) {
+    hideStoryStage();
+    return;
+  }
+  if (node.showBoard && !node.showSwimlane) {
+    hideStoryStage();
+    return;
+  }
+  const incoming = normalizeStoryBeats(node);
+  if (!fromPrev) {
+    if (node.storyReplace) state.storyBeats = [];
+    // 清除上一拍 hot
+    state.storyBeats.forEach((b) => {
+      b.hot = false;
+    });
+    // 真實情節進場時，清掉同欄佔位 ghost
+    const liveLanes = new Set(incoming.filter((b) => !b.ghost).map((b) => b.lane));
+    if (liveLanes.size) {
+      state.storyBeats = state.storyBeats.filter((b) => !(b.ghost && liveLanes.has(b.lane)));
+    }
+    for (const beat of incoming) {
+      const exists = state.storyBeats.find((b) => b.id === beat.id);
+      if (exists) {
+        Object.assign(exists, beat, { hot: true });
+      } else {
+        state.storyBeats.push(beat);
+      }
+    }
+    // 抉擇：把選項畫成 choice 橢圓
+    if (node.choices?.length && !incoming.some((b) => b.kind === "choice")) {
+      const lane = formById(node.form)?.level || forms()[0]?.level || "A";
+      node.choices.forEach((c, i) => {
+        const id = `${state.nodeId}-ch-${c.id || i}`;
+        if (!state.storyBeats.some((b) => b.id === id)) {
+          state.storyBeats.push({
+            id,
+            lane,
+            label: c.label,
+            kind: "choice",
+            hot: true,
+          });
+        }
+      });
+    }
+  }
+  const hotId = incoming.find((b) => !b.ghost)?.id || incoming[0]?.id;
+  paintStoryStage({ hotId });
 }
 
 /** 把開場四張紙縮進可視區，字可小但四張都要同時看見 */
@@ -933,24 +1070,44 @@ async function renderNode({ fromPrev = false } = {}) {
 
   const wantForm = node.form || state.formId;
   const wantDoc = node.doc || state.docId;
-  if (node.showSchema) {
+  const storyUi = !!(node.showSwimlane || (useStoryStage() && node.story && !node.showBoard));
+
+  if (node.showSwimlane || storyUi) {
     state.boardOnly = true;
+    resetStudyFit();
+    if (els.formSheet) els.formSheet.hidden = true;
+    applyStoryBeats(node, { fromPrev });
+    // 背景仍可灌 demo，供表單模式使用
+    if (wantForm) {
+      switchContext(wantForm, wantDoc || state.docId, { rebuild: false });
+      if (!fromPrev) {
+        Object.assign(state.values, resolveFills(node));
+        flushActiveDoc();
+      }
+    }
+  } else if (node.showSchema) {
+    hideStoryStage();
+    state.boardOnly = true;
+    if (els.formSheet) els.formSheet.hidden = false;
     renderFormSchema({
       highlightLevels: node.schemaHighlight || [],
       highlightRules: node.schemaRules || [],
     });
   } else if (node.showBoard) {
+    hideStoryStage();
     resetStudyFit();
     state.boardOnly = true;
+    if (els.formSheet) els.formSheet.hidden = false;
     renderBoard({ highlight: node.boardHighlight || [] });
     persistGraph();
   } else {
+    hideStoryStage();
     resetStudyFit();
     const formChanged = wantForm !== state.formId || wantDoc !== state.docId || state.boardOnly;
     state.boardOnly = false;
+    if (els.formSheet) els.formSheet.hidden = false;
     if (formChanged) {
       switchContext(wantForm, wantDoc, { rebuild: true });
-      // unlock already filled fields on this doc
       Object.entries(state.values).forEach(([k, v]) => {
         if (v) state.unlocked.add(k);
       });
@@ -958,12 +1115,9 @@ async function renderNode({ fromPrev = false } = {}) {
   }
 
   if (!fromPrev) appendChat(node);
-  else {
-    // history restore already set chat; just paint
-    paintChat();
-  }
+  else paintChat();
 
-  if (!node.showBoard && !node.showSchema) {
+  if (!node.showBoard && !node.showSchema && !storyUi) {
     prepareReveal(node);
     if (!fromPrev) await applyFills(node);
     else paintShowForm();
@@ -1000,21 +1154,13 @@ function goPrev() {
   state.nodeId = prev.nodeId;
   restoreShow(prev.snap);
   state.chat = state.chat.slice(0, prev.chatLen);
-  const cur = nodeOf(state.nodeId);
-  if (cur?.showSchema) {
-    renderFormSchema({
-      highlightLevels: cur.schemaHighlight || [],
-      highlightRules: cur.schemaRules || [],
-    });
-  } else if (state.boardOnly || cur?.showBoard) {
-    renderBoard({ highlight: cur?.boardHighlight || [] });
-  } else buildShowForm();
   renderNode({ fromPrev: true });
 }
 
 function restartShow() {
   state.typeToken += 1;
   state.nodeId = pack.show.start;
+  state.storyBeats = [];
   seedGraphFromDemo();
   // for demo.values-only packs, clear main values for show typing
   if (!pack.demo?.docs) {
@@ -1453,35 +1599,39 @@ function setMode(mode) {
   if (mode === "show") {
     els.eyebrow.textContent = "Show · LINE 對話";
     restartShow();
-  } else if (mode === "form") {
-    els.eyebrow.textContent = isGraphPack() ? "獨立表單 · 圖狀連結" : "真實表單";
-    state.roleId = state.roleId || pack.roles[0].id;
-    if (!Object.keys(state.docs || {}).length) loadGraph();
-    else {
-      flushActiveDoc();
-      persistGraph();
+  } else {
+    hideStoryStage();
+    if (els.formSheet) els.formSheet.hidden = false;
+    if (mode === "form") {
+      els.eyebrow.textContent = isGraphPack() ? "獨立表單 · 圖狀連結" : "真實表單";
+      state.roleId = state.roleId || pack.roles[0].id;
+      if (!Object.keys(state.docs || {}).length) loadGraph();
+      else {
+        flushActiveDoc();
+        persistGraph();
+      }
+      state.boardOnly = false;
+      buildRealForm();
+    } else if (mode === "board") {
+      els.eyebrow.textContent = "關聯總表";
+      state.roleId = state.roleId || pack.roles[0].id;
+      if (!Object.keys(state.docs || {}).length) loadGraph();
+      else {
+        flushActiveDoc();
+        persistGraph();
+      }
+      renderFormTabs();
+      const dl = document.getElementById("doc-list");
+      if (dl) dl.hidden = true;
+      const ft = document.getElementById("form-type-tabs");
+      if (ft) ft.hidden = true;
+      renderBoard();
+      renderRoleTabs();
+    } else if (mode === "settings") {
+      els.eyebrow.textContent = "欄位設定";
+      state.roleId = state.roleId || pack.roles[0].id;
+      buildSettings();
     }
-    state.boardOnly = false;
-    buildRealForm();
-  } else if (mode === "board") {
-    els.eyebrow.textContent = "關聯總表";
-    state.roleId = state.roleId || pack.roles[0].id;
-    if (!Object.keys(state.docs || {}).length) loadGraph();
-    else {
-      flushActiveDoc();
-      persistGraph();
-    }
-    renderFormTabs();
-    const dl = document.getElementById("doc-list");
-    if (dl) dl.hidden = true;
-    const ft = document.getElementById("form-type-tabs");
-    if (ft) ft.hidden = true;
-    renderBoard();
-    renderRoleTabs();
-  } else if (mode === "settings") {
-    els.eyebrow.textContent = "欄位設定";
-    state.roleId = state.roleId || pack.roles[0].id;
-    buildSettings();
   }
 
   const url = new URL(location.href);

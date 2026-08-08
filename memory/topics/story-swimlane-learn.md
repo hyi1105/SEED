@@ -70,10 +70,16 @@ status: active
 
 ## 實作切片（建議順序）
 
-1. **故事泳道 MVP**：四欄＋橢圓節點＋旁白下一步（可先假資料料號 A→B→C→D）
-2. 抉擇節點（左／右）接既有 `choices`
+1. **故事泳道 MVP**：四欄＋橢圓節點＋旁白下一步（可先假資料料號 A→B→C→D）✅ 2026-08-08
+2. 抉擇節點（左／右）接既有 `choices` ✅（結局岔路）
 3. 點橢圓才開該表單欄位（小）
 4. 再談精緻連線風格／轉場（使用者說可先不管）
+
+## MVP 落點（已做）
+
+- 播放器：`#story-stage`／`player.js` 累積 `storyBeats`、`showSwimlane`
+- 腳本：`vn/material-graph.json` Show 主線改泳道情節
+- 試玩：`/SEED/walkthrough/?mode=show`（合併後 Pages）
 
 ## 待使用者補
 
