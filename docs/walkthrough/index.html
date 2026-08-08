@@ -644,28 +644,50 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
 .edge-arrow { color: var(--brand); font-weight: 700; }
 .edge-label { color: var(--muted); font-size: 0.72rem; }
 
-/* 開場：同一套紙本（A 摺）外型，縮小唯讀，不用按鈕塊 */
-.schema-map { display: grid; gap: 0.55rem; }
+/* 開場：四張同屏紙本；連線用精簡圖例（正式連線風格待使用者上傳） */
+.form-sheet.is-schema {
+  padding: 0.4rem 0.45rem 0.5rem;
+}
+.form-sheet.is-schema .form-title {
+  font-size: 0.9rem;
+}
+.form-sheet.is-schema .form-sub {
+  margin: 0.1rem 0 0.3rem;
+  font-size: 0.62rem;
+}
+.form-sheet.is-schema .status-pill {
+  margin: 0 auto 0.35rem;
+  font-size: 0.58rem;
+  padding: 0.08rem 0.4rem;
+}
+.schema-map { display: grid; gap: 0.35rem; }
 .schema-sheets {
   display: grid;
-  gap: 0.55rem;
+  gap: 0.35rem;
+}
+.schema-sheets.count-4 {
+  grid-template-columns: 1fr 1fr;
+  gap: 0.3rem;
 }
 .mini-sheet {
   background: linear-gradient(180deg, #fffefb 0%, var(--paper) 100%);
   border: 1px solid var(--paper-edge);
   border-radius: 4px;
-  box-shadow: 0 8px 18px rgba(26, 36, 32, 0.08);
-  padding: 0.55rem 0.6rem 0.65rem;
+  box-shadow: 0 4px 12px rgba(26, 36, 32, 0.07);
+  padding: 0.35rem 0.4rem 0.4rem;
+  min-width: 0;
   transition: opacity 0.25s, box-shadow 0.25s, border-color 0.25s;
 }
 .mini-sheet .form-title {
-  font-size: 0.95rem;
+  font-size: 0.72rem;
   margin: 0;
+  line-height: 1.2;
+  text-align: center;
 }
 .mini-sheet .status-pill {
-  margin: 0.2rem auto 0.35rem;
-  padding: 0.1rem 0.45rem;
-  font-size: 0.62rem;
+  margin: 0.12rem auto 0.2rem;
+  padding: 0.06rem 0.35rem;
+  font-size: 0.52rem;
 }
 .mini-sheet .section {
   display: block;
@@ -673,69 +695,86 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
   padding: 0;
   border: 0;
 }
-.mini-sheet .section-label {
-  margin: 0 0 0.2rem;
-  font-size: 0.58rem;
-}
-.mini-sheet .fields { gap: 0.12rem; }
-.mini-sheet .field {
+.mini-sheet .fields { gap: 0.08rem; }
+.mini-sheet .field.schema-field {
   display: grid;
-  grid-template-columns: 3.4rem minmax(0, 1fr);
-  gap: 0.2rem;
-  padding: 0.06rem 0.2rem;
-  border-radius: 4px;
+  grid-template-columns: minmax(2.4rem, 38%) minmax(0, 1fr);
+  gap: 0.15rem;
+  padding: 0.02rem 0.1rem;
+  border-radius: 3px;
   border: 1px solid transparent;
+  align-items: center;
 }
 .mini-sheet .field.readonly { pointer-events: none; }
 .mini-sheet .field-label {
-  font-size: 0.6rem;
-  padding-top: 0.1rem;
+  font-size: 0.52rem;
+  padding-top: 0;
+  line-height: 1.15;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .mini-sheet .field-value {
-  min-height: 1rem;
-  padding: 0.1rem 0.28rem;
-  border-radius: 4px;
-  font-size: 0.68rem;
+  min-height: 0.72rem;
+  padding: 0.04rem 0.18rem;
+  border-radius: 3px;
+  font-size: 0.5rem;
 }
-.mini-sheet .schema-more {
-  margin: 0.25rem 0 0;
-  font-size: 0.58rem;
-  color: var(--muted);
-  text-align: center;
-}
-.mini-sheet .schema-link-note {
-  margin: 0.4rem 0 0;
-  padding-top: 0.35rem;
-  border-top: 1px dashed rgba(26, 36, 32, 0.12);
-  display: grid;
-  gap: 0.15rem;
-  font-size: 0.62rem;
-  color: var(--muted);
-  line-height: 1.35;
-}
-.mini-sheet .schema-link-note .hot {
-  color: var(--brand);
-  font-weight: 700;
+.mini-sheet .field-value.empty {
+  font-size: 0;
+  color: transparent;
 }
 .mini-sheet.hi {
   border-color: color-mix(in srgb, var(--brand) 40%, var(--paper-edge));
-  box-shadow: 0 0 0 2px rgba(12, 92, 77, 0.08), 0 8px 18px rgba(26, 36, 32, 0.08);
+  box-shadow: 0 0 0 1.5px rgba(12, 92, 77, 0.1), 0 4px 12px rgba(26, 36, 32, 0.07);
 }
-.mini-sheet.dim { opacity: 0.45; }
-.form-sheet.is-schema .board-lead {
-  font-size: 0.72rem;
-  margin: 0 0 0.15rem;
+.mini-sheet.dim { opacity: 0.5; }
+.schema-key {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.4rem;
+  padding: 0.3rem 0.35rem;
+  border-top: 1px dashed rgba(26, 36, 32, 0.14);
+  font-size: 0.58rem;
+  color: var(--muted);
 }
+.schema-key-label {
+  font-weight: 700;
+  color: var(--brand);
+  letter-spacing: 0.04em;
+}
+.schema-key-item {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.15rem;
+  padding: 0.08rem 0.28rem;
+  border: 1px solid var(--paper-edge);
+  border-radius: 4px;
+  background: #fff;
+  font-style: normal;
+}
+.schema-key-item b {
+  font-family: var(--font-ui);
+  font-size: 0.58rem;
+  color: var(--ink);
+}
+.schema-key-item i {
+  font-style: normal;
+  font-size: 0.5rem;
+  color: var(--muted);
+}
+.schema-key-item.hot {
+  border-color: color-mix(in srgb, var(--brand) 45%, white);
+  background: rgba(12, 92, 77, 0.06);
+}
+.schema-key-item.hot b { color: var(--brand); }
 @media (max-width: 640px) {
-  .app[data-mode="show"] .mini-sheet {
-    padding: 0.4rem 0.45rem 0.5rem;
-  }
-  .app[data-mode="show"] .mini-sheet .form-title { font-size: 0.82rem; }
-  .app[data-mode="show"] .mini-sheet .field {
-    grid-template-columns: 3rem minmax(0, 1fr);
-  }
-  .app[data-mode="show"] .mini-sheet .field-label { font-size: 0.56rem; }
-  .app[data-mode="show"] .mini-sheet .field-value { font-size: 0.62rem; }
+  .app[data-mode="show"] .form-sheet.is-schema .form-sub { display: block; }
+  .app[data-mode="show"] .mini-sheet { padding: 0.28rem 0.32rem 0.32rem; }
+  .app[data-mode="show"] .mini-sheet .form-title { font-size: 0.64rem; }
+  .app[data-mode="show"] .mini-sheet .field-label { font-size: 0.48rem; }
+  .app[data-mode="show"] .schema-key { font-size: 0.52rem; gap: 0.2rem; }
 }
 .settings-form-title {
   margin: 1rem 0 0.5rem;
@@ -5715,7 +5754,30 @@ function linkedTo(docId) {
   return state.links.filter((l) => l.to === docId);
 }
 
-/** 多表單開場：同一套紙本外型（A 摺），縮小唯讀，不改成按鈕塊 */
+/** 把開場四張紙縮進可視區，字可小但四張都要同時看見 */
+function fitSchemaToStage() {
+  const stage = els.stageWrap;
+  const host = els.stageFit;
+  if (!stage || !host || state.mode !== "show") return;
+  host.style.transform = "";
+  host.style.marginBottom = "";
+  host.dataset.scale = "1";
+  requestAnimationFrame(() => {
+    const map = els.sections?.querySelector(".schema-map");
+    if (!map) return;
+    const stageH = Math.max(120, stage.clientHeight - 8);
+    const stageW = Math.max(160, stage.clientWidth - 8);
+    const rect = host.getBoundingClientRect();
+    if (rect.height < 40 || rect.width < 40) return;
+    const scale = Math.min(1, Math.max(0.42, Math.min(stageW / rect.width, stageH / rect.height) * 0.96));
+    host.style.transformOrigin = "top center";
+    host.style.transform = `scale(${scale})`;
+    host.dataset.scale = String(scale);
+    host.style.marginBottom = `${Math.min(0, host.offsetHeight * (scale - 1))}px`;
+  });
+}
+
+/** 多表單開場：同一套紙本外型；四張同屏；連線先用精簡圖例（風格待補） */
 function renderFormSchema({ highlightLevels = [], highlightRules = [] } = {}) {
   const hiLv = new Set(highlightLevels.map(String));
   const hiRule = new Set(highlightRules.map(String));
@@ -5723,8 +5785,8 @@ function renderFormSchema({ highlightLevels = [], highlightRules = [] } = {}) {
   els.formSheet.hidden = false;
   els.formSheet.classList.add("is-schema");
   els.formTitle.textContent = pack.meta?.title || "表單關係";
-  els.formSub.textContent = "先看幾張紙怎麼連；外型與後面填寫同一張紙，只是現在唯讀、字小一點";
-  els.statusPill.textContent = `${list.length} 張同級表單 · 唯讀預覽`;
+  els.formSub.textContent = "四張同屏 · 同一紙本 · 字小但都看得見";
+  els.statusPill.textContent = `${list.length} 張 · 唯讀`;
   els.submitRow.classList.remove("open");
   els.actionRow.classList.remove("open");
   els.actionRow.innerHTML = "";
@@ -5732,52 +5794,47 @@ function renderFormSchema({ highlightLevels = [], highlightRules = [] } = {}) {
   const sheets = list
     .map((f) => {
       const on = !hiLv.size || hiLv.has(f.level) || hiLv.has(f.id);
-      const fields = (f.sections || [])
-        .flatMap((sec) => sec.fields || [])
-        .slice(0, 3);
+      const fields = (f.sections || []).flatMap((sec) => sec.fields || []);
       const rows = fields
         .map(
-          (field) => `<div class="field open readonly">
+          (field) => `<div class="field open readonly schema-field">
             <div class="field-label">${escapeHtml(field.label)}</div>
-            <div class="field-value empty">尚空白</div>
+            <div class="field-value empty" aria-hidden="true"></div>
           </div>`
         )
         .join("");
-      const more =
-        (f.sections || []).flatMap((sec) => sec.fields || []).length > fields.length
-          ? `<p class="schema-more">…其餘欄位稍後再進這張紙</p>`
-          : "";
-      const outs = (pack.linkRules || []).filter((r) => r.from === f.id);
-      const linkNote = outs.length
-        ? `<p class="schema-link-note">${outs
-            .map((r) => {
-              const to = formById(r.to);
-              const key = r.id || `${r.from}->${r.to}`;
-              const hot = !hiRule.size || hiRule.has(key);
-              return `<span class="${hot ? "hot" : ""}">${escapeHtml(f.level || "")} → ${escapeHtml(
-                to?.level || "?"
-              )} ${escapeHtml(r.cardinality || "")} ${escapeHtml(r.label || "")}</span>`;
-            })
-            .join("")}</p>`
-        : "";
       return `<article class="mini-sheet ${on ? "hi" : "dim"}" data-form="${escapeHtml(f.id)}">
-        <h3 class="form-title">${escapeHtml(f.level ? `${f.level} · ${f.title || f.label}` : f.title || f.label)}</h3>
+        <h3 class="form-title">${escapeHtml(f.level ? `${f.level} · ${f.label || f.title}` : f.label || f.title)}</h3>
         <div class="status-wrap"><span class="status-pill">${escapeHtml(f.level || "")} 草稿</span></div>
         <div class="section open">
-          <p class="section-label">${escapeHtml(f.sections?.[0]?.label || "欄位")}</p>
           <div class="fields">${rows}</div>
-          ${more}
         </div>
-        ${linkNote}
       </article>`;
+    })
+    .join("");
+
+  const key = (pack.linkRules || [])
+    .map((r, idx) => {
+      const from = formById(r.from);
+      const to = formById(r.to);
+      const id = r.id || `${r.from}->${r.to}`;
+      const hot = !hiRule.size || hiRule.has(id) || hiRule.has(String(idx));
+      return `<span class="schema-key-item ${hot ? "hot" : ""}" title="${escapeHtml(r.label || "")}">
+        <b>${escapeHtml(from?.level || "?")}→${escapeHtml(to?.level || "?")}</b>
+        <i>${escapeHtml(r.cardinality || "")}</i>
+      </span>`;
     })
     .join("");
 
   els.sections.innerHTML = `
     <div class="schema-map">
-      <p class="board-lead">同一種紙本外型：只縮字、唯讀。多張時先看<strong>誰連誰</strong>，再進某一張填寫。</p>
-      <div class="schema-sheets">${sheets}</div>
+      <div class="schema-sheets count-${list.length}">${sheets}</div>
+      <div class="schema-key" aria-label="表單連線圖例">
+        <span class="schema-key-label">連線</span>
+        ${key || `<span class="muted">尚無 linkRules</span>`}
+      </div>
     </div>`;
+  fitSchemaToStage();
 }
 
 function renderBoard({ highlight = [] } = {}) {
@@ -6002,10 +6059,12 @@ async function renderNode({ fromPrev = false } = {}) {
       highlightRules: node.schemaRules || [],
     });
   } else if (node.showBoard) {
+    resetStudyFit();
     state.boardOnly = true;
     renderBoard({ highlight: node.boardHighlight || [] });
     persistGraph();
   } else {
+    resetStudyFit();
     const formChanged = wantForm !== state.formId || wantDoc !== state.docId || state.boardOnly;
     state.boardOnly = false;
     if (formChanged) {
@@ -6596,10 +6655,11 @@ function bindChrome() {
   window.addEventListener("resize", () => {
     clearTimeout(window.__studyFitResize);
     window.__studyFitResize = setTimeout(() => {
-      if (state.mode === "show" && !state.boardOnly) {
-        const node = nodeOf(state.nodeId);
-        if (node) fitStudyView(node, node.focus || null);
-      }
+      if (state.mode !== "show") return;
+      const node = nodeOf(state.nodeId);
+      if (!node) return;
+      if (node.showSchema) fitSchemaToStage();
+      else if (!state.boardOnly) fitStudyView(node, node.focus || null);
     }, 120);
   });
 }

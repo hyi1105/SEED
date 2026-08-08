@@ -634,28 +634,50 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
 .edge-arrow { color: var(--brand); font-weight: 700; }
 .edge-label { color: var(--muted); font-size: 0.72rem; }
 
-/* 開場：同一套紙本（A 摺）外型，縮小唯讀，不用按鈕塊 */
-.schema-map { display: grid; gap: 0.55rem; }
+/* 開場：四張同屏紙本；連線用精簡圖例（正式連線風格待使用者上傳） */
+.form-sheet.is-schema {
+  padding: 0.4rem 0.45rem 0.5rem;
+}
+.form-sheet.is-schema .form-title {
+  font-size: 0.9rem;
+}
+.form-sheet.is-schema .form-sub {
+  margin: 0.1rem 0 0.3rem;
+  font-size: 0.62rem;
+}
+.form-sheet.is-schema .status-pill {
+  margin: 0 auto 0.35rem;
+  font-size: 0.58rem;
+  padding: 0.08rem 0.4rem;
+}
+.schema-map { display: grid; gap: 0.35rem; }
 .schema-sheets {
   display: grid;
-  gap: 0.55rem;
+  gap: 0.35rem;
+}
+.schema-sheets.count-4 {
+  grid-template-columns: 1fr 1fr;
+  gap: 0.3rem;
 }
 .mini-sheet {
   background: linear-gradient(180deg, #fffefb 0%, var(--paper) 100%);
   border: 1px solid var(--paper-edge);
   border-radius: 4px;
-  box-shadow: 0 8px 18px rgba(26, 36, 32, 0.08);
-  padding: 0.55rem 0.6rem 0.65rem;
+  box-shadow: 0 4px 12px rgba(26, 36, 32, 0.07);
+  padding: 0.35rem 0.4rem 0.4rem;
+  min-width: 0;
   transition: opacity 0.25s, box-shadow 0.25s, border-color 0.25s;
 }
 .mini-sheet .form-title {
-  font-size: 0.95rem;
+  font-size: 0.72rem;
   margin: 0;
+  line-height: 1.2;
+  text-align: center;
 }
 .mini-sheet .status-pill {
-  margin: 0.2rem auto 0.35rem;
-  padding: 0.1rem 0.45rem;
-  font-size: 0.62rem;
+  margin: 0.12rem auto 0.2rem;
+  padding: 0.06rem 0.35rem;
+  font-size: 0.52rem;
 }
 .mini-sheet .section {
   display: block;
@@ -663,69 +685,86 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
   padding: 0;
   border: 0;
 }
-.mini-sheet .section-label {
-  margin: 0 0 0.2rem;
-  font-size: 0.58rem;
-}
-.mini-sheet .fields { gap: 0.12rem; }
-.mini-sheet .field {
+.mini-sheet .fields { gap: 0.08rem; }
+.mini-sheet .field.schema-field {
   display: grid;
-  grid-template-columns: 3.4rem minmax(0, 1fr);
-  gap: 0.2rem;
-  padding: 0.06rem 0.2rem;
-  border-radius: 4px;
+  grid-template-columns: minmax(2.4rem, 38%) minmax(0, 1fr);
+  gap: 0.15rem;
+  padding: 0.02rem 0.1rem;
+  border-radius: 3px;
   border: 1px solid transparent;
+  align-items: center;
 }
 .mini-sheet .field.readonly { pointer-events: none; }
 .mini-sheet .field-label {
-  font-size: 0.6rem;
-  padding-top: 0.1rem;
+  font-size: 0.52rem;
+  padding-top: 0;
+  line-height: 1.15;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .mini-sheet .field-value {
-  min-height: 1rem;
-  padding: 0.1rem 0.28rem;
-  border-radius: 4px;
-  font-size: 0.68rem;
+  min-height: 0.72rem;
+  padding: 0.04rem 0.18rem;
+  border-radius: 3px;
+  font-size: 0.5rem;
 }
-.mini-sheet .schema-more {
-  margin: 0.25rem 0 0;
-  font-size: 0.58rem;
-  color: var(--muted);
-  text-align: center;
-}
-.mini-sheet .schema-link-note {
-  margin: 0.4rem 0 0;
-  padding-top: 0.35rem;
-  border-top: 1px dashed rgba(26, 36, 32, 0.12);
-  display: grid;
-  gap: 0.15rem;
-  font-size: 0.62rem;
-  color: var(--muted);
-  line-height: 1.35;
-}
-.mini-sheet .schema-link-note .hot {
-  color: var(--brand);
-  font-weight: 700;
+.mini-sheet .field-value.empty {
+  font-size: 0;
+  color: transparent;
 }
 .mini-sheet.hi {
   border-color: color-mix(in srgb, var(--brand) 40%, var(--paper-edge));
-  box-shadow: 0 0 0 2px rgba(12, 92, 77, 0.08), 0 8px 18px rgba(26, 36, 32, 0.08);
+  box-shadow: 0 0 0 1.5px rgba(12, 92, 77, 0.1), 0 4px 12px rgba(26, 36, 32, 0.07);
 }
-.mini-sheet.dim { opacity: 0.45; }
-.form-sheet.is-schema .board-lead {
-  font-size: 0.72rem;
-  margin: 0 0 0.15rem;
+.mini-sheet.dim { opacity: 0.5; }
+.schema-key {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.4rem;
+  padding: 0.3rem 0.35rem;
+  border-top: 1px dashed rgba(26, 36, 32, 0.14);
+  font-size: 0.58rem;
+  color: var(--muted);
 }
+.schema-key-label {
+  font-weight: 700;
+  color: var(--brand);
+  letter-spacing: 0.04em;
+}
+.schema-key-item {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.15rem;
+  padding: 0.08rem 0.28rem;
+  border: 1px solid var(--paper-edge);
+  border-radius: 4px;
+  background: #fff;
+  font-style: normal;
+}
+.schema-key-item b {
+  font-family: var(--font-ui);
+  font-size: 0.58rem;
+  color: var(--ink);
+}
+.schema-key-item i {
+  font-style: normal;
+  font-size: 0.5rem;
+  color: var(--muted);
+}
+.schema-key-item.hot {
+  border-color: color-mix(in srgb, var(--brand) 45%, white);
+  background: rgba(12, 92, 77, 0.06);
+}
+.schema-key-item.hot b { color: var(--brand); }
 @media (max-width: 640px) {
-  .app[data-mode="show"] .mini-sheet {
-    padding: 0.4rem 0.45rem 0.5rem;
-  }
-  .app[data-mode="show"] .mini-sheet .form-title { font-size: 0.82rem; }
-  .app[data-mode="show"] .mini-sheet .field {
-    grid-template-columns: 3rem minmax(0, 1fr);
-  }
-  .app[data-mode="show"] .mini-sheet .field-label { font-size: 0.56rem; }
-  .app[data-mode="show"] .mini-sheet .field-value { font-size: 0.62rem; }
+  .app[data-mode="show"] .form-sheet.is-schema .form-sub { display: block; }
+  .app[data-mode="show"] .mini-sheet { padding: 0.28rem 0.32rem 0.32rem; }
+  .app[data-mode="show"] .mini-sheet .form-title { font-size: 0.64rem; }
+  .app[data-mode="show"] .mini-sheet .field-label { font-size: 0.48rem; }
+  .app[data-mode="show"] .schema-key { font-size: 0.52rem; gap: 0.2rem; }
 }
 .settings-form-title {
   margin: 1rem 0 0.5rem;

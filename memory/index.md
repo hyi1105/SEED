@@ -10,6 +10,7 @@
 
 ## 場次
 
+- 2026-08-08 — 開場四張同屏＋連線風格待補 — 標籤：產品、walkthrough、Show、四張同屏、連線、待續 — [sessions/2026-08-08-schema-four-fit.md](sessions/2026-08-08-schema-four-fit.md)
 - 2026-08-08 — 表單外型統一：到處都是同一張紙（A 摺） — 標籤：產品、walkthrough、Show、表單、紙本、視覺統一 — [sessions/2026-08-08-unify-form-sheet-look.md](sessions/2026-08-08-unify-form-sheet-look.md)
 - 2026-08-08 — Show 開場：先大圖關係，再進欄位 — 標籤：產品、walkthrough、Show、多表單、關係圖、學習 — [sessions/2026-08-08-show-schema-first.md](sessions/2026-08-08-show-schema-first.md)
 - 2026-08-08 — Show 手機版：欄位壓扁＋自動縮放重點範圍 — 標籤：產品、walkthrough、Show、手機、欄位、學習 — [sessions/2026-08-08-show-mobile-field-fit.md](sessions/2026-08-08-show-mobile-field-fit.md)

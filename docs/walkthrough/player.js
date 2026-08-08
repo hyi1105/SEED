@@ -635,7 +635,30 @@ function linkedTo(docId) {
   return state.links.filter((l) => l.to === docId);
 }
 
-/** 多表單開場：同一套紙本外型（A 摺），縮小唯讀，不改成按鈕塊 */
+/** 把開場四張紙縮進可視區，字可小但四張都要同時看見 */
+function fitSchemaToStage() {
+  const stage = els.stageWrap;
+  const host = els.stageFit;
+  if (!stage || !host || state.mode !== "show") return;
+  host.style.transform = "";
+  host.style.marginBottom = "";
+  host.dataset.scale = "1";
+  requestAnimationFrame(() => {
+    const map = els.sections?.querySelector(".schema-map");
+    if (!map) return;
+    const stageH = Math.max(120, stage.clientHeight - 8);
+    const stageW = Math.max(160, stage.clientWidth - 8);
+    const rect = host.getBoundingClientRect();
+    if (rect.height < 40 || rect.width < 40) return;
+    const scale = Math.min(1, Math.max(0.42, Math.min(stageW / rect.width, stageH / rect.height) * 0.96));
+    host.style.transformOrigin = "top center";
+    host.style.transform = `scale(${scale})`;
+    host.dataset.scale = String(scale);
+    host.style.marginBottom = `${Math.min(0, host.offsetHeight * (scale - 1))}px`;
+  });
+}
+
+/** 多表單開場：同一套紙本外型；四張同屏；連線先用精簡圖例（風格待補） */
 function renderFormSchema({ highlightLevels = [], highlightRules = [] } = {}) {
   const hiLv = new Set(highlightLevels.map(String));
   const hiRule = new Set(highlightRules.map(String));
@@ -643,8 +666,8 @@ function renderFormSchema({ highlightLevels = [], highlightRules = [] } = {}) {
   els.formSheet.hidden = false;
   els.formSheet.classList.add("is-schema");
   els.formTitle.textContent = pack.meta?.title || "表單關係";
-  els.formSub.textContent = "先看幾張紙怎麼連；外型與後面填寫同一張紙，只是現在唯讀、字小一點";
-  els.statusPill.textContent = `${list.length} 張同級表單 · 唯讀預覽`;
+  els.formSub.textContent = "四張同屏 · 同一紙本 · 字小但都看得見";
+  els.statusPill.textContent = `${list.length} 張 · 唯讀`;
   els.submitRow.classList.remove("open");
   els.actionRow.classList.remove("open");
   els.actionRow.innerHTML = "";
@@ -652,52 +675,47 @@ function renderFormSchema({ highlightLevels = [], highlightRules = [] } = {}) {
   const sheets = list
     .map((f) => {
       const on = !hiLv.size || hiLv.has(f.level) || hiLv.has(f.id);
-      const fields = (f.sections || [])
-        .flatMap((sec) => sec.fields || [])
-        .slice(0, 3);
+      const fields = (f.sections || []).flatMap((sec) => sec.fields || []);
       const rows = fields
         .map(
-          (field) => `<div class="field open readonly">
+          (field) => `<div class="field open readonly schema-field">
             <div class="field-label">${escapeHtml(field.label)}</div>
-            <div class="field-value empty">尚空白</div>
+            <div class="field-value empty" aria-hidden="true"></div>
           </div>`
         )
         .join("");
-      const more =
-        (f.sections || []).flatMap((sec) => sec.fields || []).length > fields.length
-          ? `<p class="schema-more">…其餘欄位稍後再進這張紙</p>`
-          : "";
-      const outs = (pack.linkRules || []).filter((r) => r.from === f.id);
-      const linkNote = outs.length
-        ? `<p class="schema-link-note">${outs
-            .map((r) => {
-              const to = formById(r.to);
-              const key = r.id || `${r.from}->${r.to}`;
-              const hot = !hiRule.size || hiRule.has(key);
-              return `<span class="${hot ? "hot" : ""}">${escapeHtml(f.level || "")} → ${escapeHtml(
-                to?.level || "?"
-              )} ${escapeHtml(r.cardinality || "")} ${escapeHtml(r.label || "")}</span>`;
-            })
-            .join("")}</p>`
-        : "";
       return `<article class="mini-sheet ${on ? "hi" : "dim"}" data-form="${escapeHtml(f.id)}">
-        <h3 class="form-title">${escapeHtml(f.level ? `${f.level} · ${f.title || f.label}` : f.title || f.label)}</h3>
+        <h3 class="form-title">${escapeHtml(f.level ? `${f.level} · ${f.label || f.title}` : f.label || f.title)}</h3>
         <div class="status-wrap"><span class="status-pill">${escapeHtml(f.level || "")} 草稿</span></div>
         <div class="section open">
-          <p class="section-label">${escapeHtml(f.sections?.[0]?.label || "欄位")}</p>
           <div class="fields">${rows}</div>
-          ${more}
         </div>
-        ${linkNote}
       </article>`;
+    })
+    .join("");
+
+  const key = (pack.linkRules || [])
+    .map((r, idx) => {
+      const from = formById(r.from);
+      const to = formById(r.to);
+      const id = r.id || `${r.from}->${r.to}`;
+      const hot = !hiRule.size || hiRule.has(id) || hiRule.has(String(idx));
+      return `<span class="schema-key-item ${hot ? "hot" : ""}" title="${escapeHtml(r.label || "")}">
+        <b>${escapeHtml(from?.level || "?")}→${escapeHtml(to?.level || "?")}</b>
+        <i>${escapeHtml(r.cardinality || "")}</i>
+      </span>`;
     })
     .join("");
 
   els.sections.innerHTML = `
     <div class="schema-map">
-      <p class="board-lead">同一種紙本外型：只縮字、唯讀。多張時先看<strong>誰連誰</strong>，再進某一張填寫。</p>
-      <div class="schema-sheets">${sheets}</div>
+      <div class="schema-sheets count-${list.length}">${sheets}</div>
+      <div class="schema-key" aria-label="表單連線圖例">
+        <span class="schema-key-label">連線</span>
+        ${key || `<span class="muted">尚無 linkRules</span>`}
+      </div>
     </div>`;
+  fitSchemaToStage();
 }
 
 function renderBoard({ highlight = [] } = {}) {
@@ -922,10 +940,12 @@ async function renderNode({ fromPrev = false } = {}) {
       highlightRules: node.schemaRules || [],
     });
   } else if (node.showBoard) {
+    resetStudyFit();
     state.boardOnly = true;
     renderBoard({ highlight: node.boardHighlight || [] });
     persistGraph();
   } else {
+    resetStudyFit();
     const formChanged = wantForm !== state.formId || wantDoc !== state.docId || state.boardOnly;
     state.boardOnly = false;
     if (formChanged) {
@@ -1516,10 +1536,11 @@ function bindChrome() {
   window.addEventListener("resize", () => {
     clearTimeout(window.__studyFitResize);
     window.__studyFitResize = setTimeout(() => {
-      if (state.mode === "show" && !state.boardOnly) {
-        const node = nodeOf(state.nodeId);
-        if (node) fitStudyView(node, node.focus || null);
-      }
+      if (state.mode !== "show") return;
+      const node = nodeOf(state.nodeId);
+      if (!node) return;
+      if (node.showSchema) fitSchemaToStage();
+      else if (!state.boardOnly) fitStudyView(node, node.focus || null);
     }, 120);
   });
 }
