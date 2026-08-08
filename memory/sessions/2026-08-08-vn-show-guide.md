@@ -60,6 +60,12 @@ status: active
 - 主入口只有 **Show + 表單**（地圖可選）
 - 任意系統＝同一份 `vn/*.json`（form + actions + show nodes）→ 既能教也能辦單
 
+## UX：注意力只在一點
+
+- 拿掉右上角色立繪框
+- 不要底部對話條上下跳視線
+- 台詞用**箭頭氣泡**貼在正在講／正在填的欄位下方；下一步也在氣泡裡
+
 ## 待續
 
 - [x] 導引腳本改成腳本／台詞表（speaker、line、reveal、choice）— 請假 VN
