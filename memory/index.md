@@ -100,6 +100,7 @@
 
 ## 主題
 
+- **故事式泳道：讓被迫學習的人也想看下去**— [topics/story-swimlane-learn.md](topics/story-swimlane-learn.md)
 - **帳號 Repo 整理＋減少 Agent 讀多餘 MD**— [topics/repo-org-and-token.md](topics/repo-org-and-token.md)
 - **學習陌生系統：由大到小（可貼／Cursor Skill）**— [topics/learn-system-prompt.md](topics/learn-system-prompt.md) · Skill：`.cursor/skills/learn-system-blueprint-first/`
 - **空白起源地圖：從空白理解整套系統**— [topics/blank-origin-map.md](topics/blank-origin-map.md)
