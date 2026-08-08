@@ -660,18 +660,55 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
   .form-sheet { padding: 1rem 0.85rem 1.15rem; }
   .form-title { font-size: 1.25rem; }
   .field { grid-template-columns: 4.4rem minmax(0, 1fr); }
-  /* Show：聊天略縮、表單多一點；欄位再壓扁 */
+  /* Show：頂欄／聊天都讓路，表單一屏多看一點 */
   .app[data-mode="show"] {
-    grid-template-rows: auto 1fr minmax(160px, 30dvh);
+    grid-template-rows: auto 1fr minmax(140px, 26dvh);
+  }
+  .app[data-mode="show"] .top {
+    gap: 0.3rem;
+    padding: 0.35rem 0.5rem;
+  }
+  .app[data-mode="show"] .brand .eyebrow {
+    display: none;
+  }
+  .app[data-mode="show"] .brand h1 {
+    font-size: 0.95rem;
+  }
+  .app[data-mode="show"] .top a.seed {
+    padding: 0.2rem 0.4rem;
+    font-size: 0.78rem;
+  }
+  .app[data-mode="show"] .pack-pick-label {
+    display: none;
+  }
+  .app[data-mode="show"] .pack-pick select {
+    max-width: 7.5rem;
+    font-size: 0.72rem;
+    padding: 0.2rem 0.45rem;
+  }
+  .app[data-mode="show"] .mode-tab,
+  .app[data-mode="show"] .top .ghost-btn,
+  .app[data-mode="show"] .top .import-row {
+    padding: 0.22rem 0.5rem;
+    font-size: 0.68rem;
+  }
+  /* 學習時少用：匯入／匯出／重來收到第二視覺層 */
+  .app[data-mode="show"] .top > .import-row,
+  .app[data-mode="show"] .top > #btn-export-top,
+  .app[data-mode="show"] .top > #btn-restart {
+    display: none;
   }
   .app[data-mode="show"] .stage-wrap {
-    padding: 0.45rem 0.45rem 0.55rem;
+    padding: 0.35rem 0.4rem 0.45rem;
   }
   .app[data-mode="show"] .form-sheet {
-    padding: 0.45rem 0.5rem 0.55rem;
+    padding: 0.4rem 0.45rem 0.5rem;
   }
   .app[data-mode="show"] .form-title {
-    font-size: 0.95rem;
+    font-size: 0.9rem;
+  }
+  .app[data-mode="show"] .form-sub {
+    display: none;
   }
   .app[data-mode="show"] .field {
     grid-template-columns: 3.2rem minmax(0, 1fr);
@@ -688,21 +725,25 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
     font-size: 0.72rem;
   }
   .app[data-mode="show"] .chat-log {
-    padding: 0.45rem 0.55rem;
-    gap: 0.35rem;
+    padding: 0.4rem 0.5rem;
+    gap: 0.3rem;
   }
   .app[data-mode="show"] .bubble {
-    padding: 0.4rem 0.55rem;
-    font-size: 0.82rem;
-    line-height: 1.35;
+    padding: 0.35rem 0.5rem;
+    font-size: 0.78rem;
+    line-height: 1.3;
+  }
+  .app[data-mode="show"] .bubble-who,
+  .app[data-mode="show"] .who {
+    font-size: 0.62rem;
   }
   .app[data-mode="show"] .chat-bar {
-    padding: 0.35rem 0.55rem 0.5rem;
-    gap: 0.3rem;
+    padding: 0.3rem 0.5rem 0.45rem;
+    gap: 0.25rem;
   }
   .app[data-mode="show"] .nav-btn,
   .app[data-mode="show"] .choice-btn {
-    padding: 0.4rem 0.65rem;
-    font-size: 0.78rem;
+    padding: 0.35rem 0.55rem;
+    font-size: 0.75rem;
   }
 }
