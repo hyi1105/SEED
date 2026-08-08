@@ -10,6 +10,7 @@
 
 ## 場次
 
+- 2026-08-08 — 構想：空白起源地圖（從空白理解整套系統） — 標籤：產品、空白、起源、教學、請假、地圖 — [sessions/2026-08-08-blank-origin-map.md](sessions/2026-08-08-blank-origin-map.md)
 - 2026-08-08 — 導引功能：從聊需求到可用系統（催收範例） — 標籤：產品、導引、教學、催收、欄位、權限 — [sessions/2026-08-08-design-guide-wizard.md](sessions/2026-08-08-design-guide-wizard.md)
 - 2026-08-06 — 睡前願景：靜態簡報＋操作影片＋系統架構顧問 — 標籤：產品、願景、簡報、影片、阿嬤、顧問 — [sessions/2026-08-06-consultant-vision-sleep.md](sessions/2026-08-06-consultant-vision-sleep.md)
 - 2026-08-06 — 地圖式儀表板＋JSON Schema／Skill（AI 產系統包） — 標籤：產品、儀表板、地圖、JSON、Skill — [sessions/2026-08-06-walkthrough-map-skill.md](sessions/2026-08-06-walkthrough-map-skill.md)
@@ -90,6 +91,7 @@
 
 ## 主題
 
+- **空白起源地圖：從空白理解整套系統**— [topics/blank-origin-map.md](topics/blank-origin-map.md)
 - **產品願景：系統理解工具箱 → 系統架構顧問**— [topics/system-consultant-vision.md](topics/system-consultant-vision.md)
 - **情境式系統理解（角色×情境×欄位逐步高亮）**— [topics/scenario-system-walkthrough.md](topics/scenario-system-walkthrough.md)
 - **ALR5：系統欄位（Creator／Approval_n／step）**— [topics/alr5-system-fields.md](topics/alr5-system-fields.md)

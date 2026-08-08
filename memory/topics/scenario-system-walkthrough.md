@@ -223,3 +223,7 @@ status: active
 ## 總願景連結（2026-08-06 睡前）
 
 互動地圖只是工具之一。完整目標見 [system-consultant-vision.md](./system-consultant-vision.md)：靜態簡報全覽、操作演示／影片（阿嬤路徑）、多來源統一成 JSON、進階顧問（漏情境／風險）。
+
+## 空白起源（2026-08-08）
+
+教學主軸再補一層：不只「步驟亮欄位」，還要講**這個空白為什麼存在**（需求一句 → 空白一組），結束時能列「幾張表／每表空白」，並拖空白寫起源地圖。詳見 [blank-origin-map.md](./blank-origin-map.md)。

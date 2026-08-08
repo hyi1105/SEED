@@ -20,8 +20,9 @@ status: active
 3. **靜態簡報／紙本作業圖** — 已有（模式「簡報」：①②③ 框線全覽）
 4. **操作演示／影片** — 已有演示動畫（模式「演示」：打字／帶出／圈選）；真影片可晚做
 5. **顧問輸出** — 建議、漏情境、風險、死欄位（熱圖已有死欄位；顧問建議待做）
+6. **空白起源地圖** — 構想中：每個空白／按鈕掛「因為哪句需求才出現」；結束列表與空白、可拖關聯、停在最後完整圖（詳見 [blank-origin-map.md](./blank-origin-map.md)）
 
-示範系統包：離職單（`system.json`）、催收單（`systems/collection.json`）。
+示範系統包：離職單（`system.json`）、催收單（`systems/collection.json`）；請假故事線待做成第三包。
 
 ## 為何需要靜態＋影片（不只高亮）
 
@@ -38,5 +39,6 @@ status: active
 ## 相關筆記
 
 - 場次（睡前原文整理）：[sessions/2026-08-06-consultant-vision-sleep.md](../sessions/2026-08-06-consultant-vision-sleep.md)
+- 空白起源地圖：[blank-origin-map.md](./blank-origin-map.md) · [sessions/2026-08-08-blank-origin-map.md](../sessions/2026-08-08-blank-origin-map.md)
 - 互動＋契約：[scenario-system-walkthrough.md](./scenario-system-walkthrough.md)
 - Skill：[`docs/walkthrough/SKILL.md`](../../docs/walkthrough/SKILL.md)
