@@ -10,6 +10,7 @@
 
 ## 場次
 
+- 2026-08-08 — 導覽改視覺小說式 show（點下一步，不要答題） — 標籤：產品、學習、VN、show、選項 — [sessions/2026-08-08-vn-show-guide.md](sessions/2026-08-08-vn-show-guide.md)
 - 2026-08-08 — 學習／導覽偏好：漸進拼圖（四合院式） — 標籤：產品、學習、導覽、漸進拼圖、偏好 — [sessions/2026-08-08-progressive-puzzle-guide.md](sessions/2026-08-08-progressive-puzzle-guide.md)
 - 2026-08-08 — 構想：空白起源地圖（從空白理解整套系統） — 標籤：產品、空白、起源、教學、請假、地圖 — [sessions/2026-08-08-blank-origin-map.md](sessions/2026-08-08-blank-origin-map.md)
 - 2026-08-08 — 導引功能：從聊需求到可用系統（催收範例） — 標籤：產品、導引、教學、催收、欄位、權限 — [sessions/2026-08-08-design-guide-wizard.md](sessions/2026-08-08-design-guide-wizard.md)

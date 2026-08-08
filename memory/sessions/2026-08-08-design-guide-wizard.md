@@ -28,4 +28,4 @@ status: active
 - [ ] 導引可接真實對話輸入（不只預寫腳本）
 - [ ] 導引結束自動產出可下載的 system.json
 - [ ] 顧問層：漏情境／風險建議
-- [ ] 插入「空白起源旁白」＋漸進拼圖閘門（見 [blank-origin-map](./2026-08-08-blank-origin-map.md)、[progressive-puzzle](./2026-08-08-progressive-puzzle-guide.md)）：答對才長名稱釘區
+- [ ] 改成 VN show：對話框下一步＋拼圖隨劇情長出＋關鍵選項（見 [vn-show](./2026-08-08-vn-show-guide.md)、[progressive-puzzle](./2026-08-08-progressive-puzzle-guide.md)）
