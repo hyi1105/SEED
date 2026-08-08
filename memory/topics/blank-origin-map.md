@@ -121,10 +121,11 @@ status: active
 
 ## 已落地（2026-08-08）
 
-- Show 頁：`docs/walkthrough/show.html`（**邊講邊填**：真請假單＋打字填入，不是抽象標籤拼圖）
-- 腳本：`docs/walkthrough/vn/leave.json`（姓名→電話→地址→最後一天…每欄先描述再填）
-- 結局 → `index.html?mode=map&system=leave` 地圖驗證
-- 系統包：`docs/walkthrough/systems/leave.json`
+- **統一入口** `docs/walkthrough/index.html`：`Show` + `表單`（導引／簡報／演示已拿掉）
+- 同一份 `vn/leave.json`：邊講邊填腳本 ＋ 真實欄位／角色／actions 狀態機
+- 表單可切申請人／主管／HR，送出／同意／退回／拒絕／核准；存 localStorage
+- 地圖改掛 `map.html`（可選）
+- 契約：`docs/walkthrough/SKILL.md`（任意系統統一成這份 JSON）
 
 ## 待續
 

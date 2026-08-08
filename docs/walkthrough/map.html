@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
+  <title>系統地圖 — SEED</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css?v=map1" />
+</head>
+<body>
+  <div class="dash">
+    <header class="topbar">
+      <a class="back" href="../index.html">SEED</a>
+      <div class="brand">
+        <p class="eyebrow" id="mode-eyebrow">System Walkthrough</p>
+        <h1 id="sys-title">離職單</h1>
+      </div>
+      <div class="mode-tabs" role="tablist" aria-label="認識方式">
+        <a class="mode-tab" href="./index.html?mode=show">Show</a>
+        <a class="mode-tab" href="./index.html?mode=form">表單</a>
+        <button type="button" class="mode-tab active" data-mode="map" role="tab" aria-selected="true">地圖</button>
+      </div>
+    </header>
+
+    <div class="view view-map" id="view-map" data-active="true">
+      <div class="map-shell" id="map-shell">
+        <div class="map-toolbar" aria-label="地圖控制">
+          <button type="button" id="zoom-out" title="縮小">−</button>
+          <button type="button" id="zoom-in" title="放大">+</button>
+          <button type="button" id="zoom-fit" title="適合畫面">適合</button>
+          <button type="button" id="layout-reset" title="重設版面">重設版面</button>
+        </div>
+        <div class="legend float-legend" id="action-legend"></div>
+        <div class="viewport" id="viewport">
+          <div class="world" id="world">
+            <svg class="edges-svg" id="edges-svg" aria-hidden="true"></svg>
+            <div class="entities" id="lineage-canvas"></div>
+          </div>
+        </div>
+        <p class="map-hint" id="map-hint">單指拖地圖 · 雙指縮放 · 切換步驟不會移動鏡頭</p>
+      </div>
+    </div>
+
+    <div class="view view-paper" id="view-paper" data-active="false" hidden>
+      <div class="paper-toolbar">
+        <p class="paper-caption" id="paper-caption">一情境一張作業紙</p>
+        <div class="demo-controls" id="demo-controls" hidden>
+          <button type="button" id="demo-restart" class="ghost">重來</button>
+          <button type="button" id="demo-play" class="primary">▶ 播放演示</button>
+        </div>
+      </div>
+      <div class="paper-scroll">
+        <div class="paper-stage">
+          <article class="paper" id="paper-form" aria-label="作業紙表單"></article>
+          <aside class="paper-guide" id="paper-guide" aria-label="填寫順序說明"></aside>
+        </div>
+      </div>
+      <p class="demo-live" id="demo-live" hidden aria-live="polite"></p>
+    </div>
+
+    <div class="view view-guide" id="view-guide" data-active="false" hidden>
+      <div class="guide-layout">
+        <aside class="guide-rail">
+          <p class="guide-rail-title">教學階段</p>
+          <ol class="guide-phases" id="guide-phases"></ol>
+        </aside>
+        <div class="guide-main">
+          <p class="guide-kicker" id="guide-kicker">需求 → 欄位 → 權限 → 成檔 → 可用系統</p>
+          <h2 id="guide-phase-title">導引</h2>
+          <p class="guide-goal" id="guide-phase-goal"></p>
+          <div class="guide-turns" id="guide-turns"></div>
+          <div class="guide-board" id="guide-board" hidden></div>
+          <div class="guide-acl" id="guide-acl" hidden></div>
+          <div class="guide-file" id="guide-file" hidden></div>
+          <p class="guide-tip" id="guide-tip" hidden></p>
+          <div class="guide-nav">
+            <button type="button" id="guide-prev" class="ghost">上一階段</button>
+            <button type="button" id="guide-next" class="primary">下一階段</button>
+            <button type="button" id="guide-cta" class="primary" hidden>打開催收系統導覽</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <section class="sheet" id="sheet" data-open="true">
+      <button type="button" class="sheet-handle" id="sheet-toggle" aria-expanded="true">
+        <span class="grip" aria-hidden="true"></span>
+        <span id="sheet-title">導覽面板</span>
+      </button>
+
+      <div class="sheet-body">
+        <p class="top-sub sheet-sub" id="sys-sub">導引設計 · 地圖認識 · 簡報全覽 · 演示照做</p>
+        <div class="controls">
+          <label class="ctrl">
+            <span>系統</span>
+            <select id="system-select">
+              <option value="resignation">離職單</option>
+              <option value="collection">催收單</option>
+              <option value="leave">請假單</option>
+            </select>
+          </label>
+          <label class="ctrl">
+            <span>角色</span>
+            <select id="role-select"></select>
+          </label>
+          <label class="ctrl">
+            <span>情境</span>
+            <select id="scenario-select"></select>
+          </label>
+        </div>
+        <p class="scenario-summary" id="scenario-summary"></p>
+        <p class="chain" id="scenario-chain" hidden></p>
+
+        <div class="steps-head">
+          <h2>操作步驟</h2>
+          <div class="step-nav">
+            <button type="button" id="btn-prev" class="ghost">上一步</button>
+            <button type="button" id="btn-next" class="primary">下一步</button>
+          </div>
+        </div>
+        <ol class="steps" id="steps-list"></ol>
+        <div class="step-detail">
+          <p class="step-note" id="step-note">選擇情境後，逐步看欄位如何被點亮。</p>
+          <ul class="risks" id="step-risks" hidden></ul>
+        </div>
+
+        <div class="coverage" id="coverage-block">
+          <h2>欄位覆蓋</h2>
+          <p class="hint">從未被步驟碰到的欄位＝候選死欄位。</p>
+          <div class="coverage-grid" id="coverage-grid"></div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script type="application/json" id="system-data">
+{
+  "system": "離職單",
+  "subtitle": "地圖認識 · 簡報全覽 · 演示照做",
+  "roles": [
+    {
+      "id": "employee",
+      "label": "員工"
+    },
+    {
+      "id": "manager",
+      "label": "主管"
+    },
+    {
+      "id": "hr",
+      "label": "HR"
+    }
+  ],
+  "actions": [
+    {
+      "id": "write",
+      "label": "人手填寫",
+      "color": "write"
+    },
+    {
+      "id": "lookup",
+      "label": "查閱帶出",
+      "color": "lookup"
+    },
+    {
+      "id": "sync",
+      "label": "同步寫入",
+      "color": "sync"
+    },
+    {
+      "id": "auto",
+      "label": "自動產生",
+      "color": "auto"
+    },
+    {
+      "id": "validate",
+      "label": "檢核",
+      "color": "validate"
+    },
+    {
+      "id": "approve",
+      "label": "簽核",
+      "color": "approve"
+    },
+    {
+      "id": "notify",
+      "label": "通知",
+      "color": "notify"
+    }
+  ],
+  "entities": [
+    {
+      "id": "hr_api",
+      "label": "人事 API",
+      "kind": "api",
+      "fields": [
+        {
+          "id": "payload",
+          "label": "人員資料包"
+        }
+      ]
+    },
+    {
+      "id": "personnel",
+      "label": "人員主檔",
+      "kind": "table",
+      "fields": [
+        {
+          "id": "id",
+          "label": "ID"
+        },
+        {
+          "id": "name",
+          "label": "姓名"
+        },
+        {
+          "id": "dept",
+          "label": "部門"
+        },
+        {
+          "id": "status",
+          "label": "在職狀態"
+        },
+        {
+          "id": "legacy_badge",
+          "label": "舊識別證號",
+          "note": "疑似舊欄位"
+        }
+      ]
+    },
+    {
+      "id": "resignation",
+      "label": "離職單主檔",
+      "kind": "table",
+      "fields": [
+        {
+          "id": "id",
+          "label": "ID",
+          "auto": true
+        },
+        {
+          "id": "name",
+          "label": "姓名"
+        },
+        {
+          "id": "dept",
+          "label": "部門"
+        },
+        {
+          "id": "reason",
+          "label": "事由"
+        },
+        {
+          "id": "last_day",
+          "label": "最後上班日"
+        },
+        {
+          "id": "manager_comment",
+          "label": "主管意見"
+        },
+        {
+          "id": "hr_close_date",
+          "label": "HR 結案日"
+        },
+        {
+          "id": "status",
+          "label": "單據狀態"
+        },
+        {
+          "id": "old_fax",
+          "label": "傳真備註",
+          "note": "疑似舊欄位"
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "e-sync-api",
+      "from": "hr_api.payload",
+      "to": "personnel",
+      "kind": "sync",
+      "label": "api.pyc"
+    },
+    {
+      "id": "e-lookup-name",
+      "from": "personnel.id",
+      "to": "resignation.name",
+      "kind": "lookup",
+      "label": "lookup (人員主檔.ID)"
+    },
+    {
+      "id": "e-lookup-dept",
+      "from": "personnel.dept",
+      "to": "resignation.dept",
+      "kind": "lookup",
+      "label": "lookup (人員主檔.部門)"
+    },
+    {
+      "id": "e-status-check",
+      "from": "personnel.status",
+      "to": "resignation.status",
+      "kind": "lookup",
+      "label": "在職狀態檢核"
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "voluntary-resign",
+      "title": "想離職了",
+      "role": "employee",
+      "next": "manager-approve",
+      "summary": "員工開立自願離職單，系統帶出部門後送出。",
+      "steps": [
+        {
+          "n": 1,
+          "action": "write",
+          "fields": [
+            "resignation.name"
+          ],
+          "note": "在離職單填寫姓名（實際常以人員 ID 選人）。",
+          "fill": {
+            "resignation.name": "王小明"
+          }
+        },
+        {
+          "n": 2,
+          "action": "lookup",
+          "fields": [
+            "personnel.id",
+            "personnel.dept",
+            "resignation.dept"
+          ],
+          "edges": [
+            "e-lookup-name",
+            "e-lookup-dept"
+          ],
+          "note": "依人員鍵查主檔，自動帶出部門到離職單。",
+          "fill": {
+            "personnel.id": "E0123",
+            "personnel.dept": "資訊部",
+            "resignation.dept": "資訊部"
+          }
+        },
+        {
+          "n": 3,
+          "action": "write",
+          "fields": [
+            "resignation.reason",
+            "resignation.last_day"
+          ],
+          "note": "填寫事由（自願離職）與最後上班日。",
+          "fill": {
+            "resignation.reason": "自願離職",
+            "resignation.last_day": "2026-09-30"
+          }
+        },
+        {
+          "n": 4,
+          "action": "validate",
+          "fields": [
+            "personnel.status",
+            "resignation.status"
+          ],
+          "edges": [
+            "e-status-check"
+          ],
+          "note": "檢核在職才能開單；單據狀態改為「待主管簽核」。",
+          "risks": [
+            "若主檔同步延遲，可能誤擋或誤放"
+          ],
+          "fill": {
+            "personnel.status": "在職",
+            "resignation.status": "待主管簽核"
+          }
+        },
+        {
+          "n": 5,
+          "action": "auto",
+          "fields": [
+            "resignation.id"
+          ],
+          "note": "送出時系統自動產生離職單流水號。",
+          "fill": {
+            "resignation.id": "R-20260806-001"
+          }
+        },
+        {
+          "n": 6,
+          "action": "notify",
+          "fields": [
+            "resignation.status"
+          ],
+          "note": "通知直屬主管有待簽案件。",
+          "fill": {
+            "resignation.status": "待主管簽核"
+          }
+        }
+      ]
+    },
+    {
+      "id": "parental-leave",
+      "title": "育嬰留停（需填離職單）",
+      "role": "employee",
+      "next": "manager-approve",
+      "summary": "流程與自願離職類似，但事由為育嬰留停。",
+      "steps": [
+        {
+          "n": 1,
+          "action": "write",
+          "fields": [
+            "resignation.name"
+          ],
+          "note": "選取本人／填寫姓名。",
+          "fill": {
+            "resignation.name": "王小明"
+          }
+        },
+        {
+          "n": 2,
+          "action": "lookup",
+          "fields": [
+            "personnel.dept",
+            "resignation.dept"
+          ],
+          "edges": [
+            "e-lookup-dept"
+          ],
+          "note": "自動帶出部門。",
+          "fill": {
+            "personnel.dept": "資訊部",
+            "resignation.dept": "資訊部"
+          }
+        },
+        {
+          "n": 3,
+          "action": "write",
+          "fields": [
+            "resignation.reason",
+            "resignation.last_day"
+          ],
+          "note": "事由選「育嬰留停」，填最後上班日。",
+          "risks": [
+            "與真正離職共用主檔，報表易混在一起"
+          ],
+          "fill": {
+            "resignation.reason": "育嬰留停",
+            "resignation.last_day": "2026-09-30"
+          }
+        },
+        {
+          "n": 4,
+          "action": "auto",
+          "fields": [
+            "resignation.id",
+            "resignation.status"
+          ],
+          "note": "產生單號，狀態進入待簽。",
+          "fill": {
+            "resignation.id": "R-20260806-002",
+            "resignation.status": "待主管簽核"
+          }
+        },
+        {
+          "n": 5,
+          "action": "notify",
+          "fields": [
+            "resignation.status"
+          ],
+          "note": "通知主管簽核。",
+          "fill": {
+            "resignation.status": "待主管簽核"
+          }
+        }
+      ],
+      "demoValues": {
+        "resignation.reason": "育嬰留停",
+        "resignation.status": "待主管簽核",
+        "personnel.status": "留停中"
+      }
+    },
+    {
+      "id": "manager-approve",
+      "title": "主管簽核離職單",
+      "role": "manager",
+      "next": "hr-close",
+      "summary": "主管檢視部門與事由，填意見後核准。",
+      "steps": [
+        {
+          "n": 1,
+          "action": "lookup",
+          "fields": [
+            "resignation.name",
+            "resignation.dept",
+            "resignation.reason",
+            "resignation.last_day"
+          ],
+          "note": "開啟待簽單，檢視員工帶出的欄位。",
+          "fill": {
+            "resignation.name": "王小明",
+            "resignation.dept": "資訊部",
+            "resignation.reason": "自願離職",
+            "resignation.last_day": "2026-09-30"
+          }
+        },
+        {
+          "n": 2,
+          "action": "write",
+          "fields": [
+            "resignation.manager_comment"
+          ],
+          "note": "填寫主管意見。",
+          "fill": {
+            "resignation.manager_comment": "同意，請 HR 辦理後續"
+          }
+        },
+        {
+          "n": 3,
+          "action": "approve",
+          "fields": [
+            "resignation.status"
+          ],
+          "note": "核准後狀態改為「待 HR 結案」。",
+          "fill": {
+            "resignation.status": "待 HR 結案"
+          }
+        },
+        {
+          "n": 4,
+          "action": "notify",
+          "fields": [
+            "resignation.status"
+          ],
+          "note": "通知 HR 處理結案。",
+          "fill": {
+            "resignation.status": "待 HR 結案"
+          }
+        }
+      ],
+      "demoValues": {
+        "resignation.status": "待 HR 結案"
+      },
+      "demoSeed": {
+        "resignation.name": "王小明",
+        "resignation.dept": "資訊部",
+        "resignation.reason": "自願離職",
+        "resignation.last_day": "2026-09-30",
+        "resignation.id": "R-20260806-001",
+        "resignation.status": "待主管簽核"
+      }
+    },
+    {
+      "id": "hr-close",
+      "title": "HR 結案並同步主檔",
+      "role": "hr",
+      "summary": "HR 確認後結案，並把在職狀態同步回人員主檔。",
+      "steps": [
+        {
+          "n": 1,
+          "action": "lookup",
+          "fields": [
+            "resignation.name",
+            "resignation.dept",
+            "resignation.manager_comment",
+            "personnel.status"
+          ],
+          "note": "對照離職單與目前主檔在職狀態。",
+          "fill": {
+            "resignation.name": "王小明",
+            "resignation.dept": "資訊部",
+            "resignation.manager_comment": "同意，請 HR 辦理後續",
+            "personnel.status": "在職"
+          }
+        },
+        {
+          "n": 2,
+          "action": "sync",
+          "fields": [
+            "hr_api.payload",
+            "personnel.id",
+            "personnel.name",
+            "personnel.dept",
+            "personnel.status"
+          ],
+          "edges": [
+            "e-sync-api"
+          ],
+          "note": "必要時先跑 api.pyc，確保主檔最新。",
+          "risks": [
+            "同步失敗時結案與主檔會不一致"
+          ],
+          "fill": {
+            "hr_api.payload": "人員資料已同步",
+            "personnel.id": "E0123",
+            "personnel.name": "王小明",
+            "personnel.dept": "資訊部",
+            "personnel.status": "在職"
+          }
+        },
+        {
+          "n": 3,
+          "action": "write",
+          "fields": [
+            "resignation.hr_close_date",
+            "resignation.status",
+            "personnel.status"
+          ],
+          "note": "填結案日；離職單結案；主檔在職狀態改為離職／留停。",
+          "fill": {
+            "resignation.hr_close_date": "2026-08-20",
+            "resignation.status": "已結案",
+            "personnel.status": "已離職"
+          }
+        },
+        {
+          "n": 4,
+          "action": "notify",
+          "fields": [
+            "resignation.status"
+          ],
+          "note": "通知申請人結案完成。",
+          "fill": {
+            "resignation.status": "已結案"
+          }
+        }
+      ],
+      "demoValues": {
+        "resignation.status": "已結案",
+        "personnel.status": "已離職"
+      },
+      "demoSeed": {
+        "resignation.name": "王小明",
+        "resignation.dept": "資訊部",
+        "resignation.reason": "自願離職",
+        "resignation.last_day": "2026-09-30",
+        "resignation.id": "R-20260806-001",
+        "resignation.manager_comment": "同意，請 HR 辦理後續",
+        "resignation.status": "待 HR 結案",
+        "personnel.id": "E0123",
+        "personnel.name": "王小明",
+        "personnel.dept": "資訊部",
+        "personnel.status": "在職"
+      }
+    }
+  ],
+  "layout": {
+    "entities": {
+      "hr_api": {
+        "x": 40,
+        "y": 80,
+        "w": 220
+      },
+      "personnel": {
+        "x": 320,
+        "y": 60,
+        "w": 240
+      },
+      "resignation": {
+        "x": 620,
+        "y": 40,
+        "w": 260
+      }
+    }
+  },
+  "demo": {
+    "persona": {
+      "employee": "王小明",
+      "manager": "林主管",
+      "hr": "陳 HR"
+    },
+    "values": {
+      "hr_api.payload": "人員資料已同步",
+      "personnel.id": "E0123",
+      "personnel.name": "王小明",
+      "personnel.dept": "資訊部",
+      "personnel.status": "在職",
+      "resignation.name": "王小明",
+      "resignation.dept": "資訊部",
+      "resignation.reason": "自願離職",
+      "resignation.last_day": "2026-09-30",
+      "resignation.id": "R-20260806-001",
+      "resignation.status": "待主管簽核",
+      "resignation.manager_comment": "同意，請 HR 辦理後續",
+      "resignation.hr_close_date": "2026-08-20"
+    }
+  }
+}
+  </script>
+  <script type="application/json" id="guide-data">
+{
+  "title": "從需求對話到可用系統",
+  "subtitle": "教學導引：怎麼把「我想做催收系統」變成欄位、權限與可上手流程",
+  "example": "催收系統",
+  "targetSystem": "systems/collection.json",
+  "phases": [
+    {
+      "id": "hear",
+      "title": "1. 聽需求",
+      "goal": "先聽使用者要做什麼，不要急著開表。",
+      "turns": [
+        {
+          "who": "user",
+          "text": "我想做一個催收系統。申請人要填：姓名、部門、職位、系統名稱、預計催收日、區域。"
+        },
+        {
+          "who": "guide",
+          "text": "收到。這是「申請端」會填的基本資料。接下來我會問：催收本身要不要分階段？通常會。"
+        }
+      ],
+      "board": {
+        "headline": "使用者先提出的欄位",
+        "fields": [
+          { "id": "name", "label": "姓名", "source": "user" },
+          { "id": "dept", "label": "部門", "source": "user" },
+          { "id": "title", "label": "職位", "source": "user" },
+          { "id": "system_name", "label": "系統名稱", "source": "user" },
+          { "id": "expect_date", "label": "預計催收日", "source": "user" },
+          { "id": "area", "label": "區域", "source": "user" }
+        ]
+      }
+    },
+    {
+      "id": "enrich",
+      "title": "2. 補齊催收欄位",
+      "goal": "因為是催收，顧問會補上「第幾次催收」的狀態與日期——使用者沒講，但實務一定要。",
+      "turns": [
+        {
+          "who": "guide",
+          "text": "催收通常不是一次結束。我建議加上：第一次／第二次／第三次催收的狀態與日期。這樣才追得動。"
+        },
+        {
+          "who": "user",
+          "text": "對，要有一催、二催、三催。"
+        },
+        {
+          "who": "guide",
+          "text": "再加兩個結果欄位：最終交付日、催收完成日。這樣結案才有依據。"
+        }
+      ],
+      "board": {
+        "headline": "顧問補上的催收欄位",
+        "fields": [
+          { "id": "name", "label": "姓名", "source": "user" },
+          { "id": "dept", "label": "部門", "source": "user" },
+          { "id": "title", "label": "職位", "source": "user" },
+          { "id": "system_name", "label": "系統名稱", "source": "user" },
+          { "id": "expect_date", "label": "預計催收日", "source": "user" },
+          { "id": "area", "label": "區域", "source": "user" },
+          { "id": "c1_status", "label": "一催狀態", "source": "guide", "tag": "新增" },
+          { "id": "c1_date", "label": "一催日期", "source": "guide", "tag": "新增" },
+          { "id": "c2_status", "label": "二催狀態", "source": "guide", "tag": "新增" },
+          { "id": "c2_date", "label": "二催日期", "source": "guide", "tag": "新增" },
+          { "id": "c3_status", "label": "三催狀態", "source": "guide", "tag": "新增" },
+          { "id": "c3_date", "label": "三催日期", "source": "guide", "tag": "新增" },
+          { "id": "final_delivery", "label": "最終交付日", "source": "guide", "tag": "新增" },
+          { "id": "done_date", "label": "催收完成日", "source": "guide", "tag": "新增" }
+        ]
+      },
+      "tip": "教學重點：使用者講「要什麼」；顧問補「催收這種流程一定會漏的欄位」。"
+    },
+    {
+      "id": "acl-applicant",
+      "title": "3. 問申請人權限",
+      "goal": "申請人送出後：哪些能看、哪些不能改、哪些根本不該看見。",
+      "turns": [
+        {
+          "who": "guide",
+          "text": "申請人送單之後：哪些欄位不能再改？哪些催收狀態他不該看到？"
+        },
+        {
+          "who": "user",
+          "text": "基本資料送出後就不能改。一催／二催／三催的狀態與日期，申請人只能看結果，不能改。"
+        }
+      ],
+      "acl": {
+        "role": "申請人",
+        "rows": [
+          { "field": "姓名／部門／職位／系統／預計日／區域", "view": "可看", "edit": "送出前可編；送出後鎖定" },
+          { "field": "一催／二催／三催 狀態與日期", "view": "可看結果", "edit": "不可編" },
+          { "field": "最終交付日／催收完成日", "view": "可看", "edit": "不可編" }
+        ]
+      }
+    },
+    {
+      "id": "acl-collectors",
+      "title": "4. 問催收人權限",
+      "goal": "一催、二催、三催各自能動哪一欄——這就是「反對／簽核／分工」的起點。",
+      "turns": [
+        {
+          "who": "guide",
+          "text": "一催的人只能填一催狀態與日期嗎？二催、三催呢？"
+        },
+        {
+          "who": "user",
+          "text": "對。一催只能改一催欄位；二催改二催；三催改三催。別人的催收欄位只能看、不能改。"
+        },
+        {
+          "who": "guide",
+          "text": "主管或結案角色再填最終交付日、催收完成日。這樣就有完整對立流程：申請 → 催收 → 結案。"
+        }
+      ],
+      "acl": {
+        "role": "催收人／結案",
+        "rows": [
+          { "field": "申請基本資料", "view": "可看", "edit": "不可編" },
+          { "field": "一催狀態／日期", "view": "全員可看", "edit": "僅一催可編" },
+          { "field": "二催狀態／日期", "view": "全員可看", "edit": "僅二催可編" },
+          { "field": "三催狀態／日期", "view": "全員可看", "edit": "僅三催可編" },
+          { "field": "最終交付日／催收完成日", "view": "可看", "edit": "僅結案角色可編" }
+        ]
+      }
+    },
+    {
+      "id": "pack",
+      "title": "5. 收成檔案",
+      "goal": "把對話變成統一的 system.json——欄位、角色、情境、步驟都在裡面。",
+      "turns": [
+        {
+          "who": "guide",
+          "text": "討論結束後，我會依 SKILL／Schema 產出一份 JSON：表、欄位、角色、情境步驟、演示假資料。"
+        },
+        {
+          "who": "guide",
+          "text": "這份檔就是「可攜系統包」。換平台也能播：地圖認識、簡報全覽、演示照做。"
+        }
+      ],
+      "filePreview": {
+        "name": "systems/collection.json",
+        "bullets": [
+          "entities：催收單主檔（含一～三催與結案欄位）",
+          "roles：申請人／一催／二催／三催／結案",
+          "scenarios：申請開單 → 一催 → 二催 → 三催 → 結案（可接龍）",
+          "每步附 fill，演示模式可模擬真人填寫"
+        ]
+      }
+    },
+    {
+      "id": "ready",
+      "title": "6. 變成可用系統",
+      "goal": "檔案進播放器＝可上手系統：看地圖、走簡報、播演示；也看得到對立流程。",
+      "turns": [
+        {
+          "who": "guide",
+          "text": "現在可以打開「催收系統」導覽：用角色×情境看每個欄位實際在哪一步被填、被鎖、被帶出。"
+        },
+        {
+          "who": "guide",
+          "text": "這就是教學網站的導引功能：從聊天需求 → 欄位管理 → 每欄要做什麼 → 可播放的系統。"
+        }
+      ],
+      "cta": {
+        "label": "打開催收系統導覽",
+        "system": "collection",
+        "mode": "map"
+      }
+    }
+  ]
+}
+  </script>
+  <script src="map-app.js?v=map1" type="module"></script>
+</body>
+</html>

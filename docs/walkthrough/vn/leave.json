@@ -1,7 +1,7 @@
 {
-  "id": "leave-show",
+  "id": "leave",
   "title": "請假系統",
-  "subtitle": "邊講邊填 · 每一欄為什麼在這裡",
+  "subtitle": "邊講邊填 · 同一份資料也能自己辦單",
   "cast": [
     { "id": "narrator", "label": "旁白", "tone": "soft" },
     { "id": "you", "label": "林小華", "tone": "user" },
@@ -9,48 +9,215 @@
     { "id": "manager", "label": "陳主管", "tone": "manager" },
     { "id": "hr", "label": "王人事", "tone": "hr" }
   ],
+  "roles": [
+    { "id": "applicant", "label": "申請人", "persona": "林小華" },
+    { "id": "manager", "label": "主管", "persona": "陳主管" },
+    { "id": "hr", "label": "HR", "persona": "王人事" }
+  ],
   "form": {
     "title": "請假申請單",
+    "statusField": "final_status",
     "sections": [
       {
         "id": "apply",
         "label": "申請內容",
         "fields": [
-          { "id": "name", "label": "姓名", "placeholder": "尚空白" },
-          { "id": "phone", "label": "電話", "placeholder": "尚空白" },
-          { "id": "address", "label": "地址", "placeholder": "尚空白" },
-          { "id": "last_day", "label": "最後一天", "placeholder": "尚空白" }
+          {
+            "id": "name",
+            "label": "姓名",
+            "type": "text",
+            "placeholder": "請輸入姓名",
+            "required": true,
+            "write": ["applicant"],
+            "meaning": "這張單的主人"
+          },
+          {
+            "id": "phone",
+            "label": "電話",
+            "type": "tel",
+            "placeholder": "請假期間聯絡電話",
+            "required": true,
+            "write": ["applicant"],
+            "meaning": "請假期間找得到人"
+          },
+          {
+            "id": "address",
+            "label": "地址",
+            "type": "text",
+            "placeholder": "休假時的聯絡地址",
+            "required": false,
+            "write": ["applicant"],
+            "meaning": "休假時的聯絡地點"
+          },
+          {
+            "id": "last_day",
+            "label": "最後一天",
+            "type": "date",
+            "placeholder": "請假結束日",
+            "required": true,
+            "write": ["applicant"],
+            "meaning": "假單結束點、方便排班"
+          }
         ]
       },
       {
         "id": "manager",
         "label": "主管簽核",
         "fields": [
-          { "id": "m_name", "label": "簽核人", "placeholder": "尚空白" },
-          { "id": "m_date", "label": "日期", "placeholder": "尚空白" },
-          { "id": "m_status", "label": "狀態", "placeholder": "尚空白" },
-          { "id": "m_comment", "label": "意見", "placeholder": "尚空白" }
+          {
+            "id": "m_name",
+            "label": "簽核人",
+            "type": "text",
+            "placeholder": "主管姓名",
+            "write": ["manager"],
+            "autoPersona": true,
+            "meaning": "留下是誰在簽"
+          },
+          {
+            "id": "m_date",
+            "label": "日期",
+            "type": "date",
+            "write": ["manager"],
+            "autoToday": true,
+            "meaning": "何時看過這張單"
+          },
+          {
+            "id": "m_status",
+            "label": "狀態",
+            "type": "select",
+            "options": ["同意", "不同意"],
+            "write": ["manager"],
+            "meaning": "推動或停住流程"
+          },
+          {
+            "id": "m_comment",
+            "label": "意見",
+            "type": "textarea",
+            "placeholder": "同意或不同意的原因",
+            "write": ["manager"],
+            "meaning": "為什麼這樣決定"
+          }
         ]
       },
       {
         "id": "hr",
         "label": "HR 處理",
         "fields": [
-          { "id": "h_name", "label": "處理人", "placeholder": "尚空白" },
-          { "id": "h_date", "label": "日期", "placeholder": "尚空白" },
-          { "id": "h_status", "label": "狀態", "placeholder": "尚空白" },
-          { "id": "h_comment", "label": "意見", "placeholder": "尚空白" }
+          {
+            "id": "h_name",
+            "label": "處理人",
+            "type": "text",
+            "write": ["hr"],
+            "autoPersona": true,
+            "meaning": "誰登錄假別"
+          },
+          {
+            "id": "h_date",
+            "label": "日期",
+            "type": "date",
+            "write": ["hr"],
+            "autoToday": true,
+            "meaning": "何時處理"
+          },
+          {
+            "id": "h_status",
+            "label": "狀態",
+            "type": "select",
+            "options": ["完成", "補件"],
+            "write": ["hr"],
+            "meaning": "HR 處理結果"
+          },
+          {
+            "id": "h_comment",
+            "label": "意見",
+            "type": "textarea",
+            "placeholder": "備註",
+            "write": ["hr"],
+            "meaning": "假別或補件說明"
+          }
         ]
       },
       {
         "id": "close",
         "label": "結案",
         "fields": [
-          { "id": "final_status", "label": "結案狀態", "placeholder": "尚空白" }
+          {
+            "id": "final_status",
+            "label": "結案狀態",
+            "type": "text",
+            "write": [],
+            "meaning": "整張單目前走到哪"
+          }
         ]
       }
     ]
   },
+  "actions": [
+    {
+      "id": "submit",
+      "label": "送出給主管",
+      "role": "applicant",
+      "whenStatus": ["", "草稿", "待修改"],
+      "require": ["name", "phone", "last_day"],
+      "set": { "final_status": "待一簽" },
+      "message": "已送出。輪到主管簽核。"
+    },
+    {
+      "id": "approve",
+      "label": "同意，送 HR",
+      "role": "manager",
+      "whenStatus": ["待一簽"],
+      "require": ["m_comment"],
+      "set": {
+        "m_status": "同意",
+        "final_status": "待二簽"
+      },
+      "autoPersona": ["m_name"],
+      "autoToday": ["m_date"],
+      "message": "已同意。輪到 HR 處理。"
+    },
+    {
+      "id": "return",
+      "label": "不同意，退回修改",
+      "role": "manager",
+      "whenStatus": ["待一簽"],
+      "require": ["m_comment"],
+      "set": {
+        "m_status": "不同意",
+        "final_status": "待修改"
+      },
+      "autoPersona": ["m_name"],
+      "autoToday": ["m_date"],
+      "message": "已退回。申請人可修改後再送。"
+    },
+    {
+      "id": "reject",
+      "label": "不同意，直接拒絕",
+      "role": "manager",
+      "whenStatus": ["待一簽"],
+      "require": ["m_comment"],
+      "set": {
+        "m_status": "不同意",
+        "final_status": "已拒絕"
+      },
+      "autoPersona": ["m_name"],
+      "autoToday": ["m_date"],
+      "message": "已拒絕結案。若要請假需重開一張。"
+    },
+    {
+      "id": "hr_done",
+      "label": "完成並核准",
+      "role": "hr",
+      "whenStatus": ["待二簽"],
+      "set": {
+        "h_status": "完成",
+        "final_status": "已核准"
+      },
+      "autoPersona": ["h_name"],
+      "autoToday": ["h_date"],
+      "message": "已核准結案。特休可登錄。"
+    }
+  ],
   "start": "s01",
   "nodes": {
     "s01": {
@@ -116,7 +283,7 @@
     },
     "s09": {
       "speaker": "manager",
-      "line": "我是陳主管。單子到我這裡了——系統要留下「是誰在簽」，不是anonymous。",
+      "line": "我是陳主管。單子到我這裡了——系統要留下「是誰在簽」，不是 anonymous。",
       "focus": "m_name",
       "unlockSection": "manager",
       "unlock": ["m_name"],
@@ -226,7 +393,7 @@
     },
     "s15": {
       "speaker": "narrator",
-      "line": "你剛才親手看過：每一欄都是因為「有人要做一件事」才出現的。不是先畫表，是先过日子。",
+      "line": "你剛才親手看過：每一欄都是因為「有人要做一件事」才出現的。不是先畫表，是先過日子。",
       "next": "end"
     },
     "s_end_early": {
@@ -236,12 +403,12 @@
     },
     "end": {
       "speaker": "guide",
-      "line": "表單走完了。下面是這套系統收成幾張表——每一欄都能追回剛才填的那一句話。",
+      "line": "故事看完了。同一張單，現在換你自己填——申請人、主管、HR 都能切換角色真的辦單。",
       "ending": true,
       "summary": true,
       "cta": [
-        { "label": "打開地圖驗證", "action": "open-map", "system": "leave" },
-        { "label": "再填一次", "action": "restart" }
+        { "label": "自己填一張真表單", "action": "open-form" },
+        { "label": "再看一次故事", "action": "restart" }
       ]
     }
   },
@@ -250,11 +417,11 @@
       "id": "leave",
       "label": "請假主檔",
       "fields": [
-        { "label": "姓名", "origin": "知道是誰請假 → 林小華" },
+        { "label": "姓名", "origin": "知道是誰請假" },
         { "label": "電話", "origin": "請假期間要聯絡得到人" },
         { "label": "地址", "origin": "休假時的聯絡地點" },
         { "label": "最後一天", "origin": "假單結束點、方便排班" },
-        { "label": "結案狀態", "origin": "待一簽／待二簽／待修改／已核准／已拒絕" }
+        { "label": "結案狀態", "origin": "草稿／待一簽／待二簽／待修改／已核准／已拒絕" }
       ]
     },
     {
@@ -262,10 +429,10 @@
       "label": "簽核歷程",
       "fields": [
         { "label": "關卡", "origin": "主管一簽、HR 二簽" },
-        { "label": "簽核人", "origin": "留下是誰處理，不是 anonymous" },
+        { "label": "簽核人", "origin": "留下是誰處理" },
         { "label": "日期", "origin": "時間軸要對得起來" },
-        { "label": "狀態", "origin": "同意／不同意／完成——推動或停住流程" },
-        { "label": "意見", "origin": "不同意或備註時要說清楚為什麼" }
+        { "label": "狀態", "origin": "同意／不同意／完成" },
+        { "label": "意見", "origin": "為什麼這樣決定" }
       ]
     }
   ]

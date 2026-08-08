@@ -1,102 +1,59 @@
-# Skill：產出 System Walkthrough JSON
+# Skill：產出統一系統包（邊講邊填 + 真實表單）
 
-你要把一個「陌生系統」編成**可播放的導覽資料包**，讓網站播放器（`docs/walkthrough/`）能用地圖式儀表板呈現：表／欄位可拖可縮，角色 × 情境 × 步驟會高亮欄位與連線。
+你要把一個「陌生／任意系統」編成**同一份 JSON**，讓 SEED 播放器（`docs/walkthrough/index.html`）能：
+
+1. **Show**：邊講邊填——台詞描述「為什麼需要這一欄」，再打字填入  
+2. **表單**：同一欄位定義變成可切角色、真的送出／簽核的表單  
+
+不要再產「導引／簡報／演示」舊模式資料。
 
 ## 你要產出什麼
 
-只產出**一個 JSON 物件**（可寫成 `system.json`），必須符合同目錄的 [`schema.json`](./schema.json)。
+只產出**一個 JSON 物件**（寫成 `vn/<id>.json`），結構對齊 [`vn/leave.json`](./vn/leave.json)。
 
-不要產出 HTML／CSS／解釋長文（除非使用者明確要求）。先 JSON，必要時再附「死欄位清單」與「風險摘要」各三行以內。
+並可把系統加進 [`catalog.json`](./catalog.json)。
 
-## 核心詞彙（這就是語言）
+## 核心結構
 
-| 詞 | 意思 | 不是 |
-|---|---|---|
-| role | 我是誰（員工／主管／HR） | 不是情境 |
-| scenario | 我要完成的事 | 不是角色 |
-| step | 一步動作：誰動了哪些欄位 | 不是整段流程說明文 |
-| entity | 表／API／服務 | 不要塞流程邏輯進 entity |
-| edge | 同步／lookup 等關係 | 不要用邊描述 UI 按鈕 |
-| action | write／lookup／sync／auto／validate／approve／notify | 一步只選一個主動作 |
+| 區塊 | 用途 |
+|---|---|
+| `roles` | 申請人／主管／HR…（表單切換用） |
+| `form.sections[].fields` | 真實欄位：`type`／`write`／`meaning` |
+| `actions` | 送出、同意、退回、拒絕…（`whenStatus` + `set`） |
+| `cast` + `nodes` | Show 腳本：`line`／`fill`／`typewriter`／`choices` |
+| `tables` | 結局：幾張表、每欄起源 |
 
-## 寫作步驟（照做）
+## 欄位寫作標準
 
-1. **定系統名** `system` + 一句 `subtitle`。
-2. **列 roles**（至少 1 個；企業流程通常 ≥2）。
-3. **列 entities + fields**  
-   - 每個欄位要有人看得懂的 `label`  
-   - 疑似舊欄位加 `note`（例如「疑似舊欄位」）  
-   - 自動產生加 `"auto": true`
-4. **列 edges**（資料怎麼流）：`from`／`to` 用 `entityId` 或 `entityId.fieldId`。
-5. **為每個角色寫 ≥1 個 scenario**，步驟要能講完「為什麼有這些欄位」。
-6. **跨角色接龍**：用 `next` 串起來（員工 → 主管 → HR）。
-7. **覆蓋檢查**：故意保留 1～2 個**從未出現在任何 step.fields** 的欄位，讓熱圖能標「候選死欄位」。
-8. **風險**：真正危險的步驟加 `risks[]`（短句）。
-9. **layout（建議）**：給每個 entity 預設 `x,y`（地圖座標，單位約像素）。手機橫向可先排一列，直向可排成縱向瀑布。
+每一欄必須能回答：
 
-## 步驟品質標準
+- **為什麼需要**（`meaning`，也會出現在 Show 台詞）
+- **誰能寫**（`write: ["applicant"]` 等）
+- **型別**（`text`／`tel`／`date`／`select`／`textarea`）
 
-每一 step 必須：
+Show 的每一步最好只講**一欄**（或一小撮），先描述再 `fill` + `typewriter: true`。
 
-- 有明確 `action`
-- `fields` 至少 1 個，且都真實存在於 entities
-- `note` 用白話講「這一刻發生什麼」
-- 若有 lookup／sync，把對應 `edges` id 寫上，播放器才能亮線
+## 禁止
 
-禁止：
-
-- 把角色名稱寫進 scenario title 卻忘了設 `role`
-- 一步同時塞五種無關動作
-- 欄位 id 用中文或空白
-- 邊的 from/to 指向不存在的欄位
-
-## 預設 actions 標籤（可原樣複製）
-
-```json
-[
-  { "id": "write", "label": "人手填寫" },
-  { "id": "lookup", "label": "查閱帶出" },
-  { "id": "sync", "label": "同步寫入" },
-  { "id": "auto", "label": "自動產生" },
-  { "id": "validate", "label": "檢核" },
-  { "id": "approve", "label": "簽核" },
-  { "id": "notify", "label": "通知" }
-]
-```
+- 一開始攤開完整 ER／選單  
+- 做成答題過關  
+- 長篇一次講完  
+- 只產標籤拼圖、沒有可填的 `form`／`actions`
 
 ## 給使用者的提示詞範本
 
-把下面貼給 AI（可改系統名）：
-
 ```text
-請依 docs/walkthrough/SKILL.md 與 schema.json，
-為「○○系統」產出一份完整 system.json。
-角色包含：… 
-主要表單／主檔：…
-至少 3 個情境，含跨角色接龍與 1～2 個候選死欄位。
-每個 step 請附 fill（演示用假資料），並在根層加 demo.values。
+請依 docs/walkthrough/SKILL.md 與 vn/leave.json 的結構，
+為「○○系統」產出一份 vn/<id>.json。
+要有：roles、form（含 meaning／write）、actions（狀態機）、
+以及邊講邊填的 nodes（每欄先描述再填）。
+結局 CTA 指向 open-form。
 只輸出 JSON。
 ```
 
-## 簡報／演示額外欄位
+## 驗收
 
-| 欄位 | 用途 |
-|---|---|
-| `demo.values` | 全域演示假資料 |
-| `demo.persona` | 角色顯示名（作業紙抬頭） |
-| `scenario.demoSeed` | 進入此情境前已填好的值（主管／HR） |
-| `scenario.demoValues` | 情境覆寫值 |
-| `step.fill` | 此步寫入／帶出的值（演示打字用） |
-
-播放器模式讀同一份 JSON：`地圖`／`簡報`／`演示`。  
-另有教學模式 `導引`（`guide.json`）：示範「聊需求 → 補欄位 → 問權限 → 成檔 → 打開系統」。  
-另有 **Show**（視覺小說）：`show.html` + `vn/leave.json`——空舞台五分區，點下一步長「名稱＋用途」，關鍵選項分歧，結局列出幾張表。  
-示範系統：`system.json`（離職）、`systems/collection.json`（催收）、`systems/leave.json`（請假，Show 驗證用）。
-
-## 驗收清單
-
-- [ ] 通過 schema 精神（必填齊、id 格式對、action 枚舉對）
-- [ ] 每個 role 至少 1 scenario
-- [ ] 有 next 接龍或明確註記無後續
-- [ ] 至少 1 個欄位沒被任何 step 碰到（死欄位示範）或明確說明系統很乾淨無死欄位
-- [ ] 放到 `docs/walkthrough/system.json` 後，播放器能選角色／情境並高亮
+- [ ] Show 能點下一步邊講邊填  
+- [ ] 表單模式能切角色、送出、改狀態  
+- [ ] 清空／重來可用  
+- [ ] `tables` 能對回每一欄的起源  

@@ -16,18 +16,17 @@
 
 詳見 [`approval/README.md`](approval/README.md)、[`approval/學習約定.md`](approval/學習約定.md)。
 
-## 情境式系統導覽（MVP → 地圖儀表板）
+## 統一表單系統（邊講邊填 → 真實辦單）
 
-用「角色 × 情境 × 步驟」高亮資料血緣，快速認識陌生系統：
+任意系統收成**同一份 JSON**（`vn/*.json`）：Show 邊講邊填，表單模式真的送出／簽核。
 
-- **手機／公開：** https://hyi1105.github.io/SEED/walkthrough/（合併 `main` 後；檔在 `docs/walkthrough/`）
-- **Show（視覺小說式，點下一步長空白）：** [`docs/walkthrough/show.html`](docs/walkthrough/show.html) · 合併後 https://hyi1105.github.io/SEED/walkthrough/show.html
-- **單檔立刻可開（不必等 Pages）：** https://htmlpreview.github.io/?https://github.com/hyi1105/SEED/blob/main/docs/walkthrough/standalone.html  
-  Show 預覽：https://htmlpreview.github.io/?https://github.com/hyi1105/SEED/blob/main/docs/walkthrough/show.html
-- **AI 產資料契約：** [`docs/walkthrough/SKILL.md`](docs/walkthrough/SKILL.md) + [`docs/walkthrough/schema.json`](docs/walkthrough/schema.json)
-- 構想筆記：[`memory/topics/blank-origin-map.md`](memory/topics/blank-origin-map.md) · [`memory/topics/scenario-system-walkthrough.md`](memory/topics/scenario-system-walkthrough.md)
+- **主入口：** [`docs/walkthrough/index.html`](docs/walkthrough/index.html) · 合併後 https://hyi1105.github.io/SEED/walkthrough/
+- **立刻預覽：** https://htmlpreview.github.io/?https://github.com/hyi1105/SEED/blob/main/docs/walkthrough/index.html
+- **模式：** Show（故事填單）／表單（切角色辦單）／地圖（可選結構）
+- **契約：** [`docs/walkthrough/SKILL.md`](docs/walkthrough/SKILL.md) · 範例 [`vn/leave.json`](docs/walkthrough/vn/leave.json)
+- **構想：** [`memory/topics/blank-origin-map.md`](memory/topics/blank-origin-map.md)
 
-模式：Show（VN）／導引／地圖／簡報／演示。系統包：離職單／催收單／請假單。
+已拿掉：導引／簡報／演示。
 
 ## 第一次啟用 Pages（若網址 404／沒綠勾）
 

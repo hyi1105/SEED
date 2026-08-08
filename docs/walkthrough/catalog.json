@@ -1,0 +1,10 @@
+{
+  "systems": [
+    {
+      "id": "leave",
+      "label": "請假單",
+      "path": "./vn/leave.json",
+      "cdn": "https://cdn.jsdelivr.net/gh/hyi1105/SEED@main/docs/walkthrough/vn/leave.json"
+    }
+  ]
+}
