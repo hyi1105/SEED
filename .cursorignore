@@ -1,0 +1,18 @@
+# Agent 預設不要掃這些：省 token／加快
+# 回憶時仍可用工具「指定路徑」打開單一檔
+
+# 舊場次（索引 memory/index.md 即可；需要再點開）
+memory/sessions/
+memory/archive/
+
+# 建置／產物
+**/node_modules/
+**/.git/
+**/dist/
+**/out/
+*.log
+*.map
+
+# 大型單檔預覽（源碼以 player.*／vn/*.json 為準）
+docs/walkthrough/standalone.html
+docs/walkthrough/index.html

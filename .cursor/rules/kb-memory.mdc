@@ -17,10 +17,11 @@ alwaysApply: true
 1. **用改檔提案**：值得記住的內容直接改筆記，讓使用者在 Cursor **看 diff** 確認／拒絕。
 2. **說清楚動了哪**：改完在聊天簡短列出：哪個檔、哪一節、增刪改了什麼。diff 才是真相。
 3. **人看得懂**：標題清楚、條列短；避免只有 Agent 懂的縮寫。
-4. **按需回憶**：問到過去對話時，查 `memory/index.md` → `sessions/`／`topics/`，回覆**日期時間**、摘要、重點。
-5. **按需重整**：整理進 `memory/topics/`，並更新 `memory/index.md`；同樣用 diff 呈現。
+4. **按需回憶**：問到過去對話時，**先只讀** `memory/index.md`；再依連結打開**一個** `sessions/` 或 `topics/` 檔。禁止一次讀完整個 `memory/sessions/`。
+5. **按需重整**：整理進 `memory/topics/`，並更新 `memory/index.md`；同樣用 diff 呈現。舊場次可移 `memory/archive/`（見 `.cursorignore`）。
 
-不要用大段聊天文字代替改檔——改檔，讓使用者審 diff。
+不要用大段聊天文字代替改檔——改檔，讓使用者審 diff。  
+不要為了「背景齊全」批量讀 MD——索引＋單檔即可，省 token。
 
 ## 自動發布
 
