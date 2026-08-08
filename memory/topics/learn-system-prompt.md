@@ -52,3 +52,11 @@ status: active
 | 大 | `showSchema`：表單關係圖 |
 | 中／小 | 進單一 `form`，逐步 `reveal`／填值 |
 | 推進 | Show：下一步，不是答題閘門 |
+
+## Skill？
+
+- **是**：在 Cursor 裡，別人／自己寫好、可重複套用的做法叫 **Agent Skill**（資料夾＋`SKILL.md`）。
+- **現成有沒有一模一樣的？** 公開目錄／內建 Skill **沒有**「由大到小學陌生系統」這一款；常見的 progressive-disclosure Skill 是教你**怎麼寫 Skill**，不是教使用者讀系統。
+- **本倉庫已做成 Skill**：`.cursor/skills/learn-system-blueprint-first/SKILL.md`  
+  - Cursor 聊天打 `/learn-system-blueprint-first`，或說「教我學這套系統」讓 Agent 自動套用。
+- **另一支（產 JSON 播放包）**：`docs/walkthrough/SKILL.md` — 把系統編成可播放 JSON，節奏不同層。

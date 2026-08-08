@@ -100,7 +100,7 @@
 
 ## 主題
 
-- **學習陌生系統：由大到小（可貼給其他 Agent）**— [topics/learn-system-prompt.md](topics/learn-system-prompt.md)
+- **學習陌生系統：由大到小（可貼／Cursor Skill）**— [topics/learn-system-prompt.md](topics/learn-system-prompt.md) · Skill：`.cursor/skills/learn-system-blueprint-first/`
 - **空白起源地圖：從空白理解整套系統**— [topics/blank-origin-map.md](topics/blank-origin-map.md)
 - **產品願景：系統理解工具箱 → 系統架構顧問**— [topics/system-consultant-vision.md](topics/system-consultant-vision.md)
 - **情境式系統理解（角色×情境×欄位逐步高亮）**— [topics/scenario-system-walkthrough.md](topics/scenario-system-walkthrough.md)
