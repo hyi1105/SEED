@@ -32,3 +32,9 @@ status: active
 
 - [ ] 連線折線再依使用者喜歡的繪風細修
 - [ ] 點符號才開欄位細節
+
+## 後續修正（同日）：箭頭跑掉
+
+- 原因：下一步時 smooth 捲動＋SVG 座標混用 board scroll；節點 transform 動畫也讓量測框漂移
+- 作法：SVG 與 matrix 同層 `story-canvas`；座標只相對 canvas；結構不重建；只淡入不位移；捲動後重畫線
+- 密方格紙拿掉，改純泳道分隔

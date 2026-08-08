@@ -81,8 +81,10 @@ def main() -> None:
         </div>
         <p class="story-kicker" id="story-kicker">導引圖 · 上＝表單 · 左＝人 · 圖形＝動作種類 · 箭頭＝下一步</p>
         <div class="story-board" id="story-board">
-          <div class="story-lanes story-matrix" id="story-lanes"></div>
-          <svg class="story-flow-svg" id="story-flow-svg" aria-hidden="true"></svg>
+          <div class="story-canvas" id="story-canvas">
+            <div class="story-lanes story-matrix" id="story-lanes"></div>
+            <svg class="story-flow-svg" id="story-flow-svg" aria-hidden="true"></svg>
+          </div>
         </div>
       </section>
       <div class="stage-fit" id="stage-fit">

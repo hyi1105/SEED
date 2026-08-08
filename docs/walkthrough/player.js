@@ -37,11 +37,16 @@ const els = {
   stageFit: document.getElementById("stage-fit"),
   storyStage: document.getElementById("story-stage"),
   storyBoard: document.getElementById("story-board"),
+  storyCanvas: document.getElementById("story-canvas"),
   storyLanes: document.getElementById("story-lanes"),
   storyFlowSvg: document.getElementById("story-flow-svg"),
   storyKicker: document.getElementById("story-kicker"),
   storyLegend: document.getElementById("story-legend"),
 };
+
+/** 避免下一步時舊的連線重繪蓋掉新座標 */
+let storyEdgeToken = 0;
+let storyEdgeScrollBound = false;
 
 const state = {
   mode: "show",
@@ -704,7 +709,16 @@ function rolesOf() {
 function hideStoryStage() {
   if (els.storyStage) els.storyStage.hidden = true;
   els.app?.classList.remove("story-on");
+  storyEdgeToken += 1;
   if (els.storyFlowSvg) els.storyFlowSvg.innerHTML = "";
+}
+
+function storyShellSignature() {
+  return `${forms()
+    .map((f) => f.level || f.id)
+    .join(",")}|${storyPeople()
+    .map((p) => p.id)
+    .join(",")}`;
 }
 
 function showStoryStageShell() {
@@ -714,6 +728,12 @@ function showStoryStageShell() {
   const cols = forms();
   const rows = storyPeople();
   const matrix = els.storyLanes;
+  const sig = storyShellSignature();
+  // 結構沒變就不要整表重建，避免下一步時格子跳動、線跟著跑掉
+  if (matrix.dataset.sig === sig && matrix.querySelector(".story-cell")) {
+    return;
+  }
+  matrix.dataset.sig = sig;
   matrix.className = "story-lanes story-matrix";
   matrix.style.setProperty("--cols", String(Math.max(1, cols.length)));
   matrix.style.setProperty("--rows", String(Math.max(1, rows.length)));
@@ -776,18 +796,34 @@ function collectStoryEdges() {
   return edges;
 }
 
+/** 從節點中心往目標方向，取與外框相交點（線貼邊，不穿心） */
+function storyBoxEdgePoint(rect, rootRect, towardX, towardY) {
+  const cx = rect.left + rect.width / 2 - rootRect.left;
+  const cy = rect.top + rect.height / 2 - rootRect.top;
+  const hw = Math.max(rect.width / 2 - 2, 4);
+  const hh = Math.max(rect.height / 2 - 2, 4);
+  let dx = towardX - cx;
+  let dy = towardY - cy;
+  if (Math.abs(dx) < 0.01 && Math.abs(dy) < 0.01) return { x: cx, y: cy + hh };
+  const ax = Math.abs(dx) / hw;
+  const ay = Math.abs(dy) / hh;
+  const t = Math.max(ax, ay) || 1;
+  return { x: cx + dx / t, y: cy + dy / t };
+}
+
 function paintStoryEdges() {
   const svg = els.storyFlowSvg;
-  const board = els.storyBoard;
+  const canvas = els.storyCanvas || els.storyBoard;
   const matrix = els.storyLanes;
-  if (!svg || !board || !matrix) return;
+  if (!svg || !canvas || !matrix) return;
   const edges = collectStoryEdges();
-  const w = matrix.offsetWidth;
-  const h = matrix.offsetHeight;
+  const w = Math.max(matrix.offsetWidth, canvas.offsetWidth, 1);
+  const h = Math.max(matrix.offsetHeight, canvas.offsetHeight, 1);
   svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
   svg.setAttribute("width", String(w));
   svg.setAttribute("height", String(h));
-  const boardRect = board.getBoundingClientRect();
+  // 座標相對 canvas（SVG 與 matrix 同層），不要混 scroll／board，否則下一步會跑線
+  const rootRect = canvas.getBoundingClientRect();
   const marker = `
     <defs>
       <marker id="story-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
@@ -801,18 +837,24 @@ function paintStoryEdges() {
       if (!a || !b) return "";
       const ar = a.getBoundingClientRect();
       const br = b.getBoundingClientRect();
-      const x1 = ar.left + ar.width / 2 - boardRect.left + board.scrollLeft;
-      const y1 = ar.top + ar.height / 2 - boardRect.top + board.scrollTop;
-      const x2 = br.left + br.width / 2 - boardRect.left + board.scrollLeft;
-      const y2 = br.top + br.height / 2 - boardRect.top + board.scrollTop;
-      // 正交折線，避開節點中心重疊
+      const acx = ar.left + ar.width / 2 - rootRect.left;
+      const acy = ar.top + ar.height / 2 - rootRect.top;
+      const bcx = br.left + br.width / 2 - rootRect.left;
+      const bcy = br.top + br.height / 2 - rootRect.top;
+      const p1 = storyBoxEdgePoint(ar, rootRect, bcx, bcy);
+      const p2 = storyBoxEdgePoint(br, rootRect, acx, acy);
+      const x1 = p1.x;
+      const y1 = p1.y;
+      const x2 = p2.x;
+      const y2 = p2.y;
       const mx = (x1 + x2) / 2;
       const my = (y1 + y2) / 2;
       let d;
-      if (Math.abs(x2 - x1) < 12) {
+      if (Math.abs(x2 - x1) < 10 || Math.abs(y2 - y1) < 10) {
         d = `M ${x1} ${y1} L ${x2} ${y2}`;
-      } else if (Math.abs(y2 - y1) < 12) {
-        d = `M ${x1} ${y1} L ${x2} ${y2}`;
+      } else if (Math.abs(y2 - y1) >= Math.abs(x2 - x1)) {
+        // 先垂直再水平：同欄上下、跨列較穩
+        d = `M ${x1} ${y1} L ${x1} ${my} L ${x2} ${my} L ${x2} ${y2}`;
       } else {
         d = `M ${x1} ${y1} L ${mx} ${y1} L ${mx} ${y2} L ${x2} ${y2}`;
       }
@@ -823,6 +865,35 @@ function paintStoryEdges() {
     })
     .join("");
   svg.innerHTML = marker + paths;
+}
+
+function bindStoryEdgeRelayout() {
+  if (storyEdgeScrollBound || !els.storyBoard) return;
+  storyEdgeScrollBound = true;
+  let t = 0;
+  const relayout = () => {
+    clearTimeout(t);
+    t = setTimeout(() => paintStoryEdges(), 40);
+  };
+  els.storyBoard.addEventListener("scroll", relayout, { passive: true });
+  window.addEventListener("resize", relayout);
+}
+
+function scheduleStoryEdges() {
+  const token = ++storyEdgeToken;
+  bindStoryEdgeRelayout();
+  const run = () => {
+    if (token !== storyEdgeToken) return;
+    paintStoryEdges();
+  };
+  // 等 DOM 排版穩定再量座標；淡入結束後再量一次
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      run();
+      setTimeout(run, 80);
+      setTimeout(run, 320);
+    });
+  });
 }
 
 function paintStoryStage({ hotId } = {}) {
@@ -850,13 +921,16 @@ function paintStoryStage({ hotId } = {}) {
       host.appendChild(el);
       if (hot) hotEl = el;
     });
-  if (hotEl) {
-    requestAnimationFrame(() => hotEl.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" }));
+  // 先瞬間對準焦點（不要 smooth，否則量線時座標還在動）
+  if (hotEl && els.storyBoard) {
+    const board = els.storyBoard;
+    const br = board.getBoundingClientRect();
+    const nr = hotEl.getBoundingClientRect();
+    if (nr.top < br.top + 8 || nr.bottom > br.bottom - 8 || nr.left < br.left + 8 || nr.right > br.right - 8) {
+      hotEl.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "auto" });
+    }
   }
-  requestAnimationFrame(() => {
-    paintStoryEdges();
-    requestAnimationFrame(paintStoryEdges);
-  });
+  scheduleStoryEdges();
   if (els.storyKicker) {
     const live = state.storyBeats.filter((b) => !b.ghost).length;
     els.storyKicker.textContent = live

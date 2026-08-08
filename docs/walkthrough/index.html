@@ -841,7 +841,7 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
   height: 0.72rem;
   background: #c5dff0;
   border: 1.5px solid #2a4a5e;
-  transform: skewX(-18deg);
+  clip-path: polygon(12% 0, 100% 0, 88% 100%, 0 100%);
 }
 .story-legend .sym-decision {
   width: 0.72rem;
@@ -878,15 +878,21 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
   min-height: 0;
   overflow: auto;
   border: 2px solid #1e3a4a;
-  background-color: #e8f2f8;
+  background-color: #eaf3f8;
+}
+/* canvas＝matrix＋SVG 同座標系；滾動時一起走，線才不會跑掉 */
+.story-canvas {
+  position: relative;
+  display: block;
+  min-width: 100%;
+  min-height: 100%;
 }
 .story-flow-svg {
   position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
+  top: 0;
+  left: 0;
   pointer-events: none;
-  z-index: 2;
+  z-index: 4;
   overflow: visible;
 }
 .story-edge-path {
@@ -909,13 +915,12 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
   --row-label: 2.6rem;
   display: grid;
   grid-template-columns: var(--row-label) repeat(var(--cols), minmax(0, 1fr));
-  grid-template-rows: auto repeat(var(--rows), minmax(3.6rem, 1fr));
+  grid-template-rows: auto repeat(var(--rows), minmax(4rem, auto));
+  width: 100%;
   min-height: 100%;
   gap: 0;
-  background-image:
-    linear-gradient(rgba(70, 120, 155, 0.12) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(70, 120, 155, 0.12) 1px, transparent 1px);
-  background-size: 14px 14px;
+  /* 只用泳道分隔，去掉密方格紙——避免干擾排版與連線 */
+  background: #eaf3f8;
   position: relative;
   z-index: 1;
 }
@@ -995,13 +1000,15 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 0.35rem;
-  padding: 0.4rem 0.25rem;
+  justify-content: flex-start;
+  gap: 0.55rem;
+  padding: 0.55rem 0.3rem;
   min-width: 0;
-  border-right: 1px solid rgba(30, 58, 74, 0.45);
+  min-height: 4rem;
+  border-right: 1px solid rgba(30, 58, 74, 0.35);
   border-bottom: 2px solid #1e3a4a;
   overflow: visible;
+  background: rgba(255, 255, 255, 0.28);
 }
 .story-cell.end-col { border-right: none; }
 .story-row-head.end-row,
@@ -1020,7 +1027,8 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
   gap: 0.08rem;
   padding: 0.32rem 0.45rem;
   text-align: center;
-  animation: story-pop 0.36s cubic-bezier(0.2, 0.9, 0.25, 1) both;
+  /* 只淡入、不位移／縮放——否則量線時外框還在動，箭頭會跑掉 */
+  animation: story-fade 0.28s ease both;
 }
 .story-node .node-kind {
   font-family: var(--font-ui);
@@ -1056,13 +1064,11 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
   border: 2px solid #2a4a5e;
   border-radius: 0;
   background: linear-gradient(180deg, #dff0fa, #c5dff0);
-  transform: skewX(-14deg);
+  /* 用 clip-path 做平行四邊形，避免 transform 扭曲量測框 */
+  clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%);
   width: min(100%, 7.6rem);
-  animation-name: story-pop-io;
-}
-.story-node.kind-io .node-kind,
-.story-node.kind-io .node-text {
-  transform: skewX(14deg);
+  padding-left: 0.7rem;
+  padding-right: 0.7rem;
 }
 /* 判斷＝菱形 */
 .story-node.kind-decision {
@@ -1098,28 +1104,9 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
 .story-node.kind-decision.hot::before {
   box-shadow: 0 0 0 2px rgba(180, 120, 20, 0.45);
 }
-@keyframes story-pop {
-  from {
-    opacity: 0;
-    transform: translateY(8px) scale(0.9);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-@keyframes story-pop-io {
-  from {
-    opacity: 0;
-    transform: skewX(-14deg) translateY(8px) scale(0.9);
-  }
-  to {
-    opacity: 1;
-    transform: skewX(-14deg) translateY(0) scale(1);
-  }
-}
-.story-node.kind-io.hot {
-  outline-offset: 4px;
+@keyframes story-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 @media (max-width: 640px) {
   .story-legend { font-size: 0.5rem; gap: 0.18rem 0.4rem; padding: 0.15rem 0.2rem; }
@@ -1308,8 +1295,10 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
         </div>
         <p class="story-kicker" id="story-kicker">導引圖 · 上＝表單 · 左＝人 · 圖形＝動作種類 · 箭頭＝下一步</p>
         <div class="story-board" id="story-board">
-          <div class="story-lanes story-matrix" id="story-lanes"></div>
-          <svg class="story-flow-svg" id="story-flow-svg" aria-hidden="true"></svg>
+          <div class="story-canvas" id="story-canvas">
+            <div class="story-lanes story-matrix" id="story-lanes"></div>
+            <svg class="story-flow-svg" id="story-flow-svg" aria-hidden="true"></svg>
+          </div>
         </div>
       </section>
       <div class="stage-fit" id="stage-fit">
@@ -5705,11 +5694,16 @@ const els = {
   stageFit: document.getElementById("stage-fit"),
   storyStage: document.getElementById("story-stage"),
   storyBoard: document.getElementById("story-board"),
+  storyCanvas: document.getElementById("story-canvas"),
   storyLanes: document.getElementById("story-lanes"),
   storyFlowSvg: document.getElementById("story-flow-svg"),
   storyKicker: document.getElementById("story-kicker"),
   storyLegend: document.getElementById("story-legend"),
 };
+
+/** 避免下一步時舊的連線重繪蓋掉新座標 */
+let storyEdgeToken = 0;
+let storyEdgeScrollBound = false;
 
 const state = {
   mode: "show",
@@ -6372,7 +6366,16 @@ function rolesOf() {
 function hideStoryStage() {
   if (els.storyStage) els.storyStage.hidden = true;
   els.app?.classList.remove("story-on");
+  storyEdgeToken += 1;
   if (els.storyFlowSvg) els.storyFlowSvg.innerHTML = "";
+}
+
+function storyShellSignature() {
+  return `${forms()
+    .map((f) => f.level || f.id)
+    .join(",")}|${storyPeople()
+    .map((p) => p.id)
+    .join(",")}`;
 }
 
 function showStoryStageShell() {
@@ -6382,6 +6385,12 @@ function showStoryStageShell() {
   const cols = forms();
   const rows = storyPeople();
   const matrix = els.storyLanes;
+  const sig = storyShellSignature();
+  // 結構沒變就不要整表重建，避免下一步時格子跳動、線跟著跑掉
+  if (matrix.dataset.sig === sig && matrix.querySelector(".story-cell")) {
+    return;
+  }
+  matrix.dataset.sig = sig;
   matrix.className = "story-lanes story-matrix";
   matrix.style.setProperty("--cols", String(Math.max(1, cols.length)));
   matrix.style.setProperty("--rows", String(Math.max(1, rows.length)));
@@ -6444,18 +6453,34 @@ function collectStoryEdges() {
   return edges;
 }
 
+/** 從節點中心往目標方向，取與外框相交點（線貼邊，不穿心） */
+function storyBoxEdgePoint(rect, rootRect, towardX, towardY) {
+  const cx = rect.left + rect.width / 2 - rootRect.left;
+  const cy = rect.top + rect.height / 2 - rootRect.top;
+  const hw = Math.max(rect.width / 2 - 2, 4);
+  const hh = Math.max(rect.height / 2 - 2, 4);
+  let dx = towardX - cx;
+  let dy = towardY - cy;
+  if (Math.abs(dx) < 0.01 && Math.abs(dy) < 0.01) return { x: cx, y: cy + hh };
+  const ax = Math.abs(dx) / hw;
+  const ay = Math.abs(dy) / hh;
+  const t = Math.max(ax, ay) || 1;
+  return { x: cx + dx / t, y: cy + dy / t };
+}
+
 function paintStoryEdges() {
   const svg = els.storyFlowSvg;
-  const board = els.storyBoard;
+  const canvas = els.storyCanvas || els.storyBoard;
   const matrix = els.storyLanes;
-  if (!svg || !board || !matrix) return;
+  if (!svg || !canvas || !matrix) return;
   const edges = collectStoryEdges();
-  const w = matrix.offsetWidth;
-  const h = matrix.offsetHeight;
+  const w = Math.max(matrix.offsetWidth, canvas.offsetWidth, 1);
+  const h = Math.max(matrix.offsetHeight, canvas.offsetHeight, 1);
   svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
   svg.setAttribute("width", String(w));
   svg.setAttribute("height", String(h));
-  const boardRect = board.getBoundingClientRect();
+  // 座標相對 canvas（SVG 與 matrix 同層），不要混 scroll／board，否則下一步會跑線
+  const rootRect = canvas.getBoundingClientRect();
   const marker = `
     <defs>
       <marker id="story-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
@@ -6469,18 +6494,24 @@ function paintStoryEdges() {
       if (!a || !b) return "";
       const ar = a.getBoundingClientRect();
       const br = b.getBoundingClientRect();
-      const x1 = ar.left + ar.width / 2 - boardRect.left + board.scrollLeft;
-      const y1 = ar.top + ar.height / 2 - boardRect.top + board.scrollTop;
-      const x2 = br.left + br.width / 2 - boardRect.left + board.scrollLeft;
-      const y2 = br.top + br.height / 2 - boardRect.top + board.scrollTop;
-      // 正交折線，避開節點中心重疊
+      const acx = ar.left + ar.width / 2 - rootRect.left;
+      const acy = ar.top + ar.height / 2 - rootRect.top;
+      const bcx = br.left + br.width / 2 - rootRect.left;
+      const bcy = br.top + br.height / 2 - rootRect.top;
+      const p1 = storyBoxEdgePoint(ar, rootRect, bcx, bcy);
+      const p2 = storyBoxEdgePoint(br, rootRect, acx, acy);
+      const x1 = p1.x;
+      const y1 = p1.y;
+      const x2 = p2.x;
+      const y2 = p2.y;
       const mx = (x1 + x2) / 2;
       const my = (y1 + y2) / 2;
       let d;
-      if (Math.abs(x2 - x1) < 12) {
+      if (Math.abs(x2 - x1) < 10 || Math.abs(y2 - y1) < 10) {
         d = `M ${x1} ${y1} L ${x2} ${y2}`;
-      } else if (Math.abs(y2 - y1) < 12) {
-        d = `M ${x1} ${y1} L ${x2} ${y2}`;
+      } else if (Math.abs(y2 - y1) >= Math.abs(x2 - x1)) {
+        // 先垂直再水平：同欄上下、跨列較穩
+        d = `M ${x1} ${y1} L ${x1} ${my} L ${x2} ${my} L ${x2} ${y2}`;
       } else {
         d = `M ${x1} ${y1} L ${mx} ${y1} L ${mx} ${y2} L ${x2} ${y2}`;
       }
@@ -6491,6 +6522,35 @@ function paintStoryEdges() {
     })
     .join("");
   svg.innerHTML = marker + paths;
+}
+
+function bindStoryEdgeRelayout() {
+  if (storyEdgeScrollBound || !els.storyBoard) return;
+  storyEdgeScrollBound = true;
+  let t = 0;
+  const relayout = () => {
+    clearTimeout(t);
+    t = setTimeout(() => paintStoryEdges(), 40);
+  };
+  els.storyBoard.addEventListener("scroll", relayout, { passive: true });
+  window.addEventListener("resize", relayout);
+}
+
+function scheduleStoryEdges() {
+  const token = ++storyEdgeToken;
+  bindStoryEdgeRelayout();
+  const run = () => {
+    if (token !== storyEdgeToken) return;
+    paintStoryEdges();
+  };
+  // 等 DOM 排版穩定再量座標；淡入結束後再量一次
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      run();
+      setTimeout(run, 80);
+      setTimeout(run, 320);
+    });
+  });
 }
 
 function paintStoryStage({ hotId } = {}) {
@@ -6518,13 +6578,16 @@ function paintStoryStage({ hotId } = {}) {
       host.appendChild(el);
       if (hot) hotEl = el;
     });
-  if (hotEl) {
-    requestAnimationFrame(() => hotEl.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" }));
+  // 先瞬間對準焦點（不要 smooth，否則量線時座標還在動）
+  if (hotEl && els.storyBoard) {
+    const board = els.storyBoard;
+    const br = board.getBoundingClientRect();
+    const nr = hotEl.getBoundingClientRect();
+    if (nr.top < br.top + 8 || nr.bottom > br.bottom - 8 || nr.left < br.left + 8 || nr.right > br.right - 8) {
+      hotEl.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "auto" });
+    }
   }
-  requestAnimationFrame(() => {
-    paintStoryEdges();
-    requestAnimationFrame(paintStoryEdges);
-  });
+  scheduleStoryEdges();
   if (els.storyKicker) {
     const live = state.storyBeats.filter((b) => !b.ghost).length;
     els.storyKicker.textContent = live
