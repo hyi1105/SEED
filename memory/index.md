@@ -10,6 +10,7 @@
 
 ## 場次
 
+- 2026-08-08 — 導引圖按定義重畫：圖形＝動作種類 — 標籤：產品、walkthrough、Show、導引圖、流程圖、圖例、符號 — [sessions/2026-08-08-guide-flowchart-def.md](sessions/2026-08-08-guide-flowchart-def.md)
 - 2026-08-08 — 交叉泳道：上面表單 × 左邊人 — 標籤：產品、walkthrough、Show、泳道、交叉泳道、表單、角色、Visio — [sessions/2026-08-08-cross-swimlane-people.md](sessions/2026-08-08-cross-swimlane-people.md)
 - 2026-08-08 — 故事泳道 MVP：四欄舞台＋橢圓情節 — 標籤：產品、walkthrough、Show、泳道、故事、橢圓、情緒價值 — [sessions/2026-08-08-story-swimlane-mvp.md](sessions/2026-08-08-story-swimlane-mvp.md)
 - 2026-08-08 — 開場四張同屏＋連線風格待補 — 標籤：產品、walkthrough、Show、四張同屏、連線、待續 — [sessions/2026-08-08-schema-four-fit.md](sessions/2026-08-08-schema-four-fit.md)

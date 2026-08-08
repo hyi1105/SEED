@@ -71,9 +71,19 @@ def main() -> None:
       </div>
       <div id="form-type-tabs" class="mode-tabs" aria-label="獨立表單種類" hidden></div>
       <div id="doc-list" hidden></div>
-      <section class="story-stage" id="story-stage" hidden aria-label="故事泳道">
-        <p class="story-kicker" id="story-kicker">交叉泳道 · 上面是表單 · 左邊是人 · 格子裡長情節</p>
-        <div class="story-lanes" id="story-lanes"></div>
+      <section class="story-stage" id="story-stage" hidden aria-label="導引流程圖">
+        <div class="story-legend" id="story-legend" aria-label="導引圖圖例">
+          <span class="leg"><i class="sym-start"></i>開始／結束</span>
+          <span class="leg"><i class="sym-process"></i>處理（做一件事）</span>
+          <span class="leg"><i class="sym-io"></i>輸入／填寫</span>
+          <span class="leg"><i class="sym-decision"></i>判斷／分支</span>
+          <span class="leg"><i class="sym-arrow"></i>流程方向</span>
+        </div>
+        <p class="story-kicker" id="story-kicker">導引圖 · 上＝表單 · 左＝人 · 圖形＝動作種類 · 箭頭＝下一步</p>
+        <div class="story-board" id="story-board">
+          <div class="story-lanes story-matrix" id="story-lanes"></div>
+          <svg class="story-flow-svg" id="story-flow-svg" aria-hidden="true"></svg>
+        </div>
       </section>
       <div class="stage-fit" id="stage-fit">
         <article class="form-sheet" id="form-sheet">

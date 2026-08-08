@@ -36,8 +36,11 @@ const els = {
   stageWrap: document.getElementById("stage-wrap"),
   stageFit: document.getElementById("stage-fit"),
   storyStage: document.getElementById("story-stage"),
+  storyBoard: document.getElementById("story-board"),
   storyLanes: document.getElementById("story-lanes"),
+  storyFlowSvg: document.getElementById("story-flow-svg"),
   storyKicker: document.getElementById("story-kicker"),
+  storyLegend: document.getElementById("story-legend"),
 };
 
 const state = {
@@ -58,7 +61,7 @@ const state = {
   history: [],
   chat: [],
   boardOnly: false,
-  /** @type {{id:string,lane:string,row:string,label:string,kind:string,edgeTo?:string,hot?:boolean,ghost?:boolean}[]} */
+  /** @type {{id:string,lane:string,row:string,label:string,kind:string,from?:string,edgeLabel?:string,hot?:boolean}[]} */
   storyBeats: [],
 };
 
@@ -646,6 +649,26 @@ function useStoryStage() {
   return isGraphPack() && forms().length > 1;
 }
 
+/** 導引圖圖形語彙（固定意義，不是裝飾） */
+const STORY_KIND = {
+  start: "start",
+  end: "end",
+  process: "process",
+  io: "io",
+  decision: "decision",
+};
+
+function normalizeStoryKind(kind, { hasChoices = false } = {}) {
+  const k = String(kind || "").toLowerCase();
+  if (k === "start") return STORY_KIND.start;
+  if (k === "end" || k === "done") return STORY_KIND.end;
+  if (k === "io" || k === "input" || k === "fill") return STORY_KIND.io;
+  if (k === "decision" || k === "choice") return STORY_KIND.decision;
+  if (k === "process" || k === "action" || k === "link") return STORY_KIND.process;
+  if (hasChoices) return STORY_KIND.decision;
+  return STORY_KIND.process;
+}
+
 /** 泳道列＝人：旁白列＋各角色（左側用短名） */
 function storyPeople() {
   const short = { planner: "企劃", warehouse: "倉庫", buyer: "採購" };
@@ -681,6 +704,7 @@ function rolesOf() {
 function hideStoryStage() {
   if (els.storyStage) els.storyStage.hidden = true;
   els.app?.classList.remove("story-on");
+  if (els.storyFlowSvg) els.storyFlowSvg.innerHTML = "";
 }
 
 function showStoryStageShell() {
@@ -690,7 +714,7 @@ function showStoryStageShell() {
   const cols = forms();
   const rows = storyPeople();
   const matrix = els.storyLanes;
-  matrix.className = "story-matrix";
+  matrix.className = "story-lanes story-matrix";
   matrix.style.setProperty("--cols", String(Math.max(1, cols.length)));
   matrix.style.setProperty("--rows", String(Math.max(1, rows.length)));
   const lastLane = cols[cols.length - 1]?.level || cols[cols.length - 1]?.id;
@@ -721,6 +745,86 @@ function showStoryStageShell() {
   matrix.innerHTML = `<div class="story-corner" aria-hidden="true"><span class="corner-y">人</span><span class="corner-x">表單</span></div>${colHeads}${body}`;
 }
 
+function storyKindTitle(kind) {
+  return (
+    {
+      start: "開始",
+      end: "結束",
+      process: "處理",
+      io: "輸入／填寫",
+      decision: "判斷",
+    }[kind] || "處理"
+  );
+}
+
+function collectStoryEdges() {
+  const beats = state.storyBeats.filter((b) => !b.ghost);
+  const ids = new Set(beats.map((b) => b.id));
+  /** @type {{from:string,to:string,label?:string}[]} */
+  const edges = [];
+  beats.forEach((beat, idx) => {
+    if (beat.from && ids.has(beat.from)) {
+      edges.push({ from: beat.from, to: beat.id, label: beat.edgeLabel || "" });
+      return;
+    }
+    // 未指定 from：接到上一顆非 decision 分支的節點
+    if (idx === 0) return;
+    const prev = beats[idx - 1];
+    if (!prev || prev.kind === "decision") return;
+    edges.push({ from: prev.id, to: beat.id, label: beat.edgeLabel || "" });
+  });
+  return edges;
+}
+
+function paintStoryEdges() {
+  const svg = els.storyFlowSvg;
+  const board = els.storyBoard;
+  const matrix = els.storyLanes;
+  if (!svg || !board || !matrix) return;
+  const edges = collectStoryEdges();
+  const w = matrix.offsetWidth;
+  const h = matrix.offsetHeight;
+  svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
+  svg.setAttribute("width", String(w));
+  svg.setAttribute("height", String(h));
+  const boardRect = board.getBoundingClientRect();
+  const marker = `
+    <defs>
+      <marker id="story-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="#1e3a4a"></path>
+      </marker>
+    </defs>`;
+  const paths = edges
+    .map((e) => {
+      const a = matrix.querySelector(`[data-beat="${CSS.escape(e.from)}"]`);
+      const b = matrix.querySelector(`[data-beat="${CSS.escape(e.to)}"]`);
+      if (!a || !b) return "";
+      const ar = a.getBoundingClientRect();
+      const br = b.getBoundingClientRect();
+      const x1 = ar.left + ar.width / 2 - boardRect.left + board.scrollLeft;
+      const y1 = ar.top + ar.height / 2 - boardRect.top + board.scrollTop;
+      const x2 = br.left + br.width / 2 - boardRect.left + board.scrollLeft;
+      const y2 = br.top + br.height / 2 - boardRect.top + board.scrollTop;
+      // 正交折線，避開節點中心重疊
+      const mx = (x1 + x2) / 2;
+      const my = (y1 + y2) / 2;
+      let d;
+      if (Math.abs(x2 - x1) < 12) {
+        d = `M ${x1} ${y1} L ${x2} ${y2}`;
+      } else if (Math.abs(y2 - y1) < 12) {
+        d = `M ${x1} ${y1} L ${x2} ${y2}`;
+      } else {
+        d = `M ${x1} ${y1} L ${mx} ${y1} L ${mx} ${y2} L ${x2} ${y2}`;
+      }
+      const label =
+        e.label &&
+        `<text class="story-edge-label" x="${mx + 4}" y="${my - 4}">${escapeHtml(e.label)}</text>`;
+      return `<path class="story-edge-path" d="${d}" marker-end="url(#story-arrow)"></path>${label || ""}`;
+    })
+    .join("");
+  svg.innerHTML = marker + paths;
+}
+
 function paintStoryStage({ hotId } = {}) {
   if (!useStoryStage() || !els.storyLanes) return;
   showStoryStageShell();
@@ -728,34 +832,36 @@ function paintStoryStage({ hotId } = {}) {
     c.innerHTML = "";
   });
   let hotEl = null;
-  state.storyBeats.forEach((beat) => {
-    const host = els.storyLanes.querySelector(
-      `.story-cell[data-lane="${CSS.escape(beat.lane)}"][data-row="${CSS.escape(beat.row || "narrator")}"]`
-    );
-    if (!host) return;
-    const kind = beat.kind || "action";
-    const hot = beat.id === hotId || beat.hot;
-    const el = document.createElement("div");
-    el.className = `story-node kind-${kind}${hot ? " hot" : ""}${beat.ghost ? " ghost" : ""}`;
-    el.dataset.beat = beat.id;
-    el.innerHTML = `<span class="node-text">${escapeHtml(beat.label)}</span>`;
-    if (beat.edgeTo) {
-      const tip = document.createElement("div");
-      tip.className = "story-edge-tip";
-      tip.textContent = `→ ${beat.edgeTo}`;
-      el.appendChild(tip);
-    }
-    host.appendChild(el);
-    if (hot) hotEl = el;
-  });
+  state.storyBeats
+    .filter((b) => !b.ghost)
+    .forEach((beat) => {
+      const host = els.storyLanes.querySelector(
+        `.story-cell[data-lane="${CSS.escape(beat.lane)}"][data-row="${CSS.escape(beat.row || "narrator")}"]`
+      );
+      if (!host) return;
+      const kind = normalizeStoryKind(beat.kind);
+      const hot = beat.id === hotId || beat.hot;
+      const el = document.createElement("div");
+      el.className = `story-node kind-${kind}${hot ? " hot" : ""}`;
+      el.dataset.beat = beat.id;
+      el.dataset.kind = kind;
+      el.title = `${storyKindTitle(kind)}：${beat.label}`;
+      el.innerHTML = `<span class="node-kind">${escapeHtml(storyKindTitle(kind))}</span><span class="node-text">${escapeHtml(beat.label)}</span>`;
+      host.appendChild(el);
+      if (hot) hotEl = el;
+    });
   if (hotEl) {
     requestAnimationFrame(() => hotEl.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" }));
   }
+  requestAnimationFrame(() => {
+    paintStoryEdges();
+    requestAnimationFrame(paintStoryEdges);
+  });
   if (els.storyKicker) {
     const live = state.storyBeats.filter((b) => !b.ghost).length;
     els.storyKicker.textContent = live
-      ? `交叉泳道 · 上＝表單 · 左＝人 · ${live} 個情節`
-      : "交叉泳道 · 上面是表單 · 左邊是人 · 下一步在格子裡長出節點";
+      ? `導引圖 · ${live} 個符號 · 圖形種類見上方圖例 · 箭頭＝下一步`
+      : "導引圖 · 空圖：下一步會長出「開始」符號，再依流程接箭頭";
   }
 }
 
@@ -764,16 +870,19 @@ function normalizeStoryBeats(node) {
   const raw = node.story;
   if (!raw) return [];
   const list = Array.isArray(raw) ? raw : [raw];
-  return list.map((b, i) => ({
-    id: b.id || `${state.nodeId}-${i}`,
-    lane: String(b.lane || formById(node.form)?.level || "A"),
-    row: storyRowId(node, b),
-    label: b.label || node.line?.slice(0, 18) || "…",
-    kind: b.kind || (node.choices?.length ? "choice" : "action"),
-    edgeTo: b.edgeTo,
-    ghost: !!b.ghost,
-    hot: true,
-  }));
+  const hasChoices = !!(node.choices?.length);
+  return list
+    .filter((b) => !b.ghost)
+    .map((b, i) => ({
+      id: b.id || `${state.nodeId}-${i}`,
+      lane: String(b.lane || formById(node.form)?.level || "A"),
+      row: storyRowId(node, b),
+      label: b.label || node.line?.slice(0, 18) || "…",
+      kind: normalizeStoryKind(b.kind, { hasChoices }),
+      from: b.from || undefined,
+      edgeLabel: b.edgeLabel || "",
+      hot: true,
+    }));
 }
 
 function applyStoryBeats(node, { fromPrev = false } = {}) {
@@ -791,46 +900,41 @@ function applyStoryBeats(node, { fromPrev = false } = {}) {
     state.storyBeats.forEach((b) => {
       b.hot = false;
     });
-    // 真實情節進場時，清掉同格（表×人）佔位 ghost
-    const liveCells = new Set(
-      incoming.filter((b) => !b.ghost).map((b) => `${b.lane}::${b.row}`)
-    );
-    if (liveCells.size) {
-      state.storyBeats = state.storyBeats.filter(
-        (b) => !(b.ghost && liveCells.has(`${b.lane}::${b.row || "narrator"}`))
-      );
-      // 同欄若已有真人情節，也清掉該欄其他 ghost
-      const liveLanes = new Set(incoming.filter((b) => !b.ghost).map((b) => b.lane));
-      state.storyBeats = state.storyBeats.filter((b) => !(b.ghost && liveLanes.has(b.lane)));
-    }
+    // 清掉舊版佔位 ghost
+    state.storyBeats = state.storyBeats.filter((b) => !b.ghost);
     for (const beat of incoming) {
       const exists = state.storyBeats.find((b) => b.id === beat.id);
       if (exists) {
         Object.assign(exists, beat, { hot: true });
       } else {
+        // 未寫 from 時，自動接到上一顆
+        if (!beat.from) {
+          const last = [...state.storyBeats].reverse().find((b) => b.kind !== "decision");
+          if (last) beat.from = last.id;
+        }
         state.storyBeats.push(beat);
       }
     }
-    // 抉擇：菱形節點落在說話者 × 當前表
-    if (node.choices?.length && !incoming.some((b) => b.kind === "choice")) {
-      const lane = formById(node.form)?.level || forms()[0]?.level || "A";
-      const row = storyRowId(node, {});
-      node.choices.forEach((c, i) => {
-        const id = `${state.nodeId}-ch-${c.id || i}`;
-        if (!state.storyBeats.some((b) => b.id === id)) {
-          state.storyBeats.push({
-            id,
-            lane,
-            row,
-            label: c.label,
-            kind: "choice",
-            hot: true,
-          });
-        }
-      });
+    // 抉擇：只畫一顆菱形（判斷），選項在對話列——符合導引圖定義
+    if (node.choices?.length && !state.storyBeats.some((b) => b.kind === "decision" && b.id.startsWith(`${state.nodeId}`))) {
+      const hasDecision = incoming.some((b) => b.kind === "decision");
+      if (!hasDecision) {
+        const lane = formById(node.form)?.level || forms()[0]?.level || "A";
+        const row = storyRowId(node, {});
+        const last = [...state.storyBeats].reverse().find((b) => b.kind !== "decision");
+        state.storyBeats.push({
+          id: `${state.nodeId}-decision`,
+          lane,
+          row,
+          label: "怎麼走？",
+          kind: "decision",
+          from: last?.id,
+          hot: true,
+        });
+      }
     }
   }
-  const hotId = incoming.find((b) => !b.ghost)?.id || incoming[0]?.id;
+  const hotId = incoming[0]?.id || state.storyBeats.find((b) => b.hot)?.id;
   paintStoryStage({ hotId });
 }
 
