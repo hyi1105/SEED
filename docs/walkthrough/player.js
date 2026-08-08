@@ -634,6 +634,53 @@ function linkedTo(docId) {
   return state.links.filter((l) => l.to === docId);
 }
 
+/** 多表單開場：先畫「表單種類」關係圖，不露空白欄位 */
+function renderFormSchema({ highlightLevels = [], highlightRules = [] } = {}) {
+  const hiLv = new Set(highlightLevels.map(String));
+  const hiRule = new Set(highlightRules.map(String));
+  const list = forms();
+  els.formSheet.hidden = false;
+  els.formTitle.textContent = "表單關係（虛擬圖）";
+  els.formSub.textContent = "先看大張怎麼連，再進每一張的欄位";
+  els.statusPill.textContent = `${list.length} 種表單 · 尚不填空白`;
+  els.submitRow.classList.remove("open");
+  els.actionRow.classList.remove("open");
+  els.actionRow.innerHTML = "";
+
+  const cards = list
+    .map((f) => {
+      const on = !hiLv.size || hiLv.has(f.level) || hiLv.has(f.id);
+      return `<div class="schema-card ${on ? "hi" : "dim"}" data-form="${escapeHtml(f.id)}">
+        <span class="lvl">${escapeHtml(f.level || "?")}</span>
+        <strong>${escapeHtml(f.label || f.title || f.id)}</strong>
+        <small>獨立表單</small>
+      </div>`;
+    })
+    .join("");
+
+  const edges = (pack.linkRules || [])
+    .map((r, idx) => {
+      const key = r.id || `${r.from}->${r.to}`;
+      const from = formById(r.from);
+      const to = formById(r.to);
+      const on = !hiRule.size || hiRule.has(key) || hiRule.has(String(idx));
+      return `<div class="schema-edge ${on ? "hi" : ""}" data-rule="${escapeHtml(key)}">
+        <span class="edge-a"><span class="lvl">${escapeHtml(from?.level || "?")}</span> ${escapeHtml(from?.label || r.from)}</span>
+        <span class="edge-arrow">→</span>
+        <span class="edge-b"><span class="lvl">${escapeHtml(to?.level || "?")}</span> ${escapeHtml(to?.label || r.to)}</span>
+        <span class="edge-label">${escapeHtml(r.cardinality || "")} ${escapeHtml(r.label || "")}</span>
+      </div>`;
+    })
+    .join("");
+
+  els.sections.innerHTML = `
+    <div class="schema-map">
+      <p class="board-lead">多張表單時：先看<strong>誰連誰</strong>。空白欄位等進到某一張再出現——比較不會斷斷續續。</p>
+      <div class="schema-cards">${cards}</div>
+      <div class="schema-edges">${edges || `<p class="muted">尚未定義 linkRules</p>`}</div>
+    </div>`;
+}
+
 function renderBoard({ highlight = [] } = {}) {
   const hi = new Set(highlight);
   const rows = Object.values(state.docs).sort((a, b) => {
@@ -848,7 +895,13 @@ async function renderNode({ fromPrev = false } = {}) {
 
   const wantForm = node.form || state.formId;
   const wantDoc = node.doc || state.docId;
-  if (node.showBoard) {
+  if (node.showSchema) {
+    state.boardOnly = true;
+    renderFormSchema({
+      highlightLevels: node.schemaHighlight || [],
+      highlightRules: node.schemaRules || [],
+    });
+  } else if (node.showBoard) {
     state.boardOnly = true;
     renderBoard({ highlight: node.boardHighlight || [] });
     persistGraph();
@@ -870,7 +923,7 @@ async function renderNode({ fromPrev = false } = {}) {
     paintChat();
   }
 
-  if (!node.showBoard) {
+  if (!node.showBoard && !node.showSchema) {
     prepareReveal(node);
     if (!fromPrev) await applyFills(node);
     else paintShowForm();
@@ -907,8 +960,15 @@ function goPrev() {
   state.nodeId = prev.nodeId;
   restoreShow(prev.snap);
   state.chat = state.chat.slice(0, prev.chatLen);
-  if (state.boardOnly) renderBoard({ highlight: nodeOf(state.nodeId)?.boardHighlight || [] });
-  else buildShowForm();
+  const cur = nodeOf(state.nodeId);
+  if (cur?.showSchema) {
+    renderFormSchema({
+      highlightLevels: cur.schemaHighlight || [],
+      highlightRules: cur.schemaRules || [],
+    });
+  } else if (state.boardOnly || cur?.showBoard) {
+    renderBoard({ highlight: cur?.boardHighlight || [] });
+  } else buildShowForm();
   renderNode({ fromPrev: true });
 }
 

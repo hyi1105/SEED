@@ -643,6 +643,76 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
 .edge.hi { border-color: var(--brand-2); box-shadow: 0 0 0 1px rgba(23, 143, 114, 0.2); }
 .edge-arrow { color: var(--brand); font-weight: 700; }
 .edge-label { color: var(--muted); font-size: 0.72rem; }
+
+/* 開場：表單種類關係圖（多表單先看大圖） */
+.schema-map { display: grid; gap: 0.65rem; }
+.schema-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.4rem;
+}
+.schema-card {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.55rem 0.65rem;
+  border: 1.5px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  transition: border-color 0.25s, box-shadow 0.25s, opacity 0.25s;
+}
+.schema-card .lvl {
+  justify-self: start;
+}
+.schema-card strong {
+  font-family: var(--font-ui);
+  font-size: 0.92rem;
+}
+.schema-card small {
+  color: var(--muted);
+  font-size: 0.68rem;
+}
+.schema-card.hi {
+  border-color: color-mix(in srgb, var(--brand) 55%, white);
+  background: rgba(12, 92, 77, 0.06);
+  box-shadow: 0 0 0 2px rgba(12, 92, 77, 0.08);
+}
+.schema-card.dim { opacity: 0.42; }
+.schema-edges { display: grid; gap: 0.3rem; }
+.schema-edge {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 0.25rem 0.35rem;
+  align-items: center;
+  padding: 0.4rem 0.55rem;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  font-size: 0.78rem;
+}
+.schema-edge .edge-label {
+  grid-column: 1 / -1;
+  color: var(--muted);
+  font-size: 0.68rem;
+}
+.schema-edge.hi {
+  border-color: var(--brand-2);
+  box-shadow: 0 0 0 1px rgba(23, 143, 114, 0.18);
+  background: rgba(23, 143, 114, 0.05);
+}
+@media (max-width: 640px) {
+  .app[data-mode="show"] .schema-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.3rem;
+  }
+  .app[data-mode="show"] .schema-card {
+    padding: 0.4rem 0.45rem;
+  }
+  .app[data-mode="show"] .schema-card strong { font-size: 0.78rem; }
+  .app[data-mode="show"] .schema-edge {
+    font-size: 0.7rem;
+    padding: 0.3rem 0.4rem;
+  }
+}
 .settings-form-title {
   margin: 1rem 0 0.5rem;
   font-family: var(--font-d);
@@ -846,24 +916,28 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
   ],
   "linkRules": [
     {
+      "id": "material->need",
       "from": "material",
       "to": "need",
       "cardinality": "1:n",
       "label": "料號 A 可掛多個需求 B（生產／定價／備料…）"
     },
     {
+      "id": "need->component",
       "from": "need",
       "to": "component",
       "cardinality": "1:n",
       "label": "一個需求 B 可拆多個底料／申請 C"
     },
     {
+      "id": "need->purchase",
       "from": "need",
       "to": "purchase",
       "cardinality": "1:n",
       "label": "需求也可直接連到採購 D"
     },
     {
+      "id": "component->purchase",
       "from": "component",
       "to": "purchase",
       "cardinality": "n:n",
@@ -1511,28 +1585,44 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
     "nodes": {
       "s01": {
         "speaker": "narrator",
-        "line": "重點先講清楚：A 表與 B 表是同級的兩張獨立表單，不是一張表裡塞兩個分頁。今天用「料號」當例子，走一條 A→B→C→D 的圖。",
-        "form": "material",
-        "doc": "a1",
+        "line": "這個系統有四張表單。開場先看「誰連誰」的虛擬關係圖——先不要出現空白欄位，才不會一開始就跳進沒意義的空格。",
+        "showSchema": true,
+        "schemaHighlight": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ],
         "next": "s02"
       },
       "s02": {
         "speaker": "you",
         "line": "我先有一個料號。它可能要生產、要定價、要備料——這些不該全塞進料號那一張裡吧？",
-        "form": "material",
-        "doc": "a1",
+        "showSchema": true,
+        "schemaHighlight": [
+          "A",
+          "B"
+        ],
+        "schemaRules": [
+          "material->need"
+        ],
         "next": "s03"
       },
       "s03": {
         "speaker": "guide",
-        "line": "對。料號是 A。需求是 B。A 用「連結」掛很多個 B，像圖的節點，不是父子欄位。",
-        "form": "material",
-        "doc": "a1",
+        "line": "對。A 料號、B 需求、C 底料、D 採購——四張是同級獨立表單。用連結組成圖：A 可掛很多 B，B 再掛 C／D。先記住大圖，下一步才進 A 的欄位。",
+        "showSchema": true,
+        "schemaHighlight": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ],
         "next": "s04"
       },
       "s04": {
         "speaker": "planner",
-        "line": "我先建 A：料號本身。這是身分證字號。",
+        "line": "大圖有了。現在才進 A 這一張：先填料號本身——這是身分證字號。",
         "form": "material",
         "doc": "a1",
         "focus": "sku",
@@ -1990,24 +2080,28 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
     ],
     "linkRules": [
       {
+        "id": "material->need",
         "from": "material",
         "to": "need",
         "cardinality": "1:n",
         "label": "料號 A 可掛多個需求 B（生產／定價／備料…）"
       },
       {
+        "id": "need->component",
         "from": "need",
         "to": "component",
         "cardinality": "1:n",
         "label": "一個需求 B 可拆多個底料／申請 C"
       },
       {
+        "id": "need->purchase",
         "from": "need",
         "to": "purchase",
         "cardinality": "1:n",
         "label": "需求也可直接連到採購 D"
       },
       {
+        "id": "component->purchase",
         "from": "component",
         "to": "purchase",
         "cardinality": "n:n",
@@ -2655,28 +2749,44 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
       "nodes": {
         "s01": {
           "speaker": "narrator",
-          "line": "重點先講清楚：A 表與 B 表是同級的兩張獨立表單，不是一張表裡塞兩個分頁。今天用「料號」當例子，走一條 A→B→C→D 的圖。",
-          "form": "material",
-          "doc": "a1",
+          "line": "這個系統有四張表單。開場先看「誰連誰」的虛擬關係圖——先不要出現空白欄位，才不會一開始就跳進沒意義的空格。",
+          "showSchema": true,
+          "schemaHighlight": [
+            "A",
+            "B",
+            "C",
+            "D"
+          ],
           "next": "s02"
         },
         "s02": {
           "speaker": "you",
           "line": "我先有一個料號。它可能要生產、要定價、要備料——這些不該全塞進料號那一張裡吧？",
-          "form": "material",
-          "doc": "a1",
+          "showSchema": true,
+          "schemaHighlight": [
+            "A",
+            "B"
+          ],
+          "schemaRules": [
+            "material->need"
+          ],
           "next": "s03"
         },
         "s03": {
           "speaker": "guide",
-          "line": "對。料號是 A。需求是 B。A 用「連結」掛很多個 B，像圖的節點，不是父子欄位。",
-          "form": "material",
-          "doc": "a1",
+          "line": "對。A 料號、B 需求、C 底料、D 採購——四張是同級獨立表單。用連結組成圖：A 可掛很多 B，B 再掛 C／D。先記住大圖，下一步才進 A 的欄位。",
+          "showSchema": true,
+          "schemaHighlight": [
+            "A",
+            "B",
+            "C",
+            "D"
+          ],
           "next": "s04"
         },
         "s04": {
           "speaker": "planner",
-          "line": "我先建 A：料號本身。這是身分證字號。",
+          "line": "大圖有了。現在才進 A 這一張：先填料號本身——這是身分證字號。",
           "form": "material",
           "doc": "a1",
           "focus": "sku",
@@ -5580,6 +5690,53 @@ function linkedTo(docId) {
   return state.links.filter((l) => l.to === docId);
 }
 
+/** 多表單開場：先畫「表單種類」關係圖，不露空白欄位 */
+function renderFormSchema({ highlightLevels = [], highlightRules = [] } = {}) {
+  const hiLv = new Set(highlightLevels.map(String));
+  const hiRule = new Set(highlightRules.map(String));
+  const list = forms();
+  els.formSheet.hidden = false;
+  els.formTitle.textContent = "表單關係（虛擬圖）";
+  els.formSub.textContent = "先看大張怎麼連，再進每一張的欄位";
+  els.statusPill.textContent = `${list.length} 種表單 · 尚不填空白`;
+  els.submitRow.classList.remove("open");
+  els.actionRow.classList.remove("open");
+  els.actionRow.innerHTML = "";
+
+  const cards = list
+    .map((f) => {
+      const on = !hiLv.size || hiLv.has(f.level) || hiLv.has(f.id);
+      return `<div class="schema-card ${on ? "hi" : "dim"}" data-form="${escapeHtml(f.id)}">
+        <span class="lvl">${escapeHtml(f.level || "?")}</span>
+        <strong>${escapeHtml(f.label || f.title || f.id)}</strong>
+        <small>獨立表單</small>
+      </div>`;
+    })
+    .join("");
+
+  const edges = (pack.linkRules || [])
+    .map((r, idx) => {
+      const key = r.id || `${r.from}->${r.to}`;
+      const from = formById(r.from);
+      const to = formById(r.to);
+      const on = !hiRule.size || hiRule.has(key) || hiRule.has(String(idx));
+      return `<div class="schema-edge ${on ? "hi" : ""}" data-rule="${escapeHtml(key)}">
+        <span class="edge-a"><span class="lvl">${escapeHtml(from?.level || "?")}</span> ${escapeHtml(from?.label || r.from)}</span>
+        <span class="edge-arrow">→</span>
+        <span class="edge-b"><span class="lvl">${escapeHtml(to?.level || "?")}</span> ${escapeHtml(to?.label || r.to)}</span>
+        <span class="edge-label">${escapeHtml(r.cardinality || "")} ${escapeHtml(r.label || "")}</span>
+      </div>`;
+    })
+    .join("");
+
+  els.sections.innerHTML = `
+    <div class="schema-map">
+      <p class="board-lead">多張表單時：先看<strong>誰連誰</strong>。空白欄位等進到某一張再出現——比較不會斷斷續續。</p>
+      <div class="schema-cards">${cards}</div>
+      <div class="schema-edges">${edges || `<p class="muted">尚未定義 linkRules</p>`}</div>
+    </div>`;
+}
+
 function renderBoard({ highlight = [] } = {}) {
   const hi = new Set(highlight);
   const rows = Object.values(state.docs).sort((a, b) => {
@@ -5794,7 +5951,13 @@ async function renderNode({ fromPrev = false } = {}) {
 
   const wantForm = node.form || state.formId;
   const wantDoc = node.doc || state.docId;
-  if (node.showBoard) {
+  if (node.showSchema) {
+    state.boardOnly = true;
+    renderFormSchema({
+      highlightLevels: node.schemaHighlight || [],
+      highlightRules: node.schemaRules || [],
+    });
+  } else if (node.showBoard) {
     state.boardOnly = true;
     renderBoard({ highlight: node.boardHighlight || [] });
     persistGraph();
@@ -5816,7 +5979,7 @@ async function renderNode({ fromPrev = false } = {}) {
     paintChat();
   }
 
-  if (!node.showBoard) {
+  if (!node.showBoard && !node.showSchema) {
     prepareReveal(node);
     if (!fromPrev) await applyFills(node);
     else paintShowForm();
@@ -5853,8 +6016,15 @@ function goPrev() {
   state.nodeId = prev.nodeId;
   restoreShow(prev.snap);
   state.chat = state.chat.slice(0, prev.chatLen);
-  if (state.boardOnly) renderBoard({ highlight: nodeOf(state.nodeId)?.boardHighlight || [] });
-  else buildShowForm();
+  const cur = nodeOf(state.nodeId);
+  if (cur?.showSchema) {
+    renderFormSchema({
+      highlightLevels: cur.schemaHighlight || [],
+      highlightRules: cur.schemaRules || [],
+    });
+  } else if (state.boardOnly || cur?.showBoard) {
+    renderBoard({ highlight: cur?.boardHighlight || [] });
+  } else buildShowForm();
   renderNode({ fromPrev: true });
 }
 

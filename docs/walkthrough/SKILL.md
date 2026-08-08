@@ -82,7 +82,10 @@
 | `form` / `doc` | 切到哪個獨立表單／哪張單據 |
 | `ensureDoc` / `ensureDocs` | 建立或更新單據（含 `values`） |
 | `link` / `links` | 建立 from→to（可多條） |
-| `showBoard` | 改顯示關聯總表 |
+| `showSchema` | 開場顯示「表單種類」虛擬關係圖（forms＋linkRules；不露空白欄位） |
+| `schemaHighlight` | 高亮的 level／form id（配合 `showSchema`） |
+| `schemaRules` | 高亮的 linkRules id（如 `material->need`） |
+| `showBoard` | 改顯示關聯總表（已有單據實例後） |
 | `boardHighlight` | 總表高亮哪些單據 id |
 | `focus` / `reveal` / `fillFromDemo` / `typewriter` | 同前 |
 | `next` / `choices` / `cta` | 推進；cta 可 `open-board` |
@@ -103,13 +106,14 @@
 請依 docs/walkthrough/SKILL.md 與 vn/material-graph.json，
 為「○○系統」產出一份 JSON。
 必須用 forms[] 做同級獨立表單；用 links 做 A→多B→多C 圖；
-demo.docs / demo.links 放種子；show 用 form/doc/links/showBoard。
+demo.docs / demo.links 放種子；show 開場若有多張 forms，先 showSchema 畫關係，再進欄位；其後用 form/doc/links/showBoard。
 只輸出 JSON。
 ```
 
 ## 驗收
 
 - [ ] 播放器可匯入；頂部可切系統  
+- [ ] 多表單 Show：**先**表單關係圖、**再**空白欄位（不要一開場就空 AA）  
 - [ ] Show 有上一步／下一步；會切換不同獨立表單  
 - [ ] 總表看得到狀態與連結  
 - [ ] 表單可新建單據並「連到…」  

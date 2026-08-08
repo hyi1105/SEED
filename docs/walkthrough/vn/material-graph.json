@@ -11,24 +11,28 @@
   ],
   "linkRules": [
     {
+      "id": "material->need",
       "from": "material",
       "to": "need",
       "cardinality": "1:n",
       "label": "料號 A 可掛多個需求 B（生產／定價／備料…）"
     },
     {
+      "id": "need->component",
       "from": "need",
       "to": "component",
       "cardinality": "1:n",
       "label": "一個需求 B 可拆多個底料／申請 C"
     },
     {
+      "id": "need->purchase",
       "from": "need",
       "to": "purchase",
       "cardinality": "1:n",
       "label": "需求也可直接連到採購 D"
     },
     {
+      "id": "component->purchase",
       "from": "component",
       "to": "purchase",
       "cardinality": "n:n",
@@ -406,28 +410,29 @@
     "nodes": {
       "s01": {
         "speaker": "narrator",
-        "line": "重點先講清楚：A 表與 B 表是同級的兩張獨立表單，不是一張表裡塞兩個分頁。今天用「料號」當例子，走一條 A→B→C→D 的圖。",
-        "form": "material",
-        "doc": "a1",
+        "line": "這個系統有四張表單。開場先看「誰連誰」的虛擬關係圖——先不要出現空白欄位，才不會一開始就跳進沒意義的空格。",
+        "showSchema": true,
+        "schemaHighlight": ["A", "B", "C", "D"],
         "next": "s02"
       },
       "s02": {
         "speaker": "you",
         "line": "我先有一個料號。它可能要生產、要定價、要備料——這些不該全塞進料號那一張裡吧？",
-        "form": "material",
-        "doc": "a1",
+        "showSchema": true,
+        "schemaHighlight": ["A", "B"],
+        "schemaRules": ["material->need"],
         "next": "s03"
       },
       "s03": {
         "speaker": "guide",
-        "line": "對。料號是 A。需求是 B。A 用「連結」掛很多個 B，像圖的節點，不是父子欄位。",
-        "form": "material",
-        "doc": "a1",
+        "line": "對。A 料號、B 需求、C 底料、D 採購——四張是同級獨立表單。用連結組成圖：A 可掛很多 B，B 再掛 C／D。先記住大圖，下一步才進 A 的欄位。",
+        "showSchema": true,
+        "schemaHighlight": ["A", "B", "C", "D"],
         "next": "s04"
       },
       "s04": {
         "speaker": "planner",
-        "line": "我先建 A：料號本身。這是身分證字號。",
+        "line": "大圖有了。現在才進 A 這一張：先填料號本身——這是身分證字號。",
         "form": "material",
         "doc": "a1",
         "focus": "sku",
