@@ -100,6 +100,7 @@
 - **ALR5：跨單關聯與開單模式**— [topics/alr5-cross-links-create-modes.md](topics/alr5-cross-links-create-modes.md)
 - **ALR5：AB 表單、可設定匯出、JSON 完全轉移**— [topics/alr5-ab-export-json-transfer.md](topics/alr5-ab-export-json-transfer.md)
 - **怎麼跟 Agent 講 UI，少重複改**— [topics/agent-ui-briefing.md](topics/agent-ui-briefing.md)
+- **跨專案怎麼說：四合院式漸進拼圖學習**— [topics/progressive-puzzle-brief.md](topics/progressive-puzzle-brief.md)
 - **如何從 Markdown 讀懂 SEED 系統**— [topics/system-guide.md](topics/system-guide.md)
 - **簽核模板工作流（角色、權限、流程、通知）**— [topics/approval-workflow.md](topics/approval-workflow.md)
 - **最終版進度總表**— [topics/progress-final.md](topics/progress-final.md)
