@@ -58,7 +58,7 @@ const state = {
   history: [],
   chat: [],
   boardOnly: false,
-  /** @type {{id:string,lane:string,label:string,kind:string,edgeTo?:string,hot?:boolean}[]} */
+  /** @type {{id:string,lane:string,row:string,label:string,kind:string,edgeTo?:string,hot?:boolean,ghost?:boolean}[]} */
   storyBeats: [],
 };
 
@@ -646,6 +646,38 @@ function useStoryStage() {
   return isGraphPack() && forms().length > 1;
 }
 
+/** 泳道列＝人：旁白列＋各角色（左側用短名） */
+function storyPeople() {
+  const short = { planner: "企劃", warehouse: "倉庫", buyer: "採購" };
+  const roles = pack?.roles || [];
+  return [
+    { id: "narrator", label: "旁白" },
+    ...roles.map((r) => ({ id: r.id, label: short[r.id] || r.label })),
+  ];
+}
+
+/** speaker／beat.row → 左側人列 id */
+function storyRowId(node, beat = {}) {
+  if (beat.row) return String(beat.row);
+  const sp = node?.speaker || "";
+  const map = {
+    narrator: "narrator",
+    you: "narrator",
+    guide: "narrator",
+    planner: "planner",
+    wh: "warehouse",
+    warehouse: "warehouse",
+    buyer: "buyer",
+  };
+  if (map[sp]) return map[sp];
+  if (rolesOf().some((r) => r.id === sp)) return sp;
+  return "narrator";
+}
+
+function rolesOf() {
+  return pack?.roles || [];
+}
+
 function hideStoryStage() {
   if (els.storyStage) els.storyStage.hidden = true;
   els.app?.classList.remove("story-on");
@@ -655,39 +687,58 @@ function showStoryStageShell() {
   if (!els.storyStage || !els.storyLanes) return;
   els.storyStage.hidden = false;
   els.app?.classList.add("story-on");
-  const list = forms();
-  els.storyLanes.style.setProperty("--lane-count", String(Math.max(1, list.length)));
-  els.storyLanes.innerHTML = list
-    .map(
-      (f) => `<div class="story-lane" data-lane="${escapeHtml(f.level || f.id)}">
-        <div class="story-lane-head">
-          <span class="lvl">${escapeHtml(f.level || "?")}</span>
-          <span class="story-lane-title">${escapeHtml(f.label || f.title || f.id)}</span>
-        </div>
-        <div class="story-lane-flow" data-flow="${escapeHtml(f.level || f.id)}"></div>
-      </div>`
-    )
+  const cols = forms();
+  const rows = storyPeople();
+  const matrix = els.storyLanes;
+  matrix.className = "story-matrix";
+  matrix.style.setProperty("--cols", String(Math.max(1, cols.length)));
+  matrix.style.setProperty("--rows", String(Math.max(1, rows.length)));
+  const lastLane = cols[cols.length - 1]?.level || cols[cols.length - 1]?.id;
+  const lastRow = rows[rows.length - 1]?.id;
+  const colHeads = cols
+    .map((f) => {
+      const lane = f.level || f.id;
+      const end = lane === lastLane ? " end-col" : "";
+      return `<div class="story-col-head${end}" data-lane="${escapeHtml(lane)}">
+        <span class="lvl">${escapeHtml(f.level || "?")}</span>
+        <span class="story-col-title">${escapeHtml(f.label || f.title || f.id)}</span>
+      </div>`;
+    })
     .join("");
+  const body = rows
+    .map((person) => {
+      const endRow = person.id === lastRow ? " end-row" : "";
+      const cells = cols
+        .map((f) => {
+          const lane = f.level || f.id;
+          const endCol = lane === lastLane ? " end-col" : "";
+          return `<div class="story-cell${endCol}${endRow}" data-lane="${escapeHtml(lane)}" data-row="${escapeHtml(person.id)}"></div>`;
+        })
+        .join("");
+      return `<div class="story-row-head${endRow}" data-row="${escapeHtml(person.id)}"><span>${escapeHtml(person.label)}</span></div>${cells}`;
+    })
+    .join("");
+  matrix.innerHTML = `<div class="story-corner" aria-hidden="true"><span class="corner-y">人</span><span class="corner-x">表單</span></div>${colHeads}${body}`;
 }
 
 function paintStoryStage({ hotId } = {}) {
   if (!useStoryStage() || !els.storyLanes) return;
   showStoryStageShell();
-  const flows = {};
-  forms().forEach((f) => {
-    const key = f.level || f.id;
-    flows[key] = els.storyLanes.querySelector(`[data-flow="${key}"]`);
-    if (flows[key]) flows[key].innerHTML = "";
+  els.storyLanes.querySelectorAll(".story-cell").forEach((c) => {
+    c.innerHTML = "";
   });
-  state.storyBeats.forEach((beat, idx) => {
-    const host = flows[beat.lane];
+  let hotEl = null;
+  state.storyBeats.forEach((beat) => {
+    const host = els.storyLanes.querySelector(
+      `.story-cell[data-lane="${CSS.escape(beat.lane)}"][data-row="${CSS.escape(beat.row || "narrator")}"]`
+    );
     if (!host) return;
     const kind = beat.kind || "action";
     const hot = beat.id === hotId || beat.hot;
     const el = document.createElement("div");
-    el.className = `story-oval kind-${kind}${hot ? " hot" : ""}${beat.ghost ? " ghost" : ""}`;
+    el.className = `story-node kind-${kind}${hot ? " hot" : ""}${beat.ghost ? " ghost" : ""}`;
     el.dataset.beat = beat.id;
-    el.innerHTML = `<span class="oval-text">${escapeHtml(beat.label)}</span>`;
+    el.innerHTML = `<span class="node-text">${escapeHtml(beat.label)}</span>`;
     if (beat.edgeTo) {
       const tip = document.createElement("div");
       tip.className = "story-edge-tip";
@@ -695,14 +746,16 @@ function paintStoryStage({ hotId } = {}) {
       el.appendChild(tip);
     }
     host.appendChild(el);
-    if (idx > 0 && hot) {
-      requestAnimationFrame(() => el.scrollIntoView({ block: "nearest", behavior: "smooth" }));
-    }
+    if (hot) hotEl = el;
   });
+  if (hotEl) {
+    requestAnimationFrame(() => hotEl.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" }));
+  }
   if (els.storyKicker) {
-    els.storyKicker.textContent = state.storyBeats.length
-      ? `故事進行中 · ${state.storyBeats.length} 個情節`
-      : "空舞台 · 左→右是四張表 · 下一步會慢慢長出橢圓";
+    const live = state.storyBeats.filter((b) => !b.ghost).length;
+    els.storyKicker.textContent = live
+      ? `交叉泳道 · 上＝表單 · 左＝人 · ${live} 個情節`
+      : "交叉泳道 · 上面是表單 · 左邊是人 · 下一步在格子裡長出節點";
   }
 }
 
@@ -714,6 +767,7 @@ function normalizeStoryBeats(node) {
   return list.map((b, i) => ({
     id: b.id || `${state.nodeId}-${i}`,
     lane: String(b.lane || formById(node.form)?.level || "A"),
+    row: storyRowId(node, b),
     label: b.label || node.line?.slice(0, 18) || "…",
     kind: b.kind || (node.choices?.length ? "choice" : "action"),
     edgeTo: b.edgeTo,
@@ -734,13 +788,19 @@ function applyStoryBeats(node, { fromPrev = false } = {}) {
   const incoming = normalizeStoryBeats(node);
   if (!fromPrev) {
     if (node.storyReplace) state.storyBeats = [];
-    // 清除上一拍 hot
     state.storyBeats.forEach((b) => {
       b.hot = false;
     });
-    // 真實情節進場時，清掉同欄佔位 ghost
-    const liveLanes = new Set(incoming.filter((b) => !b.ghost).map((b) => b.lane));
-    if (liveLanes.size) {
+    // 真實情節進場時，清掉同格（表×人）佔位 ghost
+    const liveCells = new Set(
+      incoming.filter((b) => !b.ghost).map((b) => `${b.lane}::${b.row}`)
+    );
+    if (liveCells.size) {
+      state.storyBeats = state.storyBeats.filter(
+        (b) => !(b.ghost && liveCells.has(`${b.lane}::${b.row || "narrator"}`))
+      );
+      // 同欄若已有真人情節，也清掉該欄其他 ghost
+      const liveLanes = new Set(incoming.filter((b) => !b.ghost).map((b) => b.lane));
       state.storyBeats = state.storyBeats.filter((b) => !(b.ghost && liveLanes.has(b.lane)));
     }
     for (const beat of incoming) {
@@ -751,15 +811,17 @@ function applyStoryBeats(node, { fromPrev = false } = {}) {
         state.storyBeats.push(beat);
       }
     }
-    // 抉擇：把選項畫成 choice 橢圓
+    // 抉擇：菱形節點落在說話者 × 當前表
     if (node.choices?.length && !incoming.some((b) => b.kind === "choice")) {
       const lane = formById(node.form)?.level || forms()[0]?.level || "A";
+      const row = storyRowId(node, {});
       node.choices.forEach((c, i) => {
         const id = `${state.nodeId}-ch-${c.id || i}`;
         if (!state.storyBeats.some((b) => b.id === id)) {
           state.storyBeats.push({
             id,
             lane,
+            row,
             label: c.label,
             kind: "choice",
             hot: true,

@@ -72,7 +72,7 @@ def main() -> None:
       <div id="form-type-tabs" class="mode-tabs" aria-label="獨立表單種類" hidden></div>
       <div id="doc-list" hidden></div>
       <section class="story-stage" id="story-stage" hidden aria-label="故事泳道">
-        <p class="story-kicker" id="story-kicker">故事舞台 · 左→右是表單 · 橢圓是正在發生的事</p>
+        <p class="story-kicker" id="story-kicker">交叉泳道 · 上面是表單 · 左邊是人 · 格子裡長情節</p>
         <div class="story-lanes" id="story-lanes"></div>
       </section>
       <div class="stage-fit" id="stage-fit">

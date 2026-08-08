@@ -410,13 +410,13 @@
     "nodes": {
       "s01": {
         "speaker": "narrator",
-        "line": "先別急著看欄位。上面是四條泳道——左到右是 A 料號、B 需求、C 底料、D 採購。故事會一塊塊長出來。",
+        "line": "先別急著看欄位。這是交叉泳道：上面是各表單（A～D），左邊是人。情節會長在「誰 × 哪張表」的格子裡。",
         "showSwimlane": true,
         "story": [
-          { "id": "ghost-a", "lane": "A", "label": "（空）", "kind": "action", "ghost": true },
-          { "id": "ghost-b", "lane": "B", "label": "（空）", "kind": "action", "ghost": true },
-          { "id": "ghost-c", "lane": "C", "label": "（空）", "kind": "action", "ghost": true },
-          { "id": "ghost-d", "lane": "D", "label": "（空）", "kind": "action", "ghost": true }
+          { "id": "ghost-a", "lane": "A", "row": "narrator", "label": "…", "kind": "action", "ghost": true },
+          { "id": "ghost-b", "lane": "B", "row": "narrator", "label": "…", "kind": "action", "ghost": true },
+          { "id": "ghost-c", "lane": "C", "row": "narrator", "label": "…", "kind": "action", "ghost": true },
+          { "id": "ghost-d", "lane": "D", "row": "narrator", "label": "…", "kind": "action", "ghost": true }
         ],
         "next": "s02"
       },
@@ -427,47 +427,47 @@
         "form": "material",
         "doc": "a1",
         "story": [
-          { "id": "a-exist", "lane": "A", "label": "有一個料號", "kind": "action" }
+          { "id": "a-exist", "lane": "A", "row": "narrator", "label": "開始 · 有料號", "kind": "start" }
         ],
         "next": "s03"
       },
       "s03": {
         "speaker": "guide",
-        "line": "對。四張是同級獨立表單，用連結組成圖：A 可掛很多 B，B 再掛 C／D。看橢圓長在哪一欄，就知道事情落在哪張表。",
+        "line": "對。看格子：上是表、左是人。A 可掛很多 B，B 再掛 C／D——節點落在哪格，就知道誰在哪張表做事。",
         "showSwimlane": true,
         "story": [
-          { "id": "map-peer", "lane": "A", "label": "四張同級 · 用連結", "kind": "link", "edgeTo": "B／C／D" }
+          { "id": "map-peer", "lane": "A", "row": "narrator", "label": "四張同級連結", "kind": "link", "edgeTo": "B／C／D" }
         ],
         "next": "s04"
       },
       "s04": {
         "speaker": "planner",
-        "line": "企劃在 A 欄動手：先建料號本身——這是身分證字號。",
+        "line": "企劃列 × A 欄：先建料號本身——這是身分證字號。",
         "showSwimlane": true,
         "form": "material",
         "doc": "a1",
         "fillFromDemo": ["sku"],
         "story": [
-          { "id": "a-sku", "lane": "A", "label": "建料號 SKU-8801", "kind": "action" }
+          { "id": "a-sku", "lane": "A", "row": "planner", "label": "建 SKU-8801", "kind": "action" }
         ],
         "next": "s05"
       },
       "s05": {
         "speaker": "planner",
-        "line": "品名給人看；目標說明寫為什麼要建它——後面才知道要連哪些 B。",
+        "line": "還在企劃 × A：品名給人看；目標說明寫為什麼要建它。",
         "showSwimlane": true,
         "form": "material",
         "doc": "a1",
         "fillFromDemo": ["sku_name", "goal", "a_status"],
         "mapFill": { "a_status": "status" },
         "story": [
-          { "id": "a-goal", "lane": "A", "label": "寫品名與目標", "kind": "action" }
+          { "id": "a-goal", "lane": "A", "row": "planner", "label": "寫品名與目標", "kind": "action" }
         ],
         "next": "s06"
       },
       "s06": {
         "speaker": "guide",
-        "line": "同一張 A，開出三張獨立的 B：備料、定價、生產——橢圓落在 B 欄，表示事情換到需求單上了。",
+        "line": "事情換到 B 欄：同一張 A 開出備料、定價、生產三張需求——先記在旁白列，接著倉庫／企劃會接手。",
         "showSwimlane": true,
         "form": "material",
         "doc": "a1",
@@ -482,15 +482,15 @@
           { "from": "a1", "to": "b_mfg", "label": "需要生產" }
         ],
         "story": [
-          { "id": "b-prep", "lane": "B", "label": "備料需求", "kind": "link", "edgeTo": "←A" },
-          { "id": "b-price", "lane": "B", "label": "定價需求", "kind": "link", "edgeTo": "←A" },
-          { "id": "b-mfg", "lane": "B", "label": "生產需求", "kind": "link", "edgeTo": "←A" }
+          { "id": "b-prep", "lane": "B", "row": "narrator", "label": "備料需求", "kind": "link", "edgeTo": "←A" },
+          { "id": "b-price", "lane": "B", "row": "planner", "label": "定價需求", "kind": "link", "edgeTo": "←A" },
+          { "id": "b-mfg", "lane": "B", "row": "planner", "label": "生產需求", "kind": "link", "edgeTo": "←A" }
         ],
         "next": "s07"
       },
       "s07": {
         "speaker": "wh",
-        "line": "倉庫先處理備料這張 B：空間夠不夠、預算有沒有——寫在這張需求上，不是寫進料號。",
+        "line": "倉庫列 × B 欄：空間夠不夠、預算有沒有——寫在備料需求上，不是寫進料號。",
         "showSwimlane": true,
         "form": "need",
         "doc": "b_prep",
@@ -509,13 +509,13 @@
           "b_prep_status": "status"
         },
         "story": [
-          { "id": "b-prep-fill", "lane": "B", "label": "填空間／預算條件", "kind": "action" }
+          { "id": "b-prep-fill", "lane": "B", "row": "warehouse", "label": "填空間／預算", "kind": "action" }
         ],
         "next": "s08"
       },
       "s08": {
         "speaker": "planner",
-        "line": "定價、生產也在 B 欄各自前進——連著同一張 A，但狀態各自走。",
+        "line": "企劃列 × B 欄：定價、生產各自前進——連著同一張 A，狀態各自走。",
         "showSwimlane": true,
         "form": "need",
         "doc": "b_price",
@@ -531,14 +531,14 @@
           "b_price_status": "status"
         },
         "story": [
-          { "id": "b-price-go", "lane": "B", "label": "定價進行中", "kind": "action" },
-          { "id": "b-mfg-go", "lane": "B", "label": "生產進行中", "kind": "action" }
+          { "id": "b-price-go", "lane": "B", "row": "planner", "label": "定價進行中", "kind": "action" },
+          { "id": "b-mfg-go", "lane": "B", "row": "planner", "label": "生產進行中", "kind": "action" }
         ],
         "next": "s09"
       },
       "s09": {
         "speaker": "guide",
-        "line": "備料做下去，常還要底下的東西：瓶子、申請新紙板——橢圓移到 C 欄。一張 B 可以掛很多 C。",
+        "line": "備料做下去要瓶子、新紙板——節點移到 C 欄。一張 B 可以掛很多 C。",
         "showSwimlane": true,
         "form": "need",
         "doc": "b_prep",
@@ -551,14 +551,14 @@
           { "from": "b_prep", "to": "c_board", "label": "申請新板" }
         ],
         "story": [
-          { "id": "c-bottle", "lane": "C", "label": "瓶子", "kind": "link", "edgeTo": "←B備料" },
-          { "id": "c-board", "lane": "C", "label": "新紙板申請", "kind": "link", "edgeTo": "←B備料" }
+          { "id": "c-bottle", "lane": "C", "row": "warehouse", "label": "瓶子", "kind": "link", "edgeTo": "←B" },
+          { "id": "c-board", "lane": "C", "row": "warehouse", "label": "新紙板", "kind": "link", "edgeTo": "←B" }
         ],
         "next": "s10"
       },
       "s10": {
         "speaker": "wh",
-        "line": "這張 C：瓶子。數量、種類寫在自己的單上——事情還在 C 欄。",
+        "line": "倉庫 × C：瓶子的數量、種類寫在自己的單上。",
         "showSwimlane": true,
         "form": "component",
         "doc": "c_bottle",
@@ -570,13 +570,13 @@
           "c_bottle_status": "status"
         },
         "story": [
-          { "id": "c-bottle-fill", "lane": "C", "label": "寫數量／種類", "kind": "action" }
+          { "id": "c-bottle-fill", "lane": "C", "row": "warehouse", "label": "寫數量／種類", "kind": "action" }
         ],
         "next": "s11"
       },
       "s11": {
         "speaker": "buyer",
-        "line": "向『明達包材』買瓶子——橢圓進 D 欄。採購連到瓶子 C，也可讓備料 B 看得到這條線。",
+        "line": "採購列 × D 欄：向『明達包材』買瓶子。連到 C，也可讓備料 B 看得到。",
         "showSwimlane": true,
         "form": "purchase",
         "doc": "d1",
@@ -588,16 +588,16 @@
         "fillFromDemo": ["vendor", "po_no", "buy_what", "d_status"],
         "mapFill": { "d_status": "status" },
         "story": [
-          { "id": "d-buy", "lane": "D", "label": "採購明達包材", "kind": "link", "edgeTo": "←C／B" }
+          { "id": "d-buy", "lane": "D", "row": "buyer", "label": "採購明達", "kind": "link", "edgeTo": "←C／B" }
         ],
         "next": "s12"
       },
       "s12": {
         "speaker": "guide",
-        "line": "故事走到這裡：四欄都有情節。接下來打開總表，看每張單的狀態與連線——完成與否打在自己身上。",
+        "line": "格子裡已看出誰在哪張表動過手。接下來打開總表，看狀態與連線。",
         "showSwimlane": true,
         "story": [
-          { "id": "stage-done", "lane": "A", "label": "圖已成形", "kind": "done" }
+          { "id": "stage-done", "lane": "D", "row": "narrator", "label": "圖已成形", "kind": "done" }
         ],
         "next": "s13"
       },
@@ -610,7 +610,7 @@
       },
       "s14": {
         "speaker": "guide",
-        "line": "你要哪一種結局示範？選左邊或右邊——A 欄會出現兩個抉擇橢圓。",
+        "line": "結局怎麼走？旁白列 × A 欄會出現兩個菱形抉擇——選左或右。",
         "showSwimlane": true,
         "form": "material",
         "doc": "a1",

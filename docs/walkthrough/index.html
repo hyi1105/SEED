@@ -770,153 +770,236 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
 }
 .schema-key-item.hot b { color: var(--brand); }
 
-/* ——— 故事泳道舞台 ——— */
+/* ——— 交叉泳道：上＝表單 · 左＝人（Visio 風格子） ——— */
 .story-stage {
   display: flex;
   flex-direction: column;
-  gap: 0.45rem;
+  gap: 0.35rem;
   min-height: 0;
   flex: 1;
-  padding: 0.35rem 0.15rem 0.2rem;
+  padding: 0.25rem 0.1rem 0.15rem;
 }
 .story-stage[hidden] { display: none !important; }
 .app.story-on .stage-wrap {
   display: flex;
   flex-direction: column;
+  background:
+    radial-gradient(900px 420px at 8% 0%, rgba(90, 150, 190, 0.18), transparent 55%),
+    linear-gradient(165deg, #d9e8f2, #c5d9e6 55%, #b7cedd);
 }
 .app.story-on .stage-fit { display: none; }
 .app.story-on .form-note { display: none; }
-.app.story-on .story-stage { flex: 1; min-height: 12rem; }
+.app.story-on .story-stage { flex: 1; min-height: 14rem; }
+.app[data-mode="show"].story-on {
+  grid-template-rows: auto 1fr minmax(150px, 30dvh);
+}
+@media (max-width: 640px) {
+  .app[data-mode="show"].story-on {
+    grid-template-rows: auto 1fr minmax(120px, 24dvh);
+  }
+}
 .story-kicker {
   margin: 0;
   font-family: var(--font-ui);
   font-size: 0.68rem;
   letter-spacing: 0.04em;
-  color: var(--muted);
-  padding: 0 0.2rem;
+  color: #3a5566;
+  padding: 0 0.15rem;
 }
-.story-lanes {
-  --lane-count: 4;
+.story-matrix,
+.story-lanes.story-matrix {
+  --cols: 4;
+  --rows: 4;
+  --row-label: 2.6rem;
   display: grid;
-  grid-template-columns: repeat(var(--lane-count), minmax(0, 1fr));
-  gap: 0.35rem;
+  grid-template-columns: var(--row-label) repeat(var(--cols), minmax(0, 1fr));
+  grid-template-rows: auto repeat(var(--rows), minmax(3.4rem, 1fr));
   flex: 1;
   min-height: 0;
-  align-items: stretch;
+  gap: 0;
+  border: 2px solid #1e3a4a;
+  background-color: #e8f2f8;
+  background-image:
+    linear-gradient(rgba(70, 120, 155, 0.12) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(70, 120, 155, 0.12) 1px, transparent 1px);
+  background-size: 14px 14px;
+  overflow: auto;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
 }
-.story-lane {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  min-height: 0;
-  border: 1px solid rgba(26, 36, 32, 0.14);
-  border-radius: 14px;
-  background:
-    linear-gradient(180deg, rgba(255, 252, 247, 0.96), rgba(241, 247, 244, 0.92)),
-    repeating-linear-gradient(
-      180deg,
-      transparent,
-      transparent 18px,
-      rgba(12, 92, 77, 0.035) 18px,
-      rgba(12, 92, 77, 0.035) 19px
-    );
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
-  overflow: hidden;
-}
-.story-lane-head {
-  display: flex;
-  align-items: baseline;
-  gap: 0.3rem;
-  padding: 0.4rem 0.45rem 0.35rem;
-  border-bottom: 1px dashed rgba(26, 36, 32, 0.12);
-  background: rgba(255, 255, 255, 0.55);
-}
-.story-lane-head .lvl {
-  font-family: var(--font-d);
-  font-weight: 700;
-  font-size: 0.95rem;
-  color: var(--brand);
-  line-height: 1;
-}
-.story-lane-title {
+.story-corner {
+  position: sticky;
+  top: 0;
+  left: 0;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  background: #9eb9cb;
+  border-right: 2px solid #1e3a4a;
+  border-bottom: 2px solid #1e3a4a;
   font-family: var(--font-ui);
-  font-size: 0.62rem;
-  color: var(--muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-size: 0.55rem;
+  color: #173040;
+  line-height: 1.15;
+  padding: 0.2rem;
+  text-align: center;
 }
-.story-lane-flow {
+.story-corner .corner-y { font-weight: 700; }
+.story-corner .corner-x { opacity: 0.75; display: block; }
+.story-col-head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.45rem;
-  padding: 0.55rem 0.35rem 0.7rem;
-  overflow: auto;
-  min-height: 0;
-  flex: 1;
+  justify-content: center;
+  gap: 0.05rem;
+  padding: 0.35rem 0.2rem;
+  background: #8fadc2;
+  border-right: 1px solid #1e3a4a;
+  border-bottom: 2px solid #1e3a4a;
+  text-align: center;
 }
-.story-oval {
-  position: relative;
-  width: min(100%, 9.5rem);
-  min-height: 2.4rem;
+.story-col-head.end-col { border-right: none; }
+.story-col-head .lvl {
+  font-family: var(--font-d);
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #102838;
+  line-height: 1;
+}
+.story-col-title {
+  font-family: var(--font-ui);
+  font-size: 0.55rem;
+  color: #243c4c;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.story-row-head {
+  position: sticky;
+  left: 0;
+  z-index: 1;
   display: grid;
   place-items: center;
-  padding: 0.45rem 0.65rem;
-  border: 1.5px solid color-mix(in srgb, var(--brand) 55%, #2a3a34);
-  border-radius: 999px;
-  background: radial-gradient(120% 140% at 30% 20%, #fffefb, #e8f4ef 70%, #d7ebe3);
-  box-shadow: 0 2px 0 rgba(12, 92, 77, 0.12);
+  padding: 0.25rem 0.15rem;
+  background: #b7cede;
+  border-right: 2px solid #1e3a4a;
+  border-bottom: 2px solid #1e3a4a;
+  writing-mode: horizontal-tb;
   text-align: center;
-  animation: story-pop 0.38s cubic-bezier(0.2, 0.9, 0.25, 1) both;
 }
-.story-oval .oval-text {
+.story-row-head span {
+  font-family: var(--font-ui);
+  font-size: 0.58rem;
+  font-weight: 700;
+  color: #173040;
+  line-height: 1.15;
+  word-break: break-all;
+}
+.story-cell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.28rem;
+  padding: 0.3rem 0.2rem;
+  min-width: 0;
+  border-right: 1px solid rgba(30, 58, 74, 0.45);
+  border-bottom: 2px solid #1e3a4a;
+  overflow: hidden;
+}
+.story-cell.end-col { border-right: none; }
+.story-row-head.end-row,
+.story-cell.end-row { border-bottom: none; }
+.story-node {
+  position: relative;
+  width: min(100%, 7.6rem);
+  min-height: 1.85rem;
+  display: grid;
+  place-items: center;
+  padding: 0.28rem 0.4rem;
+  text-align: center;
+  animation: story-pop 0.36s cubic-bezier(0.2, 0.9, 0.25, 1) both;
+}
+.story-node .node-text {
   font-family: var(--font-b);
-  font-size: 0.72rem;
+  font-size: 0.62rem;
   font-weight: 600;
-  line-height: 1.25;
-  color: var(--ink);
+  line-height: 1.2;
+  color: #142430;
 }
-.story-oval.kind-choice {
-  border-radius: 12px;
+/* 動作／連結：淺藍矩形（流程步驟） */
+.story-node.kind-action,
+.story-node.kind-link {
+  border: 1.5px solid #2a4a5e;
+  border-radius: 4px;
+  background: linear-gradient(180deg, #dff0fa, #c5dff0);
+  box-shadow: 0 1px 0 rgba(20, 40, 55, 0.12);
+}
+/* 起迄：黃橢圓 */
+.story-node.kind-start,
+.story-node.kind-done {
+  border: 1.5px solid #8a6a12;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #ffe9a8, #f5d56a);
+}
+/* 抉擇：菱形 */
+.story-node.kind-choice {
+  width: min(100%, 5.6rem);
+  min-height: 3.4rem;
+  border: none;
+  background: transparent;
+  padding: 0;
+}
+.story-node.kind-choice::before {
+  content: "";
+  position: absolute;
+  inset: 12% 8%;
+  background: linear-gradient(180deg, #dff0fa, #c5dff0);
+  border: 1.5px solid #2a4a5e;
+  transform: rotate(45deg);
+  border-radius: 3px;
+  z-index: 0;
+}
+.story-node.kind-choice .node-text {
+  position: relative;
+  z-index: 1;
+  font-size: 0.52rem;
+  max-width: 78%;
+}
+.story-node.ghost {
+  opacity: 0.28;
   border-style: dashed;
-  background: radial-gradient(120% 140% at 30% 20%, #fffdf8, #f3efe4 75%, #e8dfc8);
-  border-color: color-mix(in srgb, var(--manager) 55%, #5a4630);
-}
-.story-oval.kind-link {
-  border-color: color-mix(in srgb, var(--user) 50%, #1a2420);
-  background: radial-gradient(120% 140% at 30% 20%, #fff, #e7f0fa 75%, #d5e6f5);
-}
-.story-oval.kind-done {
-  border-color: color-mix(in srgb, var(--brand-2) 60%, #1a2420);
-}
-.story-oval.ghost {
-  opacity: 0.38;
-  border-style: dashed;
-  filter: grayscale(0.2);
+  filter: grayscale(0.25);
   animation: none;
 }
-.story-oval.hot {
-  outline: 2px solid rgba(12, 92, 77, 0.28);
+.story-node.hot {
+  outline: 2px solid rgba(180, 120, 20, 0.45);
   outline-offset: 2px;
-  transform: scale(1.03);
-  box-shadow: 0 0 0 4px rgba(23, 143, 114, 0.12), 0 3px 0 rgba(12, 92, 77, 0.14);
+  z-index: 1;
+}
+.story-node.kind-choice.hot::before {
+  box-shadow: 0 0 0 2px rgba(180, 120, 20, 0.35);
 }
 .story-edge-tip {
   position: absolute;
   left: 50%;
-  bottom: -0.95rem;
+  bottom: -0.7rem;
   transform: translateX(-50%);
-  font-size: 0.55rem;
+  font-size: 0.48rem;
   font-family: var(--font-ui);
-  color: var(--user);
+  color: #1f5f8a;
   white-space: nowrap;
   letter-spacing: 0.02em;
+  z-index: 2;
 }
 @keyframes story-pop {
   from {
     opacity: 0;
-    transform: translateY(10px) scale(0.88);
+    transform: translateY(8px) scale(0.9);
   }
   to {
     opacity: 1;
@@ -924,20 +1007,22 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
   }
 }
 @media (max-width: 640px) {
-  .story-kicker { font-size: 0.6rem; }
-  .story-lanes { gap: 0.22rem; }
-  .story-lane { border-radius: 10px; }
-  .story-lane-head { padding: 0.28rem 0.28rem 0.22rem; gap: 0.18rem; }
-  .story-lane-head .lvl { font-size: 0.78rem; }
-  .story-lane-title { font-size: 0.52rem; }
-  .story-lane-flow { gap: 0.35rem; padding: 0.4rem 0.2rem 0.85rem; }
-  .story-oval {
-    width: 100%;
-    min-height: 2.1rem;
-    padding: 0.35rem 0.35rem;
+  .story-kicker { font-size: 0.58rem; }
+  .story-matrix,
+  .story-lanes.story-matrix {
+    --row-label: 1.85rem;
+    grid-template-rows: auto repeat(var(--rows), minmax(3.1rem, 1fr));
   }
-  .story-oval .oval-text { font-size: 0.58rem; }
-  .story-edge-tip { font-size: 0.48rem; bottom: -0.85rem; }
+  .story-col-head { padding: 0.22rem 0.1rem; }
+  .story-col-head .lvl { font-size: 0.78rem; }
+  .story-col-title { font-size: 0.48rem; }
+  .story-row-head span { font-size: 0.5rem; }
+  .story-cell { padding: 0.22rem 0.12rem; gap: 0.2rem; }
+  .story-node { width: 100%; min-height: 1.65rem; padding: 0.22rem 0.2rem; }
+  .story-node .node-text { font-size: 0.52rem; }
+  .story-node.kind-choice { min-height: 3rem; width: 92%; }
+  .story-node.kind-choice .node-text { font-size: 0.45rem; }
+  .story-edge-tip { font-size: 0.42rem; bottom: -0.6rem; }
 }
 @media (max-width: 640px) {
   .app[data-mode="show"] .form-sheet.is-schema .form-sub { display: block; }
@@ -1098,7 +1183,7 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
       <div id="form-type-tabs" class="mode-tabs" aria-label="獨立表單種類" hidden></div>
       <div id="doc-list" hidden></div>
       <section class="story-stage" id="story-stage" hidden aria-label="故事泳道">
-        <p class="story-kicker" id="story-kicker">故事舞台 · 左→右是表單 · 橢圓是正在發生的事</p>
+        <p class="story-kicker" id="story-kicker">交叉泳道 · 上面是表單 · 左邊是人 · 格子裡長情節</p>
         <div class="story-lanes" id="story-lanes"></div>
       </section>
       <div class="stage-fit" id="stage-fit">
@@ -1822,34 +1907,38 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
     "nodes": {
       "s01": {
         "speaker": "narrator",
-        "line": "先別急著看欄位。上面是四條泳道——左到右是 A 料號、B 需求、C 底料、D 採購。故事會一塊塊長出來。",
+        "line": "先別急著看欄位。這是交叉泳道：上面是各表單（A～D），左邊是人。情節會長在「誰 × 哪張表」的格子裡。",
         "showSwimlane": true,
         "story": [
           {
             "id": "ghost-a",
             "lane": "A",
-            "label": "（空）",
+            "row": "narrator",
+            "label": "…",
             "kind": "action",
             "ghost": true
           },
           {
             "id": "ghost-b",
             "lane": "B",
-            "label": "（空）",
+            "row": "narrator",
+            "label": "…",
             "kind": "action",
             "ghost": true
           },
           {
             "id": "ghost-c",
             "lane": "C",
-            "label": "（空）",
+            "row": "narrator",
+            "label": "…",
             "kind": "action",
             "ghost": true
           },
           {
             "id": "ghost-d",
             "lane": "D",
-            "label": "（空）",
+            "row": "narrator",
+            "label": "…",
             "kind": "action",
             "ghost": true
           }
@@ -1866,21 +1955,23 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
           {
             "id": "a-exist",
             "lane": "A",
-            "label": "有一個料號",
-            "kind": "action"
+            "row": "narrator",
+            "label": "開始 · 有料號",
+            "kind": "start"
           }
         ],
         "next": "s03"
       },
       "s03": {
         "speaker": "guide",
-        "line": "對。四張是同級獨立表單，用連結組成圖：A 可掛很多 B，B 再掛 C／D。看橢圓長在哪一欄，就知道事情落在哪張表。",
+        "line": "對。看格子：上是表、左是人。A 可掛很多 B，B 再掛 C／D——節點落在哪格，就知道誰在哪張表做事。",
         "showSwimlane": true,
         "story": [
           {
             "id": "map-peer",
             "lane": "A",
-            "label": "四張同級 · 用連結",
+            "row": "narrator",
+            "label": "四張同級連結",
             "kind": "link",
             "edgeTo": "B／C／D"
           }
@@ -1889,7 +1980,7 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
       },
       "s04": {
         "speaker": "planner",
-        "line": "企劃在 A 欄動手：先建料號本身——這是身分證字號。",
+        "line": "企劃列 × A 欄：先建料號本身——這是身分證字號。",
         "showSwimlane": true,
         "form": "material",
         "doc": "a1",
@@ -1900,7 +1991,8 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
           {
             "id": "a-sku",
             "lane": "A",
-            "label": "建料號 SKU-8801",
+            "row": "planner",
+            "label": "建 SKU-8801",
             "kind": "action"
           }
         ],
@@ -1908,7 +2000,7 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
       },
       "s05": {
         "speaker": "planner",
-        "line": "品名給人看；目標說明寫為什麼要建它——後面才知道要連哪些 B。",
+        "line": "還在企劃 × A：品名給人看；目標說明寫為什麼要建它。",
         "showSwimlane": true,
         "form": "material",
         "doc": "a1",
@@ -1924,6 +2016,7 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
           {
             "id": "a-goal",
             "lane": "A",
+            "row": "planner",
             "label": "寫品名與目標",
             "kind": "action"
           }
@@ -1932,7 +2025,7 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
       },
       "s06": {
         "speaker": "guide",
-        "line": "同一張 A，開出三張獨立的 B：備料、定價、生產——橢圓落在 B 欄，表示事情換到需求單上了。",
+        "line": "事情換到 B 欄：同一張 A 開出備料、定價、生產三張需求——先記在旁白列，接著倉庫／企劃會接手。",
         "showSwimlane": true,
         "form": "material",
         "doc": "a1",
@@ -1974,6 +2067,7 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
           {
             "id": "b-prep",
             "lane": "B",
+            "row": "narrator",
             "label": "備料需求",
             "kind": "link",
             "edgeTo": "←A"
@@ -1981,6 +2075,7 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
           {
             "id": "b-price",
             "lane": "B",
+            "row": "planner",
             "label": "定價需求",
             "kind": "link",
             "edgeTo": "←A"
@@ -1988,6 +2083,7 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
           {
             "id": "b-mfg",
             "lane": "B",
+            "row": "planner",
             "label": "生產需求",
             "kind": "link",
             "edgeTo": "←A"
@@ -1997,7 +2093,7 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
       },
       "s07": {
         "speaker": "wh",
-        "line": "倉庫先處理備料這張 B：空間夠不夠、預算有沒有——寫在這張需求上，不是寫進料號。",
+        "line": "倉庫列 × B 欄：空間夠不夠、預算有沒有——寫在備料需求上，不是寫進料號。",
         "showSwimlane": true,
         "form": "need",
         "doc": "b_prep",
@@ -2019,7 +2115,8 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
           {
             "id": "b-prep-fill",
             "lane": "B",
-            "label": "填空間／預算條件",
+            "row": "warehouse",
+            "label": "填空間／預算",
             "kind": "action"
           }
         ],
@@ -2027,7 +2124,7 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
       },
       "s08": {
         "speaker": "planner",
-        "line": "定價、生產也在 B 欄各自前進——連著同一張 A，但狀態各自走。",
+        "line": "企劃列 × B 欄：定價、生產各自前進——連著同一張 A，狀態各自走。",
         "showSwimlane": true,
         "form": "need",
         "doc": "b_price",
@@ -2059,12 +2156,14 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
           {
             "id": "b-price-go",
             "lane": "B",
+            "row": "planner",
             "label": "定價進行中",
             "kind": "action"
           },
           {
             "id": "b-mfg-go",
             "lane": "B",
+            "row": "planner",
             "label": "生產進行中",
             "kind": "action"
           }
@@ -2073,7 +2172,7 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
       },
       "s09": {
         "speaker": "guide",
-        "line": "備料做下去，常還要底下的東西：瓶子、申請新紙板——橢圓移到 C 欄。一張 B 可以掛很多 C。",
+        "line": "備料做下去要瓶子、新紙板——節點移到 C 欄。一張 B 可以掛很多 C。",
         "showSwimlane": true,
         "form": "need",
         "doc": "b_prep",
@@ -2105,23 +2204,25 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
           {
             "id": "c-bottle",
             "lane": "C",
+            "row": "warehouse",
             "label": "瓶子",
             "kind": "link",
-            "edgeTo": "←B備料"
+            "edgeTo": "←B"
           },
           {
             "id": "c-board",
             "lane": "C",
-            "label": "新紙板申請",
+            "row": "warehouse",
+            "label": "新紙板",
             "kind": "link",
-            "edgeTo": "←B備料"
+            "edgeTo": "←B"
           }
         ],
         "next": "s10"
       },
       "s10": {
         "speaker": "wh",
-        "line": "這張 C：瓶子。數量、種類寫在自己的單上——事情還在 C 欄。",
+        "line": "倉庫 × C：瓶子的數量、種類寫在自己的單上。",
         "showSwimlane": true,
         "form": "component",
         "doc": "c_bottle",
@@ -2141,6 +2242,7 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
           {
             "id": "c-bottle-fill",
             "lane": "C",
+            "row": "warehouse",
             "label": "寫數量／種類",
             "kind": "action"
           }
@@ -2149,7 +2251,7 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
       },
       "s11": {
         "speaker": "buyer",
-        "line": "向『明達包材』買瓶子——橢圓進 D 欄。採購連到瓶子 C，也可讓備料 B 看得到這條線。",
+        "line": "採購列 × D 欄：向『明達包材』買瓶子。連到 C，也可讓備料 B 看得到。",
         "showSwimlane": true,
         "form": "purchase",
         "doc": "d1",
@@ -2183,7 +2285,8 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
           {
             "id": "d-buy",
             "lane": "D",
-            "label": "採購明達包材",
+            "row": "buyer",
+            "label": "採購明達",
             "kind": "link",
             "edgeTo": "←C／B"
           }
@@ -2192,12 +2295,13 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
       },
       "s12": {
         "speaker": "guide",
-        "line": "故事走到這裡：四欄都有情節。接下來打開總表，看每張單的狀態與連線——完成與否打在自己身上。",
+        "line": "格子裡已看出誰在哪張表動過手。接下來打開總表，看狀態與連線。",
         "showSwimlane": true,
         "story": [
           {
             "id": "stage-done",
-            "lane": "A",
+            "lane": "D",
+            "row": "narrator",
             "label": "圖已成形",
             "kind": "done"
           }
@@ -2218,7 +2322,7 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
       },
       "s14": {
         "speaker": "guide",
-        "line": "你要哪一種結局示範？選左邊或右邊——A 欄會出現兩個抉擇橢圓。",
+        "line": "結局怎麼走？旁白列 × A 欄會出現兩個菱形抉擇——選左或右。",
         "showSwimlane": true,
         "form": "material",
         "doc": "a1",
@@ -3085,34 +3189,38 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
       "nodes": {
         "s01": {
           "speaker": "narrator",
-          "line": "先別急著看欄位。上面是四條泳道——左到右是 A 料號、B 需求、C 底料、D 採購。故事會一塊塊長出來。",
+          "line": "先別急著看欄位。這是交叉泳道：上面是各表單（A～D），左邊是人。情節會長在「誰 × 哪張表」的格子裡。",
           "showSwimlane": true,
           "story": [
             {
               "id": "ghost-a",
               "lane": "A",
-              "label": "（空）",
+              "row": "narrator",
+              "label": "…",
               "kind": "action",
               "ghost": true
             },
             {
               "id": "ghost-b",
               "lane": "B",
-              "label": "（空）",
+              "row": "narrator",
+              "label": "…",
               "kind": "action",
               "ghost": true
             },
             {
               "id": "ghost-c",
               "lane": "C",
-              "label": "（空）",
+              "row": "narrator",
+              "label": "…",
               "kind": "action",
               "ghost": true
             },
             {
               "id": "ghost-d",
               "lane": "D",
-              "label": "（空）",
+              "row": "narrator",
+              "label": "…",
               "kind": "action",
               "ghost": true
             }
@@ -3129,21 +3237,23 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
             {
               "id": "a-exist",
               "lane": "A",
-              "label": "有一個料號",
-              "kind": "action"
+              "row": "narrator",
+              "label": "開始 · 有料號",
+              "kind": "start"
             }
           ],
           "next": "s03"
         },
         "s03": {
           "speaker": "guide",
-          "line": "對。四張是同級獨立表單，用連結組成圖：A 可掛很多 B，B 再掛 C／D。看橢圓長在哪一欄，就知道事情落在哪張表。",
+          "line": "對。看格子：上是表、左是人。A 可掛很多 B，B 再掛 C／D——節點落在哪格，就知道誰在哪張表做事。",
           "showSwimlane": true,
           "story": [
             {
               "id": "map-peer",
               "lane": "A",
-              "label": "四張同級 · 用連結",
+              "row": "narrator",
+              "label": "四張同級連結",
               "kind": "link",
               "edgeTo": "B／C／D"
             }
@@ -3152,7 +3262,7 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
         },
         "s04": {
           "speaker": "planner",
-          "line": "企劃在 A 欄動手：先建料號本身——這是身分證字號。",
+          "line": "企劃列 × A 欄：先建料號本身——這是身分證字號。",
           "showSwimlane": true,
           "form": "material",
           "doc": "a1",
@@ -3163,7 +3273,8 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
             {
               "id": "a-sku",
               "lane": "A",
-              "label": "建料號 SKU-8801",
+              "row": "planner",
+              "label": "建 SKU-8801",
               "kind": "action"
             }
           ],
@@ -3171,7 +3282,7 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
         },
         "s05": {
           "speaker": "planner",
-          "line": "品名給人看；目標說明寫為什麼要建它——後面才知道要連哪些 B。",
+          "line": "還在企劃 × A：品名給人看；目標說明寫為什麼要建它。",
           "showSwimlane": true,
           "form": "material",
           "doc": "a1",
@@ -3187,6 +3298,7 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
             {
               "id": "a-goal",
               "lane": "A",
+              "row": "planner",
               "label": "寫品名與目標",
               "kind": "action"
             }
@@ -3195,7 +3307,7 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
         },
         "s06": {
           "speaker": "guide",
-          "line": "同一張 A，開出三張獨立的 B：備料、定價、生產——橢圓落在 B 欄，表示事情換到需求單上了。",
+          "line": "事情換到 B 欄：同一張 A 開出備料、定價、生產三張需求——先記在旁白列，接著倉庫／企劃會接手。",
           "showSwimlane": true,
           "form": "material",
           "doc": "a1",
@@ -3237,6 +3349,7 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
             {
               "id": "b-prep",
               "lane": "B",
+              "row": "narrator",
               "label": "備料需求",
               "kind": "link",
               "edgeTo": "←A"
@@ -3244,6 +3357,7 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
             {
               "id": "b-price",
               "lane": "B",
+              "row": "planner",
               "label": "定價需求",
               "kind": "link",
               "edgeTo": "←A"
@@ -3251,6 +3365,7 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
             {
               "id": "b-mfg",
               "lane": "B",
+              "row": "planner",
               "label": "生產需求",
               "kind": "link",
               "edgeTo": "←A"
@@ -3260,7 +3375,7 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
         },
         "s07": {
           "speaker": "wh",
-          "line": "倉庫先處理備料這張 B：空間夠不夠、預算有沒有——寫在這張需求上，不是寫進料號。",
+          "line": "倉庫列 × B 欄：空間夠不夠、預算有沒有——寫在備料需求上，不是寫進料號。",
           "showSwimlane": true,
           "form": "need",
           "doc": "b_prep",
@@ -3282,7 +3397,8 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
             {
               "id": "b-prep-fill",
               "lane": "B",
-              "label": "填空間／預算條件",
+              "row": "warehouse",
+              "label": "填空間／預算",
               "kind": "action"
             }
           ],
@@ -3290,7 +3406,7 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
         },
         "s08": {
           "speaker": "planner",
-          "line": "定價、生產也在 B 欄各自前進——連著同一張 A，但狀態各自走。",
+          "line": "企劃列 × B 欄：定價、生產各自前進——連著同一張 A，狀態各自走。",
           "showSwimlane": true,
           "form": "need",
           "doc": "b_price",
@@ -3322,12 +3438,14 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
             {
               "id": "b-price-go",
               "lane": "B",
+              "row": "planner",
               "label": "定價進行中",
               "kind": "action"
             },
             {
               "id": "b-mfg-go",
               "lane": "B",
+              "row": "planner",
               "label": "生產進行中",
               "kind": "action"
             }
@@ -3336,7 +3454,7 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
         },
         "s09": {
           "speaker": "guide",
-          "line": "備料做下去，常還要底下的東西：瓶子、申請新紙板——橢圓移到 C 欄。一張 B 可以掛很多 C。",
+          "line": "備料做下去要瓶子、新紙板——節點移到 C 欄。一張 B 可以掛很多 C。",
           "showSwimlane": true,
           "form": "need",
           "doc": "b_prep",
@@ -3368,23 +3486,25 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
             {
               "id": "c-bottle",
               "lane": "C",
+              "row": "warehouse",
               "label": "瓶子",
               "kind": "link",
-              "edgeTo": "←B備料"
+              "edgeTo": "←B"
             },
             {
               "id": "c-board",
               "lane": "C",
-              "label": "新紙板申請",
+              "row": "warehouse",
+              "label": "新紙板",
               "kind": "link",
-              "edgeTo": "←B備料"
+              "edgeTo": "←B"
             }
           ],
           "next": "s10"
         },
         "s10": {
           "speaker": "wh",
-          "line": "這張 C：瓶子。數量、種類寫在自己的單上——事情還在 C 欄。",
+          "line": "倉庫 × C：瓶子的數量、種類寫在自己的單上。",
           "showSwimlane": true,
           "form": "component",
           "doc": "c_bottle",
@@ -3404,6 +3524,7 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
             {
               "id": "c-bottle-fill",
               "lane": "C",
+              "row": "warehouse",
               "label": "寫數量／種類",
               "kind": "action"
             }
@@ -3412,7 +3533,7 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
         },
         "s11": {
           "speaker": "buyer",
-          "line": "向『明達包材』買瓶子——橢圓進 D 欄。採購連到瓶子 C，也可讓備料 B 看得到這條線。",
+          "line": "採購列 × D 欄：向『明達包材』買瓶子。連到 C，也可讓備料 B 看得到。",
           "showSwimlane": true,
           "form": "purchase",
           "doc": "d1",
@@ -3446,7 +3567,8 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
             {
               "id": "d-buy",
               "lane": "D",
-              "label": "採購明達包材",
+              "row": "buyer",
+              "label": "採購明達",
               "kind": "link",
               "edgeTo": "←C／B"
             }
@@ -3455,12 +3577,13 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
         },
         "s12": {
           "speaker": "guide",
-          "line": "故事走到這裡：四欄都有情節。接下來打開總表，看每張單的狀態與連線——完成與否打在自己身上。",
+          "line": "格子裡已看出誰在哪張表動過手。接下來打開總表，看狀態與連線。",
           "showSwimlane": true,
           "story": [
             {
               "id": "stage-done",
-              "lane": "A",
+              "lane": "D",
+              "row": "narrator",
               "label": "圖已成形",
               "kind": "done"
             }
@@ -3481,7 +3604,7 @@ textarea.field-input { min-height: 4rem; resize: vertical; }
         },
         "s14": {
           "speaker": "guide",
-          "line": "你要哪一種結局示範？選左邊或右邊——A 欄會出現兩個抉擇橢圓。",
+          "line": "結局怎麼走？旁白列 × A 欄會出現兩個菱形抉擇——選左或右。",
           "showSwimlane": true,
           "form": "material",
           "doc": "a1",
@@ -5549,7 +5672,7 @@ const state = {
   history: [],
   chat: [],
   boardOnly: false,
-  /** @type {{id:string,lane:string,label:string,kind:string,edgeTo?:string,hot?:boolean}[]} */
+  /** @type {{id:string,lane:string,row:string,label:string,kind:string,edgeTo?:string,hot?:boolean,ghost?:boolean}[]} */
   storyBeats: [],
 };
 
@@ -6137,6 +6260,38 @@ function useStoryStage() {
   return isGraphPack() && forms().length > 1;
 }
 
+/** 泳道列＝人：旁白列＋各角色（左側用短名） */
+function storyPeople() {
+  const short = { planner: "企劃", warehouse: "倉庫", buyer: "採購" };
+  const roles = pack?.roles || [];
+  return [
+    { id: "narrator", label: "旁白" },
+    ...roles.map((r) => ({ id: r.id, label: short[r.id] || r.label })),
+  ];
+}
+
+/** speaker／beat.row → 左側人列 id */
+function storyRowId(node, beat = {}) {
+  if (beat.row) return String(beat.row);
+  const sp = node?.speaker || "";
+  const map = {
+    narrator: "narrator",
+    you: "narrator",
+    guide: "narrator",
+    planner: "planner",
+    wh: "warehouse",
+    warehouse: "warehouse",
+    buyer: "buyer",
+  };
+  if (map[sp]) return map[sp];
+  if (rolesOf().some((r) => r.id === sp)) return sp;
+  return "narrator";
+}
+
+function rolesOf() {
+  return pack?.roles || [];
+}
+
 function hideStoryStage() {
   if (els.storyStage) els.storyStage.hidden = true;
   els.app?.classList.remove("story-on");
@@ -6146,39 +6301,58 @@ function showStoryStageShell() {
   if (!els.storyStage || !els.storyLanes) return;
   els.storyStage.hidden = false;
   els.app?.classList.add("story-on");
-  const list = forms();
-  els.storyLanes.style.setProperty("--lane-count", String(Math.max(1, list.length)));
-  els.storyLanes.innerHTML = list
-    .map(
-      (f) => `<div class="story-lane" data-lane="${escapeHtml(f.level || f.id)}">
-        <div class="story-lane-head">
-          <span class="lvl">${escapeHtml(f.level || "?")}</span>
-          <span class="story-lane-title">${escapeHtml(f.label || f.title || f.id)}</span>
-        </div>
-        <div class="story-lane-flow" data-flow="${escapeHtml(f.level || f.id)}"></div>
-      </div>`
-    )
+  const cols = forms();
+  const rows = storyPeople();
+  const matrix = els.storyLanes;
+  matrix.className = "story-matrix";
+  matrix.style.setProperty("--cols", String(Math.max(1, cols.length)));
+  matrix.style.setProperty("--rows", String(Math.max(1, rows.length)));
+  const lastLane = cols[cols.length - 1]?.level || cols[cols.length - 1]?.id;
+  const lastRow = rows[rows.length - 1]?.id;
+  const colHeads = cols
+    .map((f) => {
+      const lane = f.level || f.id;
+      const end = lane === lastLane ? " end-col" : "";
+      return `<div class="story-col-head${end}" data-lane="${escapeHtml(lane)}">
+        <span class="lvl">${escapeHtml(f.level || "?")}</span>
+        <span class="story-col-title">${escapeHtml(f.label || f.title || f.id)}</span>
+      </div>`;
+    })
     .join("");
+  const body = rows
+    .map((person) => {
+      const endRow = person.id === lastRow ? " end-row" : "";
+      const cells = cols
+        .map((f) => {
+          const lane = f.level || f.id;
+          const endCol = lane === lastLane ? " end-col" : "";
+          return `<div class="story-cell${endCol}${endRow}" data-lane="${escapeHtml(lane)}" data-row="${escapeHtml(person.id)}"></div>`;
+        })
+        .join("");
+      return `<div class="story-row-head${endRow}" data-row="${escapeHtml(person.id)}"><span>${escapeHtml(person.label)}</span></div>${cells}`;
+    })
+    .join("");
+  matrix.innerHTML = `<div class="story-corner" aria-hidden="true"><span class="corner-y">人</span><span class="corner-x">表單</span></div>${colHeads}${body}`;
 }
 
 function paintStoryStage({ hotId } = {}) {
   if (!useStoryStage() || !els.storyLanes) return;
   showStoryStageShell();
-  const flows = {};
-  forms().forEach((f) => {
-    const key = f.level || f.id;
-    flows[key] = els.storyLanes.querySelector(`[data-flow="${key}"]`);
-    if (flows[key]) flows[key].innerHTML = "";
+  els.storyLanes.querySelectorAll(".story-cell").forEach((c) => {
+    c.innerHTML = "";
   });
-  state.storyBeats.forEach((beat, idx) => {
-    const host = flows[beat.lane];
+  let hotEl = null;
+  state.storyBeats.forEach((beat) => {
+    const host = els.storyLanes.querySelector(
+      `.story-cell[data-lane="${CSS.escape(beat.lane)}"][data-row="${CSS.escape(beat.row || "narrator")}"]`
+    );
     if (!host) return;
     const kind = beat.kind || "action";
     const hot = beat.id === hotId || beat.hot;
     const el = document.createElement("div");
-    el.className = `story-oval kind-${kind}${hot ? " hot" : ""}${beat.ghost ? " ghost" : ""}`;
+    el.className = `story-node kind-${kind}${hot ? " hot" : ""}${beat.ghost ? " ghost" : ""}`;
     el.dataset.beat = beat.id;
-    el.innerHTML = `<span class="oval-text">${escapeHtml(beat.label)}</span>`;
+    el.innerHTML = `<span class="node-text">${escapeHtml(beat.label)}</span>`;
     if (beat.edgeTo) {
       const tip = document.createElement("div");
       tip.className = "story-edge-tip";
@@ -6186,14 +6360,16 @@ function paintStoryStage({ hotId } = {}) {
       el.appendChild(tip);
     }
     host.appendChild(el);
-    if (idx > 0 && hot) {
-      requestAnimationFrame(() => el.scrollIntoView({ block: "nearest", behavior: "smooth" }));
-    }
+    if (hot) hotEl = el;
   });
+  if (hotEl) {
+    requestAnimationFrame(() => hotEl.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" }));
+  }
   if (els.storyKicker) {
-    els.storyKicker.textContent = state.storyBeats.length
-      ? `故事進行中 · ${state.storyBeats.length} 個情節`
-      : "空舞台 · 左→右是四張表 · 下一步會慢慢長出橢圓";
+    const live = state.storyBeats.filter((b) => !b.ghost).length;
+    els.storyKicker.textContent = live
+      ? `交叉泳道 · 上＝表單 · 左＝人 · ${live} 個情節`
+      : "交叉泳道 · 上面是表單 · 左邊是人 · 下一步在格子裡長出節點";
   }
 }
 
@@ -6205,6 +6381,7 @@ function normalizeStoryBeats(node) {
   return list.map((b, i) => ({
     id: b.id || `${state.nodeId}-${i}`,
     lane: String(b.lane || formById(node.form)?.level || "A"),
+    row: storyRowId(node, b),
     label: b.label || node.line?.slice(0, 18) || "…",
     kind: b.kind || (node.choices?.length ? "choice" : "action"),
     edgeTo: b.edgeTo,
@@ -6225,13 +6402,19 @@ function applyStoryBeats(node, { fromPrev = false } = {}) {
   const incoming = normalizeStoryBeats(node);
   if (!fromPrev) {
     if (node.storyReplace) state.storyBeats = [];
-    // 清除上一拍 hot
     state.storyBeats.forEach((b) => {
       b.hot = false;
     });
-    // 真實情節進場時，清掉同欄佔位 ghost
-    const liveLanes = new Set(incoming.filter((b) => !b.ghost).map((b) => b.lane));
-    if (liveLanes.size) {
+    // 真實情節進場時，清掉同格（表×人）佔位 ghost
+    const liveCells = new Set(
+      incoming.filter((b) => !b.ghost).map((b) => `${b.lane}::${b.row}`)
+    );
+    if (liveCells.size) {
+      state.storyBeats = state.storyBeats.filter(
+        (b) => !(b.ghost && liveCells.has(`${b.lane}::${b.row || "narrator"}`))
+      );
+      // 同欄若已有真人情節，也清掉該欄其他 ghost
+      const liveLanes = new Set(incoming.filter((b) => !b.ghost).map((b) => b.lane));
       state.storyBeats = state.storyBeats.filter((b) => !(b.ghost && liveLanes.has(b.lane)));
     }
     for (const beat of incoming) {
@@ -6242,15 +6425,17 @@ function applyStoryBeats(node, { fromPrev = false } = {}) {
         state.storyBeats.push(beat);
       }
     }
-    // 抉擇：把選項畫成 choice 橢圓
+    // 抉擇：菱形節點落在說話者 × 當前表
     if (node.choices?.length && !incoming.some((b) => b.kind === "choice")) {
       const lane = formById(node.form)?.level || forms()[0]?.level || "A";
+      const row = storyRowId(node, {});
       node.choices.forEach((c, i) => {
         const id = `${state.nodeId}-ch-${c.id || i}`;
         if (!state.storyBeats.some((b) => b.id === id)) {
           state.storyBeats.push({
             id,
             lane,
+            row,
             label: c.label,
             kind: "choice",
             hot: true,
