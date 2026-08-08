@@ -48,6 +48,12 @@ status: active
 - 驗證用地圖包：[`docs/walkthrough/systems/leave.json`](../../docs/walkthrough/systems/leave.json)
 - 播放器頂部加 Show 連結；系統下拉加「請假單」；`?mode=map&system=leave` 可直達
 
+## 體驗修正（邊講邊填）
+
+- **不要**只長抽象標籤拼圖（無聊）
+- **要**：畫面上是真的請假單；台詞用描述介紹「為什麼需要這一欄」，再打字填入（姓名→電話→地址→最後一天…）
+- 主管／HR 區也是邊說邊填；分歧影響狀態與意見內容
+
 ## 待續
 
 - [x] 導引腳本改成腳本／台詞表（speaker、line、reveal、choice）— 請假 VN

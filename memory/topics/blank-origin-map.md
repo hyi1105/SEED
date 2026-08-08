@@ -121,8 +121,8 @@ status: active
 
 ## 已落地（2026-08-08）
 
-- Show 頁：`docs/walkthrough/show.html`（請假故事線，點下一步長空白）
-- 腳本：`docs/walkthrough/vn/leave.json`
+- Show 頁：`docs/walkthrough/show.html`（**邊講邊填**：真請假單＋打字填入，不是抽象標籤拼圖）
+- 腳本：`docs/walkthrough/vn/leave.json`（姓名→電話→地址→最後一天…每欄先描述再填）
 - 結局 → `index.html?mode=map&system=leave` 地圖驗證
 - 系統包：`docs/walkthrough/systems/leave.json`
 

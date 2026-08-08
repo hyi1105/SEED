@@ -21,6 +21,7 @@
         { "id": "id", "label": "單號", "auto": true },
         { "id": "name", "label": "姓名" },
         { "id": "phone", "label": "電話" },
+        { "id": "address", "label": "地址" },
         { "id": "last_day", "label": "最後一天" },
         { "id": "status", "label": "結案狀態" }
       ]
@@ -57,11 +58,12 @@
         {
           "n": 1,
           "action": "write",
-          "fields": ["leave.name", "leave.phone", "leave.last_day"],
-          "note": "申請人填姓名、電話、最後一天",
+          "fields": ["leave.name", "leave.phone", "leave.address", "leave.last_day"],
+          "note": "申請人填姓名、電話、地址、最後一天",
           "fill": {
             "leave.name": "林小華",
             "leave.phone": "0912-345-678",
+            "leave.address": "台南市中西區民生路一段 88 號",
             "leave.last_day": "2026-08-15"
           }
         },
@@ -157,6 +159,7 @@
     "values": {
       "leave.name": "林小華",
       "leave.phone": "0912-345-678",
+      "leave.address": "台南市中西區民生路一段 88 號",
       "leave.last_day": "2026-08-15"
     },
     "persona": {
